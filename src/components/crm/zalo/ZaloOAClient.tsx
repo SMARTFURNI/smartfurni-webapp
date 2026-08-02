@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, Bot, Check, CheckCircle2, Clock3, FileText,
-  History, Inbox, Loader2, MessageCircle, Pencil, Plus, RefreshCw, Save,
-  Send, Settings, ShieldCheck, Sparkles, Trash2, Users, X, Zap,
+  History, Inbox, Loader2, MessageCircle, Paperclip, Pencil,
+  Plus, RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
+  Trash2, Users, X, Zap,
 } from "lucide-react";
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
@@ -72,7 +73,19 @@ interface MessageRecord {
   zaloMessageId: string;
   aiConfidence: number | null;
   error: string;
+  attachment: { items?: MessageAttachment[] };
   createdAt: string;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  readAt: string | null;
+}
+
+interface MessageAttachment {
+  type?: string;
+  url?: string;
+  thumbnail?: string;
+  name?: string;
+  size?: number;
 }
 
 interface QueueItem {
@@ -165,13 +178,14 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [selectedUser, setSelectedUser] = useState("");
+  const [threadMessages, setThreadMessages] = useState<MessageRecord[]>([]);
   const [sendOpen, setSendOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Partial<Template> | null>(null);
   const visibleTabs = useMemo(() => isAdmin ? TABS : TABS.filter(item => !["templates", "automation", "settings"].includes(item.id)), [isAdmin]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const res = await fetch("/api/crm/zalo", { cache: "no-store" });
       const next = await res.json() as Dashboard & { error?: string };
@@ -180,25 +194,62 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
       setSelectedUser(current => current || next.conversations[0]?.userId || "");
     } catch (error) {
       setNotice({ type: "error", text: error instanceof Error ? error.message : "Không tải được dữ liệu." });
-    } finally { setLoading(false); }
+    } finally { if (showSpinner) setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
+  const loadThread = useCallback(async (userId: string, markRead = true) => {
+    if (!userId) { setThreadMessages([]); return; }
+    const res = await fetch(`/api/crm/zalo?userId=${encodeURIComponent(userId)}`, { cache: "no-store" });
+    const next = await res.json() as { messages?: MessageRecord[]; error?: string };
+    if (!res.ok) throw new Error(next.error || "Không tải được hội thoại Zalo OA.");
+    setThreadMessages(next.messages || []);
+    if (markRead) await postAction({ action: "mark_conversation_read", userId });
+  }, []);
+
+  useEffect(() => {
+    if (tab !== "inbox" || !selectedUser) return;
+    void loadThread(selectedUser).catch(error => setNotice({ type: "error", text: error instanceof Error ? error.message : "Không tải được hội thoại." }));
+  }, [loadThread, selectedUser, tab]);
+
+  useEffect(() => {
+    if (tab !== "inbox") return;
+    const timer = window.setInterval(() => {
+      void load(false);
+      if (selectedUser) void loadThread(selectedUser, false);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [load, loadThread, selectedUser, tab]);
+
   const run = useCallback(async (key: string, fn: () => Promise<unknown>, success: string) => {
     setBusy(key); setNotice(null);
-    try { await fn(); setNotice({ type: "ok", text: success }); await load(); }
+    try { await fn(); setNotice({ type: "ok", text: success }); await load(false); }
     catch (error) { setNotice({ type: "error", text: error instanceof Error ? error.message : "Có lỗi xảy ra." }); }
     finally { setBusy(""); }
   }, [load]);
 
   const selectedConversation = data?.conversations.find(item => item.userId === selectedUser) || null;
-  const selectedMessages = useMemo(() => (data?.messages || []).filter(item => item.userId === selectedUser).reverse(), [data?.messages, selectedUser]);
+  const selectedMessages = threadMessages;
   const drafts = (data?.aiQueue || []).filter(item => item.status === "draft");
 
   async function saveConfig() {
     await run("save-config", () => postAction({ action: "save_config", config: { ...config, ...secrets } }), "Đã lưu cấu hình Zalo OA và AI Agent.");
     setSecrets({ appSecret: "", oaSecretKey: "", accessToken: "", refreshToken: "" });
+  }
+
+  async function sendReply(content: string) {
+    if (!selectedUser) return;
+    setBusy(`reply-${selectedUser}`); setNotice(null);
+    try {
+      await postAction({ action: "send_consultation", userId: selectedUser, content });
+      await Promise.all([load(false), loadThread(selectedUser, false)]);
+      setNotice({ type: "ok", text: "Zalo OA đã tiếp nhận tin trả lời." });
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "Không gửi được tin trả lời." });
+      await loadThread(selectedUser, false).catch(() => undefined);
+      throw error;
+    } finally { setBusy(""); }
   }
 
   if (loading && !data) return <div className="flex min-h-[70vh] items-center justify-center text-[rgba(245,237,214,0.55)]"><Loader2 className="mr-2 animate-spin text-[#c9a84c]" /> Đang tải trung tâm Zalo OA...</div>;
@@ -220,7 +271,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     {notice && <div className={`flex items-start justify-between rounded-xl border px-4 py-3 text-sm ${notice.type === "ok" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-red-400/25 bg-red-400/10 text-red-200"}`}><span className="flex gap-2">{notice.type === "ok" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}{notice.text}</span><button onClick={() => setNotice(null)}><X size={16} /></button></div>}
 
     {tab === "overview" && <Overview data={data!} config={config} go={setTab} isAdmin={isAdmin} />}
-    {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
+    {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} sendReply={sendReply} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
     {tab === "ai" && <AiQueue items={data?.aiQueue || []} busy={busy} review={(id, decision) => void run(`${decision}-${id}`, () => postAction({ action: "review_ai", id, decision }), decision === "approve" ? "Đã duyệt và gửi tin tư vấn qua OA." : "Đã từ chối bản nháp AI.")} />}
     {tab === "templates" && <TemplatesTab templates={data?.templates || []} open={(item) => { setEditingTemplate(item || { category: "consultation", isActive: true, requiresApproval: true, variables: [] }); setTemplateOpen(true); }} />}
     {tab === "history" && <HistoryTab messages={data?.messages || []} />}
@@ -280,11 +331,94 @@ function Overview({ data, config, go, isAdmin }: { data: Dashboard; config: Publ
   </div>;
 }
 
-function InboxTab({ conversations, selectedUser, setSelectedUser, selected, messages, busy, generate }: { conversations: Conversation[]; selectedUser: string; setSelectedUser: (v: string) => void; selected: Conversation | null; messages: MessageRecord[]; busy: string; generate: () => void }) {
-  return <section className={`${panel} min-h-[620px] overflow-hidden`}><div className="grid min-h-[620px] lg:grid-cols-[360px_1fr]">
-    <aside className="border-b border-white/8 lg:border-b-0 lg:border-r"><div className="border-b border-white/8 p-4"><div className="text-xs font-bold uppercase tracking-[0.18em] text-[#8f99aa]">{conversations.length} hội thoại OA</div></div><div className="max-h-[560px] overflow-y-auto">{conversations.length ? conversations.map(item => <button key={item.userId} onClick={() => setSelectedUser(item.userId)} className={`w-full border-b border-white/6 p-4 text-left transition ${selectedUser === item.userId ? "bg-[#c9a84c]/10" : "hover:bg-white/[0.03]"}`}><div className="flex items-center justify-between gap-2"><strong className="truncate text-sm">{item.displayName}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-[#c9a84c] px-2 py-0.5 text-[10px] font-bold text-black">{item.unreadCount}</span>}</div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#8f99aa]">{item.lastMessagePreview}</p><div className="mt-2 flex items-center justify-between text-[11px] text-[#687487]"><span>{formatDate(item.lastMessageAt)}</span><span className={withinSevenDays(item.lastUserInteraction) ? "text-emerald-300" : "text-amber-300"}>{withinSevenDays(item.lastUserInteraction) ? "Trong 7 ngày" : "Ngoài 7 ngày"}</span></div></button>) : <Empty text="Webhook chưa nhận hội thoại nào." />}</div></aside>
-    <main className="flex min-w-0 flex-col">{selected ? <><div className="flex flex-col gap-3 border-b border-white/8 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-lg font-semibold">{selected.displayName}</h2><p className="mt-0.5 text-xs text-[#8f99aa]">UID: {selected.userId} · Tương tác cuối: {formatDate(selected.lastUserInteraction)}</p></div><button disabled={busy === `ai-${selected.userId}`} onClick={generate} className={goldButton}>{busy === `ai-${selected.userId}` ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} AI soạn trả lời</button></div><div className="flex-1 space-y-3 overflow-y-auto p-5">{messages.length ? messages.map(item => <div key={item.id} className={`max-w-[82%] rounded-2xl border px-4 py-3 ${item.direction === "outbound" ? "ml-auto border-[#c9a84c]/20 bg-[#c9a84c]/10" : "border-white/10 bg-[#0c1320]"}`}><p className="whitespace-pre-wrap text-sm leading-6">{item.content}</p><div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#7f899a]"><span>{item.direction === "outbound" ? `OA · ${item.source}` : "Khách hàng"}</span><span>{formatDate(item.createdAt)}</span></div>{item.error && <p className="mt-2 text-xs text-red-300">{item.error}</p>}</div>) : <Empty text="Chưa có nội dung trong hội thoại." />}</div></> : <Empty text="Chọn một hội thoại Zalo OA để xem chi tiết." />}</main>
-  </div></section>;
+function messageStatusLabel(item: MessageRecord) {
+  if (item.status === "read") return "Đã xem";
+  if (item.status === "delivered") return "Đã nhận";
+  if (item.status === "sent") return "Đã gửi";
+  if (item.status === "pending") return "Đang gửi";
+  return "Gửi lỗi";
+}
+
+function MessageAttachments({ attachment }: { attachment: MessageRecord["attachment"] }) {
+  const items = Array.isArray(attachment?.items) ? attachment.items : [];
+  if (!items.length) return null;
+
+  return <div className="mb-2 grid gap-2">
+    {items.map((item, index) => {
+      const type = String(item.type || "file").toLowerCase();
+      const url = item.url || item.thumbnail || "";
+      const label = item.name || (type === "image" ? "Ảnh khách gửi" : type === "audio" ? "Tin nhắn thoại" : type === "video" ? "Video" : "Tệp đính kèm");
+      if ((type === "image" || type === "gif" || type === "sticker") && url) {
+        return <a key={`${url}-${index}`} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-black/20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.thumbnail || url} alt={label} className="max-h-72 w-full object-contain" loading="lazy" />
+        </a>;
+      }
+      if (type === "audio" && url) return <audio key={`${url}-${index}`} className="max-w-full" controls preload="none" src={url} />;
+      if (type === "video" && url) return <video key={`${url}-${index}`} className="max-h-72 max-w-full rounded-xl" controls preload="metadata" src={url} />;
+      return <a key={`${url}-${index}`} href={url || undefined} target={url ? "_blank" : undefined} rel={url ? "noreferrer" : undefined} className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-xs text-[#d8d0c1] hover:border-[#c9a84c]/30">
+        <Paperclip size={14} className="shrink-0 text-[#d6b75b]" /><span className="min-w-0 flex-1 truncate">{label}</span>{item.size ? <span className="text-[10px] text-[#7f899a]">{Math.max(1, Math.round(item.size / 1024))} KB</span> : null}
+      </a>;
+    })}
+  </div>;
+}
+
+function InboxTab({ conversations, selectedUser, setSelectedUser, selected, messages, busy, generate, sendReply }: {
+  conversations: Conversation[];
+  selectedUser: string;
+  setSelectedUser: (v: string) => void;
+  selected: Conversation | null;
+  messages: MessageRecord[];
+  busy: string;
+  generate: () => void;
+  sendReply: (content: string) => Promise<void>;
+}) {
+  const [search, setSearch] = useState("");
+  const [draft, setDraft] = useState("");
+  const filtered = conversations.filter(item => `${item.displayName} ${item.userId} ${item.lastMessagePreview}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const canReply = Boolean(selected && withinSevenDays(selected.lastUserInteraction));
+  const sending = Boolean(selected && busy === `reply-${selected.userId}`);
+
+  async function submitReply() {
+    const content = draft.trim();
+    if (!content || !canReply || sending) return;
+    try {
+      await sendReply(content);
+      setDraft("");
+    } catch {
+      // Giữ nguyên nội dung để nhân viên có thể thử lại sau khi xử lý lỗi API.
+    }
+  }
+
+  return <section className={`${panel} min-h-[680px] overflow-hidden`}>
+    <div className="grid min-h-[680px] lg:grid-cols-[360px_1fr]">
+      <aside className="border-b border-[rgba(255,200,100,0.10)] bg-black/10 lg:border-b-0 lg:border-r">
+        <div className="border-b border-[rgba(255,200,100,0.10)] p-4">
+          <div className="flex items-center justify-between gap-3"><div className="text-xs font-bold uppercase tracking-[0.18em] text-[#8f99aa]">{conversations.length} hội thoại OA</div>{conversations.some(item => item.unreadCount > 0) && <span className="text-[10px] font-semibold text-[#d6b75b]">{conversations.reduce((sum, item) => sum + item.unreadCount, 0)} chưa đọc</span>}</div>
+          <label className="mt-3 flex items-center gap-2 rounded-xl border border-[rgba(255,200,100,0.12)] bg-[#0c1320] px-3 text-[#7f899a] focus-within:border-[#c9a84c]/40"><Search size={15} /><input value={search} onChange={event => setSearch(event.target.value)} className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[#f5edd6] outline-none placeholder:text-[#687487]" placeholder="Tìm tên hoặc Zalo UID" /></label>
+        </div>
+        <div className="max-h-[596px] overflow-y-auto">{filtered.length ? filtered.map(item => <button key={item.userId} onClick={() => setSelectedUser(item.userId)} className={`w-full border-b border-[rgba(255,200,100,0.07)] p-4 text-left transition ${selectedUser === item.userId ? "bg-[#c9a84c]/10 shadow-[inset_3px_0_0_#c9a84c]" : "hover:bg-white/[0.03]"}`}>
+          <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#c9a84c]/20 bg-[#c9a84c]/10 text-sm font-bold text-[#e3c86f]">{(item.displayName || "K").trim().charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><strong className="truncate text-sm">{item.displayName}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-[#c9a84c] px-2 py-0.5 text-[10px] font-bold text-black">{item.unreadCount}</span>}</div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#8f99aa]">{item.lastMessagePreview || "Hội thoại mới"}</p><div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#687487]"><span>{formatDate(item.lastMessageAt)}</span><span className={withinSevenDays(item.lastUserInteraction) ? "text-emerald-300" : "text-amber-300"}>{withinSevenDays(item.lastUserInteraction) ? "Có thể trả lời" : "Hết 7 ngày"}</span></div></div></div>
+        </button>) : <Empty text={search ? "Không tìm thấy hội thoại phù hợp." : "Webhook chưa nhận hội thoại nào."} />}</div>
+      </aside>
+
+      <main className="flex min-h-[680px] min-w-0 flex-col bg-[radial-gradient(circle_at_top_right,rgba(104,70,0,0.10),transparent_34%)]">{selected ? <>
+        <div className="flex flex-col gap-3 border-b border-[rgba(255,200,100,0.10)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#c9a84c]/12 font-bold text-[#e3c86f]">{(selected.displayName || "K").trim().charAt(0).toUpperCase()}</span><div className="min-w-0"><h2 className="truncate text-base font-semibold">{selected.displayName}</h2><p className="mt-0.5 truncate text-[11px] text-[#8f99aa]">UID {selected.userId} · tương tác {formatDate(selected.lastUserInteraction)}</p></div></div><button disabled={busy === `ai-${selected.userId}`} onClick={generate} className={goldButton}>{busy === `ai-${selected.userId}` ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} AI gợi ý</button></div>
+
+        <div className="flex max-h-[475px] min-h-[420px] flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 sm:px-6">{messages.length ? messages.map(item => <div key={item.id} className={`max-w-[88%] rounded-2xl border px-3.5 py-2.5 sm:max-w-[76%] ${item.direction === "outbound" ? "ml-auto rounded-br-md border-[#c9a84c]/22 bg-[#c9a84c]/12" : "rounded-bl-md border-white/10 bg-[#0c1320]"}`}>
+          <MessageAttachments attachment={item.attachment} />
+          {item.content && <p className="whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>}
+          <div className="mt-1.5 flex items-center justify-end gap-2 text-[10px] text-[#7f899a]"><span>{formatDate(item.createdAt)}</span>{item.direction === "outbound" && <span className={item.status === "failed" ? "text-red-300" : item.status === "read" ? "text-emerald-300" : "text-[#a99a72]"}>{messageStatusLabel(item)}</span>}</div>
+          {item.error && <p className="mt-2 text-xs text-red-300">{item.error}</p>}
+        </div>) : <Empty text="Chưa có nội dung trong hội thoại." />}</div>
+
+        <div className="mt-auto border-t border-[rgba(255,200,100,0.10)] bg-black/15 p-3.5 sm:p-4">
+          <div className={`rounded-2xl border bg-[#0c1320] p-2 transition ${canReply ? "border-[rgba(255,200,100,0.18)] focus-within:border-[#c9a84c]/50" : "border-amber-400/16 opacity-75"}`}><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitReply(); } }} disabled={!canReply || sending} rows={3} className="block w-full resize-none bg-transparent px-2 py-1.5 text-sm leading-6 text-[#f5edd6] outline-none placeholder:text-[#687487]" placeholder={canReply ? "Nhập tin nhắn… Enter để gửi, Shift + Enter để xuống dòng" : "Cửa sổ tư vấn 7 ngày đã hết"} /><div className="flex items-center justify-between gap-3 px-1 pb-0.5"><span className="text-[10px] leading-4 text-[#687487]">{canReply ? "Gửi bằng Zalo OA OpenAPI" : "Muốn tiếp tục cần dùng mẫu ZBS đã duyệt và đúng mục đích."}</span><button onClick={() => void submitReply()} disabled={!draft.trim() || !canReply || sending} className={`${goldButton} h-9 shrink-0 px-3`}>{sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Gửi</button></div></div>
+          <p className="mt-2 text-[10px] leading-4 text-[#687487]">Ảnh, video và tệp gửi từ OA Manager vẫn tự đồng bộ vào hội thoại này qua webhook.</p>
+        </div>
+      </> : <Empty text="Chọn một hội thoại Zalo OA để xem và trả lời." />}</main>
+    </div>
+  </section>;
 }
 
 function AiQueue({ items, busy, review }: { items: QueueItem[]; busy: string; review: (id: string, decision: "approve" | "reject") => void }) {

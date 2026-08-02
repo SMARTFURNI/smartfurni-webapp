@@ -76,7 +76,11 @@ export interface ZaloMessageRecord {
   zaloMessageId: string;
   aiConfidence: number | null;
   error: string;
+  attachment: Record<string, unknown>;
   createdAt: string;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  readAt: string | null;
 }
 
 export interface ZaloAiQueueItem {
@@ -291,6 +295,17 @@ function asArray(value: unknown): string[] {
   return [];
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    } catch { return {}; }
+  }
+  return {};
+}
+
 function mapTemplate(row: Record<string, unknown>): ZaloTemplate {
   return {
     id: String(row.id), name: String(row.name), category: String(row.category) as ZaloMessageCategory,
@@ -341,7 +356,9 @@ function mapMessage(row: Record<string, unknown>): ZaloMessageRecord {
     content: String(row.content || ""), status: String(row.status) as ZaloMessageStatus,
     source: String(row.source) as "manual" | "ai" | "webhook", templateId: String(row.template_id || ""),
     zaloMessageId: String(row.zalo_message_id || ""), aiConfidence: row.ai_confidence == null ? null : Number(row.ai_confidence),
-    error: String(row.error || ""), createdAt: String(row.created_at),
+    error: String(row.error || ""), attachment: asRecord(row.attachment), createdAt: String(row.created_at),
+    sentAt: row.sent_at ? String(row.sent_at) : null, deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
+    readAt: row.read_at ? String(row.read_at) : null,
   };
 }
 
@@ -396,6 +413,26 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
   };
 }
 
+export async function getZaloConversationMessages(userId: string, limit = 300): Promise<ZaloMessageRecord[]> {
+  await initZaloOASchema();
+  const safeLimit = Math.max(20, Math.min(500, Math.trunc(limit)));
+  const rows = await query<Record<string, unknown>>(
+    `SELECT recent.*,c.display_name FROM (
+       SELECT * FROM crm_zalo_messages
+       WHERE conversation_user_id=$1 ORDER BY created_at DESC LIMIT $2
+     ) recent
+     LEFT JOIN crm_zalo_conversations c ON c.user_id=recent.conversation_user_id
+     ORDER BY recent.created_at ASC`,
+    [userId, safeLimit],
+  );
+  return rows.map(mapMessage);
+}
+
+export async function markZaloConversationRead(userId: string): Promise<void> {
+  await initZaloOASchema();
+  await query(`UPDATE crm_zalo_conversations SET unread_count=0,updated_at=NOW() WHERE user_id=$1`, [userId]);
+}
+
 async function insertOutboundMessage(input: {
   userId: string; content: string; category: ZaloMessageCategory; source: "manual" | "ai";
   templateId?: string; aiConfidence?: number;
@@ -420,6 +457,14 @@ async function finalizeMessage(id: string, ok: boolean, zaloMessageId = "", erro
     `UPDATE crm_zalo_messages SET status=$2,zalo_message_id=$3,error=$4,sent_at=CASE WHEN $2='sent' THEN NOW() ELSE sent_at END WHERE id=$1`,
     [id, ok ? "sent" : "failed", zaloMessageId, error],
   );
+  if (ok) {
+    await query(
+      `UPDATE crm_zalo_conversations c SET
+       last_message_preview=m.content,last_message_at=COALESCE(m.sent_at,m.created_at),updated_at=NOW()
+       FROM crm_zalo_messages m WHERE m.id=$1 AND c.user_id=m.conversation_user_id`,
+      [id],
+    );
+  }
 }
 
 async function parseZaloResponse(res: Response): Promise<{ ok: boolean; messageId?: string; error?: string }> {
@@ -611,11 +656,29 @@ export async function reviewZaloAiQueue(id: string, action: "approve" | "reject"
 }
 
 function zaloEventContent(eventName: string, message?: Record<string, unknown>): { content: string; attachment: Record<string, unknown> } {
-  const text = String(message?.text || "").trim();
-  const rawAttachments = message?.attachments;
-  const attachment = rawAttachments && typeof rawAttachments === "object"
-    ? { items: rawAttachments }
-    : {};
+  const text = String(message?.text || message?.content || "").trim();
+  const rawAttachments = message?.attachments ?? message?.attachment;
+  const sourceItems = Array.isArray(rawAttachments) ? rawAttachments : rawAttachments ? [rawAttachments] : [];
+  const items = sourceItems.map(value => {
+    const item = asRecord(value);
+    const payload = asRecord(item.payload);
+    return {
+      type: String(item.type || payload.type || eventName.replace(/^(user|oa|anonymous)_send_/, "") || "file"),
+      url: String(payload.url || item.url || payload.download_url || item.download_url || ""),
+      thumbnail: String(payload.thumbnail || payload.thumbnail_url || item.thumbnail || item.thumbnail_url || ""),
+      name: String(payload.name || payload.file_name || item.name || item.file_name || ""),
+      size: Number(payload.size || item.size || 0),
+      raw: item,
+    };
+  });
+  if (!items.length && (message?.url || message?.thumbnail)) {
+    items.push({
+      type: eventName.replace(/^(user|oa|anonymous)_send_/, "") || "file",
+      url: String(message.url || ""), thumbnail: String(message.thumbnail || ""),
+      name: String(message.file_name || message.name || ""), size: Number(message.size || 0), raw: message,
+    });
+  }
+  const attachment = items.length ? { items } : {};
   if (text) return { content: text, attachment };
   const labels: Record<string, string> = {
     image: "[Hình ảnh]", link: "[Liên kết]", audio: "[Âm thanh]", video: "[Video]",
@@ -623,6 +686,56 @@ function zaloEventContent(eventName: string, message?: Record<string, unknown>):
   };
   const suffix = Object.keys(labels).find(key => eventName.includes(key));
   return { content: suffix ? labels[suffix] : "[Tin nhắn Zalo]", attachment };
+}
+
+function zaloPartyId(value?: Record<string, unknown>): string {
+  return String(value?.id || value?.user_id || value?.anonymous_id || value?.uid || "").trim();
+}
+
+function zaloMessageId(event: Record<string, unknown>, message?: Record<string, unknown>): string {
+  return String(
+    message?.msg_id || message?.message_id || event.msg_id || event.message_id ||
+    event.source_message_id || event.user_message_id || "",
+  ).trim();
+}
+
+function zaloEventTime(event: Record<string, unknown>): string {
+  const raw = event.timestamp || event.time || event.created_at;
+  const numeric = Number(raw);
+  const date = Number.isFinite(numeric) && numeric > 0
+    ? new Date(numeric < 10_000_000_000 ? numeric * 1000 : numeric)
+    : new Date(String(raw || ""));
+  return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString();
+}
+
+async function updateZaloDeliveryReceipt(
+  eventName: string,
+  event: Record<string, unknown>,
+  message?: Record<string, unknown>,
+): Promise<boolean> {
+  if (!new Set(["user_received_message", "user_seen_message"]).has(eventName)) return false;
+  const sender = asRecord(event.sender);
+  const recipient = asRecord(event.recipient);
+  const userId = zaloPartyId(sender) || zaloPartyId(recipient);
+  const messageId = zaloMessageId(event, message);
+  const read = eventName === "user_seen_message";
+  const status = read ? "read" : "delivered";
+  const atColumn = read ? "read_at" : "delivered_at";
+  if (messageId) {
+    const updated = await query<{ id: string }>(
+      `UPDATE crm_zalo_messages SET status=$2,${atColumn}=NOW()
+       WHERE direction='outbound' AND (zalo_message_id=$1 OR id=$3) RETURNING id`,
+      [messageId, status, `zalo-${messageId}`],
+    );
+    if (updated.length) return true;
+  }
+  if (!userId) return false;
+  await query(
+    `UPDATE crm_zalo_messages SET status=$2,${atColumn}=NOW()
+     WHERE conversation_user_id=$1 AND direction='outbound' AND status IN ('pending','sent','delivered')`,
+    [userId, status],
+  );
+  return true;
 }
 
 export async function recordZaloWebhookReceipt(input: {
@@ -640,44 +753,64 @@ export async function recordZaloWebhookEvent(payload: Record<string, unknown>): 
   const nested = payload.data && typeof payload.data === "object" ? payload.data as Record<string, unknown> : null;
   const event = nested && nested.event_name ? nested : payload;
   const eventName = String(event.event_name || payload.event_name || "").trim();
-  const sender = event.sender as Record<string, unknown> | undefined;
-  const recipient = event.recipient as Record<string, unknown> | undefined;
-  const message = event.message as Record<string, unknown> | undefined;
-  const inbound = eventName.startsWith("user_send_");
-  const outbound = eventName.startsWith("oa_send_");
+  const sender = asRecord(event.sender);
+  const recipient = asRecord(event.recipient);
+  const message = Object.keys(asRecord(event.message)).length ? asRecord(event.message) : undefined;
+  if (await updateZaloDeliveryReceipt(eventName, event, message)) return { handled: true, aiQueued: false };
+  const inbound = eventName.startsWith("user_send_") || eventName.startsWith("anonymous_send_");
+  const outbound = eventName.startsWith("oa_send_") && !eventName.startsWith("oa_send_group_");
   if (!inbound && !outbound) return { handled: false };
-  const userId = String((inbound ? sender?.id : recipient?.id) || "").trim();
+  const userId = zaloPartyId(inbound ? sender : recipient);
   if (!userId || !message) return { handled: false };
   const { content, attachment } = zaloEventContent(eventName, message);
-  const messageId = String(message?.msg_id || message?.message_id || "");
+  const messageId = zaloMessageId(event, message);
   const id = messageId ? `zalo-${messageId}` : `zin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   if (messageId) {
-    const existing = await query<{ id: string }>(`SELECT id FROM crm_zalo_messages WHERE id=$1 LIMIT 1`, [id]);
-    if (existing.length) return { handled: true, aiQueued: false };
+    const existing = await query<{ id: string; direction: string }>(
+      `SELECT id,direction FROM crm_zalo_messages WHERE id=$1 OR zalo_message_id=$2 ORDER BY created_at DESC LIMIT 1`,
+      [id, messageId],
+    );
+    if (existing.length) {
+      if (outbound) {
+        await query(
+          `UPDATE crm_zalo_messages SET status='delivered',delivered_at=COALESCE(delivered_at,NOW()),
+           attachment=CASE WHEN $2::jsonb='{}'::jsonb THEN attachment ELSE $2::jsonb END,error=''
+           WHERE id=$1`,
+          [existing[0].id, JSON.stringify(attachment)],
+        );
+      }
+      return { handled: true, aiQueued: false };
+    }
   }
   const person = inbound ? sender : recipient;
-  const displayName = String(person?.name || "Khách Zalo");
+  const displayName = String(person.name || person.display_name || "Khách Zalo");
+  const avatar = String(person.avatar || person.avatar_url || "");
+  const eventAt = zaloEventTime(event);
   if (inbound) {
     await query(
-      `INSERT INTO crm_zalo_conversations (user_id,display_name,last_user_interaction,last_message_preview,last_message_at,unread_count,ai_status)
-       VALUES ($1,$2,NOW(),$3,NOW(),1,'analyzing')
+      `INSERT INTO crm_zalo_conversations (user_id,display_name,avatar,last_user_interaction,last_message_preview,last_message_at,unread_count,ai_status)
+       VALUES ($1,$2,$3,$4,$5,$4,1,'analyzing')
        ON CONFLICT (user_id) DO UPDATE SET display_name=CASE WHEN EXCLUDED.display_name='Khách Zalo' THEN crm_zalo_conversations.display_name ELSE EXCLUDED.display_name END,
-       last_user_interaction=NOW(),last_message_preview=EXCLUDED.last_message_preview,last_message_at=NOW(),unread_count=crm_zalo_conversations.unread_count+1,ai_status='analyzing',updated_at=NOW()`,
-      [userId, displayName, content],
+       avatar=CASE WHEN EXCLUDED.avatar='' THEN crm_zalo_conversations.avatar ELSE EXCLUDED.avatar END,
+       last_user_interaction=EXCLUDED.last_user_interaction,last_message_preview=EXCLUDED.last_message_preview,last_message_at=EXCLUDED.last_message_at,
+       unread_count=crm_zalo_conversations.unread_count+1,ai_status='analyzing',updated_at=NOW()`,
+      [userId, displayName, avatar, eventAt, content],
     );
   } else {
     await query(
-      `INSERT INTO crm_zalo_conversations (user_id,display_name,last_message_preview,last_message_at,unread_count,ai_status)
-       VALUES ($1,$2,$3,NOW(),0,'idle')
+      `INSERT INTO crm_zalo_conversations (user_id,display_name,avatar,last_message_preview,last_message_at,unread_count,ai_status)
+       VALUES ($1,$2,$3,$4,$5,0,'idle')
        ON CONFLICT (user_id) DO UPDATE SET display_name=CASE WHEN EXCLUDED.display_name='Khách Zalo' THEN crm_zalo_conversations.display_name ELSE EXCLUDED.display_name END,
-       last_message_preview=EXCLUDED.last_message_preview,last_message_at=NOW(),updated_at=NOW()`,
-      [userId, displayName, content],
+       avatar=CASE WHEN EXCLUDED.avatar='' THEN crm_zalo_conversations.avatar ELSE EXCLUDED.avatar END,
+       last_message_preview=EXCLUDED.last_message_preview,last_message_at=EXCLUDED.last_message_at,updated_at=NOW()`,
+      [userId, displayName, avatar, content, eventAt],
     );
   }
   const inserted = await query<{ id: string }>(
-    `INSERT INTO crm_zalo_messages (id,conversation_user_id,direction,category,content,attachment,status,source,zalo_message_id)
-     VALUES ($1,$2,$3,'consultation',$4,$5::jsonb,'delivered','webhook',$6) ON CONFLICT (id) DO NOTHING RETURNING id`,
-    [id, userId, inbound ? "inbound" : "outbound", content, JSON.stringify(attachment), messageId],
+    `INSERT INTO crm_zalo_messages (id,conversation_user_id,direction,category,content,attachment,status,source,zalo_message_id,created_at,sent_at,delivered_at)
+     VALUES ($1,$2,$3,'consultation',$4,$5::jsonb,'delivered','webhook',$6,$7,CASE WHEN $3='outbound' THEN $7::timestamptz ELSE NULL END,$7)
+     ON CONFLICT (id) DO NOTHING RETURNING id`,
+    [id, userId, inbound ? "inbound" : "outbound", content, JSON.stringify(attachment), messageId, eventAt],
   );
   if (!inserted.length) return { handled: true, aiQueued: false };
   if (inbound && eventName === "user_send_text" && String(message.text || "").trim()) {

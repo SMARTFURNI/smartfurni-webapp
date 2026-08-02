@@ -4,7 +4,9 @@ import { SITE_URL } from "@/lib/site-url";
 import {
   deleteZaloTemplate,
   generateZaloAiDraft,
+  getZaloConversationMessages,
   getZaloDashboard,
+  markZaloConversationRead,
   reviewZaloAiQueue,
   refreshZaloOAAccessToken,
   saveZaloOAConfig,
@@ -24,9 +26,11 @@ function errorResponse(error: unknown, status = 400) {
   return NextResponse.json({ ok: false, error: message }, { status });
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
+    const userId = req.nextUrl.searchParams.get("userId")?.trim();
+    if (userId) return NextResponse.json({ messages: await getZaloConversationMessages(userId) });
     return NextResponse.json(await getZaloDashboard(SITE_URL));
   } catch (error) {
     return errorResponse(error, 500);
@@ -66,6 +70,12 @@ export async function POST(req: NextRequest) {
       if (!userId || !content) throw new Error("Tin tư vấn cần Zalo UID và nội dung.");
       const result = await sendZaloConsultation({ userId, content, source: "manual" });
       return NextResponse.json(result, { status: result.ok ? 200 : 422 });
+    }
+    if (action === "mark_conversation_read") {
+      const userId = String(body.userId || "").trim();
+      if (!userId) throw new Error("Thiếu Zalo UID của hội thoại.");
+      await markZaloConversationRead(userId);
+      return NextResponse.json({ ok: true });
     }
     if (action === "send_zbs") {
       const category = String(body.category || "") as "zbs_transaction" | "zbs_after_sale";
