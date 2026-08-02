@@ -5,6 +5,7 @@ import {
   listFanpageCarePlans,
   listFanpageCareRuns,
   listFanpageCareStaff,
+  pruneFanpageCarePlansToLatestCompletedRun,
   runDailyFanpageCareCenter,
   updateFanpageCarePlan,
 } from "@/lib/fanpage-care-center";
@@ -36,6 +37,7 @@ function canManage(session: Awaited<ReturnType<typeof getCrmSession>>) {
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await pruneFanpageCarePlansToLatestCompletedRun();
   const url = new URL(req.url);
   const statusValue = url.searchParams.get("status");
   const status = statusValue && STATUSES.has(statusValue as FanpageCarePlanStatus)

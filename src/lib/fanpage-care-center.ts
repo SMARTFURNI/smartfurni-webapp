@@ -313,6 +313,35 @@ export async function ensureFanpageCareCenterSchema() {
   return schemaPromise;
 }
 
+export async function pruneFanpageCarePlansToLatestCompletedRun(
+  preferredRunId?: string,
+): Promise<{ keptRunId?: string; deletedPlans: number }> {
+  await ensureFanpageCareCenterSchema();
+  const latestRun = preferredRunId
+    ? { id: preferredRunId }
+    : await queryOne<{ id: string }>(
+      `SELECT id
+       FROM fanpage_ai_sync_runs
+       WHERE status IN ('success', 'partial') AND finished_at IS NOT NULL
+       ORDER BY finished_at DESC, started_at DESC
+       LIMIT 1`,
+    );
+  if (!latestRun?.id) return { keptRunId: undefined, deletedPlans: 0 };
+
+  const deleted = await query<{ id: string }>(
+    `DELETE FROM fanpage_ai_care_plans AS plan
+     WHERE plan.run_id IS DISTINCT FROM $1
+       AND NOT EXISTS (
+         SELECT 1
+         FROM fanpage_ai_sync_runs AS active_run
+         WHERE active_run.id = plan.run_id AND active_run.status = 'running'
+       )
+     RETURNING plan.id`,
+    [latestRun.id],
+  );
+  return { keptRunId: latestRun.id, deletedPlans: deleted.length };
+}
+
 async function facebookGet<T>(url: URL, accessToken: string): Promise<T> {
   url.searchParams.set("access_token", accessToken);
   const response = await fetch(url, {
@@ -945,6 +974,11 @@ export async function syncCarePlanNotificationsForActor(input: {
     `SELECT *
      FROM fanpage_ai_care_plans
      WHERE status IN ('pending', 'approved', 'in_progress')
+       AND run_id = (
+         SELECT id FROM fanpage_ai_sync_runs
+         WHERE status IN ('success', 'partial') AND finished_at IS NOT NULL
+         ORDER BY finished_at DESC, started_at DESC LIMIT 1
+       )
        AND (
          ($1 = 'crm' AND assigned_staff_id = $2)
          OR ($1 = 'admin' AND assigned_staff_id IS NULL)
@@ -1141,7 +1175,21 @@ export async function runDailyFanpageCareCenter(input: {
         JSON.stringify(details),
       ],
     );
-    return { run: mapRun(updated[0]), plans };
+    let retention: { keptRunId?: string; deletedPlans: number } = { keptRunId: runId, deletedPlans: 0 };
+    if (status === "success" || status === "partial") {
+      retention = await pruneFanpageCarePlansToLatestCompletedRun(runId).catch(() => retention);
+      if (retention.deletedPlans > 0) {
+        const retainedRun = await query<DbRow>(
+          `UPDATE fanpage_ai_sync_runs
+           SET details = details || $2::jsonb
+           WHERE id = $1
+           RETURNING *`,
+          [runId, JSON.stringify({ oldPlansRemoved: retention.deletedPlans })],
+        );
+        if (retainedRun[0]) updated[0] = retainedRun[0];
+      }
+    }
+    return { run: mapRun(updated[0]), plans, retention };
   } catch (error) {
     if (activeRunId) {
       await query(
@@ -1165,7 +1213,13 @@ export async function listFanpageCarePlans(input: {
   limit?: number;
 } = {}) {
   await ensureFanpageCareCenterSchema();
-  const conditions: string[] = [];
+  const conditions: string[] = [
+    `run_id = (
+       SELECT id FROM fanpage_ai_sync_runs
+       WHERE status IN ('success', 'partial') AND finished_at IS NOT NULL
+       ORDER BY finished_at DESC, started_at DESC LIMIT 1
+     )`,
+  ];
   const params: unknown[] = [];
   if (input.status) {
     params.push(input.status);
@@ -1223,7 +1277,15 @@ export async function getFanpageCareOverview(): Promise<FanpageCareCenterOvervie
       completed: number;
       push_today: number;
     }>(
-      `SELECT
+      `WITH latest_run AS (
+         SELECT id FROM fanpage_ai_sync_runs
+         WHERE status IN ('success', 'partial') AND finished_at IS NOT NULL
+         ORDER BY finished_at DESC, started_at DESC LIMIT 1
+       ), current_plans AS (
+         SELECT * FROM fanpage_ai_care_plans
+         WHERE run_id = (SELECT id FROM latest_run)
+       )
+       SELECT
          (SELECT COUNT(*)::int FROM fanpage_conversation_snapshots WHERE last_synced_at::date = $1) AS conversations_today,
          COUNT(*) FILTER (WHERE analysis_date = $1)::int AS qualified_today,
          COUNT(*) FILTER (WHERE analysis_date = $1 AND lead_temperature = 'hot')::int AS hot_today,
@@ -1231,7 +1293,7 @@ export async function getFanpageCareOverview(): Promise<FanpageCareCenterOvervie
          COUNT(*) FILTER (WHERE status IN ('approved','in_progress'))::int AS approved,
          COUNT(*) FILTER (WHERE status = 'completed')::int AS completed,
          COUNT(*) FILTER (WHERE analysis_date = $1 AND notification_sent_at IS NOT NULL)::int AS push_today
-       FROM fanpage_ai_care_plans`,
+       FROM current_plans`,
       [today],
     ),
     query<DbRow>(`SELECT * FROM fanpage_ai_sync_runs ORDER BY started_at DESC LIMIT 1`),
@@ -1244,7 +1306,12 @@ export async function getFanpageCareOverview(): Promise<FanpageCareCenterOvervie
       pending_plans: number;
       last_synced_at: string | null;
     }>(
-      `SELECT s.page_internal_id, MAX(s.page_name) AS page_name,
+      `WITH latest_run AS (
+         SELECT id FROM fanpage_ai_sync_runs
+         WHERE status IN ('success', 'partial') AND finished_at IS NOT NULL
+         ORDER BY finished_at DESC, started_at DESC LIMIT 1
+       )
+       SELECT s.page_internal_id, MAX(s.page_name) AS page_name,
               COUNT(DISTINCT s.conversation_id)::int AS conversation_count,
               COUNT(DISTINCT p.id) FILTER (WHERE p.analysis_date = $1)::int AS qualified_leads,
               COUNT(DISTINCT p.id) FILTER (WHERE p.analysis_date = $1 AND p.lead_temperature = 'hot')::int AS hot_leads,
@@ -1252,7 +1319,9 @@ export async function getFanpageCareOverview(): Promise<FanpageCareCenterOvervie
               MAX(s.last_synced_at)::text AS last_synced_at
        FROM fanpage_conversation_snapshots s
        LEFT JOIN fanpage_ai_care_plans p
-         ON p.page_internal_id = s.page_internal_id AND p.conversation_id = s.conversation_id
+         ON p.page_internal_id = s.page_internal_id
+        AND p.conversation_id = s.conversation_id
+        AND p.run_id = (SELECT id FROM latest_run)
        GROUP BY s.page_internal_id
        ORDER BY MAX(s.page_name)`,
       [today],
