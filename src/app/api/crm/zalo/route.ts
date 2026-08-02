@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { SITE_URL } from "@/lib/site-url";
 import {
   deleteZaloTemplate,
   generateZaloAiDraft,
@@ -23,11 +24,10 @@ function errorResponse(error: unknown, status = 400) {
   return NextResponse.json({ ok: false, error: message }, { status });
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const baseUrl = new URL(req.url).origin;
-    return NextResponse.json(await getZaloDashboard(baseUrl));
+    return NextResponse.json(await getZaloDashboard(SITE_URL));
   } catch (error) {
     return errorResponse(error, 500);
   }

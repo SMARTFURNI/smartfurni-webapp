@@ -116,10 +116,10 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Activity }> = [
   { id: "settings", label: "Cài đặt", icon: Settings },
 ];
 
-const panel = "rounded-2xl border border-[rgba(118,138,166,0.18)] bg-[linear-gradient(145deg,rgba(31,37,52,0.82),rgba(29,24,15,0.76))] shadow-[0_18px_50px_rgba(0,0,0,0.18)]";
-const field = "w-full rounded-xl border border-[rgba(118,138,166,0.2)] bg-[#0c1320] px-3.5 py-2.5 text-sm text-[#eee7d8] outline-none transition focus:border-[#c9a84c]/60";
-const goldButton = "inline-flex items-center justify-center gap-2 rounded-xl bg-[#c9a84c] px-4 py-2.5 text-sm font-semibold text-[#17130a] transition hover:bg-[#dfbf62] disabled:cursor-not-allowed disabled:opacity-50";
-const secondaryButton = "inline-flex items-center justify-center gap-2 rounded-xl border border-[rgba(201,168,76,0.28)] bg-[rgba(15,19,27,0.7)] px-4 py-2.5 text-sm font-medium text-[#d8d0c1] transition hover:border-[#c9a84c]/60 hover:text-white disabled:opacity-50";
+const panel = "rounded-2xl border border-[rgba(255,200,100,0.14)] bg-[#1a1200] shadow-[0_18px_55px_rgba(0,0,0,0.22)]";
+const field = "w-full rounded-xl border border-[rgba(255,200,100,0.16)] bg-[#0d0b06] px-3.5 py-2.5 text-sm text-[#f5edd6] outline-none transition placeholder:text-[rgba(245,237,214,0.28)] focus:border-[rgba(255,200,100,0.42)] focus:ring-2 focus:ring-[#c9a84c]/10";
+const goldButton = "inline-flex items-center justify-center gap-2 rounded-xl bg-[#c9a84c] px-4 py-2.5 text-sm font-semibold text-[#171007] shadow-[0_8px_24px_rgba(201,168,76,0.14)] transition hover:bg-[#dfbf62] disabled:cursor-not-allowed disabled:opacity-50";
+const secondaryButton = "inline-flex items-center justify-center gap-2 rounded-xl border border-[rgba(255,200,100,0.14)] bg-[#110d05] px-4 py-2.5 text-sm font-medium text-[rgba(245,237,214,0.72)] transition hover:border-[rgba(255,200,100,0.28)] hover:bg-[#201707] hover:text-[#f5edd6] disabled:opacity-50";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -195,19 +195,19 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     setSecrets({ appSecret: "", accessToken: "", refreshToken: "" });
   }
 
-  if (loading && !data) return <div className="flex min-h-[70vh] items-center justify-center text-[#b8b0a2]"><Loader2 className="mr-2 animate-spin" /> Đang tải trung tâm Zalo OA...</div>;
+  if (loading && !data) return <div className="flex min-h-[70vh] items-center justify-center text-[rgba(245,237,214,0.55)]"><Loader2 className="mr-2 animate-spin text-[#c9a84c]" /> Đang tải trung tâm Zalo OA...</div>;
 
-  return <div className="min-h-full space-y-5 p-4 text-[#eee7d8] md:p-7">
+  return <div className="min-h-full space-y-4 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.08),transparent_28%),linear-gradient(180deg,rgba(6,8,13,0.2),rgba(13,9,2,0.1))] p-4 text-[#f5edd6] md:p-7">
     <section className={`${panel} overflow-hidden`}>
-      <div className="flex flex-col gap-5 border-b border-[rgba(118,138,166,0.14)] p-5 lg:flex-row lg:items-center lg:justify-between lg:p-7">
+      <div className="flex flex-col gap-5 border-b border-[rgba(255,200,100,0.10)] bg-[radial-gradient(circle_at_88%_0%,rgba(201,168,76,0.10),transparent_34%)] p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7 lg:py-6">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#c9a84c]/30 bg-[#c9a84c]/10"><MessageCircle className="text-[#d6b75b]" /></div>
-          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold md:text-3xl">Trung tâm chăm sóc khách hàng Zalo OA</h1><p className="mt-1 max-w-3xl text-sm text-[#9ca6b7]">Quản lý hội thoại, mẫu ZBS, hàng chờ AI và lịch sử gửi trên cùng dữ liệu CRM. AI không tự gửi nếu chưa vượt các cổng an toàn.</p></div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/10 shadow-[inset_0_0_24px_rgba(201,168,76,0.05)]"><MessageCircle className="text-[#d6b75b]" /></div>
+          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">Trung tâm chăm sóc khách hàng Zalo OA</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi.</p></div>
         </div>
         <div className="flex flex-wrap items-center gap-2"><StatusBadge active={Boolean(config.isActive && config.accessTokenConfigured)} /><button className={secondaryButton} onClick={() => void load()}><RefreshCw size={15} /> Làm mới</button><button className={goldButton} onClick={() => setSendOpen(true)}><Send size={15} /> Soạn tin</button></div>
       </div>
-      <nav className="flex gap-1 overflow-x-auto p-2.5">
-        {visibleTabs.map(item => { const Icon = item.icon; const count = item.id === "ai" ? drafts.length : item.id === "inbox" ? data?.stats.unread : 0; return <button key={item.id} onClick={() => setTab(item.id)} className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm transition ${tab === item.id ? "border border-[#c9a84c]/35 bg-[#c9a84c]/12 text-[#f0d77e]" : "border border-transparent text-[#9ca6b7] hover:bg-white/5 hover:text-white"}`}><Icon size={15} />{item.label}{Boolean(count) && <span className="rounded-full bg-[#c9a84c] px-1.5 py-0.5 text-[10px] font-bold text-black">{count}</span>}</button>; })}
+      <nav className="flex gap-1 overflow-x-auto bg-[#110d05]/65 p-2.5">
+        {visibleTabs.map(item => { const Icon = item.icon; const count = item.id === "ai" ? drafts.length : item.id === "inbox" ? data?.stats.unread : 0; return <button key={item.id} onClick={() => setTab(item.id)} className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition ${tab === item.id ? "border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/12 text-[#f0d77e] shadow-[inset_0_0_16px_rgba(201,168,76,0.04)]" : "border-transparent text-[rgba(245,237,214,0.46)] hover:border-[rgba(255,200,100,0.08)] hover:bg-white/[0.025] hover:text-[rgba(245,237,214,0.78)]"}`}><Icon size={15} />{item.label}{Boolean(count) && <span className="rounded-full bg-[#c9a84c] px-1.5 py-0.5 text-[10px] font-bold text-black">{count}</span>}</button>; })}
       </nav>
     </section>
 
@@ -234,24 +234,43 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
 
 function Overview({ data, config, go, isAdmin }: { data: Dashboard; config: PublicConfig; go: (tab: Tab) => void; isAdmin: boolean }) {
   const stats = [
-    [MessageCircle, "Hội thoại OA", data.stats.conversations, `${data.stats.unread} chưa đọc`],
-    [Bot, "Bản nháp AI", data.stats.aiDrafts, "Chờ admin duyệt"],
-    [Send, "Đã gửi hôm nay", data.stats.sentToday, `${data.stats.sent} gửi thành công`],
-    [AlertTriangle, "Gửi thất bại", data.stats.failed, `${data.stats.pending} đang chờ`],
+    [MessageCircle, "Hội thoại OA", data.stats.conversations, `${data.stats.unread} chưa đọc`, "#C9A84C"],
+    [Bot, "Bản nháp AI", data.stats.aiDrafts, "Chờ admin duyệt", "#8B5CF6"],
+    [Send, "Đã gửi hôm nay", data.stats.sentToday, `${data.stats.sent} gửi thành công`, "#22C55E"],
+    [AlertTriangle, "Gửi thất bại", data.stats.failed, `${data.stats.pending} đang chờ`, "#F59E0B"],
   ] as const;
-  return <div className="space-y-5">
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([Icon, label, value, hint]) => <div key={label} className={`${panel} p-5`}><div className="flex items-center justify-between"><div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#c9a84c]/20 bg-[#c9a84c]/10"><Icon size={18} className="text-[#d6b75b]" /></div><strong className="text-3xl">{value}</strong></div><div className="mt-4 text-sm font-medium">{label}</div><div className="mt-1 text-xs text-[#8f99aa]">{hint}</div></div>)}</div>
-    <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
-      <section className={`${panel} p-5 md:p-6`}><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Luồng vận hành an toàn</h2><p className="text-sm text-[#8f99aa]">Tách đúng mục đích tin theo chính sách OA 2026.</p></div><ShieldCheck className="text-emerald-300" /></div><div className="grid gap-3 md:grid-cols-3">{[
-        ["01", "Khách nhắn OA", "Webhook lưu hội thoại thật và thời điểm tương tác."],
-        ["02", "AI soạn bản nháp", "Đọc ngữ cảnh, giữ xưng hô, không bịa chính sách."],
-        ["03", "Duyệt hoặc tự gửi", "Chỉ gửi khi đúng loại tin, UID, thời gian và ngưỡng tin cậy."],
-      ].map(([no, title, desc]) => <div key={no} className="rounded-xl border border-white/8 bg-black/15 p-4"><div className="text-xs font-bold tracking-[0.2em] text-[#c9a84c]">{no}</div><div className="mt-2 font-medium">{title}</div><p className="mt-1 text-xs leading-5 text-[#8f99aa]">{desc}</p></div>)}</div></section>
-      <section className={`${panel} p-5 md:p-6`}><h2 className="text-lg font-semibold">Sẵn sàng hệ thống</h2><div className="mt-4 space-y-3">{[
-        [config.accessTokenConfigured, "Access Token OA"], [Boolean(config.appId && config.appSecretConfigured), "Webhook có chữ ký"], [config.zbsEnabled, "Quyền gửi ZBS"], [config.aiEnabled, `AI Agent · ${config.aiModel}`],
-      ].map(([ok, label]) => <div key={String(label)} className="flex items-center justify-between rounded-xl border border-white/8 bg-black/10 px-3 py-2.5 text-sm"><span>{label}</span>{ok ? <Check size={16} className="text-emerald-300" /> : <AlertTriangle size={16} className="text-amber-300" />}</div>)}</div>{isAdmin ? <button onClick={() => go("settings")} className={`${secondaryButton} mt-4 w-full`}><Settings size={15} /> Mở cài đặt</button> : <p className="mt-4 text-xs text-[#8f99aa]">Cấu hình kết nối và tự động hóa do admin quản lý.</p>}</section>
+  const readiness = [
+    [config.accessTokenConfigured, "Kết nối OA", "Access Token"],
+    [Boolean(config.appId && config.appSecretConfigured), "Webhook", "Đã xác thực chữ ký"],
+    [config.zbsEnabled, "ZBS", "Quyền gửi mẫu tin"],
+    [config.aiEnabled, "AI Agent", config.aiModel],
+  ] as const;
+  const readyCount = readiness.filter(([ok]) => ok).length;
+  return <div className="space-y-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([Icon, label, value, hint, color]) => <div key={label} className={`${panel} group p-4 transition hover:border-[rgba(255,200,100,0.24)]`}><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(245,237,214,0.42)]">{label}</div><strong className="mt-2 block text-2xl font-bold" style={{ color }}>{value}</strong></div><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(255,200,100,0.12)] bg-black/20" style={{ color }}><Icon size={17} /></div></div><div className="mt-3 border-t border-[rgba(255,200,100,0.08)] pt-2 text-[11px] text-[rgba(245,237,214,0.38)]">{hint}</div></div>)}</div>
+
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
+      <section className={`${panel} overflow-hidden`}>
+        <div className="flex flex-col gap-3 border-b border-[rgba(255,200,100,0.10)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c9a84c]">Quy trình vận hành</div><h2 className="mt-1 text-lg font-semibold">Từ hội thoại đến chăm sóc</h2><p className="mt-0.5 text-xs text-[rgba(245,237,214,0.42)]">Mỗi bước đều có dữ liệu kiểm tra và dấu vết trong CRM.</p></div>
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/18 bg-emerald-400/[0.06] px-3 py-1.5 text-xs text-emerald-200"><ShieldCheck size={14} /> Có kiểm soát</div>
+        </div>
+        <div className="grid md:grid-cols-3">{[
+          [Inbox, "01", "Nhận hội thoại", "Webhook ghi nhận đúng khách, nội dung và thời điểm tương tác."],
+          [Sparkles, "02", "AI tạo bản nháp", "Phân tích ngữ cảnh, giữ cách xưng hô và không tự thay chính sách."],
+          [CheckCircle2, "03", "Kiểm tra & gửi", "Admin duyệt hoặc hệ thống chỉ gửi khi vượt đủ cổng an toàn."],
+        ].map(([Icon, no, title, desc], index) => { const StepIcon = Icon as typeof Inbox; return <div key={String(no)} className={`relative p-5 ${index < 2 ? "border-b border-[rgba(255,200,100,0.08)] md:border-b-0 md:border-r" : ""}`}><div className="flex items-center justify-between"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#c9a84c]/10 text-[#d6b75b]"><StepIcon size={17} /></div><span className="text-[10px] font-bold tracking-[0.2em] text-[rgba(245,237,214,0.26)]">{no}</span></div><h3 className="mt-4 text-sm font-semibold">{title as string}</h3><p className="mt-1.5 text-xs leading-5 text-[rgba(245,237,214,0.42)]">{desc as string}</p></div>; })}</div>
+        <div className="flex flex-col gap-3 border-t border-[rgba(255,200,100,0.10)] bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-[rgba(245,237,214,0.42)]">Tin tư vấn dùng UID trong cửa sổ 7 ngày; tin giao dịch và hậu mãi dùng mẫu ZBS đã duyệt.</p><button onClick={() => go("automation")} className="inline-flex shrink-0 items-center gap-2 text-xs font-semibold text-[#d6b75b] hover:text-[#f0d77e]"><Zap size={14} /> Xem cổng an toàn</button></div>
+      </section>
+
+      <section className={`${panel} overflow-hidden`}>
+        <div className="flex items-center justify-between border-b border-[rgba(255,200,100,0.10)] px-5 py-4"><div><div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c9a84c]">Tích hợp hệ thống</div><h2 className="mt-1 text-lg font-semibold">Sẵn sàng {readyCount}/{readiness.length}</h2></div><div className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm font-bold ${readyCount === readiness.length ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" : "border-amber-400/25 bg-amber-400/10 text-amber-200"}`}>{Math.round(readyCount / readiness.length * 100)}%</div></div>
+        <div className="divide-y divide-[rgba(255,200,100,0.08)]">{readiness.map(([ok, label, detail]) => <div key={label} className="flex items-center gap-3 px-5 py-3"><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${ok ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-300"}`}>{ok ? <Check size={14} /> : <AlertTriangle size={14} />}</span><div className="min-w-0 flex-1"><div className="text-xs font-medium">{label}</div><div className="mt-0.5 truncate text-[10px] text-[rgba(245,237,214,0.36)]">{detail}</div></div><span className={`text-[10px] font-medium ${ok ? "text-emerald-300" : "text-amber-200"}`}>{ok ? "Sẵn sàng" : "Cần kiểm tra"}</span></div>)}</div>
+        {isAdmin ? <div className="border-t border-[rgba(255,200,100,0.10)] p-3"><button onClick={() => go("settings")} className={`${secondaryButton} w-full`}><Settings size={15} /> Quản lý kết nối</button></div> : <p className="border-t border-[rgba(255,200,100,0.10)] p-4 text-xs text-[rgba(245,237,214,0.42)]">Cấu hình kết nối do admin quản lý.</p>}
+      </section>
     </div>
-    <section className="rounded-2xl border border-emerald-400/18 bg-emerald-400/[0.06] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-emerald-300" /><div><h3 className="font-semibold text-emerald-100">Mặc định không tự nhắn khách</h3><p className="mt-1 text-sm leading-6 text-emerald-100/65">Tin tư vấn chỉ dùng Zalo UID và tương tác gần nhất trong 7 ngày. Tin giao dịch/hậu mãi dùng ZBS Template đã duyệt. Có thể bật tự gửi AI trong tab Tự động hóa sau khi kiểm tra quyền API.</p></div></div></section>
+
+    <section className="rounded-2xl border border-[rgba(255,200,100,0.14)] bg-[linear-gradient(90deg,rgba(16,60,43,0.34),rgba(26,18,0,0.96))] px-5 py-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300"><ShieldCheck size={18} /></div><div className="min-w-0 flex-1"><h3 className="text-sm font-semibold text-emerald-100">Chế độ an toàn đang bật</h3><p className="mt-1 text-xs leading-5 text-emerald-100/55">AI mặc định chỉ tạo bản nháp. Hệ thống không tự nhắn khách nếu chưa đủ quyền, thời gian tương tác, loại tin và ngưỡng tin cậy.</p></div><StatusBadge active={!config.aiAutoSend} on="Đang chờ duyệt" off="Tự gửi có điều kiện" /></div></section>
   </div>;
 }
 
@@ -307,7 +326,7 @@ function TemplateModal({ value, setValue, busy, close, save, remove }: { value: 
   return <Modal title={value.id ? "Chỉnh sửa mẫu tin" : "Thêm mẫu tin"} close={close}><div className="space-y-4"><Label text="Tên mẫu"><input className={field} value={value.name || ""} onChange={e => setValue({ ...value, name: e.target.value })} /></Label><Label text="Loại tin"><select className={field} value={value.category || "consultation"} onChange={e => setValue({ ...value, category: e.target.value as Category })}>{Object.entries(CATEGORY_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></Label>{value.category !== "consultation" && <Label text="ZBS Template ID đã duyệt"><input className={field} value={value.zbsTemplateId || ""} onChange={e => setValue({ ...value, zbsTemplateId: e.target.value })} /></Label>}<Label text="Nội dung tham chiếu"><textarea rows={6} className={field} value={value.content || ""} onChange={e => setValue({ ...value, content: e.target.value })} /></Label><Label text="Biến, cách nhau bằng dấu phẩy"><input className={field} value={(value.variables || []).join(", ")} onChange={e => setValue({ ...value, variables: e.target.value.split(",").map(item => item.trim()).filter(Boolean) })} /></Label><SettingToggle label="Mẫu đang hoạt động" hint="Mẫu tắt sẽ không xuất hiện khi soạn tin." value={value.isActive !== false} set={isActive => setValue({ ...value, isActive })} /><SettingToggle label="Cần admin duyệt" hint="Áp dụng trước khi tự động hóa sử dụng mẫu." value={value.requiresApproval !== false} set={requiresApproval => setValue({ ...value, requiresApproval })} /><div className="flex items-center justify-between gap-2 pt-2"><div>{remove && <button className="inline-flex items-center gap-2 rounded-xl border border-red-400/25 px-4 py-2.5 text-sm text-red-300 hover:bg-red-400/10" disabled={Boolean(busy)} onClick={remove}><Trash2 size={14} /> Xóa mẫu</button>}</div><div className="flex gap-2"><button className={secondaryButton} onClick={close}>Hủy</button><button className={goldButton} disabled={Boolean(busy) || !value.name?.trim()} onClick={save}>{busy === "template" ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu</button></div></div></div></Modal>;
 }
 
-function Modal({ title, close, children }: { title: string; close: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"><div className={`${panel} max-h-[92vh] w-full max-w-2xl overflow-y-auto`}><div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/8 bg-[#171b24]/95 px-5 py-4 backdrop-blur"><h2 className="text-lg font-semibold">{title}</h2><button onClick={close} className="rounded-lg p-2 text-[#8f99aa] hover:bg-white/5 hover:text-white"><X size={18} /></button></div><div className="p-5">{children}</div></div></div>; }
-function Label({ text, children }: { text: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-medium text-[#aab3c0]">{text}</span>{children}</label>; }
-function SettingToggle({ label, hint, value, set }: { label: string; hint: string; value: boolean; set: (value: boolean) => void }) { return <div className="flex items-center justify-between gap-4 rounded-xl border border-white/8 bg-black/10 p-3.5"><div><div className="text-sm font-medium">{label}</div><div className="mt-0.5 text-xs leading-5 text-[#7f899a]">{hint}</div></div><Toggle checked={value} onChange={set} /></div>; }
-function Empty({ text }: { text: string }) { return <div className="flex min-h-44 flex-col items-center justify-center p-8 text-center text-sm text-[#778396]"><MessageCircle className="mb-3 opacity-40" size={30} /><p>{text}</p></div>; }
+function Modal({ title, close, children }: { title: string; close: () => void; children: React.ReactNode }) { return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"><div className={`${panel} max-h-[92vh] w-full max-w-2xl overflow-y-auto`}><div className="sticky top-0 z-10 flex items-center justify-between border-b border-[rgba(255,200,100,0.12)] bg-[#1a1200]/95 px-5 py-4 backdrop-blur"><h2 className="text-lg font-semibold">{title}</h2><button onClick={close} className="rounded-lg p-2 text-[rgba(245,237,214,0.44)] hover:bg-[#c9a84c]/10 hover:text-[#f5edd6]"><X size={18} /></button></div><div className="p-5">{children}</div></div></div>; }
+function Label({ text, children }: { text: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-medium text-[rgba(245,237,214,0.58)]">{text}</span>{children}</label>; }
+function SettingToggle({ label, hint, value, set }: { label: string; hint: string; value: boolean; set: (value: boolean) => void }) { return <div className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(255,200,100,0.10)] bg-black/10 p-3.5"><div><div className="text-sm font-medium">{label}</div><div className="mt-0.5 text-xs leading-5 text-[rgba(245,237,214,0.38)]">{hint}</div></div><Toggle checked={value} onChange={set} /></div>; }
+function Empty({ text }: { text: string }) { return <div className="flex min-h-44 flex-col items-center justify-center p-8 text-center text-sm text-[rgba(245,237,214,0.36)]"><MessageCircle className="mb-3 text-[#c9a84c] opacity-35" size={30} /><p>{text}</p></div>; }

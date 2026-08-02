@@ -17,6 +17,7 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 export const dynamic = "force-dynamic";
 const SMARTFURNI_GOOGLE_ADS_ID = "AW-16742362454";
+const ZALO_PLATFORM_SITE_VERIFICATION = "E8RWTjcuRtSpdVrRwezxTXsawohnqZnrDZao";
 
 export async function generateMetadata(): Promise<Metadata> {
   await initDbOnce();
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="vi" className="scroll-smooth">
       <head>
+        <meta name="zalo-platform-site-verification" content={ZALO_PLATFORM_SITE_VERIFICATION} />
         <JsonLd data={organizationSchema()} />
         <JsonLd data={websiteSchema()} />
         <JsonLd data={productCategoryNavigationSchema(PRODUCT_FAMILIES)} />
