@@ -1,6 +1,50 @@
 import { query, queryOne } from "@/lib/db";
 
+export type FanpageCareAiProvider = "openai" | "gemini";
+
+export const FANPAGE_CARE_AI_MODELS = [
+  {
+    id: "openai:gpt-5.6-terra",
+    provider: "openai",
+    model: "gpt-5.6-terra",
+    label: "ChatGPT GPT-5.6 Terra",
+    description: "Mặc định đề xuất: cân bằng độ thông minh, tốc độ và chi phí cho phân tích hội thoại.",
+  },
+  {
+    id: "openai:gpt-5.6",
+    provider: "openai",
+    model: "gpt-5.6",
+    label: "ChatGPT GPT-5.6",
+    description: "Model OpenAI chất lượng cao hơn cho các hội thoại phức tạp, chi phí và độ trễ có thể cao hơn.",
+  },
+  {
+    id: "openai:gpt-4.1-mini",
+    provider: "openai",
+    model: "gpt-4.1-mini",
+    label: "ChatGPT GPT-4.1 mini",
+    description: "Lựa chọn OpenAI tiết kiệm cho khối lượng hội thoại lớn.",
+  },
+  {
+    id: "gemini:gemini-2.5-flash",
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    label: "Google Gemini 2.5 Flash",
+    description: "Giữ lại model Gemini đang dùng trước đây để admin có thể chuyển lại khi cần.",
+  },
+] as const satisfies ReadonlyArray<{
+  id: string;
+  provider: FanpageCareAiProvider;
+  model: string;
+  label: string;
+  description: string;
+}>;
+
+export type FanpageCareAiModelId = typeof FANPAGE_CARE_AI_MODELS[number]["id"];
+
 export interface FanpageCareSettings {
+  ai: {
+    defaultModel: FanpageCareAiModelId;
+  };
   prompts: {
     system: string;
     planning: string;
@@ -62,6 +106,9 @@ export interface StoredFanpageCareSettings {
 }
 
 export const DEFAULT_FANPAGE_CARE_SETTINGS: FanpageCareSettings = {
+  ai: {
+    defaultModel: "openai:gpt-5.6-terra",
+  },
   prompts: {
     system: "Bạn là AI Customer Care Planner của CRM nội bộ SmartFurni. Chỉ phân tích dữ liệu hội thoại được cung cấp và tạo kế hoạch để nhân viên xem xét.",
     planning: "Ưu tiên tin nhắn khách chưa được phản hồi, xác định đúng nhu cầu, sản phẩm quan tâm, tín hiệu mua và trở ngại. Đọc cách nhân viên và khách đang xưng hô để giữ đúng đại từ trong mọi tin nhắn nháp; không tự đổi sang văn mẫu. Kế hoạch phải ngắn gọn, tự nhiên, có giá trị và không gây áp lực.",
@@ -143,9 +190,14 @@ export function normalizeFanpageCareSettings(value: unknown): FanpageCareSetting
   const notifications = source.notifications || {} as FanpageCareSettings["notifications"];
   const keywords = source.keywords || {} as FanpageCareSettings["keywords"];
   const defaults = DEFAULT_FANPAGE_CARE_SETTINGS;
+  const requestedModel = String(source.ai?.defaultModel || "");
+  const defaultModel = FANPAGE_CARE_AI_MODELS.some(item => item.id === requestedModel)
+    ? requestedModel as FanpageCareAiModelId
+    : defaults.ai.defaultModel;
   const hotThreshold = clampNumber(scoring.hotThreshold, defaults.scoring.hotThreshold, 50, 100);
   const warmThreshold = clampNumber(scoring.warmThreshold, defaults.scoring.warmThreshold, 1, hotThreshold - 1);
   return {
+    ai: { defaultModel },
     prompts: {
       system: cleanText(source.prompts?.system, defaults.prompts.system),
       planning: cleanText(source.prompts?.planning, defaults.prompts.planning),
@@ -198,6 +250,11 @@ export function normalizeFanpageCareSettings(value: unknown): FanpageCareSetting
       passiveAfterPrice: cleanKeywords(keywords.passiveAfterPrice, defaults.keywords.passiveAfterPrice),
     },
   };
+}
+
+export function resolveFanpageCareAiModel(settings: FanpageCareSettings) {
+  return FANPAGE_CARE_AI_MODELS.find(item => item.id === settings.ai.defaultModel)
+    || FANPAGE_CARE_AI_MODELS[0];
 }
 
 async function ensureSettingsSchema() {

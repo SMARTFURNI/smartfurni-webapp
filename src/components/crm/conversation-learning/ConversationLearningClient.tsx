@@ -77,6 +77,14 @@ interface SettingsResponse {
   version: number;
   updatedAt?: string;
   updatedBy?: string;
+  models: Array<{
+    id: FanpageCareSettings["ai"]["defaultModel"];
+    provider: "openai" | "gemini";
+    model: string;
+    label: string;
+    description: string;
+    configured: boolean;
+  }>;
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -131,6 +139,12 @@ function priceGatePresentation(plan: FanpageCarePlan) {
     return { label: "Không vượt giá", tone: "border-red-300/25 bg-red-500/10 text-red-100" };
   }
   return { label: "Chưa báo giá", tone: "border-slate-300/20 bg-white/5 text-slate-200" };
+}
+
+function careEngineLabel(engine: FanpageCarePlan["engine"]) {
+  if (engine === "openai") return "OpenAI";
+  if (engine === "gemini") return "Gemini";
+  return "Rules an toàn";
 }
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -192,6 +206,7 @@ export function ConversationLearningClient() {
   const [workflows, setWorkflows] = useState<SalesWorkflow[]>([]);
   const [careCenter, setCareCenter] = useState<CareCenterResponse | null>(null);
   const [aiSettings, setAiSettings] = useState<FanpageCareSettings | null>(null);
+  const [aiModels, setAiModels] = useState<SettingsResponse["models"]>([]);
   const [settingsVersion, setSettingsVersion] = useState(0);
   const [settingsUpdatedAt, setSettingsUpdatedAt] = useState<string | undefined>();
   const [settingsNotice, setSettingsNotice] = useState<string | null>(null);
@@ -223,6 +238,7 @@ export function ConversationLearningClient() {
       if (careData.permissions.canManageSettings) {
         const settingsData = await fetchJson<SettingsResponse>("/api/crm/conversation-learning/care-center/settings");
         setAiSettings(settingsData.settings);
+        setAiModels(settingsData.models);
         setSettingsVersion(settingsData.version);
         setSettingsUpdatedAt(settingsData.updatedAt);
       }
@@ -260,6 +276,11 @@ export function ConversationLearningClient() {
   const selectedCarePlan = useMemo(
     () => filteredCarePlans.find(plan => plan.id === expandedPlanId) || filteredCarePlans[0] || null,
     [expandedPlanId, filteredCarePlans],
+  );
+
+  const selectedAiModel = useMemo(
+    () => aiModels.find(model => model.id === aiSettings?.ai.defaultModel),
+    [aiModels, aiSettings?.ai.defaultModel],
   );
 
   const priorityCarePlans = useMemo(
@@ -393,6 +414,7 @@ export function ConversationLearningClient() {
         body: JSON.stringify({ settings: aiSettings }),
       });
       setAiSettings(data.settings);
+      setAiModels(data.models);
       setSettingsVersion(data.version);
       setSettingsUpdatedAt(data.updatedAt);
       setSettingsNotice("Đã lưu. Cấu hình mới sẽ áp dụng từ lần chạy AI tiếp theo.");
@@ -415,6 +437,7 @@ export function ConversationLearningClient() {
         body: JSON.stringify({ action: "reset" }),
       });
       setAiSettings(data.settings);
+      setAiModels(data.models);
       setSettingsVersion(data.version);
       setSettingsUpdatedAt(data.updatedAt);
       setSettingsNotice("Đã khôi phục cấu hình mặc định.");
@@ -817,7 +840,7 @@ export function ConversationLearningClient() {
                       <DetailMetric label="Tin nhắn nguồn" value={`${selectedCarePlan.sourceMessageCount} tin nhắn`} />
                       <DetailMetric
                         label="Độ tin cậy"
-                        value={`${Math.round(selectedCarePlan.confidence * 100)}% · ${selectedCarePlan.engine === "gemini" ? "Gemini" : "Rules an toàn"}`}
+                        value={`${Math.round(selectedCarePlan.confidence * 100)}% · ${careEngineLabel(selectedCarePlan.engine)}`}
                       />
                       <DetailMetric
                         label="Thông báo PWA"
@@ -1056,6 +1079,44 @@ export function ConversationLearningClient() {
                 <span className="shrink-0">Cập nhật: {formatDate(settingsUpdatedAt)}</span>
               </div>
               {settingsNotice ? <p className="mt-3 text-sm font-medium text-emerald-300">{settingsNotice}</p> : null}
+            </Card>
+
+            <Card className="p-5">
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)] lg:items-center">
+                <SectionTitle
+                  title="Mô hình AI mặc định"
+                  subtitle="Model này được dùng cho mọi lượt phân tích hội thoại có tin nhắn mới ở lần chạy tiếp theo. Các cổng chấm điểm và quy tắc an toàn vẫn được giữ nguyên."
+                />
+                <label className="block rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-3">
+                  <span className="block text-xs font-semibold text-[rgba(245,237,214,0.58)]">Model phân tích hội thoại</span>
+                  <select
+                    value={aiSettings.ai.defaultModel}
+                    onChange={event => setAiSettings(current => current ? {
+                      ...current,
+                      ai: {
+                        ...current.ai,
+                        defaultModel: event.target.value as FanpageCareSettings["ai"]["defaultModel"],
+                      },
+                    } : current)}
+                    className="mt-2 w-full rounded-lg border border-[rgba(118,138,166,0.18)] bg-[#080d15] px-3 py-2.5 text-sm font-semibold text-[#F5EDD6] outline-none transition focus:border-[#C9A84C]/55"
+                  >
+                    {aiModels.map(model => (
+                      <option key={model.id} value={model.id}>
+                        {model.label}{model.configured ? "" : " — chưa có API key"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 rounded-xl border border-[#C9A84C]/15 bg-[#C9A84C]/[0.055] p-3 text-sm leading-6 text-[#CFC5AE] sm:flex-row sm:items-center sm:justify-between">
+                <span>{selectedAiModel?.description || "Chọn model AI mặc định cho Trung tâm AI Fanpage."}</span>
+                <Pill className={selectedAiModel?.configured
+                  ? "shrink-0 border-emerald-300/25 bg-emerald-500/10 text-emerald-100"
+                  : "shrink-0 border-amber-300/25 bg-amber-500/10 text-amber-100"}
+                >
+                  {selectedAiModel?.configured ? "API đã sẵn sàng" : "Cần cấu hình API key"}
+                </Pill>
+              </div>
             </Card>
 
             <div className="grid gap-4 xl:grid-cols-2">

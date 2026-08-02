@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "crypto";
+import OpenAI from "openai";
 import { getDb, query, queryOne } from "@/lib/db";
 import {
   getPages,
@@ -8,7 +9,12 @@ import {
 import { getAllStaff, getStaffById } from "@/lib/crm-staff-store";
 import { initConversationLearningSchema } from "@/lib/conversation-learning-store";
 import { countPushSubscriptions, sendPushNotification } from "@/lib/pwa-server";
-import { getFanpageCareSettings, type FanpageCareSettings } from "@/lib/fanpage-care-settings";
+import {
+  getFanpageCareSettings,
+  resolveFanpageCareAiModel,
+  type FanpageCareAiProvider,
+  type FanpageCareSettings,
+} from "@/lib/fanpage-care-settings";
 import {
   assessFanpageConversation,
   alignDraftMessageAddressing,
@@ -169,7 +175,9 @@ function mapPlan(row: DbRow): FanpageCarePlan {
     dueAt: safeDate(row.due_at),
     planSteps: normalizePlanSteps(asJson(row.plan_steps, [])),
     status: String(row.status || "pending") as FanpageCarePlanStatus,
-    engine: String(row.engine || "rules") === "gemini" ? "gemini" : "rules",
+    engine: String(row.engine || "rules") === "openai"
+      ? "openai"
+      : String(row.engine || "rules") === "gemini" ? "gemini" : "rules",
     model: row.model ? String(row.model) : undefined,
     sourceMessageCount: Number(row.source_message_count || 0),
     sourceLatestMessageAt: safeDate(row.source_latest_message_at),
@@ -549,24 +557,41 @@ async function markConversationsAnalyzed(conversations: ConversationForAnalysis[
   return rows.length;
 }
 
-function parseGeminiJson(text: string) {
+function parseAiJson(text: string) {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
   return JSON.parse(cleaned) as unknown;
 }
 
-async function generateGeminiPlans(
+async function generateAiPlans(
   inputs: Array<{ conversation: ConversationForAnalysis; assessment: DeterministicConversationAssessment }>,
   settings: FanpageCareSettings,
 ) {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey || !inputs.length) {
-    return { plans: new Map<string, GeneratedCarePlan>(), model: undefined, errors: [] as string[] };
-  }
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const selection = resolveFanpageCareAiModel(settings);
+  const provider: FanpageCareAiProvider = selection.provider;
+  const model = selection.model;
   const plans = new Map<string, GeneratedCarePlan>();
   const errors: string[] = [];
-  const batchSize = Math.max(2, Math.min(8, Number(process.env.FANPAGE_AI_GEMINI_BATCH_SIZE || 3)));
-  const concurrency = Math.max(1, Math.min(4, Number(process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 1)));
+  if (!inputs.length) return { plans, provider, model, errors };
+
+  const apiKey = provider === "openai"
+    ? process.env.OPENAI_API_KEY?.trim()
+    : process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) {
+    errors.push(provider === "openai"
+      ? "OPENAI_API_KEY chưa được cấu hình trên Railway."
+      : "GEMINI_API_KEY chưa được cấu hình trên Railway.");
+    return { plans, provider, model, errors };
+  }
+
+  const openai = provider === "openai"
+    ? new OpenAI({ apiKey, timeout: 75_000, maxRetries: 2 })
+    : null;
+  const batchSize = Math.max(2, Math.min(8, Number(
+    process.env.FANPAGE_AI_BATCH_SIZE || process.env.FANPAGE_AI_GEMINI_BATCH_SIZE || 3,
+  )));
+  const concurrency = Math.max(1, Math.min(4, Number(
+    process.env.FANPAGE_AI_CONCURRENCY || process.env.FANPAGE_AI_GEMINI_CONCURRENCY || 1,
+  )));
   const batches: typeof inputs[] = [];
   for (let offset = 0; offset < inputs.length; offset += batchSize) {
     batches.push(inputs.slice(offset, offset + batchSize));
@@ -620,38 +645,60 @@ async function generateGeminiPlans(
           `Mỗi hội thoại cần 3-4 bước trong tối đa ${settings.timing.maxPlanDays} ngày. Viết tiếng Việt tự nhiên, ngắn gọn.`,
           JSON.stringify(safePayload),
         ].join("\n");
-        let response: Response | undefined;
-        for (let attempt = 0; attempt < 3; attempt += 1) {
-          response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature: 0.2,
-                  responseMimeType: "application/json",
-                  maxOutputTokens: 8192,
-                },
-              }),
-              signal: AbortSignal.timeout(50_000),
-            },
-          );
-          if (response.status !== 429 || attempt === 2) break;
-          await new Promise(resolve => setTimeout(resolve, 1_500 * (attempt + 1)));
+        let text = "";
+        let truncated = false;
+        if (provider === "openai") {
+          if (!openai) throw new Error("OpenAI client chưa sẵn sàng");
+          const response = await openai.chat.completions.create({
+            model,
+            response_format: { type: "json_object" },
+            max_completion_tokens: 8192,
+            ...(model.startsWith("gpt-5") ? {} : { temperature: 0.2 }),
+            messages: [
+              {
+                role: "system",
+                content: "Bạn là AI phân tích hội thoại của CRM SmartFurni. Chỉ trả về một JSON object hợp lệ, không markdown.",
+              },
+              { role: "user", content: prompt },
+            ],
+          });
+          text = response.choices[0]?.message?.content || "";
+          truncated = response.choices[0]?.finish_reason === "length";
+        } else {
+          let response: Response | undefined;
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                    temperature: 0.2,
+                    responseMimeType: "application/json",
+                    maxOutputTokens: 8192,
+                  },
+                }),
+                signal: AbortSignal.timeout(50_000),
+              },
+            );
+            if (response.status !== 429 || attempt === 2) break;
+            await new Promise(resolve => setTimeout(resolve, 1_500 * (attempt + 1)));
+          }
+          if (!response) throw new Error("không nhận được phản hồi");
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const payload = await response.json() as {
+            candidates?: Array<{
+              finishReason?: string;
+              content?: { parts?: Array<{ text?: string }> };
+            }>;
+          };
+          const candidate = payload.candidates?.[0];
+          text = candidate?.content?.parts?.map(part => part.text || "").join("") || "";
+          truncated = candidate?.finishReason === "MAX_TOKENS";
         }
-        if (!response) throw new Error("không nhận được phản hồi");
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json() as {
-          candidates?: Array<{
-            finishReason?: string;
-            content?: { parts?: Array<{ text?: string }> };
-          }>;
-        };
-        const candidate = payload.candidates?.[0];
-        const text = candidate?.content?.parts?.map(part => part.text || "").join("") || "";
-        if (candidate?.finishReason === "MAX_TOKENS") {
+        if (truncated) {
           if (batch.length > 1) {
             const middle = Math.ceil(batch.length / 2);
             batches.push(batch.slice(0, middle), batch.slice(middle));
@@ -660,7 +707,7 @@ async function generateGeminiPlans(
           throw new Error("phản hồi vượt giới hạn token");
         }
         if (!text) throw new Error("phản hồi trống");
-        const parsed = parseGeminiJson(text) as { plans?: Array<Record<string, unknown>> };
+        const parsed = parseAiJson(text) as { plans?: Array<Record<string, unknown>> };
         const allowedIds = new Set(batch.map(item => item.conversation.conversationId));
         for (const raw of parsed.plans || []) {
           const conversationId = String(raw.conversationId || "");
@@ -697,7 +744,7 @@ async function generateGeminiPlans(
     }
   });
   await Promise.all(workers);
-  return { plans, model, errors };
+  return { plans, provider, model, errors };
 }
 
 async function upsertCarePlan(input: {
@@ -705,7 +752,7 @@ async function upsertCarePlan(input: {
   conversation: ConversationForAnalysis;
   assessment: DeterministicConversationAssessment;
   generated: GeneratedCarePlan;
-  engine: "gemini" | "rules";
+  engine: "openai" | "gemini" | "rules";
   model?: string;
 }) {
   const { conversation, assessment, generated } = input;
@@ -951,15 +998,15 @@ export async function runDailyFanpageCareCenter(input: {
   const client = await getDb().connect();
   let locked = false;
   let activeRunId: string | null = null;
-  let retryFailedGemini = false;
+  let retryFailedAi = false;
   try {
     const lock = await client.query<{ locked: boolean }>(`SELECT pg_try_advisory_lock($1) AS locked`, [DAILY_LOCK_ID]);
     locked = lock.rows[0]?.locked === true;
     if (!locked) return { skipped: "already-running", ranAt: new Date().toISOString() };
 
     if (!input.force) {
-      const existingRuns = await query<{ id: string; gemini_error: string | null }>(
-        `SELECT id, NULLIF(details->>'geminiError', '') AS gemini_error
+      const existingRuns = await query<{ id: string; ai_error: string | null }>(
+        `SELECT id, NULLIF(COALESCE(details->>'aiError', details->>'geminiError'), '') AS ai_error
          FROM fanpage_ai_sync_runs
          WHERE run_date = $1 AND status IN ('success', 'partial')
          ORDER BY started_at DESC LIMIT 2`,
@@ -967,8 +1014,8 @@ export async function runDailyFanpageCareCenter(input: {
       );
       if (existingRuns.length) {
         const latest = existingRuns[0];
-        retryFailedGemini = Boolean(latest.gemini_error) && existingRuns.length < 2;
-        if (!retryFailedGemini) {
+        retryFailedAi = Boolean(latest.ai_error) && existingRuns.length < 2;
+        if (!retryFailedAi) {
           return { skipped: "already-ran-today", runId: latest.id, ranAt: new Date().toISOString() };
         }
       }
@@ -1017,28 +1064,30 @@ export async function runDailyFanpageCareCenter(input: {
     const qualified = assessed.slice(0, maxPlansPerRun);
     const deferredQualified = assessed.slice(maxPlansPerRun);
 
-    let generatedByGemini = new Map<string, GeneratedCarePlan>();
+    let generatedByAi = new Map<string, GeneratedCarePlan>();
+    let aiProvider: FanpageCareAiProvider | undefined;
     let model: string | undefined;
-    let geminiError: string | undefined;
+    let aiError: string | undefined;
     try {
-      const result = await generateGeminiPlans(qualified, settings);
-      generatedByGemini = result.plans;
-      model = result.model;
-      if (result.errors.length) geminiError = result.errors.join("; ").slice(0, 2000);
+      const result = await generateAiPlans(qualified, settings);
+      generatedByAi = result.plans;
+      aiProvider = result.provider;
+      model = result.plans.size ? result.model : undefined;
+      if (result.errors.length) aiError = result.errors.join("; ").slice(0, 2000);
     } catch (error) {
-      geminiError = error instanceof Error ? error.message : "Gemini lỗi không xác định";
+      aiError = error instanceof Error ? error.message : "AI lỗi không xác định";
     }
 
     const plans: FanpageCarePlan[] = [];
     for (const item of qualified) {
-      const aiPlan = generatedByGemini.get(item.conversation.conversationId);
-      if (retryFailedGemini && !aiPlan) continue;
+      const aiPlan = generatedByAi.get(item.conversation.conversationId);
+      if (retryFailedAi && !aiPlan) continue;
       plans.push(await upsertCarePlan({
         runId,
         conversation: item.conversation,
         assessment: item.assessment,
         generated: aiPlan || buildFallbackCarePlan(item.conversation, item.assessment),
-        engine: aiPlan ? "gemini" : "rules",
+        engine: aiPlan ? aiProvider || "rules" : "rules",
         model: aiPlan ? model : undefined,
       }));
     }
@@ -1057,16 +1106,18 @@ export async function runDailyFanpageCareCenter(input: {
     const details = {
       actorId: input.actorId || "system",
       pageErrors,
-      geminiError,
-      geminiPlans: generatedByGemini.size,
-      rulesPlans: plans.length - generatedByGemini.size,
+      aiProvider,
+      aiModelSelection: settings.ai.defaultModel,
+      aiError,
+      aiPlans: generatedByAi.size,
+      rulesPlans: plans.length - generatedByAi.size,
       priceGateExcluded: allAssessed.filter(item => item.assessment.excludedFromCare).length,
       priceGateDismissedPlans,
       conversationsWithNewMessages: conversationsWithNewMessages.length,
       skippedUnchangedConversations,
       deferredQualifiedConversations: deferredQualified.length,
       conversationsCheckpointed,
-      retryFailedGemini,
+      retryFailedAi,
       settingsVersion,
       safety: "AI only proposes; customer contact requires human approval",
     };

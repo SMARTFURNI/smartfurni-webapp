@@ -12,6 +12,20 @@ import {
 } from "@/lib/fanpage-care-settings";
 
 describe("fanpage care center", () => {
+  it("dùng ChatGPT GPT-5.6 Terra làm model phân tích mặc định", () => {
+    const settings = normalizeFanpageCareSettings({});
+
+    expect(settings.ai.defaultModel).toBe("openai:gpt-5.6-terra");
+  });
+
+  it("chỉ lưu model AI nằm trong danh sách admin được phép chọn", () => {
+    const settings = normalizeFanpageCareSettings({
+      ai: { defaultModel: "openai:model-khong-hop-le" },
+    });
+
+    expect(settings.ai.defaultModel).toBe("openai:gpt-5.6-terra");
+  });
+
   it("không phân tích lại hội thoại khi số tin nhắn không đổi", () => {
     expect(hasNewMessagesSinceAnalysis({
       pageInternalId: "page-1",

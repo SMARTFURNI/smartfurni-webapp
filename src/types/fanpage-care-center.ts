@@ -43,7 +43,7 @@ export interface FanpageCarePlan {
   dueAt?: string;
   planSteps: FanpageCarePlanStep[];
   status: FanpageCarePlanStatus;
-  engine: "gemini" | "rules";
+  engine: "openai" | "gemini" | "rules";
   model?: string;
   sourceMessageCount: number;
   sourceLatestMessageAt?: string;
