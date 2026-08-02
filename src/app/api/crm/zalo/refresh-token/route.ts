@@ -4,31 +4,27 @@
  * Chỉ admin mới có quyền gọi API này
  */
 import { getCrmSession } from "@/lib/admin-auth";
-import { NextRequest, NextResponse } from "next/server";
-import { refreshZaloToken } from "@/lib/zalo-cloud";
+import { NextResponse } from "next/server";
+import { refreshZaloOAAccessToken } from "@/lib/zalo-oa-store";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const session = await getCrmSession();
   if (!session || !session.isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const body = await req.json().catch(() => ({})) as { refreshToken?: string };
-    const result = await refreshZaloToken(body.refreshToken);
-
-    if (!result) {
+    const result = await refreshZaloOAAccessToken();
+    if (!result.ok) {
       return NextResponse.json({
-        error: "Không thể làm mới token. Kiểm tra ZALO_APP_ID, ZALO_APP_SECRET và ZALO_REFRESH_TOKEN.",
+        error: result.error || "Không thể làm mới token. Kiểm tra App ID, App Secret và Refresh Token.",
       }, { status: 400 });
     }
 
     return NextResponse.json({
       ok: true,
-      accessToken: result.access_token,
-      refreshToken: result.refresh_token,
-      expiresIn: result.expires_in,
-      message: "Token đã được làm mới. Cập nhật ZALO_ACCESS_TOKEN và ZALO_REFRESH_TOKEN trong Railway.",
+      expiresIn: result.expiresIn,
+      message: "Token đã được làm mới và lưu an toàn trong CRM.",
     });
   } catch (e) {
     return NextResponse.json({ error: "Lỗi hệ thống" }, { status: 500 });

@@ -424,8 +424,11 @@ export async function sendZaloMessage(phone: string, message: string, zaloUid?: 
     return { ok: false, error: "Zalo OA chưa được cấu hình hoặc chưa kích hoạt" };
   }
   try {
-    const recipient = zaloUid ? { user_id: zaloUid } : { phone };
-    const res = await fetch("https://openapi.zalo.me/v2.0/oa/message/cs", {
+    if (!zaloUid) {
+      return { ok: false, error: "Tin tư vấn Zalo OA bắt buộc dùng Zalo UID; không được gửi trực tiếp bằng số điện thoại." };
+    }
+    const recipient = { user_id: zaloUid };
+    const res = await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
