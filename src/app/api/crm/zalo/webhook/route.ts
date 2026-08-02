@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getZaloOAConfig,
   recordZaloWebhookEvent,
+  recordZaloWebhookReceipt,
   verifyZaloWebhookSignature,
 } from "@/lib/zalo-oa-store";
 
@@ -51,14 +52,37 @@ export async function POST(req: NextRequest) {
     // register the URL, but never process or persist an unsigned request.
     // Returning the same 200 acknowledgement also avoids exposing signature
     // validation details to callers.
+    await recordZaloWebhookReceipt({
+      eventName: webhookEventName(payload),
+      status: "ignored",
+      error: config.oaSecretKey
+        ? "Chữ ký X-ZEvent-Signature không hợp lệ."
+        : "Chưa cấu hình OA Secret Key riêng cho webhook.",
+    }).catch(error => console.error("[Zalo OA webhook receipt]", error));
+    console.warn("[Zalo OA webhook] ignored invalid signature", {
+      eventName: webhookEventName(payload),
+      signaturePresent: Boolean(signature),
+      appIdConfigured: Boolean(config.appId),
+      oaSecretKeyConfigured: Boolean(config.oaSecretKey),
+    });
     return okResponse({ ok: true, ignored: true });
   }
 
   try {
     const result = await recordZaloWebhookEvent(payload);
+    await recordZaloWebhookReceipt({
+      eventName: webhookEventName(payload),
+      status: result.handled ? "processed" : "ignored",
+      error: result.handled ? "" : "Loại sự kiện chưa tạo hội thoại.",
+    });
     return okResponse({ ok: true, ...result });
   } catch (error) {
     console.error("[Zalo OA webhook]", error);
+    await recordZaloWebhookReceipt({
+      eventName: webhookEventName(payload),
+      status: "error",
+      error: error instanceof Error ? error.message : "Không ghi được sự kiện webhook.",
+    }).catch(receiptError => console.error("[Zalo OA webhook receipt]", receiptError));
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

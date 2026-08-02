@@ -24,9 +24,14 @@ interface PublicConfig {
   businessHoursEnd: string;
   zbsEnabled: boolean;
   appSecretConfigured: boolean;
+  oaSecretKeyConfigured: boolean;
   accessTokenConfigured: boolean;
   refreshTokenConfigured: boolean;
   webhookUrl: string;
+  webhookLastReceivedAt: string | null;
+  webhookLastEvent: string;
+  webhookLastStatus: string;
+  webhookLastError: string;
 }
 
 interface Template {
@@ -97,7 +102,8 @@ const EMPTY_CONFIG: PublicConfig = {
   requireApproval: true, aiModel: "gpt-5.6-terra", aiConfidenceThreshold: 0.9,
   maxAutoMessagesPerDay: 30, businessHoursStart: "08:00", businessHoursEnd: "20:00",
   zbsEnabled: false, appSecretConfigured: false, accessTokenConfigured: false,
-  refreshTokenConfigured: false, webhookUrl: "",
+  oaSecretKeyConfigured: false, refreshTokenConfigured: false, webhookUrl: "",
+  webhookLastReceivedAt: null, webhookLastEvent: "", webhookLastStatus: "", webhookLastError: "",
 };
 
 const CATEGORY_LABELS: Record<Category, string> = {
@@ -153,7 +159,7 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
 export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
   const [data, setData] = useState<Dashboard | null>(null);
   const [config, setConfig] = useState<PublicConfig>(EMPTY_CONFIG);
-  const [secrets, setSecrets] = useState({ appSecret: "", accessToken: "", refreshToken: "" });
+  const [secrets, setSecrets] = useState({ appSecret: "", oaSecretKey: "", accessToken: "", refreshToken: "" });
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
@@ -192,7 +198,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
 
   async function saveConfig() {
     await run("save-config", () => postAction({ action: "save_config", config: { ...config, ...secrets } }), "Đã lưu cấu hình Zalo OA và AI Agent.");
-    setSecrets({ appSecret: "", accessToken: "", refreshToken: "" });
+    setSecrets({ appSecret: "", oaSecretKey: "", accessToken: "", refreshToken: "" });
   }
 
   if (loading && !data) return <div className="flex min-h-[70vh] items-center justify-center text-[rgba(245,237,214,0.55)]"><Loader2 className="mr-2 animate-spin text-[#c9a84c]" /> Đang tải trung tâm Zalo OA...</div>;
@@ -241,7 +247,7 @@ function Overview({ data, config, go, isAdmin }: { data: Dashboard; config: Publ
   ] as const;
   const readiness = [
     [config.accessTokenConfigured, "Kết nối OA", "Access Token"],
-    [Boolean(config.appId && config.appSecretConfigured), "Webhook", "Đã xác thực chữ ký"],
+    [Boolean(config.appId && config.oaSecretKeyConfigured && config.webhookLastStatus === "processed"), "Webhook", config.webhookLastStatus === "processed" ? "Đã nhận sự kiện hợp lệ" : "Chưa xác nhận sự kiện thật"],
     [config.zbsEnabled, "ZBS", "Quyền gửi mẫu tin"],
     [config.aiEnabled, "AI Agent", config.aiModel],
   ] as const;
@@ -255,11 +261,11 @@ function Overview({ data, config, go, isAdmin }: { data: Dashboard; config: Publ
           <div><div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c9a84c]">Quy trình vận hành</div><h2 className="mt-1 text-lg font-semibold">Từ hội thoại đến chăm sóc</h2><p className="mt-0.5 text-xs text-[rgba(245,237,214,0.42)]">Mỗi bước đều có dữ liệu kiểm tra và dấu vết trong CRM.</p></div>
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/18 bg-emerald-400/[0.06] px-3 py-1.5 text-xs text-emerald-200"><ShieldCheck size={14} /> Có kiểm soát</div>
         </div>
-        <div className="grid md:grid-cols-3">{[
+        <div className="grid md:grid-cols-3">{([
           [Inbox, "01", "Nhận hội thoại", "Webhook ghi nhận đúng khách, nội dung và thời điểm tương tác."],
           [Sparkles, "02", "AI tạo bản nháp", "Phân tích ngữ cảnh, giữ cách xưng hô và không tự thay chính sách."],
           [CheckCircle2, "03", "Kiểm tra & gửi", "Admin duyệt hoặc hệ thống chỉ gửi khi vượt đủ cổng an toàn."],
-        ].map(([Icon, no, title, desc], index) => { const StepIcon = Icon as typeof Inbox; return <div key={String(no)} className={`relative p-5 ${index < 2 ? "border-b border-[rgba(255,200,100,0.08)] md:border-b-0 md:border-r" : ""}`}><div className="flex items-center justify-between"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#c9a84c]/10 text-[#d6b75b]"><StepIcon size={17} /></div><span className="text-[10px] font-bold tracking-[0.2em] text-[rgba(245,237,214,0.26)]">{no}</span></div><h3 className="mt-4 text-sm font-semibold">{title as string}</h3><p className="mt-1.5 text-xs leading-5 text-[rgba(245,237,214,0.42)]">{desc as string}</p></div>; })}</div>
+        ] as const).map(([Icon, no, title, desc], index) => { const StepIcon = Icon; return <div key={no} className={`relative p-5 ${index < 2 ? "border-b border-[rgba(255,200,100,0.08)] md:border-b-0 md:border-r" : ""}`}><div className="flex items-center justify-between"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#c9a84c]/10 text-[#d6b75b]"><StepIcon size={17} /></div><span className="text-[10px] font-bold tracking-[0.2em] text-[rgba(245,237,214,0.26)]">{no}</span></div><h3 className="mt-4 text-sm font-semibold">{title}</h3><p className="mt-1.5 text-xs leading-5 text-[rgba(245,237,214,0.42)]">{desc}</p></div>; })}</div>
         <div className="flex flex-col gap-3 border-t border-[rgba(255,200,100,0.10)] bg-black/10 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-[rgba(245,237,214,0.42)]">Tin tư vấn dùng UID trong cửa sổ 7 ngày; tin giao dịch và hậu mãi dùng mẫu ZBS đã duyệt.</p><button onClick={() => go("automation")} className="inline-flex shrink-0 items-center gap-2 text-xs font-semibold text-[#d6b75b] hover:text-[#f0d77e]"><Zap size={14} /> Xem cổng an toàn</button></div>
       </section>
 
@@ -301,8 +307,80 @@ function AutomationTab({ config, setConfig, save, busy }: { config: PublicConfig
   return <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]"><section className={`${panel} p-5 md:p-6`}><h2 className="text-lg font-semibold">Chế độ AI Agent</h2><p className="mt-1 text-sm text-[#8f99aa]">Mặc định an toàn là tạo nháp và chờ duyệt.</p><div className="mt-5 space-y-4"><SettingToggle label="AI phân tích tin nhắn mới" hint="Tạo câu trả lời dựa trên lịch sử hội thoại." value={config.aiEnabled} set={value => setConfig({ ...config, aiEnabled: value })} /><SettingToggle label="Yêu cầu admin duyệt" hint="Khuyến nghị bật khi mới vận hành." value={config.requireApproval} set={value => setConfig({ ...config, requireApproval: value })} /><SettingToggle label="Cho phép AI tự gửi" hint="Chỉ có hiệu lực khi tắt yêu cầu duyệt và vượt toàn bộ cổng an toàn." value={config.aiAutoSend} set={value => setConfig({ ...config, aiAutoSend: value })} /></div><div className="mt-5 grid grid-cols-2 gap-3"><Label text="Giờ bắt đầu"><input type="time" className={field} value={config.businessHoursStart} onChange={e => setConfig({ ...config, businessHoursStart: e.target.value })} /></Label><Label text="Giờ kết thúc"><input type="time" className={field} value={config.businessHoursEnd} onChange={e => setConfig({ ...config, businessHoursEnd: e.target.value })} /></Label><Label text="Ngưỡng tin cậy (%)"><input type="number" min={50} max={100} className={field} value={Math.round(config.aiConfidenceThreshold * 100)} onChange={e => setConfig({ ...config, aiConfidenceThreshold: Number(e.target.value) / 100 })} /></Label><Label text="Giới hạn AI/ngày"><input type="number" min={1} max={500} className={field} value={config.maxAutoMessagesPerDay} onChange={e => setConfig({ ...config, maxAutoMessagesPerDay: Number(e.target.value) })} /></Label></div><button onClick={save} disabled={busy} className={`${goldButton} mt-5 w-full`}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu tự động hóa</button></section><section className={`${panel} p-5 md:p-6`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10"><ShieldCheck className="text-emerald-300" /></div><div><h2 className="text-lg font-semibold">6 cổng trước khi tự gửi</h2><p className="text-sm text-[#8f99aa]">Sai một điều kiện là chuyển về hàng chờ admin.</p></div></div><div className="mt-5 grid gap-3 sm:grid-cols-2">{gates.map(([title, hint]) => <div key={title} className="rounded-xl border border-white/8 bg-black/10 p-4"><div className="flex items-center gap-2 font-medium"><CheckCircle2 size={15} className="text-emerald-300" />{title}</div><p className="mt-1.5 text-xs leading-5 text-[#8f99aa]">{hint}</p></div>)}</div><div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4 text-xs leading-5 text-amber-100/75">Bật tự gửi không mở rộng quyền API của OA. Zalo vẫn có thể từ chối nếu ứng dụng chưa được cấp quyền, mẫu ZBS chưa duyệt hoặc người dùng chưa đồng ý nhận tin.</div></section></div>;
 }
 
-function SettingsTab({ config, setConfig, secrets, setSecrets, save, test, busy }: { config: PublicConfig; setConfig: (v: PublicConfig) => void; secrets: { appSecret: string; accessToken: string; refreshToken: string }; setSecrets: (v: { appSecret: string; accessToken: string; refreshToken: string }) => void; save: () => void; test: () => void; busy: string }) {
-  return <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]"><section className={`${panel} p-5 md:p-6`}><h2 className="text-lg font-semibold">Kết nối Zalo OA OpenAPI</h2><p className="mt-1 text-sm text-[#8f99aa]">Giá trị bí mật để trống sẽ giữ nguyên, hệ thống không hiển thị token đã lưu.</p><div className="mt-5 grid gap-4 sm:grid-cols-2"><Label text="OA ID"><input className={field} value={config.oaId} onChange={e => setConfig({ ...config, oaId: e.target.value })} /></Label><Label text="App ID"><input className={field} value={config.appId} onChange={e => setConfig({ ...config, appId: e.target.value })} /></Label><Label text={`App Secret ${config.appSecretConfigured ? "· đã cấu hình" : ""}`}><input type="password" className={field} value={secrets.appSecret} onChange={e => setSecrets({ ...secrets, appSecret: e.target.value })} placeholder={config.appSecretConfigured ? "•••••••• (để trống để giữ nguyên)" : "OA Secret Key"} /></Label><Label text={`Access Token ${config.accessTokenConfigured ? "· đã cấu hình" : ""}`}><input type="password" className={field} value={secrets.accessToken} onChange={e => setSecrets({ ...secrets, accessToken: e.target.value })} placeholder={config.accessTokenConfigured ? "•••••••• (để trống để giữ nguyên)" : "Access Token"} /></Label><Label text={`Refresh Token ${config.refreshTokenConfigured ? "· đã cấu hình" : ""}`}><input type="password" className={field} value={secrets.refreshToken} onChange={e => setSecrets({ ...secrets, refreshToken: e.target.value })} placeholder={config.refreshTokenConfigured ? "•••••••• (để trống để giữ nguyên)" : "Refresh Token"} /></Label><Label text="Mô hình AI mặc định"><input className={field} value={config.aiModel} onChange={e => setConfig({ ...config, aiModel: e.target.value })} /></Label></div><div className="mt-5 space-y-4"><SettingToggle label="Kích hoạt kết nối OA" hint="Cho phép CRM gọi Zalo OA OpenAPI." value={config.isActive} set={value => setConfig({ ...config, isActive: value })} /><SettingToggle label="Đã được cấp quyền ZBS" hint="Chỉ bật sau khi ứng dụng và mẫu đã được Zalo phê duyệt." value={config.zbsEnabled} set={value => setConfig({ ...config, zbsEnabled: value })} /></div><div className="mt-5 flex flex-wrap gap-2"><button onClick={save} disabled={Boolean(busy)} className={goldButton}>{busy === "save-config" ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu cấu hình</button><button onClick={test} disabled={Boolean(busy)} className={secondaryButton}>{busy === "test" ? <Loader2 size={15} className="animate-spin" /> : <Activity size={15} />} Kiểm tra kết nối</button></div></section><section className={`${panel} p-5 md:p-6`}><h2 className="text-lg font-semibold">Webhook nhận tin khách</h2><p className="mt-1 text-sm text-[#8f99aa]">Dùng URL này trong ứng dụng Zalo Developer và đăng ký sự kiện tin nhắn.</p><div className="mt-4 rounded-xl border border-white/8 bg-[#0c1320] p-3 text-xs break-all text-[#d8d0c1]">{config.webhookUrl || "/api/crm/zalo/webhook"}</div><ol className="mt-5 space-y-3 text-sm text-[#a5aebc]">{["Tạo/liên kết ứng dụng với Official Account.", "Cấp quyền OA OpenAPI và lưu Access/Refresh Token.", "Đăng ký webhook; chữ ký được kiểm bằng App ID + data + timestamp + OA Secret Key.", "Đăng ký và duyệt ZBS Template cho tin giao dịch/hậu mãi.", "Gửi thử bằng tài khoản thật trước khi bật AI tự gửi."].map((text, index) => <li key={text} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c9a84c]/12 text-xs font-bold text-[#d6b75b]">{index + 1}</span><span className="pt-0.5 leading-5">{text}</span></li>)}</ol><a href="https://developers.zalo.me/docs" target="_blank" rel="noreferrer" className={`${secondaryButton} mt-5 w-full`}>Mở tài liệu Zalo Platform</a></section></div>;
+type ZaloSecrets = { appSecret: string; oaSecretKey: string; accessToken: string; refreshToken: string };
+
+function SettingsTab({ config, setConfig, secrets, setSecrets, save, test, busy }: {
+  config: PublicConfig;
+  setConfig: (v: PublicConfig) => void;
+  secrets: ZaloSecrets;
+  setSecrets: (v: ZaloSecrets) => void;
+  save: () => void;
+  test: () => void;
+  busy: string;
+}) {
+  const webhookOk = config.webhookLastStatus === "processed";
+  const webhookFailed = Boolean(config.webhookLastReceivedAt) && !webhookOk;
+
+  return <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+    <section className={`${panel} p-5 md:p-6`}>
+      <h2 className="text-lg font-semibold">Kết nối Zalo OA OpenAPI</h2>
+      <p className="mt-1 text-sm text-[#8f99aa]">App Secret và OA Secret Key là hai khóa khác nhau. Giá trị để trống sẽ giữ nguyên khóa đã lưu.</p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <Label text="OA ID"><input className={field} value={config.oaId} onChange={e => setConfig({ ...config, oaId: e.target.value })} /></Label>
+        <Label text="App ID"><input className={field} value={config.appId} onChange={e => setConfig({ ...config, appId: e.target.value })} /></Label>
+        <Label text={`App Secret (OAuth) ${config.appSecretConfigured ? "· đã cấu hình" : ""}`}>
+          <input type="password" className={field} value={secrets.appSecret} onChange={e => setSecrets({ ...secrets, appSecret: e.target.value })} placeholder={config.appSecretConfigured ? "•••••••• (để trống để giữ nguyên)" : "App Secret của ứng dụng"} />
+        </Label>
+        <Label text={`OA Secret Key (Webhook) ${config.oaSecretKeyConfigured ? "· đã cấu hình" : "· chưa cấu hình"}`}>
+          <input type="password" className={field} value={secrets.oaSecretKey} onChange={e => setSecrets({ ...secrets, oaSecretKey: e.target.value })} placeholder={config.oaSecretKeyConfigured ? "•••••••• (để trống để giữ nguyên)" : "OA Secret Key trong OA Manager"} />
+        </Label>
+        <Label text={`Access Token ${config.accessTokenConfigured ? "· đã cấu hình" : ""}`}>
+          <input type="password" className={field} value={secrets.accessToken} onChange={e => setSecrets({ ...secrets, accessToken: e.target.value })} placeholder={config.accessTokenConfigured ? "•••••••• (để trống để giữ nguyên)" : "Access Token"} />
+        </Label>
+        <Label text={`Refresh Token ${config.refreshTokenConfigured ? "· đã cấu hình" : ""}`}>
+          <input type="password" className={field} value={secrets.refreshToken} onChange={e => setSecrets({ ...secrets, refreshToken: e.target.value })} placeholder={config.refreshTokenConfigured ? "•••••••• (để trống để giữ nguyên)" : "Refresh Token"} />
+        </Label>
+        <Label text="Mô hình AI mặc định"><input className={field} value={config.aiModel} onChange={e => setConfig({ ...config, aiModel: e.target.value })} /></Label>
+      </div>
+      <div className="mt-5 space-y-4">
+        <SettingToggle label="Kích hoạt kết nối OA" hint="Cho phép CRM gọi Zalo OA OpenAPI." value={config.isActive} set={value => setConfig({ ...config, isActive: value })} />
+        <SettingToggle label="Đã được cấp quyền ZBS" hint="Chỉ bật sau khi ứng dụng và mẫu đã được Zalo phê duyệt." value={config.zbsEnabled} set={value => setConfig({ ...config, zbsEnabled: value })} />
+      </div>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button onClick={save} disabled={Boolean(busy)} className={goldButton}>{busy === "save-config" ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu cấu hình</button>
+        <button onClick={test} disabled={Boolean(busy)} className={secondaryButton}>{busy === "test" ? <Loader2 size={15} className="animate-spin" /> : <Activity size={15} />} Kiểm tra kết nối</button>
+      </div>
+    </section>
+
+    <section className={`${panel} p-5 md:p-6`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><h2 className="text-lg font-semibold">Webhook nhận tin khách</h2><p className="mt-1 text-sm text-[#8f99aa]">Kết nối URL chỉ xác nhận HTTP 200; trạng thái dưới đây mới xác nhận CRM đã kiểm chữ ký và lưu sự kiện.</p></div>
+        <StatusBadge active={webhookOk} on="Đã lưu sự kiện" off={webhookFailed ? "Sự kiện bị từ chối" : "Chưa nhận sự kiện"} />
+      </div>
+      <div className="mt-4 rounded-xl border border-white/8 bg-[#0c1320] p-3 text-xs break-all text-[#d8d0c1]">{config.webhookUrl || "/api/crm/zalo/webhook"}</div>
+
+      <div className={`mt-4 rounded-xl border p-4 ${webhookOk ? "border-emerald-400/20 bg-emerald-400/[0.06]" : webhookFailed ? "border-red-400/20 bg-red-400/[0.06]" : "border-amber-400/20 bg-amber-400/[0.06]"}`}>
+        <div className="flex items-start gap-3">
+          {webhookOk ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-300" /> : <AlertTriangle size={18} className={`mt-0.5 shrink-0 ${webhookFailed ? "text-red-300" : "text-amber-200"}`} />}
+          <div className="min-w-0 text-xs leading-5">
+            <div className="font-semibold">{config.webhookLastReceivedAt ? `Lần nhận gần nhất: ${formatDate(config.webhookLastReceivedAt)}` : "Chưa ghi nhận webhook thật từ Zalo OA."}</div>
+            {config.webhookLastEvent && <div className="mt-1 text-[#9ca6b7]">Sự kiện: <span className="font-mono text-[#d8d0c1]">{config.webhookLastEvent}</span></div>}
+            {config.webhookLastError && <div className="mt-1 text-red-200">{config.webhookLastError}</div>}
+            {!config.oaSecretKeyConfigured && <div className="mt-1 text-amber-100">Nhập OA Secret Key riêng rồi bấm Lưu cấu hình trước khi gửi tin thử.</div>}
+          </div>
+        </div>
+      </div>
+
+      <ol className="mt-5 space-y-3 text-sm text-[#a5aebc]">{[
+        "Liên kết ứng dụng với đúng Official Account.",
+        "Lưu App Secret cho OAuth và OA Secret Key riêng cho chữ ký webhook.",
+        "Đăng ký các sự kiện user_send_text, user_send_image và user_send_file.",
+        "Dùng một tài khoản Zalo khác gửi tin mới trực tiếp vào OA.",
+        "Làm mới CRM và kiểm tra trạng thái sự kiện gần nhất tại đây.",
+      ].map((text, index) => <li key={text} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c9a84c]/12 text-xs font-bold text-[#d6b75b]">{index + 1}</span><span className="pt-0.5 leading-5">{text}</span></li>)}</ol>
+      <a href="https://developers.zalo.me/docs" target="_blank" rel="noreferrer" className={`${secondaryButton} mt-5 w-full`}>Mở tài liệu Zalo Platform</a>
+    </section>
+  </div>;
 }
 
 function SendModal({ config, templates, conversations, initialUserId, busy, close, submit }: { config: PublicConfig; templates: Template[]; conversations: Conversation[]; initialUserId: string; busy: boolean; close: () => void; submit: (body: Record<string, unknown>) => void }) {

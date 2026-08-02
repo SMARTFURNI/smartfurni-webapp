@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import OpenAI from "openai";
 import { query } from "@/lib/db";
 
@@ -10,6 +10,7 @@ export interface ZaloOAConfig {
   oaId: string;
   appId: string;
   appSecret: string;
+  oaSecretKey: string;
   accessToken: string;
   refreshToken: string;
   isActive: boolean;
@@ -25,11 +26,16 @@ export interface ZaloOAConfig {
   updatedAt: string;
 }
 
-export interface ZaloOAPublicConfig extends Omit<ZaloOAConfig, "appSecret" | "accessToken" | "refreshToken"> {
+export interface ZaloOAPublicConfig extends Omit<ZaloOAConfig, "appSecret" | "oaSecretKey" | "accessToken" | "refreshToken"> {
   appSecretConfigured: boolean;
+  oaSecretKeyConfigured: boolean;
   accessTokenConfigured: boolean;
   refreshTokenConfigured: boolean;
   webhookUrl: string;
+  webhookLastReceivedAt: string | null;
+  webhookLastEvent: string;
+  webhookLastStatus: string;
+  webhookLastError: string;
 }
 
 export interface ZaloTemplate {
@@ -121,6 +127,7 @@ export async function initZaloOASchema(): Promise<void> {
 
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS app_id TEXT NOT NULL DEFAULT '';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS app_secret TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS oa_secret_key TEXT NOT NULL DEFAULT '';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN NOT NULL DEFAULT true;
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS ai_auto_send BOOLEAN NOT NULL DEFAULT false;
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS require_approval BOOLEAN NOT NULL DEFAULT true;
@@ -130,6 +137,10 @@ export async function initZaloOASchema(): Promise<void> {
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS business_hours_start TEXT NOT NULL DEFAULT '08:00';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS business_hours_end TEXT NOT NULL DEFAULT '20:00';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS zbs_enabled BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_received_at TIMESTAMPTZ;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_event TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_status TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_error TEXT NOT NULL DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS crm_zalo_templates (
       id TEXT PRIMARY KEY,
@@ -217,6 +228,7 @@ function mapConfig(row?: Record<string, unknown>): ZaloOAConfig {
     oaId: String(row?.oa_id || ""),
     appId: String(row?.app_id || ""),
     appSecret: String(row?.app_secret || ""),
+    oaSecretKey: String(row?.oa_secret_key || ""),
     accessToken: String(row?.access_token || ""),
     refreshToken: String(row?.refresh_token || ""),
     isActive: Boolean(row?.is_active),
@@ -245,15 +257,16 @@ export async function saveZaloOAConfig(input: Partial<ZaloOAConfig>): Promise<vo
   const keep = (next: string | undefined, old: string) => next?.trim() ? next.trim() : old;
   await query(
     `UPDATE crm_zalo_config SET
-      oa_id=$1, app_id=$2, app_secret=$3, access_token=$4, refresh_token=$5,
-      is_active=$6, ai_enabled=$7, ai_auto_send=$8, require_approval=$9,
-      ai_model=$10, ai_confidence_threshold=$11, max_auto_messages_per_day=$12,
-      business_hours_start=$13, business_hours_end=$14, zbs_enabled=$15, updated_at=NOW()
+      oa_id=$1, app_id=$2, app_secret=$3, oa_secret_key=$4, access_token=$5, refresh_token=$6,
+      is_active=$7, ai_enabled=$8, ai_auto_send=$9, require_approval=$10,
+      ai_model=$11, ai_confidence_threshold=$12, max_auto_messages_per_day=$13,
+      business_hours_start=$14, business_hours_end=$15, zbs_enabled=$16, updated_at=NOW()
      WHERE id='default'`,
     [
       input.oaId ?? current.oaId,
       input.appId ?? current.appId,
       keep(input.appSecret, current.appSecret),
+      keep(input.oaSecretKey, current.oaSecretKey),
       keep(input.accessToken, current.accessToken),
       keep(input.refreshToken, current.refreshToken),
       input.isActive ?? current.isActive,
@@ -360,12 +373,19 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
   const conversations = conversationRows.map(mapConversation);
   const aiQueue = queueRows.map(mapQueue);
   const s = statRows[0] || {};
-  const { appSecret: _appSecret, accessToken: _accessToken, refreshToken: _refreshToken, ...safeConfig } = config;
+  const { appSecret: _appSecret, oaSecretKey: _oaSecretKey, accessToken: _accessToken, refreshToken: _refreshToken, ...safeConfig } = config;
+  const webhookMeta = await query<Record<string, unknown>>(
+    `SELECT webhook_last_received_at,webhook_last_event,webhook_last_status,webhook_last_error FROM crm_zalo_config WHERE id='default'`,
+  );
   return {
     config: {
       ...safeConfig,
-      appSecretConfigured: Boolean(config.appSecret), accessTokenConfigured: Boolean(config.accessToken),
+      appSecretConfigured: Boolean(config.appSecret), oaSecretKeyConfigured: Boolean(config.oaSecretKey), accessTokenConfigured: Boolean(config.accessToken),
       refreshTokenConfigured: Boolean(config.refreshToken), webhookUrl: `${baseUrl}${WEBHOOK_PATH}`,
+      webhookLastReceivedAt: webhookMeta[0]?.webhook_last_received_at ? String(webhookMeta[0].webhook_last_received_at) : null,
+      webhookLastEvent: String(webhookMeta[0]?.webhook_last_event || ""),
+      webhookLastStatus: String(webhookMeta[0]?.webhook_last_status || ""),
+      webhookLastError: String(webhookMeta[0]?.webhook_last_error || ""),
     },
     stats: {
       total: Number(s.total || 0), sent: Number(s.sent || 0), failed: Number(s.failed || 0), pending: Number(s.pending || 0),
@@ -590,56 +610,104 @@ export async function reviewZaloAiQueue(id: string, action: "approve" | "reject"
   return result;
 }
 
+function zaloEventContent(eventName: string, message?: Record<string, unknown>): { content: string; attachment: Record<string, unknown> } {
+  const text = String(message?.text || "").trim();
+  const rawAttachments = message?.attachments;
+  const attachment = rawAttachments && typeof rawAttachments === "object"
+    ? { items: rawAttachments }
+    : {};
+  if (text) return { content: text, attachment };
+  const labels: Record<string, string> = {
+    image: "[Hình ảnh]", link: "[Liên kết]", audio: "[Âm thanh]", video: "[Video]",
+    sticker: "[Sticker]", location: "[Vị trí]", business_card: "[Danh thiếp]", file: "[Tệp đính kèm]", gif: "[Ảnh GIF]",
+  };
+  const suffix = Object.keys(labels).find(key => eventName.includes(key));
+  return { content: suffix ? labels[suffix] : "[Tin nhắn Zalo]", attachment };
+}
+
+export async function recordZaloWebhookReceipt(input: {
+  eventName: string; status: "received" | "processed" | "ignored" | "error"; error?: string;
+}): Promise<void> {
+  await initZaloOASchema();
+  await query(
+    `UPDATE crm_zalo_config SET webhook_last_received_at=NOW(),webhook_last_event=$1,webhook_last_status=$2,webhook_last_error=$3 WHERE id='default'`,
+    [input.eventName.slice(0, 100), input.status, String(input.error || "").slice(0, 240)],
+  );
+}
+
 export async function recordZaloWebhookEvent(payload: Record<string, unknown>): Promise<{ handled: boolean; aiQueued?: boolean }> {
   await initZaloOASchema();
   const nested = payload.data && typeof payload.data === "object" ? payload.data as Record<string, unknown> : null;
   const event = nested && nested.event_name ? nested : payload;
-  const eventName = String(event.event_name || payload.event_name || "");
+  const eventName = String(event.event_name || payload.event_name || "").trim();
   const sender = event.sender as Record<string, unknown> | undefined;
+  const recipient = event.recipient as Record<string, unknown> | undefined;
   const message = event.message as Record<string, unknown> | undefined;
-  const userId = String(sender?.id || "");
-  const text = String(message?.text || "").trim();
+  const inbound = eventName.startsWith("user_send_");
+  const outbound = eventName.startsWith("oa_send_");
+  if (!inbound && !outbound) return { handled: false };
+  const userId = String((inbound ? sender?.id : recipient?.id) || "").trim();
+  if (!userId || !message) return { handled: false };
+  const { content, attachment } = zaloEventContent(eventName, message);
   const messageId = String(message?.msg_id || message?.message_id || "");
-  if (eventName === "user_send_text" && userId && text) {
-    const id = messageId ? `zalo-${messageId}` : `zin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    if (messageId) {
-      const existing = await query<{ id: string }>(`SELECT id FROM crm_zalo_messages WHERE id=$1 LIMIT 1`, [id]);
-      if (existing.length) return { handled: true, aiQueued: false };
-    }
-    const displayName = String(sender?.name || "Khách Zalo");
+  const id = messageId ? `zalo-${messageId}` : `zin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  if (messageId) {
+    const existing = await query<{ id: string }>(`SELECT id FROM crm_zalo_messages WHERE id=$1 LIMIT 1`, [id]);
+    if (existing.length) return { handled: true, aiQueued: false };
+  }
+  const person = inbound ? sender : recipient;
+  const displayName = String(person?.name || "Khách Zalo");
+  if (inbound) {
     await query(
       `INSERT INTO crm_zalo_conversations (user_id,display_name,last_user_interaction,last_message_preview,last_message_at,unread_count,ai_status)
        VALUES ($1,$2,NOW(),$3,NOW(),1,'analyzing')
        ON CONFLICT (user_id) DO UPDATE SET display_name=CASE WHEN EXCLUDED.display_name='Khách Zalo' THEN crm_zalo_conversations.display_name ELSE EXCLUDED.display_name END,
        last_user_interaction=NOW(),last_message_preview=EXCLUDED.last_message_preview,last_message_at=NOW(),unread_count=crm_zalo_conversations.unread_count+1,ai_status='analyzing',updated_at=NOW()`,
-      [userId, displayName, text],
+      [userId, displayName, content],
     );
-    const inserted = await query<{ id: string }>(
-      `INSERT INTO crm_zalo_messages (id,conversation_user_id,direction,category,content,status,source,zalo_message_id)
-       VALUES ($1,$2,'inbound','consultation',$3,'delivered','webhook',$4) ON CONFLICT (id) DO NOTHING RETURNING id`,
-      [id, userId, text, messageId],
+  } else {
+    await query(
+      `INSERT INTO crm_zalo_conversations (user_id,display_name,last_message_preview,last_message_at,unread_count,ai_status)
+       VALUES ($1,$2,$3,NOW(),0,'idle')
+       ON CONFLICT (user_id) DO UPDATE SET display_name=CASE WHEN EXCLUDED.display_name='Khách Zalo' THEN crm_zalo_conversations.display_name ELSE EXCLUDED.display_name END,
+       last_message_preview=EXCLUDED.last_message_preview,last_message_at=NOW(),updated_at=NOW()`,
+      [userId, displayName, content],
     );
-    if (!inserted.length) return { handled: true, aiQueued: false };
-    try { await generateZaloAiDraft({ userId, incomingMessage: text, customerName: displayName }); return { handled: true, aiQueued: true }; }
+  }
+  const inserted = await query<{ id: string }>(
+    `INSERT INTO crm_zalo_messages (id,conversation_user_id,direction,category,content,attachment,status,source,zalo_message_id)
+     VALUES ($1,$2,$3,'consultation',$4,$5::jsonb,'delivered','webhook',$6) ON CONFLICT (id) DO NOTHING RETURNING id`,
+    [id, userId, inbound ? "inbound" : "outbound", content, JSON.stringify(attachment), messageId],
+  );
+  if (!inserted.length) return { handled: true, aiQueued: false };
+  if (inbound && eventName === "user_send_text" && String(message.text || "").trim()) {
+    try { await generateZaloAiDraft({ userId, incomingMessage: content, customerName: displayName }); return { handled: true, aiQueued: true }; }
     catch (error) {
       await query(`UPDATE crm_zalo_conversations SET ai_status=$2,updated_at=NOW() WHERE user_id=$1`, [userId, `error:${error instanceof Error ? error.message.slice(0, 160) : "unknown"}`]);
       return { handled: true, aiQueued: false };
     }
   }
-  if (["oa_send_text", "oa_send_image"].includes(eventName)) return { handled: true };
-  return { handled: false };
+  if (inbound) await query(`UPDATE crm_zalo_conversations SET ai_status='idle',updated_at=NOW() WHERE user_id=$1`, [userId]);
+  return { handled: true, aiQueued: false };
 }
 
 export function verifyZaloWebhookSignature(rawBody: string, signature: string | null, config: ZaloOAConfig): boolean {
-  if (!signature || !config.appId || !config.appSecret) return false;
+  const secret = config.oaSecretKey || config.appSecret;
+  if (!signature || !config.appId || !secret) return false;
   let timestamp = "";
-  let data = rawBody;
+  const dataCandidates = new Set<string>([rawBody]);
   try {
     const parsed = JSON.parse(rawBody) as Record<string, unknown>;
-    timestamp = String(parsed.timestamp || "");
-    if (parsed.data !== undefined) data = typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data);
+    const nested = parsed.data && typeof parsed.data === "object" ? parsed.data as Record<string, unknown> : null;
+    timestamp = String(parsed.timestamp || nested?.timestamp || "");
+    if (parsed.data !== undefined) dataCandidates.add(typeof parsed.data === "string" ? parsed.data : JSON.stringify(parsed.data));
   } catch { return false; }
-  const expected = createHash("sha256").update(`${config.appId}${data}${timestamp}${config.appSecret}`).digest("hex");
   const supplied = signature.replace(/^mac=/i, "").trim().toLowerCase();
-  return supplied === expected;
+  if (!/^[a-f0-9]{64}$/.test(supplied)) return false;
+  const suppliedBuffer = Buffer.from(supplied, "hex");
+  for (const data of dataCandidates) {
+    const expected = createHash("sha256").update(`${config.appId}${data}${timestamp}${secret}`).digest();
+    if (expected.length === suppliedBuffer.length && timingSafeEqual(expected, suppliedBuffer)) return true;
+  }
+  return false;
 }

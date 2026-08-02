@@ -1,17 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { recordZaloWebhookEvent } = vi.hoisted(() => ({
+const { recordZaloWebhookEvent, recordZaloWebhookReceipt, verifyZaloWebhookSignature } = vi.hoisted(() => ({
   recordZaloWebhookEvent: vi.fn(),
+  recordZaloWebhookReceipt: vi.fn().mockResolvedValue(undefined),
+  verifyZaloWebhookSignature: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("@/lib/zalo-oa-store", () => ({
   getZaloOAConfig: vi.fn().mockResolvedValue({
     appId: "429156857373131074",
     appSecret: "configured-secret",
+    oaSecretKey: "configured-oa-secret",
   }),
   recordZaloWebhookEvent,
-  verifyZaloWebhookSignature: vi.fn().mockReturnValue(false),
+  recordZaloWebhookReceipt,
+  verifyZaloWebhookSignature,
 }));
 
 import { POST } from "@/app/api/crm/zalo/webhook/route";
@@ -50,11 +54,39 @@ describe("Zalo OA webhook verification", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ ok: true, ignored: true });
     expect(recordZaloWebhookEvent).not.toHaveBeenCalled();
+    expect(recordZaloWebhookReceipt).toHaveBeenCalledWith(expect.objectContaining({
+      eventName: "user_send_text",
+      status: "ignored",
+    }));
   });
 
   it("rejects malformed non-empty JSON", async () => {
     const response = await POST(request("not-json"));
 
     expect(response.status).toBe(400);
+  });
+
+  it("stores a correctly signed OA event and records successful processing", async () => {
+    verifyZaloWebhookSignature.mockReturnValueOnce(true);
+    recordZaloWebhookEvent.mockResolvedValueOnce({ handled: true, aiQueued: false });
+    const body = JSON.stringify({
+      event_name: "user_send_image",
+      app_id: "429156857373131074",
+      timestamp: "1785686400000",
+      sender: { id: "zalo-user-1" },
+      message: { msg_id: "message-1", attachments: [{ type: "image" }] },
+    });
+    const signedRequest = new NextRequest("https://www.smartfurni.com.vn/api/crm/zalo/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-zevent-signature": "mac=valid" },
+      body,
+    });
+
+    const response = await POST(signedRequest);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, handled: true });
+    expect(recordZaloWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ event_name: "user_send_image" }));
+    expect(recordZaloWebhookReceipt).toHaveBeenCalledWith(expect.objectContaining({ status: "processed" }));
   });
 });
