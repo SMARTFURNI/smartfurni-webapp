@@ -70,11 +70,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await recordZaloWebhookEvent(payload);
-    await recordZaloWebhookReceipt({
-      eventName: webhookEventName(payload),
-      status: result.handled ? "processed" : "ignored",
-      error: result.handled ? "" : "Loại sự kiện chưa tạo hội thoại.",
-    });
+    // Only inbound message events that actually create/update a CRM
+    // conversation should become the connection health receipt. Zalo also
+    // sends valid delivery/receipt events after the OA replies; recording
+    // those as "ignored" would overwrite a successful inbound receipt and
+    // make the settings screen report a false webhook failure.
+    if (result.handled) {
+      await recordZaloWebhookReceipt({
+        eventName: webhookEventName(payload),
+        status: "processed",
+        error: "",
+      });
+    }
     return okResponse({ ok: true, ...result });
   } catch (error) {
     console.error("[Zalo OA webhook]", error);

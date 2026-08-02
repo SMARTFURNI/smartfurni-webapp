@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const { recordZaloWebhookEvent, recordZaloWebhookReceipt, verifyZaloWebhookSignature } = vi.hoisted(() => ({
@@ -29,6 +29,10 @@ function request(body: string) {
 }
 
 describe("Zalo OA webhook verification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("accepts Zalo's empty connectivity probe", async () => {
     const response = await POST(request(""));
 
@@ -88,5 +92,28 @@ describe("Zalo OA webhook verification", () => {
     await expect(response.json()).resolves.toMatchObject({ ok: true, handled: true });
     expect(recordZaloWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ event_name: "user_send_image" }));
     expect(recordZaloWebhookReceipt).toHaveBeenCalledWith(expect.objectContaining({ status: "processed" }));
+  });
+
+  it("does not replace a successful receipt with a supported but non-conversation event", async () => {
+    verifyZaloWebhookSignature.mockReturnValueOnce(true);
+    recordZaloWebhookEvent.mockResolvedValueOnce({ handled: false });
+    const body = JSON.stringify({
+      event_name: "user_received_message",
+      app_id: "429156857373131074",
+      timestamp: "1785686400000",
+      sender: { id: "zalo-user-1" },
+      message: { msg_id: "receipt-1" },
+    });
+    const signedRequest = new NextRequest("https://www.smartfurni.com.vn/api/crm/zalo/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-zevent-signature": "mac=valid" },
+      body,
+    });
+
+    const response = await POST(signedRequest);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, handled: false });
+    expect(recordZaloWebhookReceipt).not.toHaveBeenCalled();
   });
 });
