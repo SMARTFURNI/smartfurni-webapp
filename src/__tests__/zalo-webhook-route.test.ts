@@ -1,5 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+
+const { recordZaloWebhookEvent } = vi.hoisted(() => ({
+  recordZaloWebhookEvent: vi.fn(),
+}));
+
+vi.mock("@/lib/zalo-oa-store", () => ({
+  getZaloOAConfig: vi.fn().mockResolvedValue({
+    appId: "429156857373131074",
+    appSecret: "configured-secret",
+  }),
+  recordZaloWebhookEvent,
+  verifyZaloWebhookSignature: vi.fn().mockReturnValue(false),
+}));
+
 import { POST } from "@/app/api/crm/zalo/webhook/route";
 
 function request(body: string) {
@@ -23,6 +37,19 @@ describe("Zalo OA webhook verification", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ ok: true, verification: true });
+  });
+
+  it("acknowledges an unsigned event-shaped verification request without processing it", async () => {
+    const response = await POST(request(JSON.stringify({
+      event_name: "user_send_text",
+      app_id: "429156857373131074",
+      timestamp: "1785686400000",
+      data: { msg_id: "zalo-connectivity-check" },
+    })));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, ignored: true });
+    expect(recordZaloWebhookEvent).not.toHaveBeenCalled();
   });
 
   it("rejects malformed non-empty JSON", async () => {

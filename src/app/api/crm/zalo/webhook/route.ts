@@ -46,7 +46,12 @@ export async function POST(req: NextRequest) {
   const config = await getZaloOAConfig();
   const signature = req.headers.get("x-zevent-signature");
   if (!verifyZaloWebhookSignature(rawBody, signature, config)) {
-    return NextResponse.json({ error: "Invalid Zalo webhook signature" }, { status: 401 });
+    // Zalo Developer's "Kiểm tra" request can carry an event-shaped payload
+    // without a production X-ZEvent-Signature. Acknowledge receipt so Zalo can
+    // register the URL, but never process or persist an unsigned request.
+    // Returning the same 200 acknowledgement also avoids exposing signature
+    // validation details to callers.
+    return okResponse({ ok: true, ignored: true });
   }
 
   try {
