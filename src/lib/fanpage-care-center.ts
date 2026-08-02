@@ -11,7 +11,9 @@ import { countPushSubscriptions, sendPushNotification } from "@/lib/pwa-server";
 import { getFanpageCareSettings, type FanpageCareSettings } from "@/lib/fanpage-care-settings";
 import {
   assessFanpageConversation,
+  alignDraftMessageAddressing,
   buildFallbackCarePlan,
+  detectConversationAddressing,
   type ConversationForAnalysis,
   type DeterministicConversationAssessment,
   type GeneratedCarePlan,
@@ -503,6 +505,7 @@ async function generateGeminiPlans(
             objections: assessment.objections,
             signals: assessment.buyingSignals,
           },
+          addressing: detectConversationAddressing(conversation),
           messages: conversation.messages.slice(-14).map(message => ({
             direction: message.direction,
             content: message.content.slice(0, 500),
@@ -514,6 +517,8 @@ async function generateGeminiPlans(
           settings.prompts.planning,
           "Không bịa giá, chính sách, số điện thoại, khuyến mãi hoặc thông tin sản phẩm.",
           "Không tự gửi tin. Mọi bước liên hệ phải requiresHumanApproval=true.",
+          "XƯNG HÔ BẮT BUỘC: mỗi hội thoại có trường addressing. Tin nhắn nháp phải dùng đúng staffPronoun để Fanpage tự xưng và customerAddress để gọi khách. Giữ cách xưng hô xuyên suốt, không tự đổi sang 'bạn', 'quý khách', 'anh/chị' hoặc gọi thẳng tên khi addressing đã xác định cách khác.",
+          "Ưu tiên đúng ngữ cảnh hội thoại hơn văn mẫu; câu mở đầu phải tự nhiên như lời nhân viên đang tiếp tục cuộc trò chuyện, không giới thiệu lại thương hiệu nếu không cần.",
           "Tránh spam: tối đa một liên hệ/ngày, dừng nếu khách từ chối, ưu tiên trả lời tin chưa phản hồi.",
           "Trả về JSON thuần dạng {\"plans\":[...]} với mỗi phần tử gồm:",
           "conversationId, summary, customerNeed, productInterest[], objections[], buyingSignals[],",
@@ -566,6 +571,14 @@ async function generateGeminiPlans(
         for (const raw of parsed.plans || []) {
           const conversationId = String(raw.conversationId || "");
           if (!allowedIds.has(conversationId)) continue;
+          const sourceConversation = batch.find(item => item.conversation.conversationId === conversationId)?.conversation;
+          const addressing = sourceConversation ? detectConversationAddressing(sourceConversation) : undefined;
+          const planSteps = normalizePlanSteps(raw.planSteps).map(step => ({
+            ...step,
+            draftMessage: step.draftMessage && addressing
+              ? alignDraftMessageAddressing(step.draftMessage, addressing, sourceConversation?.participantName)
+              : step.draftMessage,
+          }));
           plans.set(conversationId, {
             conversationId,
             summary: String(raw.summary || "").slice(0, 1500),
@@ -575,7 +588,7 @@ async function generateGeminiPlans(
             buyingSignals: stringArray(raw.buyingSignals).slice(0, 12),
             nextBestAction: String(raw.nextBestAction || "").slice(0, 1000),
             confidence: Math.max(0, Math.min(1, Number(raw.confidence || 0.75))),
-            planSteps: normalizePlanSteps(raw.planSteps),
+            planSteps,
           });
         }
       } catch (error) {
@@ -669,6 +682,7 @@ async function upsertCarePlan(input: {
         canReply: conversation.canReply,
         unreadCount: conversation.unreadCount,
         latestInboundUnanswered: assessment.latestInboundUnanswered,
+        addressing: detectConversationAddressing(conversation),
         safety: "human-approval-required",
       }),
     ],

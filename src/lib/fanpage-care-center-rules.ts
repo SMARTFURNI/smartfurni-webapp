@@ -54,6 +54,15 @@ export interface GeneratedCarePlan {
   planSteps: FanpageCarePlanStep[];
 }
 
+export interface ConversationAddressingStyle {
+  staffPronoun: string;
+  customerAddress: string;
+  greeting: string;
+  source: "outbound" | "inbound" | "default";
+  confidence: "high" | "medium" | "low";
+  evidence?: string;
+}
+
 function normalizeText(input: string) {
   return input
     .toLowerCase()
@@ -66,6 +75,168 @@ function normalizeText(input: string) {
 
 function unique(values: string[]) {
   return [...new Set(values.map(value => value.trim()).filter(Boolean))];
+}
+
+function compactEvidence(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
+function makeAddressingStyle(input: Omit<ConversationAddressingStyle, "greeting">): ConversationAddressingStyle {
+  const deferential = /^(?:anh|chị|cô|chú|anh\/chị)$/.test(input.customerAddress);
+  return {
+    ...input,
+    greeting: deferential ? `Dạ ${input.customerAddress}` : `Chào ${input.customerAddress}`,
+  };
+}
+
+function detectStaffPronounFromOutbound(text: string) {
+  const match = normalizeText(text).match(
+    /\b(smartfurni|ben em|ben anh|ben chi|ben minh|chung toi|em|anh|chi|chau|con|toi|minh)\s+(?:xin|da|se|gui|muon|co the|kiem tra|ho tro|tu van|bao|nhan|goi|trao doi|cam on)\b/,
+  );
+  const value = match?.[1];
+  if (!value) return undefined;
+  return ({
+    smartfurni: "SmartFurni",
+    "ben em": "bên em",
+    "ben anh": "bên anh",
+    "ben chi": "bên chị",
+    "ben minh": "bên mình",
+    "chung toi": "chúng tôi",
+    em: "em",
+    anh: "anh",
+    chi: "chị",
+    chau: "cháu",
+    con: "con",
+    toi: "tôi",
+    minh: "mình",
+  } as Record<string, string>)[value];
+}
+
+function detectCustomerAddressFromOutbound(text: string) {
+  const normalized = normalizeText(text);
+  const receivers = [
+    /\b(?:gui|ho tro|tu van|bao gia cho|cam on|moi|nho)\s+(anh\/chi|anh|chi|co|chu|em|minh|ban|quy khach)\b/,
+    /\b(?:cua|voi)\s+(anh\/chi|anh|chi|co|chu|em|minh|ban|quy khach)\b/,
+    /\b(anh\/chi|anh|chi|co|chu|minh|ban|quy khach)\s+(?:co|can|muon|cho|giup|xem|tham khao|nhan|sap xep|vui long|con)\b/,
+    /^(?:da|vang|chao|xin chao)[,! ]+(anh\/chi|anh|chi|co|chu|em|minh|ban|quy khach)\b/,
+  ];
+  const value = receivers.map(pattern => normalized.match(pattern)?.[1]).find(Boolean);
+  if (!value) return undefined;
+  return ({
+    "anh/chi": "anh/chị",
+    anh: "anh",
+    chi: "chị",
+    co: "cô",
+    chu: "chú",
+    em: "em",
+    minh: "mình",
+    ban: "bạn",
+    "quy khach": "quý khách",
+  } as Record<string, string>)[value];
+}
+
+function defaultCustomerAddressForStaff(staffPronoun: string) {
+  if (/^(?:anh|chị|bên anh|bên chị)$/.test(staffPronoun)) return "em";
+  if (/^(?:cháu|con)$/.test(staffPronoun)) return "cô/chú";
+  if (/^(?:SmartFurni|chúng tôi|tôi|mình|bên mình)$/.test(staffPronoun)) return "mình";
+  return "anh/chị";
+}
+
+function detectInboundSelfReference(text: string) {
+  const normalized = normalizeText(text);
+  const match = normalized.match(/\b(em|anh|chi|co|chu|minh|toi)\s+(?:muon|can|hoi|dang|o|gui|lay|mua|quan tam|chua|da)\b/);
+  const value = match?.[1];
+  if (!value || value === "toi") return value === "toi" ? "mình" : undefined;
+  return ({ em: "em", anh: "anh", chi: "chị", co: "cô", chu: "chú", minh: "mình" } as Record<string, string>)[value];
+}
+
+/**
+ * Keep the same relationship language already established in the thread.
+ * Staff outbound messages are authoritative; inbound vocatives are only used
+ * when the page has not established a clear style yet.
+ */
+export function detectConversationAddressing(
+  conversation: Pick<ConversationForAnalysis, "messages">,
+): ConversationAddressingStyle {
+  const outbound = [...conversation.messages].reverse().filter(message => message.direction === "outbound");
+  for (const message of outbound) {
+    const staffPronoun = detectStaffPronounFromOutbound(message.content);
+    const customerAddress = detectCustomerAddressFromOutbound(message.content);
+    if (staffPronoun || customerAddress) {
+      const resolvedStaff = staffPronoun || (/^(?:anh|chị|cô|chú|anh\/chị)$/.test(customerAddress || "") ? "em" : "SmartFurni");
+      return makeAddressingStyle({
+        staffPronoun: resolvedStaff,
+        customerAddress: customerAddress || defaultCustomerAddressForStaff(resolvedStaff),
+        source: "outbound",
+        confidence: staffPronoun && customerAddress ? "high" : "medium",
+        evidence: compactEvidence(message.content),
+      });
+    }
+  }
+
+  const inbound = [...conversation.messages].reverse().filter(message => message.direction === "inbound");
+  for (const message of inbound) {
+    const normalized = normalizeText(message.content);
+    const called = normalized.match(/\b(anh|chi|em|co|chu)\s+oi\b/)?.[1]
+      || normalized.match(/^(?:chao|xin chao|da|alo)[,! ]+(anh|chi|em|co|chu)\b/)?.[1];
+    const callsShop = /\b(?:shop|admin|smartfurni)\s+oi\b/.test(normalized);
+    if (called || callsShop) {
+      const staffPronoun = called
+        ? ({ anh: "anh", chi: "chị", em: "em", co: "cô", chu: "chú" } as Record<string, string>)[called]
+        : "SmartFurni";
+      const selfReference = detectInboundSelfReference(message.content);
+      return makeAddressingStyle({
+        staffPronoun,
+        customerAddress: selfReference || defaultCustomerAddressForStaff(staffPronoun),
+        source: "inbound",
+        confidence: selfReference ? "medium" : "low",
+        evidence: compactEvidence(message.content),
+      });
+    }
+  }
+
+  return makeAddressingStyle({
+    staffPronoun: "em",
+    customerAddress: "anh/chị",
+    source: "default",
+    confidence: "low",
+  });
+}
+
+function replaceWithCase(value: string, replacement: string) {
+  return value[0] === value[0]?.toUpperCase()
+    ? replacement.charAt(0).toUpperCase() + replacement.slice(1)
+    : replacement;
+}
+
+export function alignDraftMessageAddressing(
+  draftMessage: string,
+  style: ConversationAddressingStyle,
+  participantName?: string,
+) {
+  let output = draftMessage.trim();
+  if (!output || style.source === "default") return output;
+  if (participantName?.trim()) {
+    const escapedName = participantName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    output = output.replace(new RegExp(`^(?:Xin chào|Chào)\\s+${escapedName}\\s*,?`, "i"), `${style.greeting},`);
+  }
+  if (style.customerAddress !== "anh/chị") {
+    output = output
+      .replace(/anh\s*\/\s*chị/gi, match => replaceWithCase(match, style.customerAddress))
+      .replace(/quý khách/gi, match => replaceWithCase(match, style.customerAddress))
+      .replace(/\bBạn\b(?=\s+(?:có|cần|muốn|cho|giúp|vui lòng|thấy|đang|đã|sẽ|còn|ưu tiên|phản hồi))/g, replaceWithCase("Bạn", style.customerAddress))
+      .replace(/\b(cho|gửi|hỗ trợ|tư vấn|của|với)\s+bạn\b/gi, match => match.replace(/bạn/i, style.customerAddress));
+  }
+  if (style.staffPronoun !== "SmartFurni") {
+    const actionLookahead = "(?=xin|đã|sẽ|gửi|muốn|có thể|kiểm tra|hỗ trợ|tư vấn|cảm ơn|nhận|báo|trao đổi)";
+    const staffReference = (offset: number) => offset === 0
+      ? style.staffPronoun.charAt(0).toUpperCase() + style.staffPronoun.slice(1)
+      : style.staffPronoun;
+    output = output
+      .replace(new RegExp(`\\bSmartFurni\\s+${actionLookahead}`, "gi"), (_match, offset: number) => `${staffReference(offset)} `)
+      .replace(new RegExp(`\\b(?:bên em|bên mình|chúng tôi|tôi|em)\\s+${actionLookahead}`, "gi"), (_match, offset: number) => `${staffReference(offset)} `);
+  }
+  return output.replace(/\s{2,}/g, " ").trim();
 }
 
 function matchesKeyword(text: string, keywords: string[]) {
@@ -187,14 +358,16 @@ export function buildFallbackCarePlan(
   conversation: ConversationForAnalysis,
   assessment: DeterministicConversationAssessment,
 ): GeneratedCarePlan {
+  const addressing = detectConversationAddressing(conversation);
+  const { staffPronoun, customerAddress, greeting } = addressing;
   const firstGoal = assessment.funnelStage === "closing"
     ? "Xác nhận thông tin để chốt đơn"
     : assessment.funnelStage === "quotation"
       ? "Làm rõ size và khu vực trước khi báo giá"
       : "Làm rõ nhu cầu thật của khách";
   const firstDraft = assessment.latestInboundUnanswered
-    ? `Chào anh/chị, em đã nhận được tin nhắn về ${assessment.productInterest[0] || "sản phẩm SmartFurni"}. Anh/chị cho em xin thêm kích thước cần dùng và khu vực giao lắp để em tư vấn chính xác nhé.`
-    : `Chào anh/chị, em xin phép hỏi thăm thêm về nhu cầu ${assessment.productInterest[0] || "nội thất thông minh"} mình đã trao đổi. Hiện anh/chị còn cần em hỗ trợ về kích thước, giá hay giao lắp không ạ?`;
+    ? `${greeting}, ${staffPronoun} đã nhận được tin nhắn về ${assessment.productInterest[0] || "sản phẩm SmartFurni"}. ${customerAddress.charAt(0).toUpperCase() + customerAddress.slice(1)} cho ${staffPronoun} xin thêm kích thước cần dùng và khu vực giao lắp để ${staffPronoun} tư vấn chính xác nhé.`
+    : `${greeting}, ${staffPronoun} xin phép hỏi thăm thêm về nhu cầu ${assessment.productInterest[0] || "nội thất thông minh"} mình đã trao đổi. Hiện ${customerAddress} còn cần ${staffPronoun} hỗ trợ về kích thước, giá hay giao lắp không ạ?`;
 
   return {
     conversationId: conversation.conversationId,
@@ -229,7 +402,7 @@ export function buildFallbackCarePlan(
         channel: "Messenger",
         goal: "Bổ sung thông tin có giá trị",
         action: "Gửi một nội dung phù hợp như ảnh thực tế, kích thước hoặc chính sách; không gửi lại nguyên báo giá.",
-        draftMessage: "Em gửi thêm thông tin thực tế để anh/chị dễ cân nhắc. Nếu mình cho em biết size và khu vực, em sẽ lọc đúng phương án phù hợp nhất.",
+        draftMessage: `${staffPronoun.charAt(0).toUpperCase() + staffPronoun.slice(1)} gửi thêm thông tin thực tế để ${customerAddress} dễ cân nhắc. Nếu ${customerAddress} cho ${staffPronoun} biết kích thước và khu vực, ${staffPronoun} sẽ lọc đúng phương án phù hợp nhất.`,
         requiresHumanApproval: true,
       },
       {

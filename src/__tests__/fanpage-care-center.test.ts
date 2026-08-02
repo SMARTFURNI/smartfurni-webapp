@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  alignDraftMessageAddressing,
   assessFanpageConversation,
   buildFallbackCarePlan,
+  detectConversationAddressing,
 } from "@/lib/fanpage-care-center-rules";
 import {
   DEFAULT_FANPAGE_CARE_SETTINGS,
@@ -111,5 +113,55 @@ describe("fanpage care center", () => {
 
     expect(settings.scoring.hotThreshold).toBe(60);
     expect(settings.scoring.warmThreshold).toBe(59);
+  });
+
+  it("giữ đúng cách nhân viên đang xưng em và gọi khách là chị", () => {
+    const conversation = {
+      pageInternalId: "page-1",
+      pageFacebookId: "fb-page-1",
+      pageName: "SmartFurni",
+      conversationId: "conv-addressing",
+      participantName: "Lan",
+      unreadCount: 0,
+      canReply: true,
+      latestMessageAt: new Date().toISOString(),
+      messages: [
+        { id: "m1", direction: "inbound" as const, content: "Chị tư vấn giúp em mẫu sofa giường nhé" },
+        { id: "m2", direction: "outbound" as const, content: "Dạ chị, em gửi chị thông tin mẫu SMF22 ạ" },
+        { id: "m3", direction: "inbound" as const, content: "Chị gửi thêm kích thước giúp em" },
+      ],
+    };
+    const style = detectConversationAddressing(conversation);
+    const plan = buildFallbackCarePlan(conversation, assessFanpageConversation(conversation));
+
+    expect(style).toMatchObject({ staffPronoun: "em", customerAddress: "chị", source: "outbound", confidence: "high" });
+    expect(plan.planSteps[0].draftMessage).toContain("Dạ chị, em");
+    expect(plan.planSteps[0].draftMessage).not.toContain("anh/chị");
+    expect(plan.planSteps[0].draftMessage).not.toContain("Bạn");
+  });
+
+  it("suy luận cách xưng hô từ lời khách khi chưa có tin nhắn Fanpage", () => {
+    const style = detectConversationAddressing({
+      messages: [{ id: "m1", direction: "inbound", content: "Anh ơi, em muốn hỏi giá giường 1m6" }],
+    });
+
+    expect(style).toMatchObject({ staffPronoun: "anh", customerAddress: "em", source: "inbound" });
+  });
+
+  it("sửa đại từ văn mẫu trong kết quả AI theo hội thoại", () => {
+    const style = detectConversationAddressing({
+      messages: [{ id: "m1", direction: "outbound", content: "Dạ cô, cháu sẽ kiểm tra và báo cô ngay ạ" }],
+    });
+    const aligned = alignDraftMessageAddressing(
+      "Chào Mai, SmartFurni xin gửi thêm thông tin để quý khách tham khảo. Bạn có cần SmartFurni hỗ trợ thêm không ạ?",
+      style,
+      "Mai",
+    );
+
+    expect(aligned).toContain("Dạ cô");
+    expect(aligned).toContain("cháu xin gửi");
+    expect(aligned).toContain("cô tham khảo");
+    expect(aligned).not.toContain("quý khách");
+    expect(aligned).not.toContain("Bạn");
   });
 });

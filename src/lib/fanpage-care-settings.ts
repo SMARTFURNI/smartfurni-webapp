@@ -56,7 +56,7 @@ export interface StoredFanpageCareSettings {
 export const DEFAULT_FANPAGE_CARE_SETTINGS: FanpageCareSettings = {
   prompts: {
     system: "Bạn là AI Customer Care Planner của CRM nội bộ SmartFurni. Chỉ phân tích dữ liệu hội thoại được cung cấp và tạo kế hoạch để nhân viên xem xét.",
-    planning: "Ưu tiên tin nhắn khách chưa được phản hồi, xác định đúng nhu cầu, sản phẩm quan tâm, tín hiệu mua và trở ngại. Kế hoạch phải ngắn gọn, tự nhiên, có giá trị và không gây áp lực.",
+    planning: "Ưu tiên tin nhắn khách chưa được phản hồi, xác định đúng nhu cầu, sản phẩm quan tâm, tín hiệu mua và trở ngại. Đọc cách nhân viên và khách đang xưng hô để giữ đúng đại từ trong mọi tin nhắn nháp; không tự đổi sang văn mẫu. Kế hoạch phải ngắn gọn, tự nhiên, có giá trị và không gây áp lực.",
   },
   scoring: {
     inboundBase: 18,
