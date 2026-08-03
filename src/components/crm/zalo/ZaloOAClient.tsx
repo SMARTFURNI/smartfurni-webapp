@@ -398,10 +398,10 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
 
 function Overview({ data, config, go, isAdmin }: { data: Dashboard; config: PublicConfig; go: (tab: Tab) => void; isAdmin: boolean }) {
   const stats = [
-    [MessageCircle, "Hội thoại OA", data.stats.conversations, `${data.stats.unread} chưa đọc`, "#C9A84C"],
-    [Bot, "Bản nháp AI", data.stats.aiDrafts, "Chờ admin duyệt", "#8B5CF6"],
-    [Send, "Đã gửi hôm nay", data.stats.sentToday, `${data.stats.sent} gửi thành công`, "#22C55E"],
-    [AlertTriangle, "Gửi thất bại", data.stats.failed, `${data.stats.pending} đang chờ`, "#F59E0B"],
+    [MessageCircle, "Hội thoại OA", data.stats.conversations, `${data.stats.unread} chưa đọc`, "#2878c8", "blue"],
+    [Bot, "Bản nháp AI", data.stats.aiDrafts, "Chờ admin duyệt", "#7c3fd1", "violet"],
+    [Send, "Đã gửi hôm nay", data.stats.sentToday, `${data.stats.sent} gửi thành công`, "#0f9f70", "emerald"],
+    [AlertTriangle, "Gửi thất bại", data.stats.failed, `${data.stats.pending} đang chờ`, "#d97706", "amber"],
   ] as const;
   const readiness = [
     [config.accessTokenConfigured, "Kết nối OA", "Access Token"],
@@ -411,7 +411,7 @@ function Overview({ data, config, go, isAdmin }: { data: Dashboard; config: Publ
   ] as const;
   const readyCount = readiness.filter(([ok]) => ok).length;
   return <div className="space-y-4">
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([Icon, label, value, hint, color]) => <div key={label} className={`${panel} group p-4 transition hover:border-[rgba(255,200,100,0.24)]`}><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(245,237,214,0.42)]">{label}</div><strong className="mt-2 block text-2xl font-bold" style={{ color }}>{value}</strong></div><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(255,200,100,0.12)] bg-black/20" style={{ color }}><Icon size={17} /></div></div><div className="mt-3 border-t border-[rgba(255,200,100,0.08)] pt-2 text-[11px] text-[rgba(245,237,214,0.38)]">{hint}</div></div>)}</div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{stats.map(([Icon, label, value, hint, color, tone]) => <div key={label} data-zalo-tone={tone} className={`${panel} group p-4 transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(30,48,72,0.13)]`}><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[rgba(245,237,214,0.42)]">{label}</div><strong className="mt-2 block text-2xl font-bold" style={{ color }}>{value}</strong></div><div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(255,200,100,0.12)] bg-black/20" style={{ color }}><Icon size={17} /></div></div><div className="mt-3 border-t border-[rgba(255,200,100,0.08)] pt-2 text-[11px] text-[rgba(245,237,214,0.38)]">{hint}</div></div>)}</div>
 
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
       <section className={`${panel} overflow-hidden`}>

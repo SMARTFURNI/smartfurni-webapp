@@ -138,11 +138,11 @@ export default function ZaloTemplatesTab({ templates, syncSummary, configured, b
       </div>
       <div className="grid gap-px bg-[rgba(255,200,100,0.08)] sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ["Tất cả Template", counts.all, "text-[#e0c66f]"],
-          ["Đã duyệt", counts.approved, "text-emerald-300"],
-          ["Đang duyệt", counts.pending, "text-sky-300"],
-          ["Chưa được duyệt", counts.unapproved, "text-amber-200"],
-        ].map(([label, value, color]) => <div key={String(label)} className="bg-[#130f08] px-5 py-4"><div className={`text-2xl font-semibold ${color}`}>{value}</div><div className="mt-1 text-xs text-[#738095]">{label}</div></div>)}
+          ["Tất cả Template", counts.all, "text-[#e0c66f]", "blue"],
+          ["Đã duyệt", counts.approved, "text-emerald-300", "emerald"],
+          ["Đang duyệt", counts.pending, "text-sky-300", "violet"],
+          ["Chưa được duyệt", counts.unapproved, "text-amber-200", "amber"],
+        ].map(([label, value, color, tone]) => <div key={String(label)} data-zalo-tone={tone} className="bg-[#130f08] px-5 py-4"><div className={`text-2xl font-semibold ${color}`}>{value}</div><div className="mt-1 text-xs text-[#738095]">{label}</div></div>)}
       </div>
     </section>
 
