@@ -2,9 +2,9 @@
 
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, AlertTriangle, Bot, Check, CheckCircle2, Clock3, FileText, FileUp,
-  History, ImageIcon, Inbox, Loader2, MessageCircle, Paperclip, Pencil,
-  Plus, RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
+  Activity, AlertTriangle, Bot, Check, CheckCircle2, FileText, FileUp,
+  History, ImageIcon, Inbox, Loader2, MessageCircle, Paperclip,
+  RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
   Trash2, Users, X, Zap,
 } from "lucide-react";
 import ZaloCustomersTab, {
@@ -12,6 +12,10 @@ import ZaloCustomersTab, {
   type ZaloCustomerSegmentView,
   type ZaloCustomerTagView,
 } from "./ZaloCustomersTab";
+import ZaloTemplatesTab, {
+  type ZaloTemplateSyncView,
+  type ZaloTemplateView as Template,
+} from "./ZaloTemplatesTab";
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
 type Tab = "overview" | "inbox" | "customers" | "ai" | "templates" | "history" | "automation" | "settings";
@@ -56,18 +60,7 @@ interface PublicConfig {
   webhookLastStatus: string;
   webhookLastError: string;
   historySync: HistorySyncSummary;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  category: Category;
-  content: string;
-  zbsTemplateId: string;
-  variables: string[];
-  isActive: boolean;
-  requiresApproval: boolean;
-  updatedAt: string;
+  templateSync: ZaloTemplateSyncView;
 }
 
 interface Conversation {
@@ -149,6 +142,10 @@ const EMPTY_CONFIG: PublicConfig = {
     customersUpserted: 0, conversationsSeen: 0, messagesSeen: 0,
     messagesInserted: 0, messagesSkipped: 0, profilesUpdated: 0, tagsSynced: 0, warnings: [], error: "",
   },
+  templateSync: {
+    status: "never", startedAt: null, finishedAt: null, total: 0,
+    approved: 0, pending: 0, rejected: 0, disabled: 0, warnings: [], error: "",
+  },
 };
 
 const CATEGORY_LABELS: Record<Category, string> = {
@@ -185,7 +182,7 @@ function withinSevenDays(value: string | null) {
 
 async function postAction(payload: Record<string, unknown>) {
   const res = await fetch("/api/crm/zalo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-  const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string; name?: string; summary?: HistorySyncSummary };
+  const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string; name?: string; summary?: HistorySyncSummary; templateSync?: ZaloTemplateSyncView };
   if (!res.ok || data.ok === false) throw new Error(data.error || "Không thể xử lý yêu cầu.");
   return data;
 }
@@ -306,6 +303,25 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     }
   }
 
+  async function syncTemplates() {
+    setBusy("sync-templates");
+    setNotice(null);
+    try {
+      const result = await postAction({ action: "sync_templates" });
+      const summary = result.templateSync;
+      if (!summary) throw new Error("CRM không trả về báo cáo đồng bộ Template.");
+      await load(false);
+      setNotice({
+        type: summary.status === "failed" ? "error" : "ok",
+        text: `Đã đồng bộ ${summary.total} template: ${summary.approved} đã duyệt, ${summary.pending} đang duyệt, ${summary.rejected} bị từ chối.`,
+      });
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "Không đồng bộ được Template Zalo OA." });
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function sendReply(content: string) {
     if (!selectedUser) return;
     setBusy(`reply-${selectedUser}`); setNotice(null);
@@ -347,7 +363,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex flex-col gap-5 border-b border-[rgba(255,200,100,0.10)] bg-[radial-gradient(circle_at_88%_0%,rgba(201,168,76,0.10),transparent_34%)] p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7 lg:py-6">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/10 shadow-[inset_0_0_24px_rgba(201,168,76,0.05)]"><MessageCircle className="text-[#d6b75b]" /></div>
-          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">{tab === "customers" ? "Khách hàng Zalo OA" : "Trung tâm chăm sóc khách hàng Zalo OA"}</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">{tab === "customers" ? "Đồng bộ, phân nhóm và chăm sóc khách hàng theo tag từ Zalo OA." : "Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi."}</p></div>
+          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">{tab === "customers" ? "Khách hàng Zalo OA" : tab === "templates" ? "Mẫu tin Zalo OA" : "Trung tâm chăm sóc khách hàng Zalo OA"}</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">{tab === "customers" ? "Đồng bộ, phân nhóm và chăm sóc khách hàng theo tag từ Zalo OA." : tab === "templates" ? "Theo dõi vòng đời kiểm duyệt, nội dung xem trước và chi phí gửi của từng ZBS Template." : "Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi."}</p></div>
         </div>
         <div className="flex flex-wrap items-center gap-2"><StatusBadge active={Boolean(config.isActive && config.accessTokenConfigured)} /><button className={secondaryButton} disabled={Boolean(busy)} onClick={() => tab === "customers" ? void syncHistory() : void load()}>{busy === "sync-history" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} {tab === "customers" ? "Đồng bộ ngay" : "Làm mới"}</button><button className={goldButton} onClick={() => { if (tab === "customers") setCampaignRequest(value => value + 1); else setSendOpen(true); }}><Send size={15} /> {tab === "customers" ? "Tạo chiến dịch" : "Soạn tin"}</button></div>
       </div>
@@ -362,7 +378,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} sendReply={sendReply} sendAttachment={sendAttachment} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
     {tab === "customers" && <ZaloCustomersTab customers={data?.conversations || []} tags={data?.customerTags || []} segments={data?.segments || []} campaigns={data?.campaigns || []} busy={busy} isAdmin={isAdmin} campaignRequest={campaignRequest} sync={() => void syncHistory()} runAction={(key, payload, success) => run(key, () => postAction(payload), success)} />}
     {tab === "ai" && <AiQueue items={data?.aiQueue || []} busy={busy} review={(id, decision) => void run(`${decision}-${id}`, () => postAction({ action: "review_ai", id, decision }), decision === "approve" ? "Đã duyệt và gửi tin tư vấn qua OA." : "Đã từ chối bản nháp AI.")} />}
-    {tab === "templates" && <TemplatesTab templates={data?.templates || []} open={(item) => { setEditingTemplate(item || { category: "consultation", isActive: true, requiresApproval: true, variables: [] }); setTemplateOpen(true); }} />}
+    {tab === "templates" && <ZaloTemplatesTab templates={data?.templates || []} syncSummary={config.templateSync} configured={Boolean(config.isActive && config.accessTokenConfigured)} busy={busy === "sync-templates"} sync={() => void syncTemplates()} open={(item) => { setEditingTemplate(item || { category: "consultation", isActive: true, requiresApproval: true, variables: [], approvalStatus: "LOCAL", quality: "UNDEFINED", templateTag: "", reason: "", previewUrl: "", priceSdt: "", priceUid: "", buttons: [], source: "crm", zaloCreatedAt: null, syncedAt: null }); setTemplateOpen(true); }} />}
     {tab === "history" && <HistoryTab messages={data?.messages || []} />}
     {tab === "automation" && <AutomationTab config={config} setConfig={setConfig} save={() => void saveConfig()} busy={busy === "save-config"} />}
     {tab === "settings" && <div className="space-y-4">
@@ -557,10 +573,6 @@ function AiQueue({ items, busy, review }: { items: QueueItem[]; busy: string; re
   return <div className="space-y-4"><div className={`${panel} flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between`}><div><h2 className="text-lg font-semibold">Hàng chờ duyệt AI</h2><p className="text-sm text-[#8f99aa]">Admin đọc ngữ cảnh và nội dung trước khi cho phép gửi.</p></div><StatusBadge active={drafts.length === 0} on="Không còn bản nháp" off={`${drafts.length} bản nháp cần duyệt`} /></div>{drafts.length ? drafts.map(item => <article key={item.id} className={`${panel} p-5 md:p-6`}><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold">{item.customerName}</h3><span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-xs text-sky-200">Tin cậy {Math.round(item.confidence * 100)}%</span><span className="text-xs text-[#778396]">{formatDate(item.createdAt)}</span></div><div className="mt-4 grid gap-3 lg:grid-cols-2"><div className="rounded-xl border border-white/8 bg-black/10 p-4"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8f99aa]">Tin khách vừa gửi</div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#b6bfcc]">{item.incomingMessage}</p></div><div className="rounded-xl border border-[#c9a84c]/18 bg-[#c9a84c]/[0.06] p-4"><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c9a84c]">AI đề xuất</div><p className="mt-2 whitespace-pre-wrap text-sm leading-6">{item.suggestedReply}</p></div></div>{item.reasoning && <p className="mt-3 text-xs leading-5 text-[#7f899a]">Lý do: {item.reasoning}</p>}</div><div className="flex shrink-0 gap-2"><button disabled={Boolean(busy)} onClick={() => review(item.id, "reject")} className={secondaryButton}><X size={15} /> Từ chối</button><button disabled={Boolean(busy)} onClick={() => review(item.id, "approve")} className={goldButton}>{busy === `approve-${item.id}` ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Duyệt & gửi</button></div></div></article>) : <div className={`${panel} p-12`}><Empty text="Không có bản nháp AI nào đang chờ duyệt." /></div>}</div>;
 }
 
-function TemplatesTab({ templates, open }: { templates: Template[]; open: (item?: Template) => void }) {
-  return <div className="space-y-4"><div className={`${panel} flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between`}><div><h2 className="text-lg font-semibold">Mẫu tin tư vấn & ZBS</h2><p className="text-sm text-[#8f99aa]">ID ZBS phải là mẫu đã đăng ký và được duyệt trên Zalo.</p></div><button className={goldButton} onClick={() => open()}><Plus size={15} /> Thêm mẫu</button></div><div className="grid gap-4 xl:grid-cols-2">{templates.map(item => <article key={item.id} className={`${panel} p-5`}><div className="flex items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold">{item.name}</h3><span className="rounded-full border border-[#c9a84c]/20 bg-[#c9a84c]/10 px-2.5 py-1 text-[11px] text-[#e3c86f]">{CATEGORY_LABELS[item.category]}</span></div><p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-[#9ca6b7]">{item.content}</p><div className="mt-3 text-xs text-[#738095]">{item.zbsTemplateId ? `ZBS ID: ${item.zbsTemplateId}` : "Không cần ZBS ID"} · {item.requiresApproval ? "Cần duyệt" : "Theo tự động hóa"}</div></div><button className={secondaryButton} onClick={() => open(item)}><Pencil size={14} /></button></div></article>)}</div></div>;
-}
-
 function HistoryTab({ messages }: { messages: MessageRecord[] }) {
   return <section className={`${panel} overflow-hidden`}><div className="border-b border-white/8 p-5"><h2 className="text-lg font-semibold">Lịch sử Zalo OA</h2><p className="text-sm text-[#8f99aa]">Bao gồm tin khách gửi, tin nhân viên gửi và tin do AI gửi.</p></div><div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="bg-black/15 text-[10px] uppercase tracking-[0.16em] text-[#7e899b]"><tr><th className="px-5 py-3">Thời gian</th><th className="px-5 py-3">Khách hàng</th><th className="px-5 py-3">Loại</th><th className="px-5 py-3">Nội dung</th><th className="px-5 py-3">Nguồn</th><th className="px-5 py-3">Trạng thái</th></tr></thead><tbody>{messages.map(item => <tr key={item.id} className="border-t border-white/6"><td className="whitespace-nowrap px-5 py-4 text-xs text-[#8f99aa]">{formatDate(item.createdAt)}</td><td className="px-5 py-4 font-medium">{item.displayName}</td><td className="whitespace-nowrap px-5 py-4 text-xs">{CATEGORY_LABELS[item.category]}</td><td className="max-w-lg px-5 py-4"><p className="line-clamp-2 text-[#b5bdca]">{item.content}</p>{item.error && <p className="mt-1 text-xs text-red-300">{item.error}</p>}</td><td className="px-5 py-4 text-xs uppercase text-[#8f99aa]">{item.source}</td><td className={`px-5 py-4 text-xs font-medium ${item.status === "failed" ? "text-red-300" : item.status === "pending" ? "text-amber-200" : "text-emerald-300"}`}>{item.status}</td></tr>)}{!messages.length && <tr><td colSpan={6}><Empty text="Chưa có lịch sử tin nhắn." /></td></tr>}</tbody></table></div></section>;
 }
@@ -708,7 +720,7 @@ function SendModal({ config, templates, conversations, initialUserId, busy, clos
   const [content, setContent] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [templateData, setTemplateData] = useState("{}");
-  const filtered = templates.filter(item => item.category === category && item.isActive);
+  const filtered = templates.filter(item => item.category === category && item.isActive && (category === "consultation" || item.approvalStatus === "ENABLE"));
   useEffect(() => { setTemplateId(filtered[0]?.zbsTemplateId || ""); if (category === "consultation") setContent(filtered[0]?.content || ""); }, [category]); // eslint-disable-line react-hooks/exhaustive-deps
   function send() {
     if (category === "consultation") return submit({ action: "send_consultation", userId, content });
