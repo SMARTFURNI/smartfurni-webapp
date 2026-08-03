@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, AlertTriangle, Bot, Check, CheckCircle2, Clock3, FileText,
-  History, Inbox, Loader2, MessageCircle, Paperclip, Pencil,
+  Activity, AlertTriangle, Bot, Check, CheckCircle2, Clock3, FileText, FileUp,
+  History, ImageIcon, Inbox, Loader2, MessageCircle, Paperclip, Pencil,
   Plus, RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
   Trash2, Users, X, Zap,
 } from "lucide-react";
@@ -179,6 +179,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [selectedUser, setSelectedUser] = useState("");
   const [threadMessages, setThreadMessages] = useState<MessageRecord[]>([]);
+  const [threadConversation, setThreadConversation] = useState<Conversation | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Partial<Template> | null>(null);
@@ -200,11 +201,18 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
   useEffect(() => { void load(); }, [load]);
 
   const loadThread = useCallback(async (userId: string, markRead = true) => {
-    if (!userId) { setThreadMessages([]); return; }
+    if (!userId) { setThreadMessages([]); setThreadConversation(null); return; }
     const res = await fetch(`/api/crm/zalo?userId=${encodeURIComponent(userId)}`, { cache: "no-store" });
-    const next = await res.json() as { messages?: MessageRecord[]; error?: string };
+    const next = await res.json() as { messages?: MessageRecord[]; conversation?: Conversation | null; error?: string };
     if (!res.ok) throw new Error(next.error || "Không tải được hội thoại Zalo OA.");
     setThreadMessages(next.messages || []);
+    setThreadConversation(next.conversation || null);
+    if (next.conversation) {
+      setData(current => current ? {
+        ...current,
+        conversations: current.conversations.map(item => item.userId === userId ? next.conversation! : item),
+      } : current);
+    }
     if (markRead) await postAction({ action: "mark_conversation_read", userId });
   }, []);
 
@@ -229,7 +237,9 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     finally { setBusy(""); }
   }, [load]);
 
-  const selectedConversation = data?.conversations.find(item => item.userId === selectedUser) || null;
+  const selectedConversation = threadConversation?.userId === selectedUser
+    ? threadConversation
+    : data?.conversations.find(item => item.userId === selectedUser) || null;
   const selectedMessages = threadMessages;
   const drafts = (data?.aiQueue || []).filter(item => item.status === "draft");
 
@@ -247,6 +257,26 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
       setNotice({ type: "ok", text: "Zalo OA đã tiếp nhận tin trả lời." });
     } catch (error) {
       setNotice({ type: "error", text: error instanceof Error ? error.message : "Không gửi được tin trả lời." });
+      await loadThread(selectedUser, false).catch(() => undefined);
+      throw error;
+    } finally { setBusy(""); }
+  }
+
+  async function sendAttachment(file: File, kind: "image" | "file") {
+    if (!selectedUser) return;
+    setBusy(`attachment-${selectedUser}`); setNotice(null);
+    try {
+      const form = new FormData();
+      form.append("userId", selectedUser);
+      form.append("kind", kind);
+      form.append("file", file);
+      const res = await fetch("/api/crm/zalo/attachment", { method: "POST", body: form });
+      const next = await res.json().catch(() => ({})) as { ok?: boolean; error?: string };
+      if (!res.ok || next.ok === false) throw new Error(next.error || "Không gửi được tệp đính kèm.");
+      await Promise.all([load(false), loadThread(selectedUser, false)]);
+      setNotice({ type: "ok", text: kind === "image" ? "Đã gửi ảnh qua Zalo OA." : "Đã gửi tệp qua Zalo OA." });
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "Không gửi được tệp đính kèm." });
       await loadThread(selectedUser, false).catch(() => undefined);
       throw error;
     } finally { setBusy(""); }
@@ -271,7 +301,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     {notice && <div className={`flex items-start justify-between rounded-xl border px-4 py-3 text-sm ${notice.type === "ok" ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-red-400/25 bg-red-400/10 text-red-200"}`}><span className="flex gap-2">{notice.type === "ok" ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}{notice.text}</span><button onClick={() => setNotice(null)}><X size={16} /></button></div>}
 
     {tab === "overview" && <Overview data={data!} config={config} go={setTab} isAdmin={isAdmin} />}
-    {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} sendReply={sendReply} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
+    {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} sendReply={sendReply} sendAttachment={sendAttachment} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
     {tab === "ai" && <AiQueue items={data?.aiQueue || []} busy={busy} review={(id, decision) => void run(`${decision}-${id}`, () => postAction({ action: "review_ai", id, decision }), decision === "approve" ? "Đã duyệt và gửi tin tư vấn qua OA." : "Đã từ chối bản nháp AI.")} />}
     {tab === "templates" && <TemplatesTab templates={data?.templates || []} open={(item) => { setEditingTemplate(item || { category: "consultation", isActive: true, requiresApproval: true, variables: [] }); setTemplateOpen(true); }} />}
     {tab === "history" && <HistoryTab messages={data?.messages || []} />}
@@ -339,31 +369,48 @@ function messageStatusLabel(item: MessageRecord) {
   return "Gửi lỗi";
 }
 
+function ConversationAvatar({ conversation, className = "h-10 w-10" }: { conversation: Conversation; className?: string }) {
+  const initial = (conversation.displayName || "K").trim().charAt(0).toUpperCase();
+  return conversation.avatar ? <span className={`${className} shrink-0 overflow-hidden rounded-full border border-[#c9a84c]/20 bg-[#c9a84c]/10`}>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src={conversation.avatar} alt={conversation.displayName || "Khách Zalo"} className="h-full w-full object-cover" loading="lazy" />
+  </span> : <span className={`${className} flex shrink-0 items-center justify-center rounded-full border border-[#c9a84c]/20 bg-[#c9a84c]/10 text-sm font-bold text-[#e3c86f]`}>{initial}</span>;
+}
+
+function shouldRenderMessageContent(item: MessageRecord) {
+  const content = item.content.trim();
+  if (!content) return false;
+  const hasAttachment = Array.isArray(item.attachment?.items) && item.attachment.items.length > 0;
+  if (!hasAttachment) return true;
+  return !["[hình ảnh]", "[ảnh]", "[tệp đính kèm]", "[file]", "[video]", "[âm thanh]"].includes(content.toLowerCase());
+}
+
 function MessageAttachments({ attachment }: { attachment: MessageRecord["attachment"] }) {
   const items = Array.isArray(attachment?.items) ? attachment.items : [];
   if (!items.length) return null;
 
-  return <div className="mb-2 grid gap-2">
+  return <div className="mb-2 flex max-w-[320px] flex-wrap gap-2">
     {items.map((item, index) => {
       const type = String(item.type || "file").toLowerCase();
       const url = item.url || item.thumbnail || "";
       const label = item.name || (type === "image" ? "Ảnh khách gửi" : type === "audio" ? "Tin nhắn thoại" : type === "video" ? "Video" : "Tệp đính kèm");
       if ((type === "image" || type === "gif" || type === "sticker") && url) {
-        return <a key={`${url}-${index}`} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-black/20">
+        const compact = items.length > 1;
+        return <a key={`${url}-${index}`} href={url} target="_blank" rel="noreferrer" className={`${compact ? "h-28 w-28 sm:h-32 sm:w-32" : "max-w-[300px]"} inline-flex overflow-hidden rounded-xl border border-white/10 bg-black/20 transition hover:border-[#c9a84c]/35`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.thumbnail || url} alt={label} className="max-h-72 w-full object-contain" loading="lazy" />
+          <img src={item.thumbnail || url} alt={label} className={compact ? "h-full w-full object-cover" : "h-auto max-h-60 w-auto max-w-full object-contain"} loading="lazy" />
         </a>;
       }
-      if (type === "audio" && url) return <audio key={`${url}-${index}`} className="max-w-full" controls preload="none" src={url} />;
-      if (type === "video" && url) return <video key={`${url}-${index}`} className="max-h-72 max-w-full rounded-xl" controls preload="metadata" src={url} />;
-      return <a key={`${url}-${index}`} href={url || undefined} target={url ? "_blank" : undefined} rel={url ? "noreferrer" : undefined} className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-xs text-[#d8d0c1] hover:border-[#c9a84c]/30">
+      if (type === "audio" && url) return <audio key={`${url}-${index}`} className="w-full max-w-[300px]" controls preload="none" src={url} />;
+      if (type === "video" && url) return <video key={`${url}-${index}`} className="max-h-60 w-full max-w-[320px] rounded-xl border border-white/10 bg-black/20" controls preload="metadata" src={url} />;
+      return <a key={`${url}-${index}`} href={url || undefined} target={url ? "_blank" : undefined} rel={url ? "noreferrer" : undefined} className="flex w-full max-w-[320px] items-center gap-2 rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-xs text-[#d8d0c1] hover:border-[#c9a84c]/30">
         <Paperclip size={14} className="shrink-0 text-[#d6b75b]" /><span className="min-w-0 flex-1 truncate">{label}</span>{item.size ? <span className="text-[10px] text-[#7f899a]">{Math.max(1, Math.round(item.size / 1024))} KB</span> : null}
       </a>;
     })}
   </div>;
 }
 
-function InboxTab({ conversations, selectedUser, setSelectedUser, selected, messages, busy, generate, sendReply }: {
+function InboxTab({ conversations, selectedUser, setSelectedUser, selected, messages, busy, generate, sendReply, sendAttachment }: {
   conversations: Conversation[];
   selectedUser: string;
   setSelectedUser: (v: string) => void;
@@ -372,12 +419,16 @@ function InboxTab({ conversations, selectedUser, setSelectedUser, selected, mess
   busy: string;
   generate: () => void;
   sendReply: (content: string) => Promise<void>;
+  sendAttachment: (file: File, kind: "image" | "file") => Promise<void>;
 }) {
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const filtered = conversations.filter(item => `${item.displayName} ${item.userId} ${item.lastMessagePreview}`.toLowerCase().includes(search.trim().toLowerCase()));
   const canReply = Boolean(selected && withinSevenDays(selected.lastUserInteraction));
   const sending = Boolean(selected && busy === `reply-${selected.userId}`);
+  const attaching = Boolean(selected && busy === `attachment-${selected.userId}`);
 
   async function submitReply() {
     const content = draft.trim();
@@ -390,31 +441,46 @@ function InboxTab({ conversations, selectedUser, setSelectedUser, selected, mess
     }
   }
 
-  return <section className={`${panel} min-h-[680px] overflow-hidden`}>
-    <div className="grid min-h-[680px] lg:grid-cols-[360px_1fr]">
+  async function uploadAttachment(event: ChangeEvent<HTMLInputElement>, kind: "image" | "file") {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file || !canReply || sending || attaching) return;
+    try {
+      await sendAttachment(file, kind);
+    } catch {
+      // Thông báo lỗi được xử lý ở component cha; giữ nguyên hội thoại để nhân viên kiểm tra.
+    } finally {
+      input.value = "";
+    }
+  }
+
+  return <section className={`${panel} min-h-[640px] overflow-hidden`}>
+    <div className="grid min-h-[640px] lg:grid-cols-[320px_1fr]">
       <aside className="border-b border-[rgba(255,200,100,0.10)] bg-black/10 lg:border-b-0 lg:border-r">
         <div className="border-b border-[rgba(255,200,100,0.10)] p-4">
           <div className="flex items-center justify-between gap-3"><div className="text-xs font-bold uppercase tracking-[0.18em] text-[#8f99aa]">{conversations.length} hội thoại OA</div>{conversations.some(item => item.unreadCount > 0) && <span className="text-[10px] font-semibold text-[#d6b75b]">{conversations.reduce((sum, item) => sum + item.unreadCount, 0)} chưa đọc</span>}</div>
           <label className="mt-3 flex items-center gap-2 rounded-xl border border-[rgba(255,200,100,0.12)] bg-[#0c1320] px-3 text-[#7f899a] focus-within:border-[#c9a84c]/40"><Search size={15} /><input value={search} onChange={event => setSearch(event.target.value)} className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[#f5edd6] outline-none placeholder:text-[#687487]" placeholder="Tìm tên hoặc Zalo UID" /></label>
         </div>
-        <div className="max-h-[596px] overflow-y-auto">{filtered.length ? filtered.map(item => <button key={item.userId} onClick={() => setSelectedUser(item.userId)} className={`w-full border-b border-[rgba(255,200,100,0.07)] p-4 text-left transition ${selectedUser === item.userId ? "bg-[#c9a84c]/10 shadow-[inset_3px_0_0_#c9a84c]" : "hover:bg-white/[0.03]"}`}>
-          <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#c9a84c]/20 bg-[#c9a84c]/10 text-sm font-bold text-[#e3c86f]">{(item.displayName || "K").trim().charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><strong className="truncate text-sm">{item.displayName}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-[#c9a84c] px-2 py-0.5 text-[10px] font-bold text-black">{item.unreadCount}</span>}</div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#8f99aa]">{item.lastMessagePreview || "Hội thoại mới"}</p><div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#687487]"><span>{formatDate(item.lastMessageAt)}</span><span className={withinSevenDays(item.lastUserInteraction) ? "text-emerald-300" : "text-amber-300"}>{withinSevenDays(item.lastUserInteraction) ? "Có thể trả lời" : "Hết 7 ngày"}</span></div></div></div>
+        <div className="max-h-[280px] overflow-y-auto lg:max-h-[560px]">{filtered.length ? filtered.map(item => <button key={item.userId} onClick={() => setSelectedUser(item.userId)} className={`w-full border-b border-[rgba(255,200,100,0.07)] p-4 text-left transition ${selectedUser === item.userId ? "bg-[#c9a84c]/10 shadow-[inset_3px_0_0_#c9a84c]" : "hover:bg-white/[0.03]"}`}>
+          <div className="flex items-start gap-3"><ConversationAvatar conversation={item} /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><strong className="truncate text-sm">{item.displayName || "Khách Zalo"}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-[#c9a84c] px-2 py-0.5 text-[10px] font-bold text-black">{item.unreadCount}</span>}</div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#8f99aa]">{item.lastMessagePreview || "Hội thoại mới"}</p><div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#687487]"><span>{formatDate(item.lastMessageAt)}</span><span className={withinSevenDays(item.lastUserInteraction) ? "text-emerald-300" : "text-amber-300"}>{withinSevenDays(item.lastUserInteraction) ? "Có thể trả lời" : "Hết 7 ngày"}</span></div></div></div>
         </button>) : <Empty text={search ? "Không tìm thấy hội thoại phù hợp." : "Webhook chưa nhận hội thoại nào."} />}</div>
       </aside>
 
-      <main className="flex min-h-[680px] min-w-0 flex-col bg-[radial-gradient(circle_at_top_right,rgba(104,70,0,0.10),transparent_34%)]">{selected ? <>
-        <div className="flex flex-col gap-3 border-b border-[rgba(255,200,100,0.10)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#c9a84c]/12 font-bold text-[#e3c86f]">{(selected.displayName || "K").trim().charAt(0).toUpperCase()}</span><div className="min-w-0"><h2 className="truncate text-base font-semibold">{selected.displayName}</h2><p className="mt-0.5 truncate text-[11px] text-[#8f99aa]">UID {selected.userId} · tương tác {formatDate(selected.lastUserInteraction)}</p></div></div><button disabled={busy === `ai-${selected.userId}`} onClick={generate} className={goldButton}>{busy === `ai-${selected.userId}` ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} AI gợi ý</button></div>
+      <main className="flex min-h-[640px] min-w-0 flex-col bg-[radial-gradient(circle_at_top_right,rgba(104,70,0,0.10),transparent_34%)]">{selected ? <>
+        <div className="flex flex-col gap-3 border-b border-[rgba(255,200,100,0.10)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><ConversationAvatar conversation={selected} /><div className="min-w-0"><h2 className="truncate text-base font-semibold">{selected.displayName || "Khách Zalo"}</h2><p className="mt-0.5 truncate text-[11px] text-[#8f99aa]">UID {selected.userId} · tương tác {formatDate(selected.lastUserInteraction)}</p></div></div><button disabled={busy === `ai-${selected.userId}`} onClick={generate} className={goldButton}>{busy === `ai-${selected.userId}` ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} AI gợi ý</button></div>
 
-        <div className="flex max-h-[475px] min-h-[420px] flex-1 flex-col gap-3 overflow-y-auto px-4 py-5 sm:px-6">{messages.length ? messages.map(item => <div key={item.id} className={`max-w-[88%] rounded-2xl border px-3.5 py-2.5 sm:max-w-[76%] ${item.direction === "outbound" ? "ml-auto rounded-br-md border-[#c9a84c]/22 bg-[#c9a84c]/12" : "rounded-bl-md border-white/10 bg-[#0c1320]"}`}>
+        <div className="flex max-h-[520px] min-h-[360px] flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-6 sm:py-5">{messages.length ? messages.map(item => <div key={item.id} className={`max-w-[92%] rounded-2xl border px-3.5 py-2.5 sm:max-w-[76%] ${item.direction === "outbound" ? "ml-auto rounded-br-md border-[#c9a84c]/22 bg-[#c9a84c]/12" : "rounded-bl-md border-white/10 bg-[#0c1320]"}`}>
           <MessageAttachments attachment={item.attachment} />
-          {item.content && <p className="whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>}
+          {shouldRenderMessageContent(item) && <p className="whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>}
           <div className="mt-1.5 flex items-center justify-end gap-2 text-[10px] text-[#7f899a]"><span>{formatDate(item.createdAt)}</span>{item.direction === "outbound" && <span className={item.status === "failed" ? "text-red-300" : item.status === "read" ? "text-emerald-300" : "text-[#a99a72]"}>{messageStatusLabel(item)}</span>}</div>
           {item.error && <p className="mt-2 text-xs text-red-300">{item.error}</p>}
         </div>) : <Empty text="Chưa có nội dung trong hội thoại." />}</div>
 
         <div className="mt-auto border-t border-[rgba(255,200,100,0.10)] bg-black/15 p-3.5 sm:p-4">
-          <div className={`rounded-2xl border bg-[#0c1320] p-2 transition ${canReply ? "border-[rgba(255,200,100,0.18)] focus-within:border-[#c9a84c]/50" : "border-amber-400/16 opacity-75"}`}><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitReply(); } }} disabled={!canReply || sending} rows={3} className="block w-full resize-none bg-transparent px-2 py-1.5 text-sm leading-6 text-[#f5edd6] outline-none placeholder:text-[#687487]" placeholder={canReply ? "Nhập tin nhắn… Enter để gửi, Shift + Enter để xuống dòng" : "Cửa sổ tư vấn 7 ngày đã hết"} /><div className="flex items-center justify-between gap-3 px-1 pb-0.5"><span className="text-[10px] leading-4 text-[#687487]">{canReply ? "Gửi bằng Zalo OA OpenAPI" : "Muốn tiếp tục cần dùng mẫu ZBS đã duyệt và đúng mục đích."}</span><button onClick={() => void submitReply()} disabled={!draft.trim() || !canReply || sending} className={`${goldButton} h-9 shrink-0 px-3`}>{sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Gửi</button></div></div>
-          <p className="mt-2 text-[10px] leading-4 text-[#687487]">Ảnh, video và tệp gửi từ OA Manager vẫn tự đồng bộ vào hội thoại này qua webhook.</p>
+          <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={event => void uploadAttachment(event, "image")} />
+          <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.txt" className="hidden" onChange={event => void uploadAttachment(event, "file")} />
+          <div className={`rounded-2xl border bg-[#0c1320] p-2 transition ${canReply ? "border-[rgba(255,200,100,0.18)] focus-within:border-[#c9a84c]/50" : "border-amber-400/16 opacity-75"}`}><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitReply(); } }} disabled={!canReply || sending || attaching} rows={2} className="block w-full resize-none bg-transparent px-2 py-1.5 text-sm leading-6 text-[#f5edd6] outline-none placeholder:text-[#687487]" placeholder={canReply ? "Nhập tin nhắn… Enter để gửi, Shift + Enter để xuống dòng" : "Cửa sổ tư vấn 7 ngày đã hết"} /><div className="flex flex-col gap-2 px-1 pb-0.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => imageInputRef.current?.click()} disabled={!canReply || sending || attaching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-xs text-[#b8c1cf] transition hover:border-[#c9a84c]/30 hover:text-[#f0d77e] disabled:opacity-40"><ImageIcon size={14} /> Ảnh</button><button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canReply || sending || attaching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-xs text-[#b8c1cf] transition hover:border-[#c9a84c]/30 hover:text-[#f0d77e] disabled:opacity-40"><FileUp size={14} /> Tệp</button>{attaching && <span className="inline-flex items-center gap-1.5 text-[11px] text-[#d6b75b]"><Loader2 size={13} className="animate-spin" /> Đang tải lên và gửi…</span>}</div><button onClick={() => void submitReply()} disabled={!draft.trim() || !canReply || sending || attaching} className={`${goldButton} h-9 shrink-0 px-3`}>{sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Gửi</button></div></div>
+          <p className="mt-2 text-[10px] leading-4 text-[#687487]">Gửi trực tiếp từ CRM: ảnh tối đa 5 MB; PDF, Word, Excel, ZIP hoặc TXT tối đa 10 MB. Mọi tin gửi từ OA Manager vẫn được đồng bộ qua webhook.</p>
         </div>
       </> : <Empty text="Chọn một hội thoại Zalo OA để xem và trả lời." />}</main>
     </div>

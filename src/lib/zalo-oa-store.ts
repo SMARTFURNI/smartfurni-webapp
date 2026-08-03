@@ -428,6 +428,52 @@ export async function getZaloConversationMessages(userId: string, limit = 300): 
   return rows.map(mapMessage);
 }
 
+export async function getZaloConversation(userId: string): Promise<ZaloConversation | null> {
+  await initZaloOASchema();
+  const rows = await query<Record<string, unknown>>(
+    `SELECT * FROM crm_zalo_conversations WHERE user_id=$1 LIMIT 1`,
+    [userId],
+  );
+  return rows[0] ? mapConversation(rows[0]) : null;
+}
+
+export async function syncZaloUserProfile(userId: string): Promise<ZaloConversation | null> {
+  await initZaloOASchema();
+  const [config, stored] = await Promise.all([getZaloOAConfig(), getZaloConversation(userId)]);
+  if (!config.accessToken || !userId) return stored;
+
+  try {
+    const dataParam = JSON.stringify({ user_id: userId });
+    const response = await fetch(`https://openapi.zalo.me/v3.0/oa/user/detail?data=${encodeURIComponent(dataParam)}`, {
+      headers: { access_token: config.accessToken },
+      cache: "no-store",
+    });
+    const body = await response.json().catch(() => ({})) as {
+      error?: number;
+      message?: string;
+      data?: { display_name?: string; name?: string; avatar?: string; avatar_url?: string; user_id?: string };
+    };
+    if (!response.ok || Number(body.error || 0) !== 0 || !body.data) return stored;
+
+    const displayName = String(body.data.display_name || body.data.name || "").trim();
+    const avatar = String(body.data.avatar || body.data.avatar_url || "").trim();
+    if (!displayName && !avatar) return stored;
+
+    await query(
+      `UPDATE crm_zalo_conversations SET
+       display_name=CASE WHEN $2<>'' THEN $2 ELSE display_name END,
+       avatar=CASE WHEN $3<>'' THEN $3 ELSE avatar END,
+       updated_at=NOW()
+       WHERE user_id=$1`,
+      [userId, displayName, avatar],
+    );
+    return await getZaloConversation(userId);
+  } catch {
+    // Hồ sơ chỉ làm giàu giao diện; lỗi API không được làm gián đoạn hội thoại.
+    return stored;
+  }
+}
+
 export async function markZaloConversationRead(userId: string): Promise<void> {
   await initZaloOASchema();
   await query(`UPDATE crm_zalo_conversations SET unread_count=0,updated_at=NOW() WHERE user_id=$1`, [userId]);
@@ -435,13 +481,13 @@ export async function markZaloConversationRead(userId: string): Promise<void> {
 
 async function insertOutboundMessage(input: {
   userId: string; content: string; category: ZaloMessageCategory; source: "manual" | "ai";
-  templateId?: string; aiConfidence?: number;
+  templateId?: string; aiConfidence?: number; attachment?: Record<string, unknown>;
 }): Promise<string> {
   const id = `zm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await query(
-    `INSERT INTO crm_zalo_messages (id,conversation_user_id,direction,category,content,status,source,template_id,ai_confidence)
-     VALUES ($1,$2,'outbound',$3,$4,'pending',$5,$6,$7)`,
-    [id, input.userId, input.category, input.content, input.source, input.templateId || "", input.aiConfidence ?? null],
+    `INSERT INTO crm_zalo_messages (id,conversation_user_id,direction,category,content,status,source,template_id,ai_confidence,attachment)
+     VALUES ($1,$2,'outbound',$3,$4,'pending',$5,$6,$7,$8::jsonb)`,
+    [id, input.userId, input.category, input.content, input.source, input.templateId || "", input.aiConfidence ?? null, JSON.stringify(input.attachment || {})],
   );
   return id;
 }
@@ -506,6 +552,105 @@ export async function sendZaloConsultation(input: {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Không gọi được Zalo OA API";
     await finalizeMessage(id, false, "", message);
+    return { ok: false, error: message };
+  }
+}
+
+type ZaloAttachmentKind = "image" | "file";
+
+async function getConsultationContext(userId: string): Promise<{
+  config: ZaloOAConfig;
+  conversation: ZaloConversation | null;
+  error?: string;
+}> {
+  const [config, conversation] = await Promise.all([getZaloOAConfig(), getZaloConversation(userId)]);
+  if (!config.isActive || !config.accessToken) {
+    return { config, conversation, error: "Zalo OA chưa kích hoạt hoặc thiếu Access Token." };
+  }
+  if (!conversation || !isWithinSevenDays(conversation.lastUserInteraction)) {
+    return { config, conversation, error: "Tin tư vấn bị chặn: khách chưa tương tác hoặc lần tương tác cuối đã quá 7 ngày." };
+  }
+  return { config, conversation };
+}
+
+function getUploadedAttachmentId(body: Record<string, unknown>): string {
+  const data = (body.data || {}) as Record<string, unknown>;
+  return String(data.attachment_id || data.token || body.attachment_id || "");
+}
+
+export async function sendZaloAttachment(input: {
+  userId: string;
+  file: Blob;
+  filename: string;
+  mimeType: string;
+  kind: ZaloAttachmentKind;
+  source?: "manual" | "ai";
+}): Promise<{ ok: boolean; error?: string }> {
+  await initZaloOASchema();
+  const context = await getConsultationContext(input.userId);
+  const preview = input.kind === "image" ? "[Hình ảnh]" : `[Tệp] ${input.filename}`;
+  const baseAttachment = {
+    items: [{ type: input.kind, name: input.filename, size: input.file.size, mimeType: input.mimeType }],
+  };
+  const messageId = await insertOutboundMessage({
+    userId: input.userId,
+    content: preview,
+    category: "consultation",
+    source: input.source || "manual",
+    attachment: baseAttachment,
+  });
+
+  if (context.error) {
+    await finalizeMessage(messageId, false, "", context.error);
+    return { ok: false, error: context.error };
+  }
+
+  try {
+    const uploadForm = new FormData();
+    uploadForm.append("file", input.file, input.filename);
+    const uploadEndpoint = input.kind === "image"
+      ? "https://openapi.zalo.me/v2.0/oa/upload/image"
+      : "https://openapi.zalo.me/v2.0/oa/upload/file";
+    const uploadResponse = await fetch(uploadEndpoint, {
+      method: "POST",
+      headers: { access_token: context.config.accessToken },
+      body: uploadForm,
+    });
+    const uploadBody = await uploadResponse.json().catch(() => ({})) as Record<string, unknown>;
+    const uploadError = Number(uploadBody.error || 0);
+    const attachmentId = getUploadedAttachmentId(uploadBody);
+    if (!uploadResponse.ok || uploadError !== 0 || !attachmentId) {
+      const error = String(uploadBody.message || `Zalo upload HTTP ${uploadResponse.status}`);
+      await finalizeMessage(messageId, false, "", error);
+      return { ok: false, error };
+    }
+
+    const message = input.kind === "image"
+      ? {
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "media",
+              elements: [{ media_type: "image", attachment_id: attachmentId }],
+            },
+          },
+        }
+      : { attachment: { type: "file", payload: { token: attachmentId } } };
+    const sendResponse = await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", access_token: context.config.accessToken },
+      body: JSON.stringify({ recipient: { user_id: input.userId }, message }),
+    });
+    const result = await parseZaloResponse(sendResponse);
+    await query(
+      `UPDATE crm_zalo_messages SET attachment=$2::jsonb WHERE id=$1`,
+      [messageId, JSON.stringify({ items: [{ ...baseAttachment.items[0], attachmentId }] })],
+    );
+    await finalizeMessage(messageId, result.ok, result.messageId, result.error);
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Không gửi được tệp qua Zalo OA";
+    await finalizeMessage(messageId, false, "", message);
     return { ok: false, error: message };
   }
 }

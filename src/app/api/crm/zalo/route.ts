@@ -13,6 +13,7 @@ import {
   saveZaloTemplate,
   sendZaloConsultation,
   sendZaloZbs,
+  syncZaloUserProfile,
   testZaloConnection,
   type ZaloMessageCategory,
   type ZaloOAConfig,
@@ -30,7 +31,13 @@ export async function GET(req: NextRequest) {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const userId = req.nextUrl.searchParams.get("userId")?.trim();
-    if (userId) return NextResponse.json({ messages: await getZaloConversationMessages(userId) });
+    if (userId) {
+      const [messages, conversation] = await Promise.all([
+        getZaloConversationMessages(userId),
+        syncZaloUserProfile(userId),
+      ]);
+      return NextResponse.json({ messages, conversation });
+    }
     return NextResponse.json(await getZaloDashboard(SITE_URL));
   } catch (error) {
     return errorResponse(error, 500);
