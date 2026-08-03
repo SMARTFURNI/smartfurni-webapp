@@ -100,3 +100,230 @@
 .workspace [class*='text-slate-200'] {
   color: var(--crm-text-secondary) !important;
 }
+
+.workspace .sectionCard {
+  background: linear-gradient(145deg, #ffffff 0%, #fbfcfe 68%, #f6f8fb 100%) !important;
+}
+
+.workspace .heroCard {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(214, 176, 69, 0.2), transparent 18rem),
+    radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.1), transparent 16rem),
+    linear-gradient(135deg, #ffffff 0%, #fffdf7 48%, #f7f9fd 100%) !important;
+  border-color: #e3d8b8 !important;
+  box-shadow: 0 18px 45px rgba(38, 50, 74, 0.1) !important;
+}
+
+.heroIcon {
+  color: #7a5910 !important;
+  border-color: #ead795 !important;
+  background: linear-gradient(145deg, #fffdf3 0%, #f5df92 100%) !important;
+  box-shadow: 0 10px 24px rgba(170, 126, 22, 0.2);
+}
+
+.primaryButton,
+.secondaryButton {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+  transform: translateY(0);
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+.primaryButton {
+  color: #241a05 !important;
+  border-color: #c99e32 !important;
+  background: linear-gradient(135deg, #f1d778 0%, #d4af45 48%, #b98720 100%) !important;
+  box-shadow: 0 12px 28px rgba(166, 119, 20, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.52) !important;
+}
+
+.primaryButton:hover {
+  filter: saturate(1.08) brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 15px 32px rgba(166, 119, 20, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.58) !important;
+}
+
+.secondaryButton {
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #eef3f8 100%) !important;
+  box-shadow: 0 8px 20px rgba(51, 65, 85, 0.1) !important;
+}
+
+.secondaryButton:hover {
+  color: #172033 !important;
+  border-color: #94a3b8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 25px rgba(51, 65, 85, 0.14) !important;
+}
+
+.tabButton {
+  border: 1px solid transparent;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tabActive {
+  color: #7a5910 !important;
+  border-color: #ead795 !important;
+  background: linear-gradient(135deg, #fffcef 0%, #f6e7b4 100%) !important;
+  box-shadow: 0 7px 18px rgba(164, 119, 20, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+.tabIdle {
+  color: #64748b !important;
+}
+
+.tabIdle:hover {
+  color: #243148 !important;
+  border-color: #dbe3ee !important;
+  background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+}
+
+.countBadge {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #e1bc52, #9a7418) !important;
+  box-shadow: 0 4px 10px rgba(154, 116, 24, 0.24);
+}
+
+.textButton {
+  color: #8b6818 !important;
+  border: 1px solid #ead795;
+  background: linear-gradient(135deg, #fffdf4, #fff6d9);
+  box-shadow: 0 6px 14px rgba(154, 116, 24, 0.08);
+}
+
+.textButton:hover {
+  color: #694c0b !important;
+  border-color: #d8bd69;
+  background: linear-gradient(135deg, #fff8df, #f6e7b4);
+}
+
+.tag {
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 12px rgba(34, 48, 72, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.workspace [class~='bg-emerald-500/10'],
+.workspace [class~='bg-emerald-500/[0.055]'] {
+  color: #087a55 !important;
+  border-color: #a7e7cf !important;
+  background: linear-gradient(135deg, #ecfdf5 0%, #dcf8ed 100%) !important;
+}
+
+.workspace [class~='bg-sky-500/10'],
+.workspace [class~='bg-sky-500/[0.055]'] {
+  color: #0369a1 !important;
+  border-color: #addcf5 !important;
+  background: linear-gradient(135deg, #eff9ff 0%, #dff3ff 100%) !important;
+}
+
+.workspace [class~='bg-amber-500/10'] {
+  color: #956000 !important;
+  border-color: #efd592 !important;
+  background: linear-gradient(135deg, #fffbeb 0%, #fff0c2 100%) !important;
+}
+
+.workspace [class~='bg-red-500/10'] {
+  color: #b42318 !important;
+  border-color: #f4b4ae !important;
+  background: linear-gradient(135deg, #fff4f2 0%, #ffe2de 100%) !important;
+}
+
+.tag[class~='bg-white/5'],
+.tag[class~='bg-white/[0.035]'] {
+  color: #526173 !important;
+  border-color: #d7e0ea !important;
+  background: linear-gradient(135deg, #ffffff 0%, #edf2f7 100%) !important;
+}
+
+.workspace .tag[class~='bg-[#C9A84C]/10'] {
+  color: #7a5910 !important;
+  border-color: #e6ce86 !important;
+  background: linear-gradient(135deg, #fffdf2 0%, #f8e8b5 100%) !important;
+}
+
+.workspace .metricCard {
+  position: relative;
+  overflow: hidden;
+  border-color: #dbe3ee !important;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.metricCard::after {
+  content: "";
+  position: absolute;
+  inset: auto -28px -34px auto;
+  width: 108px;
+  height: 108px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.075;
+  pointer-events: none;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(30, 48, 72, 0.13) !important;
+}
+
+.workspace .metricBlue {
+  color: #2563eb;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%) !important;
+  border-color: #c9dcff !important;
+}
+
+.workspace .metricViolet {
+  color: #7c3aed;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f0ff 100%) !important;
+  border-color: #ded0fa !important;
+}
+
+.workspace .metricRose {
+  color: #dc2626;
+  background: linear-gradient(135deg, #ffffff 0%, #fff0ee 100%) !important;
+  border-color: #f6c5c0 !important;
+}
+
+.workspace .metricAmber {
+  color: #a66f08;
+  background: linear-gradient(135deg, #ffffff 0%, #fff8df 100%) !important;
+  border-color: #edd89c !important;
+}
+
+.workspace .metricEmerald {
+  color: #059669;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%) !important;
+  border-color: #b9ead7 !important;
+}
+
+.metricIcon {
+  color: currentColor !important;
+  border-color: color-mix(in srgb, currentColor 24%, white) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), color-mix(in srgb, currentColor 13%, white)) !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.metricValue {
+  color: #172033 !important;
+}
+
+.highlightBlock {
+  border-color: #e6ca77 !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(245, 194, 66, 0.2), transparent 10rem),
+    linear-gradient(135deg, #fffdf4 0%, #fff5d1 100%) !important;
+  box-shadow: 0 10px 24px rgba(154, 116, 24, 0.1);
+}
+
+.selectedRow {
+  background: linear-gradient(90deg, #fff6d7 0%, #fffdf6 72%, #ffffff 100%) !important;
+  box-shadow: inset 3px 0 0 #b88920, inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+}
+
+.workspace .detailPanel {
+  border-color: #d9e2ec !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f3f7fb 100%) !important;
+  box-shadow: 0 7px 18px rgba(30, 48, 72, 0.06);
+}

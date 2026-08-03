@@ -152,6 +152,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   return (
     <div
       className={cn(
+        lightStyles.sectionCard,
         "rounded-2xl border border-[rgba(118,138,166,0.18)] bg-[linear-gradient(145deg,rgba(31,37,52,0.82),rgba(29,24,15,0.76))] shadow-[0_18px_45px_rgba(2,5,12,0.22)] backdrop-blur-xl",
         className
       )}
@@ -163,7 +164,7 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 
 function Pill({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold", className)}>
+    <span className={cn(lightStyles.tag, "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold", className)}>
       {children}
     </span>
   );
@@ -188,8 +189,8 @@ function ActionButton({
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
         variant === "primary"
-          ? "bg-[#C9A84C] text-[#0D0B00] shadow-[0_10px_28px_rgba(201,168,76,0.18)] hover:bg-[#E2C97E]"
-          : "border border-[rgba(255,200,100,0.18)] bg-[#1a1200]/70 text-[rgba(245,237,214,0.72)] hover:border-[#C9A84C]/35 hover:text-white"
+          ? lightStyles.primaryButton
+          : lightStyles.secondaryButton
       )}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -473,10 +474,10 @@ export function ConversationLearningClient() {
 
   return (
     <div className={cn(lightStyles.workspace, "mx-auto max-w-[1680px] space-y-4 text-[#F5EDD6]")}>
-      <Card className="overflow-hidden">
+      <Card className={cn(lightStyles.heroCard, "overflow-hidden")}>
         <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between lg:p-6">
           <div className="flex min-w-0 items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#C9A84C]/25 bg-[#C9A84C]/12 text-[#E2C97E]">
+            <div className={cn(lightStyles.heroIcon, "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border")}>
               <BrainCircuit className="h-6 w-6" />
             </div>
             <div className="min-w-0">
@@ -513,16 +514,17 @@ export function ConversationLearningClient() {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
+                  lightStyles.tabButton,
                   "flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium transition",
                   active
-                    ? "bg-[#C9A84C]/15 text-[#E2C97E] shadow-[inset_0_0_0_1px_rgba(201,168,76,0.20)]"
-                    : "text-[rgba(245,237,214,0.48)] hover:bg-white/[0.04] hover:text-[#F5EDD6]"
+                    ? lightStyles.tabActive
+                    : lightStyles.tabIdle
                 )}
               >
                 <Icon className="h-4 w-4" />
                 {tab.label}
                 {tab.key === "care-plans" && (careCenter?.overview.pendingPlans || 0) > 0 ? (
-                  <span className="rounded-full bg-[#C9A84C] px-1.5 py-0.5 text-[10px] font-bold text-black">
+                  <span className={cn(lightStyles.countBadge, "rounded-full px-1.5 py-0.5 text-[10px] font-bold")}>
                     {careCenter?.overview.pendingPlans}
                   </span>
                 ) : null}
@@ -560,7 +562,7 @@ export function ConversationLearningClient() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("care-plans")}
-                  className="shrink-0 text-sm font-semibold text-[#D9BD6A] transition hover:text-[#F5EDD6]"
+                  className={cn(lightStyles.textButton, "shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition")}
                 >
                   Mở tất cả
                 </button>
@@ -754,7 +756,7 @@ export function ConversationLearningClient() {
                       className={cn(
                         "w-full px-4 py-4 text-left transition",
                         selectedCarePlan?.id === plan.id
-                          ? "bg-[#C9A84C]/10 shadow-[inset_3px_0_0_#C9A84C]"
+                          ? lightStyles.selectedRow
                           : "hover:bg-white/[0.035]",
                       )}
                     >
@@ -878,7 +880,7 @@ export function ConversationLearningClient() {
                       <InfoPanel label="Trở ngại" value={selectedCarePlan.objections.join(", ") || "Chưa thấy rõ"} />
                     </div>
 
-                    <div className="rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/[0.065] p-4">
+                    <div className={cn(lightStyles.highlightBlock, "rounded-xl border p-4")}>
                       <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#D9BD6A]">Hành động tốt nhất tiếp theo</div>
                       <p className="mt-2 text-sm leading-6 text-[#F5EDD6]">{selectedCarePlan.nextBestAction}</p>
                     </div>
@@ -1274,15 +1276,24 @@ function RunMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function metricTone(label: string) {
+  const normalized = label.toLocaleLowerCase("vi-VN");
+  if (normalized.includes("nóng") || normalized.includes("kiểm tra")) return lightStyles.metricRose;
+  if (normalized.includes("chờ") || normalized.includes("nháp")) return lightStyles.metricAmber;
+  if (normalized.includes("pwa") || normalized.includes("đang bật")) return lightStyles.metricEmerald;
+  if (normalized.includes("tiềm năng") || normalized.includes("chăm sóc")) return lightStyles.metricViolet;
+  return lightStyles.metricBlue;
+}
+
 function Metric({ label, value, icon: Icon }: { label: string; value: number; icon: LucideIcon }) {
   return (
-    <Card className="p-4 transition hover:border-[#C9A84C]/20">
+    <Card className={cn(lightStyles.metricCard, metricTone(label), "p-4")}>
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/10 text-[#E2C97E]">
+        <div className={cn(lightStyles.metricIcon, "flex h-10 w-10 items-center justify-center rounded-xl border")}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <div className="text-2xl font-bold text-[#F5EDD6]">{value}</div>
+          <div className={cn(lightStyles.metricValue, "text-2xl font-bold")}>{value}</div>
           <div className="truncate text-xs text-[rgba(245,237,214,0.40)]">{label}</div>
         </div>
       </div>
@@ -1300,7 +1311,7 @@ function DetailMetric({
   success?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-3">
+    <div className={cn(lightStyles.detailPanel, "rounded-xl border p-3")}>
       <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[rgba(245,237,214,0.34)]">{label}</div>
       <div className={cn("mt-1.5 text-sm font-semibold", success ? "text-emerald-300" : "text-[rgba(245,237,214,0.72)]")}>
         {value}
@@ -1377,7 +1388,7 @@ function EmptyState({ text }: { text: string }) {
 
 function InfoPanel({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
+    <div className={cn(lightStyles.detailPanel, "rounded-xl border p-4")}>
       <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#D9BD6A]">{label}</div>
       <p className="mt-2 text-sm leading-6 text-[rgba(245,237,214,0.60)]">{value || "-"}</p>
     </div>
