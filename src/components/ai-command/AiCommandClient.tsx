@@ -46,7 +46,11 @@ export default function AiCommandClient({ surface, initialAccess }: { surface: "
     const data = await api<{ threads: AiChatThread[]; access: AccessInfo }>("/api/ai-command/threads");
     setThreads(data.threads);
     setAccess(data.access);
-    if (selectFirst && !snapshot && data.threads[0]) await loadThread(data.threads[0].id);
+    if (selectFirst && !snapshot && data.threads[0]) {
+      await loadThread(data.threads[0].id);
+      return;
+    }
+    setLoading(false);
   }
 
   async function loadThread(threadId: string) {
