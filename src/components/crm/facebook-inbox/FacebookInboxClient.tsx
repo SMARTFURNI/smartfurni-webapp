@@ -8,34 +8,34 @@ import {
   Clock, Check, Settings, Key, Save, Eye, EyeOff,
 } from "lucide-react";
 
-// ─── Design Tokens (Dark Luxury — đồng bộ CRM) ────────────────────────────────
+// ─── Design Tokens (Light workspace — đồng bộ Zalo OA) ───────────────────────
 const T = {
-  bg: "#0b111b",
-  sidebar: "#111827",
-  sidebarBorder: "rgba(127,148,181,0.18)",
-  sidebarHover: "rgba(255,255,255,0.035)",
-  sidebarActive: "rgba(201,168,76,0.13)",
-  sidebarActiveBorder: "#d4b557",
-  chatBg: "#0b111b",
-  headerBg: "rgba(17,24,39,0.97)",
-  headerBorder: "rgba(127,148,181,0.18)",
+  bg: "#f4f7fb",
+  sidebar: "#ffffff",
+  sidebarBorder: "#dbe3ee",
+  sidebarHover: "#f1f5f9",
+  sidebarActive: "#eff6ff",
+  sidebarActiveBorder: "#1877f2",
+  chatBg: "#f4f7fb",
+  headerBg: "rgba(255,255,255,0.97)",
+  headerBorder: "#dbe3ee",
   bubbleSelf: "linear-gradient(135deg, #1877f2 0%, #0a5dc2 100%)",
-  bubbleOther: "#1b2535",
-  bubbleOtherText: "#f5edd6",
+  bubbleOther: "#ffffff",
+  bubbleOtherText: "#172033",
   bubbleSelfText: "#ffffff",
-  inputBg: "#0d1522",
-  inputBorder: "rgba(127,148,181,0.22)",
-  inputFocus: "#d4b557",
-  textPrimary: "#f5edd6",
-  textSecondary: "rgba(245,237,214,0.78)",
-  textMuted: "rgba(205,214,229,0.5)",
-  accent: "#d4b557",
-  accentHover: "#ead477",
+  inputBg: "#ffffff",
+  inputBorder: "#c8d3e0",
+  inputFocus: "#1877f2",
+  textPrimary: "#172033",
+  textSecondary: "#526173",
+  textMuted: "#738196",
+  accent: "#1877f2",
+  accentHover: "#0a5dc2",
   fbBlue: "#1877f2",
   badge: "#ef4444",
-  gold: "#d4b557",
+  gold: "#9a7418",
   success: "#10b981",
-  divider: "rgba(127,148,181,0.18)",
+  divider: "#dbe3ee",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1012,12 +1012,12 @@ export default function FacebookInboxClient() {
       {showPancakeSettings && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 1000,
-          background: "rgba(0,0,0,0.7)",
+          background: "rgba(15,23,42,0.36)",
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: 16,
         }} onClick={() => setShowPancakeSettings(false)}>
           <div style={{
-            background: "#12101f", border: `1px solid ${T.sidebarBorder}`,
+            background: "#ffffff", border: `1px solid ${T.sidebarBorder}`,
             borderRadius: 16, padding: 24, width: "100%", maxWidth: 520,
             maxHeight: "80vh", overflowY: "auto",
           }} onClick={e => e.stopPropagation()}>
@@ -1033,7 +1033,7 @@ export default function FacebookInboxClient() {
                 <X size={18} />
               </button>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "12px 14px", background: "#f8fafc", borderRadius: 10 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ color: T.textPrimary, fontSize: 13, fontWeight: 600 }}>Bật tích hợp Pancake</div>
                 <div style={{ color: T.textMuted, fontSize: 11, marginTop: 2 }}>Tự động gửi qua Pancake khi gặp lỗi thread control</div>
@@ -1066,7 +1066,7 @@ export default function FacebookInboxClient() {
                   const isVisible = showTokens[page.pageId];
                   const isConfigured = !!(tokenVal && pancakePageIdVal);
                   return (
-                    <div key={page.id} style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: `1px solid ${isConfigured ? "rgba(16,185,129,0.3)" : T.inputBorder}` }}>
+                    <div key={page.id} style={{ marginBottom: 16, padding: "12px 14px", background: "#f8fafc", borderRadius: 10, border: `1px solid ${isConfigured ? "rgba(16,185,129,0.3)" : T.inputBorder}` }}>
                       <div style={{ color: T.textSecondary, fontSize: 12, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                         <div style={{ width: 20, height: 20, borderRadius: 5, background: T.fbBlue, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff" }}>
                           {page.pageName.charAt(0)}

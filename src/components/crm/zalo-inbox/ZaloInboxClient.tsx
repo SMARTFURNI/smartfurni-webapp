@@ -17,29 +17,29 @@ import ZaloCatalogPanel from "./ZaloCatalogPanel";
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
   // Sidebar
-  sidebarBg: "#111827",
-  sidebarBorder: "#1F2937",
-  sidebarHover: "#1F2937",
+  sidebarBg: "#FFFFFF",
+  sidebarBorder: "#DBE3EE",
+  sidebarHover: "#F1F5F9",
   sidebarActive: "#1D4ED8",
-  sidebarActiveBg: "#1E3A5F",
+  sidebarActiveBg: "#EFF6FF",
   // Chat
-  chatBg: "#0F172A",
-  chatBgPattern: "radial-gradient(circle at 20% 50%, rgba(59,130,246,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139,92,246,0.03) 0%, transparent 50%)",
-  headerBg: "rgba(15,23,42,0.95)",
-  headerBorder: "#1E293B",
+  chatBg: "#F4F7FB",
+  chatBgPattern: "radial-gradient(circle at 20% 50%, rgba(59,130,246,0.045) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(154,116,24,0.035) 0%, transparent 50%)",
+  headerBg: "rgba(255,255,255,0.97)",
+  headerBorder: "#DBE3EE",
   // Bubbles
   bubbleSelf: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
-  bubbleOther: "#1E293B",
-  bubbleOtherText: "#E2E8F0",
+  bubbleOther: "#FFFFFF",
+  bubbleOtherText: "#172033",
   bubbleSelfText: "#FFFFFF",
   // Input
-  inputBg: "#1E293B",
-  inputBorder: "#334155",
+  inputBg: "#FFFFFF",
+  inputBorder: "#C8D3E0",
   inputFocus: "#3B82F6",
   // Text
-  textPrimary: "#F1F5F9",
-  textSecondary: "#94A3B8",
-  textMuted: "#64748B",
+  textPrimary: "#172033",
+  textSecondary: "#526173",
+  textMuted: "#738196",
   // Accent
   accent: "#3B82F6",
   accentHover: "#2563EB",
@@ -738,7 +738,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
-      <div style={{ background: "#1E293B", borderRadius: 16, padding: 28, width: 380, border: `1px solid ${T.sidebarBorder}`, boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}>
+      <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 28, width: 380, border: `1px solid ${T.sidebarBorder}`, boxShadow: "0 25px 60px rgba(15,23,42,0.18)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary }}>Cài đặt Zalo</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 4 }}><X size={18} /></button>
@@ -1235,7 +1235,7 @@ export default function ZaloInboxClient() {
 
       {/* Context menu */}
       {contextMenu && (
-        <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999, background: "#1E293B", borderRadius: 10, boxShadow: "0 8px 30px rgba(0,0,0,0.4)", border: `1px solid ${T.sidebarBorder}`, minWidth: 180, overflow: "hidden" }}
+        <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999, background: "#FFFFFF", borderRadius: 10, boxShadow: "0 8px 30px rgba(15,23,42,0.14)", border: `1px solid ${T.sidebarBorder}`, minWidth: 180, overflow: "hidden" }}
           onClick={e => e.stopPropagation()}>
           <button onClick={() => { markUnread(contextMenu.convId); setContextMenu(null); }}
             style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 13, color: T.textPrimary, display: "flex", alignItems: "center", gap: 8 }}
@@ -1479,7 +1479,7 @@ export default function ZaloInboxClient() {
                   <Smile size={16} />
                 </button>
                 {showEmoji && (
-                  <div style={{ position: "absolute", bottom: 44, left: 0, background: "#1E293B", borderRadius: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.4)", border: `1px solid ${T.sidebarBorder}`, padding: 10, zIndex: 100, width: 288 }}>
+                  <div style={{ position: "absolute", bottom: 44, left: 0, background: "#FFFFFF", borderRadius: 14, boxShadow: "0 8px 30px rgba(15,23,42,0.14)", border: `1px solid ${T.sidebarBorder}`, padding: 10, zIndex: 100, width: 288 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 2 }}>
                       {["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😙","😋","🤫","🤔","😐","😑","😶","🙄","😬","😮","😯","😲","😳","😕","😟","🙁","☹️","😢","😭","😤","😠","😡","🤬","🤯","😈","👍","👎","❤️","💔","👏","🙏","🔥","💯","🎉","🎁","💰","💪","🚀","✅","❌","⚠️","🔔","📞","📱"].map(em => (
                         <button key={em} onClick={() => { setInputText(t => t + em); setShowEmoji(false); textareaRef.current?.focus(); }}
@@ -1706,8 +1706,8 @@ export default function ZaloInboxClient() {
         @keyframes spin { to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-thumb { background: #c8d3e0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
     </div>
   );

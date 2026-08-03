@@ -127,17 +127,17 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
   const formatPrice = (price: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-200">
         <div className="flex items-center gap-2">
           {selectedCatalog && (
-            <button onClick={() => { setSelectedCatalog(null); setShowProductForm(false); }} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+            <button onClick={() => { setSelectedCatalog(null); setShowProductForm(false); }} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500">
               <ChevronLeft size={16} />
             </button>
           )}
           <ShoppingBag size={16} className="text-blue-500" />
-          <h2 className="font-semibold text-gray-900 dark:text-white text-sm">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-900 text-sm">
             {selectedCatalog ? selectedCatalog.title : "Catalog sản phẩm"}
           </h2>
         </div>
@@ -148,20 +148,20 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
           }} className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg">
             <Plus size={12} /> {selectedCatalog ? "Thêm SP" : "Thêm"}
           </button>
-          <button onClick={() => selectedCatalog ? loadProducts(selectedCatalog.id) : loadCatalogs()} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+          <button onClick={() => selectedCatalog ? loadProducts(selectedCatalog.id) : loadCatalogs()} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
-          {onClose && <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"><X size={14} /></button>}
+          {onClose && <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500"><X size={14} /></button>}
         </div>
       </div>
 
       {/* Catalog Form */}
       {showCatalogForm && !selectedCatalog && (
-        <div className="border-b border-gray-200 dark:border-gray-700 p-4 bg-blue-50 dark:bg-blue-900/20 space-y-3">
+        <div className="border-b border-gray-200 dark:border-gray-200 p-4 bg-blue-50 dark:bg-blue-50 space-y-3">
           <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-300">{editCatalog ? "Sửa catalog" : "Tạo catalog mới"}</h3>
-          <input value={catalogTitle} onChange={e => setCatalogTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSaveCatalog()} placeholder="Tên catalog..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          <input value={catalogTitle} onChange={e => setCatalogTitle(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSaveCatalog()} placeholder="Tên catalog..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           <div className="flex gap-2">
-            <button onClick={() => { setShowCatalogForm(false); setEditCatalog(null); setCatalogTitle(""); }} className="flex-1 py-1.5 text-xs text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Hủy</button>
+            <button onClick={() => { setShowCatalogForm(false); setEditCatalog(null); setCatalogTitle(""); }} className="flex-1 py-1.5 text-xs text-gray-600 border border-gray-200 dark:border-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-100">Hủy</button>
             <button onClick={handleSaveCatalog} disabled={saving || !catalogTitle.trim()} className="flex-1 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium flex items-center justify-center gap-1">
               {saving ? <RefreshCw size={12} className="animate-spin" /> : <Plus size={12} />}
               {editCatalog ? "Lưu" : "Tạo"}
@@ -172,16 +172,16 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
 
       {/* Product Form */}
       {showProductForm && selectedCatalog && (
-        <div className="border-b border-gray-200 dark:border-gray-700 p-4 bg-blue-50 dark:bg-blue-900/20 space-y-3">
+        <div className="border-b border-gray-200 dark:border-gray-200 p-4 bg-blue-50 dark:bg-blue-50 space-y-3">
           <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-300">{editProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"}</h3>
-          <input value={productName} onChange={e => setProductName(e.target.value)} placeholder="Tên sản phẩm..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          <input value={productName} onChange={e => setProductName(e.target.value)} placeholder="Tên sản phẩm..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           <div className="relative">
             <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={productPrice} onChange={e => setProductPrice(e.target.value)} type="number" min="0" placeholder="Giá (VNĐ)..." className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <input value={productPrice} onChange={e => setProductPrice(e.target.value)} type="number" min="0" placeholder="Giá (VNĐ)..." className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           </div>
-          <textarea value={productDesc} onChange={e => setProductDesc(e.target.value)} rows={2} placeholder="Mô tả sản phẩm (tùy chọn)..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
+          <textarea value={productDesc} onChange={e => setProductDesc(e.target.value)} rows={2} placeholder="Mô tả sản phẩm (tùy chọn)..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
           <div className="flex gap-2">
-            <button onClick={() => { setShowProductForm(false); setEditProduct(null); setProductName(""); setProductPrice(""); setProductDesc(""); }} className="flex-1 py-1.5 text-xs text-gray-600 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Hủy</button>
+            <button onClick={() => { setShowProductForm(false); setEditProduct(null); setProductName(""); setProductPrice(""); setProductDesc(""); }} className="flex-1 py-1.5 text-xs text-gray-600 border border-gray-200 dark:border-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-100">Hủy</button>
             <button onClick={handleSaveProduct} disabled={saving || !productName.trim() || !productPrice} className="flex-1 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium flex items-center justify-center gap-1">
               {saving ? <RefreshCw size={12} className="animate-spin" /> : <Plus size={12} />}
               {editProduct ? "Lưu" : "Thêm"}
@@ -206,19 +206,19 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
               <div className="px-4 py-2 text-xs text-gray-400">{catalogs.length} catalog</div>
               {catalogs.map(cat => (
-                <div key={cat.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 group cursor-pointer" onClick={() => setSelectedCatalog(cat)}>
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                <div key={cat.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-100 group cursor-pointer" onClick={() => setSelectedCatalog(cat)}>
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-100 flex items-center justify-center flex-shrink-0">
                     <ShoppingBag size={18} className="text-blue-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{cat.title}</div>
+                    <div className="font-medium text-sm text-gray-900 dark:text-gray-900 truncate">{cat.title}</div>
                     <div className="text-xs text-gray-400">{cat.totalProduct || 0} sản phẩm</div>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={e => { e.stopPropagation(); setEditCatalog(cat); setCatalogTitle(cat.title); setShowCatalogForm(true); }} className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400">
                       <Edit2 size={13} />
                     </button>
-                    <button onClick={e => { e.stopPropagation(); handleDeleteCatalog(cat.id); }} className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400">
+                    <button onClick={e => { e.stopPropagation(); handleDeleteCatalog(cat.id); }} className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-50 text-red-400">
                       <Trash2 size={13} />
                     </button>
                     <ChevronRight size={14} className="text-gray-400" />
@@ -239,20 +239,20 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
               <div className="px-4 py-2 text-xs text-gray-400">{products.length} sản phẩm</div>
               {products.map(p => (
-                <div key={p.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+                <div key={p.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-100 group">
                   <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
                     {p.imageUrl ? <img src={p.imageUrl} alt={p.productName} className="w-10 h-10 rounded-xl object-cover" /> : <Package size={18} className="text-green-500" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{p.productName}</div>
-                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">{formatPrice(p.price)}</div>
+                    <div className="font-medium text-sm text-gray-900 dark:text-gray-900 truncate">{p.productName}</div>
+                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-600">{formatPrice(p.price)}</div>
                     {p.description && <div className="text-xs text-gray-400 mt-0.5 line-clamp-2">{p.description}</div>}
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setEditProduct(p); setProductName(p.productName); setProductPrice(String(p.price)); setProductDesc(p.description || ""); setShowProductForm(true); }} className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400">
                       <Edit2 size={13} />
                     </button>
-                    <button onClick={() => handleDeleteProduct(p.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400">
+                    <button onClick={() => handleDeleteProduct(p.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-50 text-red-400">
                       <Trash2 size={13} />
                     </button>
                   </div>

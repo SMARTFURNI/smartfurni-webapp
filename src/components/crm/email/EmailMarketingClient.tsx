@@ -187,9 +187,9 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   );
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex h-full flex-col bg-[#f4f7fb] text-[#172033]">
       {/* ── Header ── */}
-      <div className="crm-admin-page-header m-5 mb-0 flex-shrink-0 px-6 pt-5 pb-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
+      <div className="crm-admin-page-header m-5 mb-0 flex-shrink-0 rounded-2xl bg-white px-6 pt-5 pb-0 shadow-[0_10px_30px_rgba(30,48,72,0.08)]" style={{ border: "1px solid #dbe3ee" }}>
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm..."
                 className="pl-8 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-44"
-                style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
+                style={{ background: "#f1f5f9", border: "1px solid #dbe3ee" }}
               />
             </div>
             {tab === "campaigns" && (
@@ -253,7 +253,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             { label: "Tỷ lệ click", value: `${avgClickRate}%`,                                icon: Target,     color: "#f87171" },
           ].map((kpi, i) => (
             <div key={i} className="rounded-xl px-3 py-2.5 flex items-center gap-2.5"
-              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
               <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: `${kpi.color}18` }}>
                 <kpi.icon size={14} style={{ color: kpi.color }} />
@@ -309,7 +309,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const clickRate = campaign.sentCount > 0 ? Math.round((campaign.clickCount / campaign.sentCount) * 100) : 0;
                 return (
                   <div key={campaign.id} className="rounded-2xl p-4 transition-all hover:shadow-sm"
-                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                    style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -366,30 +366,30 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                               htmlContent: campaign.htmlContent || `<div style="font-family:Arial,sans-serif;padding:32px;max-width:600px"><h2>${campaign.name}</h2><p>${campaign.subject}</p></div>`,
                             })}
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-colors"
-                            style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}
+                            style={{ border: "1px solid #dbe3ee", color: "#3b82f6" }}
                             title="Gửi email test">
                             <FlaskConical size={11} /> Test
                           </button>
                           <button onClick={() => setEditingCampaign(campaign)}
                             className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
-                            style={{ border: "1px solid #e5e7eb" }}>
+                            style={{ border: "1px solid #dbe3ee" }}>
                             <Edit3 size={12} className="text-gray-500" />
                           </button>
                           <button onClick={() => deleteCampaign(campaign.id)}
                             className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
-                            style={{ border: "1px solid #e5e7eb" }}>
+                            style={{ border: "1px solid #dbe3ee" }}>
                             <Trash2 size={12} className="text-gray-400" />
                           </button>
                         </div>
                       </div>
                     </div>
                     {campaign.status === "sent" && campaign.sentCount > 0 && (
-                      <div className="mt-3 pt-3" style={{ borderTop: "1px solid #f3f4f6" }}>
+                      <div className="mt-3 pt-3" style={{ borderTop: "1px solid #f1f5f9" }}>
                         <div className="flex justify-between text-[10px] mb-1 text-gray-400">
                           <span>Tỷ lệ mở</span>
                           <span>{openRate}%</span>
                         </div>
-                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "#f1f5f9" }}>
                           <div className="h-full rounded-full" style={{ width: `${openRate}%`, background: "#22c55e" }} />
                         </div>
                       </div>
@@ -418,7 +418,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                     </button>
                     <button onClick={seedTemplates} disabled={loading}
                       className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
-                      style={{ border: "1px solid #e5e7eb" }}>
+                      style={{ border: "1px solid #dbe3ee" }}>
                       {loading ? <Loader2 size={14} className="animate-spin inline" /> : "Tải mẫu mặc định"}
                     </button>
                   </div>
@@ -430,7 +430,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                   const catColor = CATEGORY_COLORS[template.category];
                   return (
                     <div key={template.id} className="rounded-2xl overflow-hidden hover:shadow-sm transition-all group"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                       <div className="h-28 overflow-hidden relative cursor-pointer" onClick={() => setPreviewTemplate(template)}
                         style={{ background: "#050505" }}>
                         <div className="absolute inset-0 p-2 overflow-hidden"
@@ -457,7 +457,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                         <div className="flex gap-1">
                           <button onClick={() => setPreviewTemplate(template)}
                             className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-                            style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}>
+                            style={{ border: "1px solid #dbe3ee", color: "#6b7280" }}>
                             <Eye size={11} /> Xem trước
                           </button>
                           <button
@@ -468,18 +468,18 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                               htmlContent: template.htmlContent,
                             })}
                             className="flex-1 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-1"
-                            style={{ border: "1px solid #e5e7eb", color: "#3b82f6" }}>
+                            style={{ border: "1px solid #dbe3ee", color: "#3b82f6" }}>
                             <FlaskConical size={11} /> Gửi test
                           </button>
                           <button onClick={() => setEditingTemplate(template)}
                             className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-blue-50 transition-colors"
-                            style={{ border: "1px solid #e5e7eb" }}
+                            style={{ border: "1px solid #dbe3ee" }}
                             title="Chỉnh sửa mẫu email">
                             <Edit3 size={12} className="text-blue-500" />
                           </button>
                           <button onClick={() => deleteTemplate(template.id)}
                             className="w-8 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
-                            style={{ border: "1px solid #e5e7eb" }}>
+                            style={{ border: "1px solid #dbe3ee" }}>
                             <Trash2 size={12} className="text-gray-400" />
                           </button>
                         </div>
@@ -489,7 +489,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 })}
                 <button onClick={() => setShowNewTemplate(true)}
                   className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-yellow-400 hover:bg-yellow-50/30 transition-all min-h-[160px]"
-                  style={{ borderColor: "#e5e7eb" }}>
+                  style={{ borderColor: "#dbe3ee" }}>
                   <Plus size={20} className="text-gray-400" />
                   <span className="text-sm text-gray-400 font-medium">Tạo mẫu mới</span>
                 </button>
@@ -535,7 +535,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const wsc = WORKFLOW_STATUS_CONFIG[wf.status];
                 return (
                   <div key={wf.id} className="rounded-2xl p-4 transition-all hover:shadow-sm"
-                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                    style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -565,7 +565,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                             {wf.steps.slice(0, 4).map((step, i) => (
                               <div key={step.id} className="flex items-center gap-1">
                                 <span className="text-[10px] px-2 py-0.5 rounded-md font-medium"
-                                  style={{ background: "#f3f4f6", color: "#6b7280" }}>
+                                  style={{ background: "#f1f5f9", color: "#6b7280" }}>
                                   {step.delayDays > 0 ? `+${step.delayDays}d` : "Ngay"}: {(step.subject || "Email").substring(0, 18)}...
                                 </span>
                                 {i < Math.min(wf.steps.length - 1, 3) && (
@@ -590,9 +590,9 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                               htmlContent: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px">
                                 <h2 style="color:#1a1a1a">${wf.name}</h2>
                                 <p style="color:#555">Trigger: ${wf.description || TRIGGER_LABELS[wf.triggerType] || wf.triggerType}</p>
-                                <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0"/>
+                                <hr style="border:none;border-top:1px solid #dbe3ee;margin:20px 0"/>
                                 <h3 style="color:#374151;font-size:14px">Các bước trong workflow (${wf.steps?.length || 0} bước):</h3>
-                                ${(wf.steps || []).map((s, i) => `<div style="margin:8px 0;padding:10px 14px;background:#f9fafb;border-radius:8px;border-left:3px solid #C9A84C"><strong style="font-size:13px">Bước ${i+1}</strong> ${s.delayDays > 0 ? `(sau ${s.delayDays} ngày)` : "(ngay lập tức)"}: <span style="color:#374151">${s.subject || s.templateName || "Email"}</span></div>`).join("")}
+                                ${(wf.steps || []).map((s, i) => `<div style="margin:8px 0;padding:10px 14px;background:#f8fafc;border-radius:8px;border-left:3px solid #C9A84C"><strong style="font-size:13px">Bước ${i+1}</strong> ${s.delayDays > 0 ? `(sau ${s.delayDays} ngày)` : "(ngay lập tức)"}: <span style="color:#374151">${s.subject || s.templateName || "Email"}</span></div>`).join("")}
                               </div>`,
                             });
                           }}
@@ -602,7 +602,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                         </button>
                         <button onClick={() => setEditingWorkflow(wf)}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                          style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb" }}>
+                          style={{ background: "#f1f5f9", color: "#374151", border: "1px solid #dbe3ee" }}>
                           <Edit2 size={11} /> Sửa
                         </button>
                         <button onClick={() => toggleWorkflow(wf.id, wf.status)}
@@ -610,7 +610,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                           style={{
                             background: wf.status === "active" ? "rgba(34,197,94,0.1)" : "rgba(148,163,184,0.1)",
                             color: wf.status === "active" ? "#16a34a" : "#64748b",
-                            border: `1px solid ${wf.status === "active" ? "rgba(34,197,94,0.3)" : "#e5e7eb"}`,
+                            border: `1px solid ${wf.status === "active" ? "rgba(34,197,94,0.3)" : "#dbe3ee"}`,
                           }}>
                           {wf.status === "active" ? <Pause size={11} /> : <Play size={11} />}
                           {wf.status === "active" ? "Tạm dừng" : "Kích hoạt"}
@@ -767,7 +767,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
       if (line.trim() === "") return "<br>";
       return `<p style="font-size:15px;color:#1a1a1a;line-height:1.7;margin:0 0 12px">${line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</p>`;
     });
-    return `<!DOCTYPE html>\n<html><head><meta charset="UTF-8"></head>\n<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">\n<table width="100%" cellpadding="0" cellspacing="0" border="0">\n<tr><td style="padding:32px 24px;max-width:600px">\n${htmlLines.join("\n")}\n<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px">\n<p style="font-size:11px;color:#9ca3af;line-height:1.5;margin:0">\nSmartFurni · smartfurni.vn<br>\n<a href="{{unsubscribe_url}}" style="color:#9ca3af">Hủy nhận email</a>\n</p>\n</td></tr>\n</table>\n</body></html>`;
+    return `<!DOCTYPE html>\n<html><head><meta charset="UTF-8"></head>\n<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">\n<table width="100%" cellpadding="0" cellspacing="0" border="0">\n<tr><td style="padding:32px 24px;max-width:600px">\n${htmlLines.join("\n")}\n<hr style="border:none;border-top:1px solid #dbe3ee;margin:24px 0 16px">\n<p style="font-size:11px;color:#9ca3af;line-height:1.5;margin:0">\nSmartFurni · smartfurni.vn<br>\n<a href="{{unsubscribe_url}}" style="color:#9ca3af">Hủy nhận email</a>\n</p>\n</td></tr>\n</table>\n</body></html>`;
   }
 
   const finalHtml = editorMode === "text" ? plainTextToHtml(plainText) : htmlContent;
@@ -794,7 +794,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
     <div className="grid grid-cols-2 gap-6" style={{ minHeight: "600px" }}>
       {/* Left: Editor */}
       <div className="space-y-4">
-        <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
           <h3 className="text-sm font-bold text-gray-900 mb-4">Thông tin template</h3>
           <div className="space-y-3">
             <div>
@@ -802,21 +802,21 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
               <input value={name} onChange={e => setName(e.target.value)}
                 placeholder="VD: Email chào mừng B2B"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Tiêu đề email *</label>
               <input value={subject} onChange={e => setSubject(e.target.value)}
                 placeholder="VD: Giải pháp nội thất cho dự án của bạn"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Danh mục</label>
                 <select value={category} onChange={e => setCategory(e.target.value as EmailTemplateCategory)}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+                  style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
                   {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
                     <option key={k} value={k}>{v}</option>
                   ))}
@@ -827,13 +827,13 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
                 <input value={previewText} onChange={e => setPreviewText(e.target.value)}
                   placeholder="Mô tả ngắn..."
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                  style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="rounded-2xl p-4" style={{ border: "1px solid #dbe3ee" }}>
           <div className="flex items-center gap-2 mb-3">
             <Tag size={13} className="text-gray-500" />
             <span className="text-xs font-semibold text-gray-700">Biến động (click để chèn)</span>
@@ -842,25 +842,25 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
             {VARIABLES.map(v => (
               <button key={v} onClick={() => insertVariable(v)}
                 className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium hover:bg-yellow-50 transition-colors"
-                style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
+                style={{ border: "1px solid #dbe3ee", color: "#C9A84C" }}>
                 {`{{${v}}}`}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
           <div className="flex items-center justify-between px-4 py-2.5"
-            style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+            style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
             <span className="text-xs font-semibold text-gray-700">Nội dung email</span>
-            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+            <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
               <button
                 onClick={() => setEditorMode("text")}
                 className="px-3 py-1 text-xs font-semibold transition-colors"
                 style={{
-                  background: editorMode === "text" ? "#1e1e1e" : "#f9fafb",
+                  background: editorMode === "text" ? "#1e1e1e" : "#f8fafc",
                   color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
-                  borderRight: "1px solid #e5e7eb",
+                  borderRight: "1px solid #dbe3ee",
                 }}>
                 ✏️ Văn bản
               </button>
@@ -868,7 +868,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
                 onClick={() => setEditorMode("html")}
                 className="px-3 py-1 text-xs font-semibold transition-colors"
                 style={{
-                  background: editorMode === "html" ? "#1e1e1e" : "#f9fafb",
+                  background: editorMode === "html" ? "#1e1e1e" : "#f8fafc",
                   color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
                 }}>
                 {"</>"}  HTML
@@ -886,7 +886,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
                 onChange={e => setPlainText(e.target.value)}
                 className="w-full p-3 text-sm focus:outline-none resize-none rounded-xl"
                 style={{
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid #dbe3ee",
                   background: "#ffffff",
                   color: "#1a1a1a",
                   minHeight: "220px",
@@ -919,7 +919,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
           </button>
           <button onClick={handleSave} disabled={saving}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
-            style={{ background: saving ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+            style={{ background: saving ? "#dbe3ee" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? "Đang lưu..." : saved ? "✓ Đã lưu!" : "Lưu template"}
           </button>
@@ -927,13 +927,13 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
       </div>
 
       {/* Right: Preview */}
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
         <div className="px-4 py-2.5 flex items-center gap-2"
-          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+          style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
           <Eye size={13} className="text-gray-500" />
           <span className="text-xs font-semibold text-gray-700">Preview Email</span>
         </div>
-        <div className="overflow-auto" style={{ height: "calc(100% - 40px)", background: "#f3f4f6" }}>
+        <div className="overflow-auto" style={{ height: "calc(100% - 40px)", background: "#f1f5f9" }}>
           <div className="p-4">
             {subject && <div className="text-xs font-semibold text-gray-700 mb-2 px-2">Tiêu đề: {subject}</div>}
             <iframe
@@ -968,7 +968,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
           { label: "Tỷ lệ mở trung bình", value: `${avgOpenRate}%`,                  icon: TrendingUp, color: "#22c55e" },
           { label: "Tỷ lệ click",         value: `${avgClickRate}%`,                 icon: Target,     color: "#C9A84C" },
         ].map((kpi, i) => (
-          <div key={i} className="rounded-2xl p-4" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+          <div key={i} className="rounded-2xl p-4" style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
             <div className="flex items-center justify-between mb-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ background: `${kpi.color}15` }}>
@@ -982,12 +982,12 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         ))}
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
         <div className="px-5 py-3.5 flex items-center justify-between"
-          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+          style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
           <h3 className="text-sm font-bold text-gray-900">Hiệu suất từng chiến dịch</h3>
           <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-            style={{ border: "1px solid #e5e7eb" }}>
+            style={{ border: "1px solid #dbe3ee" }}>
             <Download size={12} /> Xuất CSV
           </button>
         </div>
@@ -997,7 +997,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+                <tr style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
                   {["Chiến dịch", "Phân khúc", "Đã gửi", "Đã mở", "Tỷ lệ mở", "Click", "Tỷ lệ click", "Ngày gửi"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600">{h}</th>
                   ))}
@@ -1009,7 +1009,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
                   const clickRate = c.sentCount > 0 ? ((c.clickCount / c.sentCount) * 100).toFixed(1) : "0";
                   return (
                     <tr key={c.id}
-                      style={{ borderBottom: i < sentCampaigns.length - 1 ? "1px solid #f3f4f6" : "none" }}
+                      style={{ borderBottom: i < sentCampaigns.length - 1 ? "1px solid #f1f5f9" : "none" }}
                       className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-gray-900 max-w-[180px] truncate">{c.name}</td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{SEGMENT_LABELS[c.segment]}</td>
@@ -1039,7 +1039,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
       </div>
 
       {/* Thống kê Inbox vs Promotions */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-900">Phân loại hộp thư (Inbox vs Quảng cáo)</h3>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Dựa trên tỷ lệ mở email</span>
@@ -1100,7 +1100,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         </div>
       </div>
 
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-3">Benchmark ngành B2B</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
           {[
@@ -1108,7 +1108,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
             { metric: "Tỷ lệ click",            industry: "2.3%",  yours: `${avgClickRate}%`, good: parseFloat(avgClickRate) >= 2.3 },
             { metric: "Tỷ lệ hủy đăng ký",     industry: "< 0.5%", yours: "0.1%", good: true },
           ].map((b, i) => (
-            <div key={i} className="rounded-xl p-3 bg-white" style={{ border: "1px solid #e5e7eb" }}>
+            <div key={i} className="rounded-xl p-3 bg-white" style={{ border: "1px solid #dbe3ee" }}>
               <div className="text-xs text-gray-500 mb-1">{b.metric}</div>
               <div className="flex items-center justify-between">
                 <div>
@@ -1191,7 +1191,7 @@ function SettingsTab() {
     <div className="max-w-2xl space-y-5">
 
       {/* ── Thông tin người gửi ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Mail size={14} style={{ color: "#C9A84C" }} /> Thông tin người gửi
         </h3>
@@ -1201,13 +1201,13 @@ function SettingsTab() {
               <label className="block text-xs font-semibold text-gray-700 mb-1">Tên người gửi</label>
               <input value={config.senderName} onChange={e => setConfig(p => ({ ...p, senderName: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Email người gửi</label>
               <input type="email" value={config.senderEmail} onChange={e => setConfig(p => ({ ...p, senderEmail: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
             </div>
           </div>
           <div>
@@ -1215,19 +1215,19 @@ function SettingsTab() {
             <input type="email" value={config.replyToEmail} onChange={e => setConfig(p => ({ ...p, replyToEmail: e.target.value }))}
               placeholder="sales@smartfurni.com"
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Chữ ký email</label>
             <textarea value={config.emailSignature} onChange={e => setConfig(p => ({ ...p, emailSignature: e.target.value }))}
               rows={3} className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none resize-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
           </div>
         </div>
       </div>
 
       {/* ── Lịch gửi ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Clock size={14} style={{ color: "#60a5fa" }} /> Lịch gửi email
         </h3>
@@ -1237,20 +1237,20 @@ function SettingsTab() {
               <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ bắt đầu gửi</label>
               <input type="time" value={config.scheduleTime} onChange={e => setConfig(p => ({ ...p, scheduleTime: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Giờ kết thúc gửi</label>
               <input type="time" value={config.scheduleTimeEnd} onChange={e => setConfig(p => ({ ...p, scheduleTimeEnd: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-2">Múi giờ</label>
             <select value={config.timezone} onChange={e => setConfig(p => ({ ...p, timezone: e.target.value }))}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
               <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
               <option value="Asia/Bangkok">Asia/Bangkok (GMT+7)</option>
               <option value="UTC">UTC</option>
@@ -1271,9 +1271,9 @@ function SettingsTab() {
                     }))}
                     className="w-9 h-9 rounded-xl text-xs font-bold transition-colors"
                     style={{
-                      background: active ? "rgba(201,168,76,0.15)" : "#f9fafb",
+                      background: active ? "rgba(201,168,76,0.15)" : "#f8fafc",
                       color: active ? "#C9A84C" : "#9ca3af",
-                      border: `1px solid ${active ? "#C9A84C" : "#e5e7eb"}`,
+                      border: `1px solid ${active ? "#C9A84C" : "#dbe3ee"}`,
                     }}>
                     {d.label}
                   </button>
@@ -1285,7 +1285,7 @@ function SettingsTab() {
       </div>
 
       {/* ── Giới hạn & Kiểm soát ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Target size={14} style={{ color: "#a78bfa" }} /> Giới hạn & Kiểm soát gửi
         </h3>
@@ -1296,7 +1296,7 @@ function SettingsTab() {
               <input type="number" min={10} max={2000} value={config.dailyLimit}
                 onChange={e => setConfig(p => ({ ...p, dailyLimit: parseInt(e.target.value) || 200 }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
               <p className="text-[10px] text-gray-400 mt-1">Giới hạn tổng email gửi mỗi ngày</p>
             </div>
             <div>
@@ -1304,7 +1304,7 @@ function SettingsTab() {
               <input type="number" min={1} max={168} value={config.minIntervalHours}
                 onChange={e => setConfig(p => ({ ...p, minIntervalHours: parseInt(e.target.value) || 24 }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
               <p className="text-[10px] text-gray-400 mt-1">Thời gian chờ giữa 2 email cho cùng 1 lead</p>
             </div>
           </div>
@@ -1313,20 +1313,20 @@ function SettingsTab() {
             <input type="number" min={0} max={5} value={config.retryCount}
               onChange={e => setConfig(p => ({ ...p, retryCount: parseInt(e.target.value) }))}
               className="w-32 px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">Blacklist domain <span className="font-normal text-gray-400">(phân cách bởi dấu phẩy)</span></label>
             <input value={config.blacklistDomains} onChange={e => setConfig(p => ({ ...p, blacklistDomains: e.target.value }))}
               placeholder="spam.com, test.com, ..."
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
           </div>
         </div>
       </div>
 
       {/* ── Điều kiện dừng ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <AlertCircle size={14} style={{ color: "#f87171" }} /> Điều kiện dừng workflow
         </h3>
@@ -1336,7 +1336,7 @@ function SettingsTab() {
             { key: "stopOnUnsubscribe",  label: "Dừng khi khách hủy đăng ký",          desc: "Tự động loại khỏi mọi workflow khi nhận unsubscribe" },
           ].map(item => (
             <div key={item.key} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
-              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
               <div>
                 <div className="text-sm font-semibold text-gray-900">{item.label}</div>
                 <div className="text-xs text-gray-500">{item.desc}</div>
@@ -1351,7 +1351,7 @@ function SettingsTab() {
       </div>
 
       {/* ── Tracking ── */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
           <BarChart3 size={14} style={{ color: "#22c55e" }} /> Tracking & Tuân thủ
         </h3>
@@ -1362,7 +1362,7 @@ function SettingsTab() {
             { key: "unsubscribeLink",  label: "Tự động thêm link hủy đăng ký",   desc: "Bắt buộc theo quy định CAN-SPAM / GDPR" },
           ].map(item => (
             <div key={item.key} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
-              style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
               <div>
                 <div className="text-sm font-semibold text-gray-900">{item.label}</div>
                 <div className="text-xs text-gray-500">{item.desc}</div>
@@ -1377,7 +1377,7 @@ function SettingsTab() {
       </div>
 
       {/* ── Bật/tắt tổng thể ── */}
-      <div className="rounded-2xl p-4" style={{ background: config.enabled ? "rgba(34,197,94,0.04)" : "#fafafa", border: `1px solid ${config.enabled ? "rgba(34,197,94,0.3)" : "#e5e7eb"}` }}>
+      <div className="rounded-2xl p-4" style={{ background: config.enabled ? "rgba(34,197,94,0.04)" : "#fafafa", border: `1px solid ${config.enabled ? "rgba(34,197,94,0.3)" : "#dbe3ee"}` }}>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-bold text-gray-900">Tự động hoá email</div>
@@ -1391,7 +1391,7 @@ function SettingsTab() {
 
       <button onClick={handleSave} disabled={saving}
         className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-black"
-        style={{ background: saving ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+        style={{ background: saving ? "#dbe3ee" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
         {saving ? "Đang lưu..." : saved ? "✓ Đã lưu thành công!" : "Lưu cài đặt"}
       </button>
@@ -1441,19 +1441,19 @@ function CampaignModal({
           <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
             placeholder="VD: Email B2B tháng 4/2026"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+            style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
         </Field>
         <Field label="Tiêu đề email *">
           <input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
             placeholder="VD: Ưu đãi đặc biệt dành cho đối tác SmartFurni"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+            style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Phân khúc khách hàng">
             <select value={form.segment} onChange={e => setForm(p => ({ ...p, segment: e.target.value as EmailSegment }))}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
               {Object.entries(SEGMENT_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
@@ -1462,7 +1462,7 @@ function CampaignModal({
           <Field label="Dùng template có sẵn">
             <select value={form.templateId} onChange={e => setForm(p => ({ ...p, templateId: e.target.value }))}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
               <option value="">— Không dùng template —</option>
               {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
@@ -1472,11 +1472,11 @@ function CampaignModal({
           <input type="datetime-local" value={form.scheduledAt}
             onChange={e => setForm(p => ({ ...p, scheduledAt: e.target.value }))}
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+            style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
         </Field>
         <button type="submit" disabled={loading || !form.name || !form.subject}
           className="w-full py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
-          style={{ background: loading ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          style={{ background: loading ? "#dbe3ee" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           {loading ? "Đang lưu..." : editing ? "Cập nhật chiến dịch" : "Tạo chiến dịch"}
         </button>
@@ -1511,18 +1511,18 @@ function TemplateModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
             placeholder="VD: Email chào mừng B2B"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+            style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
         </Field>
         <Field label="Tiêu đề email *">
           <input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
             placeholder="VD: Giải pháp nội thất thông minh"
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+            style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
         </Field>
         <Field label="Danh mục">
           <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as EmailTemplateCategory }))}
             className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-            style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+            style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
             {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
@@ -1530,7 +1530,7 @@ function TemplateModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </Field>
         <button type="submit" disabled={loading || !form.name || !form.subject}
           className="w-full py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
-          style={{ background: loading ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          style={{ background: loading ? "#dbe3ee" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
           {loading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
           {loading ? "Đang lưu..." : "Tạo template"}
         </button>
@@ -1613,19 +1613,19 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
       <form onSubmit={handleSubmit} className="space-y-4">
 
         {/* ── Thông tin cơ bản ── */}
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Thông tin cơ bản</div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Tên workflow *">
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 placeholder="VĐ: Chào mừng lead mới"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
             </Field>
             <Field label="Trigger kích hoạt">
               <select value={form.triggerType} onChange={e => setForm(p => ({ ...p, triggerType: e.target.value as EmailWorkflow["triggerType"] }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                 {Object.entries(TRIGGER_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
@@ -1636,12 +1636,12 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
             <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               placeholder="Mô tả ngắn về workflow..."
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+              style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
           </Field>
         </div>
 
         {/* ── Điều kiện lọc ── */}
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
             <Target size={11} /> Điều kiện lọc <span className="font-normal normal-case text-gray-400">(tùy chọn)</span>
           </div>
@@ -1650,7 +1650,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
               <Field label="Giai đoạn lead">
                 <select value={form.filterStage} onChange={e => setForm(p => ({ ...p, filterStage: e.target.value }))}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                  style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                   {STAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
@@ -1658,7 +1658,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
             <Field label="Giá trị lead">
               <select value={form.filterValueRange} onChange={e => setForm(p => ({ ...p, filterValueRange: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                 {VALUE_RANGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </Field>
@@ -1666,14 +1666,14 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
               <input value={form.filterTag} onChange={e => setForm(p => ({ ...p, filterTag: e.target.value }))}
                 placeholder="VD: B2B, VIP, ..."
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
             </Field>
             {showNoActivityDays && (
               <Field label="Không tương tác (ngày)">
                 <input type="number" min={1} max={90} value={form.noActivityDays}
                   onChange={e => setForm(p => ({ ...p, noActivityDays: parseInt(e.target.value) || 5 }))}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                  style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
               </Field>
             )}
           </div>
@@ -1685,14 +1685,14 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
             <label className="text-xs font-semibold text-gray-700">Các bước email ({steps.length})</label>
             <button type="button" onClick={addStep}
               className="text-xs font-medium px-2.5 py-1 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1"
-              style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
+              style={{ border: "1px solid #dbe3ee", color: "#C9A84C" }}>
               <Plus size={11} /> Thêm bước
             </button>
           </div>
           <div className="space-y-2">
             {steps.map((step, i) => (
               <div key={i} className="rounded-xl p-3 space-y-2"
-                style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+                style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                     style={{ background: "#C9A84C20", color: "#C9A84C" }}>{i + 1}</span>
@@ -1701,18 +1701,18 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                     <input type="number" min={0} value={step.delayDays}
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayDays: parseInt(e.target.value) || 0 } : s))}
                       className="w-10 px-1.5 py-1 text-xs rounded-lg text-center focus:outline-none"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
                     <span className="text-xs text-gray-500">ngày</span>
                     <input type="number" min={0} max={23} value={step.delayHours}
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, delayHours: parseInt(e.target.value) || 0 } : s))}
                       className="w-10 px-1.5 py-1 text-xs rounded-lg text-center focus:outline-none"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
                     <span className="text-xs text-gray-500">giờ</span>
                   </div>
                   <select value={step.action}
                     onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, action: e.target.value } : s))}
                     className="text-xs px-2 py-1.5 rounded-lg focus:outline-none flex-shrink-0"
-                    style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                    style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <option value="send_email">✉️ Gửi email</option>
                     <option value="create_task">✅ Tạo task</option>
                     <option value="add_tag">🏷️ Thêm tag</option>
@@ -1731,11 +1731,11 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
                       placeholder="Tiêu đề email..."
                       className="px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
                     <select value={step.templateId}
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, templateId: e.target.value } : s))}
                       className="text-xs px-2 py-1.5 rounded-lg focus:outline-none"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                       <option value="">Không dùng template</option>
                       {templates.map(t => <option key={t.id} value={t.id}>{t.name.substring(0, 25)}</option>)}
                     </select>
@@ -1747,7 +1747,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
                       placeholder="Tiêu đề task... (VD: Gọi điện follow-up)"
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
                   </div>
                 )}
                 {step.action === "add_tag" && (
@@ -1756,7 +1756,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
                       onChange={e => setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, subject: e.target.value } : s))}
                       placeholder="Tên tag cần thêm... (VD: hot-lead)"
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg focus:outline-none"
-                      style={{ border: "1px solid #e5e7eb", background: "#fff" }} />
+                      style={{ border: "1px solid #dbe3ee", background: "#fff" }} />
                   </div>
                 )}
               </div>
@@ -1766,7 +1766,7 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
 
         <button type="submit" disabled={loading || !form.name}
           className="w-full py-2.5 rounded-xl text-sm font-bold text-black flex items-center justify-center gap-2"
-          style={{ background: loading ? "#e5e7eb" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
+          style={{ background: loading ? "#dbe3ee" : "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
           {loading ? "Đang lưu..." : editing ? "Cập nhật workflow" : "Tạo workflow"}
         </button>
@@ -1781,9 +1781,9 @@ function TemplatePreviewModal({ template, onClose }: { template: EmailTemplate; 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
-        style={{ width: "680px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
+        style={{ width: "680px", maxHeight: "85vh", border: "1px solid #dbe3ee" }}>
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb" }}>
+          style={{ borderBottom: "1px solid #dbe3ee" }}>
           <div>
             <div className="text-sm font-bold text-gray-900">{template.name}</div>
             <div className="text-xs text-gray-500 mt-0.5">Tiêu đề: {template.subject}</div>
@@ -1793,7 +1793,7 @@ function TemplatePreviewModal({ template, onClose }: { template: EmailTemplate; 
             <X size={16} className="text-gray-500" />
           </button>
         </div>
-        <div className="flex-1 overflow-auto p-4" style={{ background: "#f3f4f6" }}>
+        <div className="flex-1 overflow-auto p-4" style={{ background: "#f1f5f9" }}>
           <iframe
             srcDoc={template.htmlContent}
             className="w-full rounded-xl"
@@ -1813,7 +1813,7 @@ function EmptyState({ icon, title, description, action }: {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+        style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
         {icon}
       </div>
       <div className="text-base font-bold text-gray-900 mb-1">{title}</div>
@@ -1830,9 +1830,9 @@ function Modal({ title, onClose, children, wide }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
-        style={{ width: wide ? "680px" : "480px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
+        style={{ width: wide ? "680px" : "480px", maxHeight: "85vh", border: "1px solid #dbe3ee" }}>
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb" }}>
+          style={{ borderBottom: "1px solid #dbe3ee" }}>
           <span className="text-sm font-bold text-gray-900">{title}</span>
           <button onClick={onClose}
             className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
@@ -1927,11 +1927,11 @@ function SendTestEmailModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
-        style={{ width: "520px", maxHeight: "85vh", border: "1px solid #e5e7eb" }}>
+        style={{ width: "520px", maxHeight: "85vh", border: "1px solid #dbe3ee" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb" }}>
+          style={{ borderBottom: "1px solid #dbe3ee" }}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: `${srcColor}15` }}>
@@ -1959,7 +1959,7 @@ function SendTestEmailModal({
             style={{ background: `${srcColor}0d`, border: `1px solid ${srcColor}30` }}>
             <FlaskConical size={14} style={{ color: srcColor, marginTop: 2, flexShrink: 0 }} />
             <p className="text-xs text-gray-600 leading-relaxed">
-              Email test sẽ được gửi ngay tới địa chỉ bạn nhập. Các biến động <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f3f4f6" }}>{'{{name}}'}</code>, <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f3f4f6" }}>{'{{company}}'}</code>... sẽ được thay thế bằng dữ liệu mẫu. Email sẽ có banner <strong>[TEST]</strong> ở đầu.
+              Email test sẽ được gửi ngay tới địa chỉ bạn nhập. Các biến động <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f1f5f9" }}>{'{{name}}'}</code>, <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#f1f5f9" }}>{'{{company}}'}</code>... sẽ được thay thế bằng dữ liệu mẫu. Email sẽ có banner <strong>[TEST]</strong> ở đầu.
             </p>
           </div>
 
@@ -1974,7 +1974,7 @@ function SendTestEmailModal({
               onChange={e => { setToEmail(e.target.value); setResult(null); }}
               placeholder="your@email.com"
               className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}
               onKeyDown={e => e.key === "Enter" && handleSend()}
             />
           </div>
@@ -1987,7 +1987,7 @@ function SendTestEmailModal({
               onChange={e => setSubject(e.target.value)}
               placeholder="Tiêu đề email..."
               className="w-full px-3 py-2.5 text-sm rounded-xl focus:outline-none"
-              style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}
+              style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}
             />
             <p className="text-[10px] text-gray-400 mt-1">Email sẽ có tiêu đề <strong>[TEST]</strong> ở đầu</p>
           </div>
@@ -1996,7 +1996,7 @@ function SendTestEmailModal({
           {htmlContent && (
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Xem trước nội dung</label>
-              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e5e7eb", maxHeight: "200px", overflow: "auto" }}>
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #dbe3ee", maxHeight: "200px", overflow: "auto" }}>
                 <iframe
                   srcDoc={htmlContent}
                   className="w-full"
@@ -2036,10 +2036,10 @@ function SendTestEmailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #e5e7eb" }}>
+        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #dbe3ee" }}>
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-            style={{ border: "1px solid #e5e7eb" }}>
+            style={{ border: "1px solid #dbe3ee" }}>
             Đóng
           </button>
           <button
@@ -2047,7 +2047,7 @@ function SendTestEmailModal({
             disabled={sending || !toEmail}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
             style={{
-              background: sending || !toEmail ? "#e5e7eb" : `linear-gradient(135deg, ${srcColor}, ${srcColor}cc)`,
+              background: sending || !toEmail ? "#dbe3ee" : `linear-gradient(135deg, ${srcColor}, ${srcColor}cc)`,
               color: sending || !toEmail ? "#9ca3af" : "#fff",
             }}>
             {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -2128,7 +2128,7 @@ function LaunchCampaignModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid #e5e7eb" }}>
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid #dbe3ee" }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
               <Rocket size={16} style={{ color: "#000" }} />
@@ -2150,7 +2150,7 @@ function LaunchCampaignModal({
           {step === "confirm" && (
             <>
               {/* Campaign info */}
-              <div className="rounded-xl p-4 space-y-2" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+              <div className="rounded-xl p-4 space-y-2" style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-500">Chiến dịch</span>
                   <span className="font-semibold text-gray-900 text-right max-w-[200px] truncate">{campaign.name}</span>
@@ -2257,12 +2257,12 @@ function LaunchCampaignModal({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #e5e7eb" }}>
+        <div className="flex-shrink-0 px-5 py-4 flex gap-3" style={{ borderTop: "1px solid #dbe3ee" }}>
           {step === "confirm" && (
             <>
               <button onClick={onClose}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-                style={{ border: "1px solid #e5e7eb" }}>
+                style={{ border: "1px solid #dbe3ee" }}>
                 Hủy
               </button>
               <button
@@ -2270,7 +2270,7 @@ function LaunchCampaignModal({
                 disabled={loadingCount || recipientCount === 0}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all"
                 style={{
-                  background: (loadingCount || recipientCount === 0) ? "#e5e7eb" : "linear-gradient(135deg,#C9A84C,#E2C97E)",
+                  background: (loadingCount || recipientCount === 0) ? "#dbe3ee" : "linear-gradient(135deg,#C9A84C,#E2C97E)",
                   color: (loadingCount || recipientCount === 0) ? "#9ca3af" : "#000",
                 }}>
                 <Rocket size={14} />
@@ -2349,7 +2349,7 @@ function EditTemplateModal({
 <table width="100%" cellpadding="0" cellspacing="0" border="0">
 <tr><td style="padding:32px 24px;max-width:600px">
 ${htmlLines.join("\n")}
-<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px">
+<hr style="border:none;border-top:1px solid #dbe3ee;margin:24px 0 16px">
 <p style="font-size:11px;color:#9ca3af;line-height:1.5;margin:0">
 SmartFurni · smartfurni.vn<br>
 <a href="{{unsubscribe_url}}" style="color:#9ca3af">Hủy nhận email</a>
@@ -2404,11 +2404,11 @@ SmartFurni · smartfurni.vn<br>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.6)" }}>
       <div className="bg-white rounded-2xl flex flex-col overflow-hidden"
-        style={{ width: "min(1100px, 96vw)", height: "90vh", border: "1px solid #e5e7eb" }}>
+        style={{ width: "min(1100px, 96vw)", height: "90vh", border: "1px solid #dbe3ee" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
-          style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+          style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
@@ -2422,7 +2422,7 @@ SmartFurni · smartfurni.vn<br>
           <div className="flex items-center gap-2">
             <button onClick={handleSave} disabled={saving}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-black transition-all"
-              style={{ background: saving ? "#e5e7eb" : "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
+              style={{ background: saving ? "#dbe3ee" : "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
               {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
               {saving ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
@@ -2437,29 +2437,29 @@ SmartFurni · smartfurni.vn<br>
         <div className="flex flex-1 overflow-hidden">
 
           {/* Left: Form + Editor */}
-          <div className="flex flex-col overflow-y-auto" style={{ width: "420px", flexShrink: 0, borderRight: "1px solid #e5e7eb" }}>
+          <div className="flex flex-col overflow-y-auto" style={{ width: "420px", flexShrink: 0, borderRight: "1px solid #dbe3ee" }}>
 
             {/* Thông tin cơ bản */}
-            <div className="p-4 space-y-3" style={{ borderBottom: "1px solid #f3f4f6" }}>
+            <div className="p-4 space-y-3" style={{ borderBottom: "1px solid #f1f5f9" }}>
               <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Thông tin template</div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Tên template *</label>
                 <input value={name} onChange={e => setName(e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-300"
-                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                  style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Tiêu đề email *</label>
                 <input value={subject} onChange={e => setSubject(e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-300"
-                  style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                  style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Danh mục</label>
                   <select value={category} onChange={e => setCategory(e.target.value as EmailTemplateCategory)}
                     className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                    style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+                    style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
                     {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
@@ -2470,13 +2470,13 @@ SmartFurni · smartfurni.vn<br>
                   <input value={previewText} onChange={e => setPreviewText(e.target.value)}
                     placeholder="Mô tả ngắn..."
                     className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                    style={{ border: "1px solid #e5e7eb", background: "#f9fafb" }} />
+                    style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }} />
                 </div>
               </div>
             </div>
 
             {/* Biến động */}
-            <div className="px-4 py-3" style={{ borderBottom: "1px solid #f3f4f6" }}>
+            <div className="px-4 py-3" style={{ borderBottom: "1px solid #f1f5f9" }}>
               <div className="flex items-center gap-1.5 mb-2">
                 <Tag size={11} className="text-gray-400" />
                 <span className="text-xs font-semibold text-gray-600">Biến động (click để chèn)</span>
@@ -2485,7 +2485,7 @@ SmartFurni · smartfurni.vn<br>
                 {VARIABLES.map(v => (
                   <button key={v} onClick={() => insertVariable(v)}
                     className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium hover:bg-yellow-50 transition-colors"
-                    style={{ border: "1px solid #e5e7eb", color: "#C9A84C" }}>
+                    style={{ border: "1px solid #dbe3ee", color: "#C9A84C" }}>
                     {`{{${v}}}`}
                   </button>
                 ))}
@@ -2496,14 +2496,14 @@ SmartFurni · smartfurni.vn<br>
             <div className="px-4 pt-3 pb-2">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-gray-700">Nội dung email</span>
-                <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+                <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
                   <button
                     onClick={switchToText}
                     className="px-3 py-1.5 text-xs font-semibold transition-colors"
                     style={{
-                      background: editorMode === "text" ? "#1e1e1e" : "#f9fafb",
+                      background: editorMode === "text" ? "#1e1e1e" : "#f8fafc",
                       color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
-                      borderRight: "1px solid #e5e7eb",
+                      borderRight: "1px solid #dbe3ee",
                     }}>
                     ✏️ Văn bản
                   </button>
@@ -2511,7 +2511,7 @@ SmartFurni · smartfurni.vn<br>
                     onClick={switchToHtml}
                     className="px-3 py-1.5 text-xs font-semibold transition-colors"
                     style={{
-                      background: editorMode === "html" ? "#1e1e1e" : "#f9fafb",
+                      background: editorMode === "html" ? "#1e1e1e" : "#f8fafc",
                       color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
                     }}>
                     {"</>"} HTML
@@ -2531,7 +2531,7 @@ SmartFurni · smartfurni.vn<br>
                     onChange={e => setPlainText(e.target.value)}
                     className="w-full p-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 resize-none rounded-xl"
                     style={{
-                      border: "1px solid #e5e7eb",
+                      border: "1px solid #dbe3ee",
                       background: "#fafafa",
                       color: "#1a1a1a",
                       minHeight: "320px",
@@ -2551,7 +2551,7 @@ SmartFurni · smartfurni.vn<br>
                   onChange={e => setHtmlContent(e.target.value)}
                   className="w-full p-3 text-xs font-mono focus:outline-none resize-none rounded-xl"
                   style={{
-                    border: "1px solid #e5e7eb",
+                    border: "1px solid #dbe3ee",
                     background: "#1e1e1e",
                     color: "#d4d4d4",
                     minHeight: "320px",
@@ -2566,7 +2566,7 @@ SmartFurni · smartfurni.vn<br>
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Preview tabs */}
             <div className="flex items-center gap-1 px-4 py-2.5 flex-shrink-0"
-              style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
               <Eye size={13} className="text-gray-400 mr-1" />
               <span className="text-xs font-semibold text-gray-600 mr-3">Xem trước</span>
               {(["preview", "html", "text"] as const).map(mode => (
@@ -2582,7 +2582,7 @@ SmartFurni · smartfurni.vn<br>
             </div>
 
             {/* Preview content */}
-            <div className="flex-1 overflow-auto" style={{ background: "#f3f4f6" }}>
+            <div className="flex-1 overflow-auto" style={{ background: "#f1f5f9" }}>
               {activePreview === "preview" && (
                 <div className="p-4">
                   <div className="text-xs font-semibold text-gray-600 mb-2 px-1">
@@ -2607,8 +2607,8 @@ SmartFurni · smartfurni.vn<br>
               )}
               {activePreview === "text" && (
                 <div className="p-4">
-                  <div className="bg-white rounded-xl p-6" style={{ minHeight: "500px", border: "1px solid #e5e7eb" }}>
-                    <div className="text-xs text-gray-400 mb-3 pb-2" style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <div className="bg-white rounded-xl p-6" style={{ minHeight: "500px", border: "1px solid #dbe3ee" }}>
+                    <div className="text-xs text-gray-400 mb-3 pb-2" style={{ borderBottom: "1px solid #f1f5f9" }}>
                       Plain text version (dự phòng khi email client không hiển thị HTML)
                     </div>
                     <pre className="text-sm text-gray-800 whitespace-pre-wrap"

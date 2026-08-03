@@ -1,0 +1,102 @@
+.workspace {
+  --crm-canvas: #f4f7fb;
+  --crm-surface: #ffffff;
+  --crm-surface-soft: #f8fafc;
+  --crm-border: #dbe3ee;
+  --crm-border-strong: #c8d3e0;
+  --crm-text: #172033;
+  --crm-text-secondary: #526173;
+  --crm-text-muted: #738196;
+  --crm-brand: #9a7418;
+  --crm-brand-soft: #fff7dd;
+  color: var(--crm-text);
+}
+
+.workspace [class*='linear-gradient(145deg,rgba(31,37,52,0.82)'] {
+  background: var(--crm-surface) !important;
+  box-shadow: 0 10px 30px rgba(30, 48, 72, 0.08) !important;
+}
+
+.workspace [class*='bg-[#0d1420]'],
+.workspace [class*='bg-[#0b111b]'],
+.workspace [class*='bg-[#080d15]'],
+.workspace [class~='bg-black/10'] {
+  background: var(--crm-surface-soft) !important;
+}
+
+.workspace [class*='border-[rgba(118,138,166'],
+.workspace [class*='border-[rgba(255,200,100'] {
+  border-color: var(--crm-border) !important;
+}
+
+.workspace [class*='divide-[rgba(118,138,166'] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--crm-border) !important;
+}
+
+.workspace [class*='text-[rgba(245,237,214'],
+.workspace [class*='text-[#CFC5AE]'] {
+  color: var(--crm-text-muted) !important;
+}
+
+.workspace [class*='text-[#F5EDD6]'],
+.workspace [class*='text-[#E7D8AD]'] {
+  color: var(--crm-text) !important;
+}
+
+.workspace [class~='text-[#D9BD6A]'],
+.workspace [class~='text-[#E2C97E]'] {
+  color: var(--crm-brand) !important;
+}
+
+.workspace [class~='bg-[#C9A84C]/10'],
+.workspace [class~='bg-[#C9A84C]/12'],
+.workspace [class~='bg-[#C9A84C]/15'],
+.workspace [class~='bg-[#C9A84C]/[0.055]'],
+.workspace [class~='bg-[#C9A84C]/[0.065]'],
+.workspace [class~='bg-[#C9A84C]/[0.07]'] {
+  background: var(--crm-brand-soft) !important;
+}
+
+.workspace [class~='hover:bg-white/[0.035]']:hover,
+.workspace [class~='hover:bg-white/[0.04]']:hover {
+  background: #f1f5f9 !important;
+}
+
+.workspace input,
+.workspace textarea,
+.workspace select {
+  color: var(--crm-text) !important;
+}
+
+.workspace input::placeholder,
+.workspace textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.workspace [class*='text-emerald-100'],
+.workspace [class*='text-emerald-200'],
+.workspace [class*='text-emerald-300'] {
+  color: #087a55 !important;
+}
+
+.workspace [class*='text-sky-100'],
+.workspace [class*='text-sky-200'],
+.workspace [class*='text-sky-300'] {
+  color: #0369a1 !important;
+}
+
+.workspace [class*='text-amber-100'],
+.workspace [class*='text-amber-200'],
+.workspace [class*='text-amber-300'] {
+  color: #9a6200 !important;
+}
+
+.workspace [class*='text-red-100'],
+.workspace [class*='text-red-200'],
+.workspace [class*='text-red-300'] {
+  color: #b42318 !important;
+}
+
+.workspace [class*='text-slate-200'] {
+  color: var(--crm-text-secondary) !important;
+}

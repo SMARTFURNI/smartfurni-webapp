@@ -45,6 +45,7 @@ import type {
   FanpageCareStaffOption,
 } from "@/types/fanpage-care-center";
 import type { FanpageCareSettings } from "@/lib/fanpage-care-settings";
+import lightStyles from "@/components/crm/CrmLightWorkspace.module.css";
 
 type TabKey = "overview" | "care-plans" | "conversations" | "analysis" | "scripts" | "workflows" | "settings";
 
@@ -463,7 +464,7 @@ export function ConversationLearningClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[520px] items-center justify-center text-[#E2C97E]">
+      <div className="flex min-h-[520px] items-center justify-center text-[#9a7418]">
         <Loader2 className="mr-3 h-6 w-6 animate-spin" />
         Đang tải Trung tâm AI Fanpage...
       </div>
@@ -471,7 +472,7 @@ export function ConversationLearningClient() {
   }
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 text-[#F5EDD6]">
+    <div className={cn(lightStyles.workspace, "mx-auto max-w-[1680px] space-y-4 text-[#F5EDD6]")}>
       <Card className="overflow-hidden">
         <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between lg:p-6">
           <div className="flex min-w-0 items-start gap-4">
