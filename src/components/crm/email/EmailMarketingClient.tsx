@@ -287,7 +287,16 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
 
         {/* ── TAB: Chiến dịch ── */}
         {tab === "campaigns" && (
-          <div className="space-y-3">
+          <div className={styles.tabStack}>
+            <div className={styles.sectionBanner} data-tone="blue">
+              <div className={styles.sectionBannerIcon}><Send size={18} /></div>
+              <div>
+                <div className={styles.sectionEyebrow}>Campaign workspace</div>
+                <h2>Chiến dịch chăm sóc khách hàng</h2>
+                <p>Theo dõi trạng thái, lịch gửi và hiệu suất của từng chiến dịch trên một luồng thống nhất.</p>
+              </div>
+              <span className={styles.sectionCount}>{filteredCampaigns.length} chiến dịch</span>
+            </div>
             {filteredCampaigns.length === 0 ? (
               <EmptyState
                 icon={<Send size={32} style={{ color: "#C9A84C" }} />}
@@ -302,12 +311,12 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 }
               />
             ) : (
-              filteredCampaigns.map(campaign => {
+              <div className={styles.campaignList}>{filteredCampaigns.map(campaign => {
                 const sc = STATUS_CONFIG[campaign.status];
                 const openRate = campaign.sentCount > 0 ? Math.round((campaign.openCount / campaign.sentCount) * 100) : 0;
                 const clickRate = campaign.sentCount > 0 ? Math.round((campaign.clickCount / campaign.sentCount) * 100) : 0;
                 return (
-                  <div key={campaign.id} className={`${styles.surfaceCard} rounded-2xl p-4 transition-all hover:shadow-sm`}
+                  <div key={campaign.id} className={`${styles.surfaceCard} ${styles.campaignCard} rounded-2xl p-4 transition-all hover:shadow-sm`}
                     style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -395,14 +404,23 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                     )}
                   </div>
                 );
-              })
+              })}</div>
             )}
           </div>
         )}
 
         {/* ── TAB: Mẫu Email ── */}
         {tab === "templates" && (
-          <div>
+          <div className={styles.tabStack}>
+            <div className={styles.sectionBanner} data-tone="gold">
+              <div className={styles.sectionBannerIcon}><FileText size={18} /></div>
+              <div>
+                <div className={styles.sectionEyebrow}>Template library</div>
+                <h2>Thư viện mẫu Email</h2>
+                <p>Quản lý nội dung theo mục đích sử dụng, xem trước nhanh và gửi thử trước khi đưa vào chiến dịch.</p>
+              </div>
+              <span className={styles.sectionCount}>{filteredTemplates.length} mẫu</span>
+            </div>
             {filteredTemplates.length === 0 ? (
               <EmptyState
                 icon={<FileText size={32} style={{ color: "#60a5fa" }} />}
@@ -424,27 +442,31 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 }
               />
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className={styles.templateGallery}>
                 {filteredTemplates.map(template => {
                   const catColor = CATEGORY_COLORS[template.category];
                   return (
-                    <div key={template.id} className={`${styles.surfaceCard} rounded-2xl overflow-hidden hover:shadow-sm transition-all group`}
+                    <div key={template.id} className={`${styles.surfaceCard} ${styles.templateCard} rounded-2xl overflow-hidden transition-all group`}
                       style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
-                      <div className="h-28 overflow-hidden relative cursor-pointer" onClick={() => setPreviewTemplate(template)}
-                        style={{ background: "#050505" }}>
-                        <div className="absolute inset-0 p-2 overflow-hidden"
-                          style={{ transform: "scale(0.4)", transformOrigin: "top left", width: "250%", height: "250%" }}>
-                          <div dangerouslySetInnerHTML={{ __html: template.htmlContent }} />
+                      <div className={styles.templateWindowBar}>
+                        <span /><span /><span />
+                        <strong>Email preview</strong>
+                      </div>
+                      <div className={`${styles.templatePreview} relative cursor-pointer`} onClick={() => setPreviewTemplate(template)}>
+                        <div className={styles.templatePreviewSheet}>
+                          <div className={styles.templatePreviewContent}>
+                            <div dangerouslySetInnerHTML={{ __html: template.htmlContent }} />
+                          </div>
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{ background: "rgba(0,0,0,0.55)" }}>
+                          style={{ background: "rgba(35,49,72,0.24)", backdropFilter: "blur(2px)" }}>
                           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900"
                             style={{ background: "rgba(255,255,255,0.92)" }}>
                             <Eye size={11} /> Xem trước
                           </span>
                         </div>
                       </div>
-                      <div className="p-3">
+                      <div className={styles.templateInfo}>
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <span className="text-sm font-semibold text-gray-900 truncate flex-1">{template.name}</span>
                           <span className={`${styles.tag} text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0`}
@@ -487,10 +509,11 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                   );
                 })}
                 <button onClick={() => setShowNewTemplate(true)}
-                  className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 hover:border-yellow-400 hover:bg-yellow-50/30 transition-all min-h-[160px]"
+                  className={`${styles.newTemplateCard} rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all`}
                   style={{ borderColor: "#dbe3ee" }}>
-                  <Plus size={20} className="text-gray-400" />
-                  <span className="text-sm text-gray-400 font-medium">Tạo mẫu mới</span>
+                  <span className={styles.newTemplateIcon}><Plus size={22} /></span>
+                  <span className="text-sm font-bold">Tạo mẫu email mới</span>
+                  <small>Bắt đầu từ bố cục trống</small>
                 </button>
               </div>
             )}
@@ -508,13 +531,15 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
 
         {/* ── TAB: Workflow ── */}
         {tab === "workflows" && (
-          <div className="space-y-3">
-            <div className="rounded-xl px-4 py-3 flex items-center gap-3 mb-2"
-              style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)" }}>
-              <Zap size={16} style={{ color: "#60a5fa" }} />
-              <p className="text-xs text-gray-600">
-                Workflow tự động gửi chuỗi email theo hành động khách hàng. Mỗi bước có thể đặt thời gian trễ riêng.
-              </p>
+          <div className={styles.tabStack}>
+            <div className={styles.sectionBanner} data-tone="violet">
+              <div className={styles.sectionBannerIcon}><Zap size={18} /></div>
+              <div>
+                <div className={styles.sectionEyebrow}>Automation journey</div>
+                <h2>Workflow chăm sóc tự động</h2>
+                <p>Thiết kế chuỗi email theo hành vi khách hàng, thời gian chờ và điều kiện kích hoạt.</p>
+              </div>
+              <span className={styles.sectionCount}>{workflows.filter(w => w.status === "active").length} đang chạy</span>
             </div>
             {workflows.length === 0 ? (
               <EmptyState
@@ -530,10 +555,10 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 }
               />
             ) : (
-              workflows.map(wf => {
+              <div className={styles.workflowGrid}>{workflows.map(wf => {
                 const wsc = WORKFLOW_STATUS_CONFIG[wf.status];
                 return (
-                  <div key={wf.id} className={`${styles.surfaceCard} rounded-2xl p-4 transition-all hover:shadow-sm`}
+                  <div key={wf.id} className={`${styles.surfaceCard} ${styles.workflowCard} rounded-2xl p-4 transition-all hover:shadow-sm`}
                     style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -560,15 +585,16 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                           </span>
                         </div>
                         {wf.steps && wf.steps.length > 0 && (
-                          <div className="flex items-center gap-1 mt-2 flex-wrap">
+                          <div className={styles.workflowSteps}>
                             {wf.steps.slice(0, 4).map((step, i) => (
-                              <div key={step.id} className="flex items-center gap-1">
-                                <span className="text-[10px] px-2 py-0.5 rounded-md font-medium"
-                                  style={{ background: "#f1f5f9", color: "#6b7280" }}>
-                                  {step.delayDays > 0 ? `+${step.delayDays}d` : "Ngay"}: {(step.subject || "Email").substring(0, 18)}...
+                              <div key={step.id} className={styles.workflowStep}>
+                                <span className={styles.workflowStepNumber}>{i + 1}</span>
+                                <span>
+                                  <small>{step.delayDays > 0 ? `Sau ${step.delayDays} ngày` : "Gửi ngay"}</small>
+                                  <strong>{(step.subject || "Email").substring(0, 28)}{(step.subject || "Email").length > 28 ? "…" : ""}</strong>
                                 </span>
                                 {i < Math.min(wf.steps.length - 1, 3) && (
-                                  <ChevronRight size={10} className="text-gray-400" />
+                                  <ChevronRight size={12} className={styles.workflowArrow} />
                                 )}
                               </div>
                             ))}
@@ -618,7 +644,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                     </div>
                   </div>
                 );
-              })
+              })}</div>
             )}
           </div>
         )}
@@ -719,22 +745,22 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState<EmailTemplateCategory>("custom");
   const [previewText, setPreviewText] = useState("");
-  const [editorMode, setEditorMode] = useState<"html" | "text">("html");
+  const [editorMode, setEditorMode] = useState<"html" | "text">("text");
   const [plainText, setPlainText] = useState("Kính gửi anh/chị {{name}},\n\nNội dung email của bạn ở đây...\n\nTrân trọng,\nPhạm Nhất Bá Tuất\nGiám đốc Kinh doanh · SmartFurni\n📞 0820 xxx xxx · 🌐 smartfurni.vn");
-  const [htmlContent, setHtmlContent] = useState(`<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#fff;border-radius:12px;overflow:hidden">
-  <div style="background:linear-gradient(135deg,#1a1a1a,#0d0d0d);padding:40px;text-align:center;border-bottom:1px solid #222">
-    <div style="font-size:28px;font-weight:900;color:#C9A84C;letter-spacing:2px">SMARTFURNI</div>
-    <div style="font-size:12px;color:#888;margin-top:4px;letter-spacing:4px">NỘI THẤT THÔNG MINH</div>
+  const [htmlContent, setHtmlContent] = useState(`<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;color:#172033;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
+  <div style="background:linear-gradient(135deg,#fffdf5,#f7e7ac);padding:36px;text-align:center;border-bottom:1px solid #ead9a8">
+    <div style="font-size:28px;font-weight:900;color:#8f6917;letter-spacing:2px">SMARTFURNI</div>
+    <div style="font-size:12px;color:#7d6d49;margin-top:4px;letter-spacing:4px">NỘI THẤT THÔNG MINH</div>
   </div>
   <div style="padding:40px">
-    <p style="font-size:16px;line-height:1.6;color:#e0e0e0">Xin chào <strong style="color:#C9A84C">{{name}}</strong>,</p>
-    <p style="font-size:15px;line-height:1.7;color:#b0b0b0">Nội dung email của bạn ở đây...</p>
+    <p style="font-size:16px;line-height:1.6;color:#253249">Xin chào <strong style="color:#9a7418">{{name}}</strong>,</p>
+    <p style="font-size:15px;line-height:1.7;color:#526173">Nội dung email của bạn ở đây...</p>
     <div style="text-align:center;margin:32px 0">
       <a href="#" style="background:linear-gradient(135deg,#C9A84C,#E2C97E);color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">Xem chi tiết</a>
     </div>
   </div>
-  <div style="padding:24px;text-align:center;border-top:1px solid #222">
-    <p style="font-size:11px;color:#555;margin:0">SmartFurni — Nội thất thông minh cao cấp</p>
+  <div style="padding:24px;text-align:center;border-top:1px solid #e5e7eb;background:#f8fafc">
+    <p style="font-size:11px;color:#7b8798;margin:0">SmartFurni — Nội thất thông minh cao cấp</p>
   </div>
 </div>`);
   const [saving, setSaving] = useState(false);
@@ -790,11 +816,24 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
   }
 
   return (
-    <div className={`${styles.builderArea} grid grid-cols-2 gap-6`} style={{ minHeight: "600px" }}>
+    <div className={styles.builderShell}>
+      <div className={styles.sectionBanner} data-tone="emerald">
+        <div className={styles.sectionBannerIcon}><Palette size={18} /></div>
+        <div>
+          <div className={styles.sectionEyebrow}>Visual email studio</div>
+          <h2>Thiết kế nội dung Email</h2>
+          <p>Soạn nội dung thân thiện ở chế độ văn bản hoặc chuyển sang HTML nâng cao khi cần tùy biến.</p>
+        </div>
+        <span className={styles.sectionCount}>Xem trước trực tiếp</span>
+      </div>
+      <div className={`${styles.builderArea} grid grid-cols-2 gap-6`} style={{ minHeight: "600px" }}>
       {/* Left: Editor */}
       <div className="space-y-4">
-        <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Thông tin template</h3>
+        <div className={`${styles.builderPanel} rounded-2xl p-5`} style={{ border: "1px solid #dbe3ee" }}>
+          <div className={styles.panelHeading}>
+            <span>01</span>
+            <div><h3>Thông tin template</h3><p>Đặt tên và phân loại để dễ tái sử dụng.</p></div>
+          </div>
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">Tên template *</label>
@@ -832,15 +871,15 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
           </div>
         </div>
 
-        <div className="rounded-2xl p-4" style={{ border: "1px solid #dbe3ee" }}>
+        <div className={`${styles.variablePanel} rounded-2xl p-4`} style={{ border: "1px solid #dbe3ee" }}>
           <div className="flex items-center gap-2 mb-3">
             <Tag size={13} className="text-gray-500" />
-            <span className="text-xs font-semibold text-gray-700">Biến động (click để chèn)</span>
+            <span className="text-xs font-semibold text-gray-700">Trường cá nhân hóa · nhấn để chèn</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {VARIABLES.map(v => (
               <button key={v} onClick={() => insertVariable(v)}
-                className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium hover:bg-yellow-50 transition-colors"
+                className={styles.variableChip}
                 style={{ border: "1px solid #dbe3ee", color: "#C9A84C" }}>
                 {`{{${v}}}`}
               </button>
@@ -848,28 +887,19 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
           </div>
         </div>
 
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
+        <div className={`${styles.editorPanel} rounded-2xl overflow-hidden`} style={{ border: "1px solid #dbe3ee" }}>
           <div className="flex items-center justify-between px-4 py-2.5"
             style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
             <span className="text-xs font-semibold text-gray-700">Nội dung email</span>
             <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
-              <button
+              <button data-active={editorMode === "text"}
                 onClick={() => setEditorMode("text")}
-                className="px-3 py-1 text-xs font-semibold transition-colors"
-                style={{
-                  background: editorMode === "text" ? "#1e1e1e" : "#f8fafc",
-                  color: editorMode === "text" ? "#d4d4d4" : "#6b7280",
-                  borderRight: "1px solid #dbe3ee",
-                }}>
-                ✏️ Văn bản
+                className={styles.editorModeButton}>
+                <Edit3 size={11} /> Văn bản
               </button>
-              <button
+              <button data-active={editorMode === "html"}
                 onClick={() => setEditorMode("html")}
-                className="px-3 py-1 text-xs font-semibold transition-colors"
-                style={{
-                  background: editorMode === "html" ? "#1e1e1e" : "#f8fafc",
-                  color: editorMode === "html" ? "#d4d4d4" : "#6b7280",
-                }}>
+                className={styles.editorModeButton}>
                 {"</>"}  HTML
               </button>
             </div>
@@ -900,14 +930,14 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
               id="html-editor"
               value={htmlContent}
               onChange={e => setHtmlContent(e.target.value)}
-              className="w-full p-4 text-xs font-mono focus:outline-none resize-none"
-              style={{ minHeight: "200px", background: "#1e1e1e", color: "#d4d4d4" }}
+              className={`${styles.htmlEditor} w-full p-4 text-xs font-mono focus:outline-none resize-none`}
+              style={{ minHeight: "240px" }}
               rows={12}
             />
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className={styles.builderActions}>
           <button
             type="button"
             onClick={() => onSendTest?.(subject, finalHtml)}
@@ -926,11 +956,12 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
       </div>
 
       {/* Right: Preview */}
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
-        <div className="px-4 py-2.5 flex items-center gap-2"
+      <div className={`${styles.previewPanel} rounded-2xl overflow-hidden`} style={{ border: "1px solid #dbe3ee" }}>
+        <div className={`${styles.previewToolbar} px-4 py-2.5 flex items-center gap-2`}
           style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
           <Eye size={13} className="text-gray-500" />
-          <span className="text-xs font-semibold text-gray-700">Preview Email</span>
+          <span className="text-xs font-semibold text-gray-700">Xem trước Email</span>
+          <span className={styles.desktopBadge}>Desktop · 600px</span>
         </div>
         <div className="overflow-auto" style={{ height: "calc(100% - 40px)", background: "#f1f5f9" }}>
           <div className="p-4">
@@ -944,6 +975,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
             />
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
@@ -960,6 +992,15 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
 
   return (
     <div className="space-y-6">
+      <div className={styles.sectionBanner} data-tone="rose">
+        <div className={styles.sectionBannerIcon}><BarChart3 size={18} /></div>
+        <div>
+          <div className={styles.sectionEyebrow}>Performance intelligence</div>
+          <h2>Hiệu suất gửi và tương tác</h2>
+          <p>Đọc nhanh khả năng tiếp cận, mức độ mở và hành vi nhấp của khách hàng theo chiến dịch.</p>
+        </div>
+        <span className={styles.sectionCount}>{sentCampaigns.length} chiến dịch đã gửi</span>
+      </div>
       <div className={`${styles.performanceGrid} grid grid-cols-4 gap-4`}>
         {[
           { label: "Tổng email đã gửi",   value: totalSent.toLocaleString("vi-VN"),  icon: Send,       color: "#60a5fa" },
@@ -1187,7 +1228,16 @@ function SettingsTab() {
   }
 
   return (
-    <div className={`${styles.settingsArea} max-w-2xl space-y-5`}>
+    <div className={styles.settingsArea}>
+      <div className={styles.sectionBanner} data-tone="slate">
+        <div className={styles.sectionBannerIcon}><Settings size={18} /></div>
+        <div>
+          <div className={styles.sectionEyebrow}>Delivery control center</div>
+          <h2>Cấu hình Email Marketing</h2>
+          <p>Kiểm soát người gửi, lịch hoạt động, giới hạn an toàn và các quy tắc tuân thủ.</p>
+        </div>
+        <span className={styles.sectionCount}>{config.enabled ? "Đang hoạt động" : "Đang tạm dừng"}</span>
+      </div>
 
       {/* ── Thông tin người gửi ── */}
       <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
@@ -1810,7 +1860,7 @@ function EmptyState({ icon, title, description, action }: {
   icon: React.ReactNode; title: string; description: string; action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className={`${styles.emptyState} flex flex-col items-center justify-center py-16 text-center`}>
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
         style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
         {icon}
