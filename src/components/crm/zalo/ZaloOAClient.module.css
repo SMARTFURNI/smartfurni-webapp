@@ -273,6 +273,7 @@
   background: radial-gradient(circle at 92% 15%, rgba(245, 158, 11, 0.15), transparent 5.5rem), linear-gradient(135deg, #ffffff, #fff8e9) !important;
 }
 
+.outboundBubble,
 .lightTheme [class~='rounded-br-md'] {
   color: #ffffff !important;
   border-color: #4b83de !important;
@@ -280,14 +281,21 @@
   box-shadow: 0 8px 18px rgba(37, 99, 199, 0.18) !important;
 }
 
+.outboundBubble .messageMeta,
 .lightTheme [class~='rounded-br-md'] [class*='text-[rgba(245,237,214'] {
   color: rgba(255, 255, 255, 0.72) !important;
 }
 
+.inboundBubble,
 .lightTheme [class~='rounded-bl-md'] {
+  color: #1d2939 !important;
   border-color: #dbe3ee !important;
   background: linear-gradient(145deg, #ffffff, #f4f7fb) !important;
   box-shadow: 0 6px 16px rgba(30, 48, 72, 0.08) !important;
+}
+
+.inboundBubble .messageMeta {
+  color: #7a8798 !important;
 }
 
 .lightTheme [class~='text-[#c9a84c]'],
