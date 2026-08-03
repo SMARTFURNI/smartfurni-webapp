@@ -105,7 +105,6 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Nhắc nhở Zalo/SMS", href: "/crm/notifications", icon: Bell, permissionKey: "notifications_view" },
       { label: "Zalo OA", href: "/crm/zalo", icon: MessageSquare, superAdminOnly: true, permissionKey: "zalo_oa_view" },
       { label: "Zalo Inbox", href: "/crm/zalo-inbox", icon: MessageSquare, permissionKey: "zalo_inbox_view" },
-      { label: "Facebook Inbox", href: "/crm/facebook-inbox", icon: Facebook, permissionKey: "content_marketing_view" },
       { label: "Landing Pages", href: "/crm/landing-pages", icon: Globe, adminOnly: true, permissionKey: "content_marketing_view" },
     ],
     adminOnly: true,
