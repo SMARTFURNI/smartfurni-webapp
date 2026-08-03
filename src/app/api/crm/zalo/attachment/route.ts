@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     if (kind === "image") {
       if (!IMAGE_TYPES.has(upload.type)) return responseError("Zalo OA chỉ nhận ảnh JPG, PNG, GIF hoặc WebP từ CRM.");
-      if (upload.size > 5 * 1024 * 1024) return responseError("Ảnh không được vượt quá 5 MB.");
+      if (upload.size > 1024 * 1024) return responseError("Ảnh gửi qua Zalo OA không được vượt quá 1 MB.");
     } else {
       if (upload.type && !FILE_TYPES.has(upload.type)) return responseError("Định dạng tệp này chưa được phép gửi từ CRM.");
       if (upload.size > 10 * 1024 * 1024) return responseError("Tệp không được vượt quá 10 MB.");

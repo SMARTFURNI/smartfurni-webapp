@@ -385,18 +385,18 @@ function shouldRenderMessageContent(item: MessageRecord) {
   return !["[hình ảnh]", "[ảnh]", "[tệp đính kèm]", "[file]", "[video]", "[âm thanh]"].includes(content.toLowerCase());
 }
 
-function MessageAttachments({ attachment }: { attachment: MessageRecord["attachment"] }) {
+function MessageAttachments({ attachment, hasBody = false }: { attachment: MessageRecord["attachment"]; hasBody?: boolean }) {
   const items = Array.isArray(attachment?.items) ? attachment.items : [];
   if (!items.length) return null;
 
-  return <div className="mb-2 flex max-w-[320px] flex-wrap gap-2">
+  return <div className={`${hasBody ? "mb-2" : ""} flex w-fit max-w-full flex-wrap gap-2`}>
     {items.map((item, index) => {
       const type = String(item.type || "file").toLowerCase();
       const url = item.url || item.thumbnail || "";
       const label = item.name || (type === "image" ? "Ảnh khách gửi" : type === "audio" ? "Tin nhắn thoại" : type === "video" ? "Video" : "Tệp đính kèm");
       if ((type === "image" || type === "gif" || type === "sticker") && url) {
         const compact = items.length > 1;
-        return <a key={`${url}-${index}`} href={url} target="_blank" rel="noreferrer" className={`${compact ? "h-28 w-28 sm:h-32 sm:w-32" : "max-w-[300px]"} inline-flex overflow-hidden rounded-xl border border-white/10 bg-black/20 transition hover:border-[#c9a84c]/35`}>
+        return <a key={`${url}-${index}`} href={url} target="_blank" rel="noreferrer" className={`${compact ? "h-28 w-28 sm:h-32 sm:w-32" : "max-w-[280px] sm:max-w-[300px]"} inline-flex w-fit overflow-hidden rounded-xl border border-white/10 bg-black/20 transition hover:border-[#c9a84c]/35`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={item.thumbnail || url} alt={label} className={compact ? "h-full w-full object-cover" : "h-auto max-h-60 w-auto max-w-full object-contain"} loading="lazy" />
         </a>;
@@ -469,18 +469,23 @@ function InboxTab({ conversations, selectedUser, setSelectedUser, selected, mess
       <main className="flex min-h-[640px] min-w-0 flex-col bg-[radial-gradient(circle_at_top_right,rgba(104,70,0,0.10),transparent_34%)]">{selected ? <>
         <div className="flex flex-col gap-3 border-b border-[rgba(255,200,100,0.10)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><ConversationAvatar conversation={selected} /><div className="min-w-0"><h2 className="truncate text-base font-semibold">{selected.displayName || "Khách Zalo"}</h2><p className="mt-0.5 truncate text-[11px] text-[#8f99aa]">UID {selected.userId} · tương tác {formatDate(selected.lastUserInteraction)}</p></div></div><button disabled={busy === `ai-${selected.userId}`} onClick={generate} className={goldButton}>{busy === `ai-${selected.userId}` ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} AI gợi ý</button></div>
 
-        <div className="flex max-h-[520px] min-h-[360px] flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-6 sm:py-5">{messages.length ? messages.map(item => <div key={item.id} className={`max-w-[92%] rounded-2xl border px-3.5 py-2.5 sm:max-w-[76%] ${item.direction === "outbound" ? "ml-auto rounded-br-md border-[#c9a84c]/22 bg-[#c9a84c]/12" : "rounded-bl-md border-white/10 bg-[#0c1320]"}`}>
-          <MessageAttachments attachment={item.attachment} />
-          {shouldRenderMessageContent(item) && <p className="whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>}
-          <div className="mt-1.5 flex items-center justify-end gap-2 text-[10px] text-[#7f899a]"><span>{formatDate(item.createdAt)}</span>{item.direction === "outbound" && <span className={item.status === "failed" ? "text-red-300" : item.status === "read" ? "text-emerald-300" : "text-[#a99a72]"}>{messageStatusLabel(item)}</span>}</div>
-          {item.error && <p className="mt-2 text-xs text-red-300">{item.error}</p>}
-        </div>) : <Empty text="Chưa có nội dung trong hội thoại." />}</div>
+        <div className="flex max-h-[520px] min-h-[360px] flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-6 sm:py-5">{messages.length ? messages.map(item => {
+          const hasAttachment = Array.isArray(item.attachment?.items) && item.attachment.items.length > 0;
+          const renderContent = shouldRenderMessageContent(item);
+          const attachmentOnly = hasAttachment && !renderContent;
+          return <div key={item.id} className={`w-fit max-w-[88%] self-start rounded-2xl border sm:max-w-[70%] ${attachmentOnly ? "p-2" : "px-3.5 py-2.5"} ${item.direction === "outbound" ? "ml-auto self-end rounded-br-md border-[#c9a84c]/22 bg-[#c9a84c]/12" : "mr-auto rounded-bl-md border-white/10 bg-[#0c1320]"}`}>
+            <MessageAttachments attachment={item.attachment} hasBody={renderContent} />
+            {renderContent && <p className="max-w-full whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>}
+            <div className="mt-1.5 flex items-center justify-end gap-2 whitespace-nowrap text-[10px] text-[#7f899a]"><span>{formatDate(item.createdAt)}</span>{item.direction === "outbound" && <span className={item.status === "failed" ? "text-red-300" : item.status === "read" ? "text-emerald-300" : "text-[#a99a72]"}>{messageStatusLabel(item)}</span>}</div>
+            {item.error && <p className="mt-2 max-w-[320px] text-xs text-red-300">{item.error}</p>}
+          </div>;
+        }) : <Empty text="Chưa có nội dung trong hội thoại." />}</div>
 
         <div className="mt-auto border-t border-[rgba(255,200,100,0.10)] bg-black/15 p-3.5 sm:p-4">
           <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={event => void uploadAttachment(event, "image")} />
           <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.txt" className="hidden" onChange={event => void uploadAttachment(event, "file")} />
           <div className={`rounded-2xl border bg-[#0c1320] p-2 transition ${canReply ? "border-[rgba(255,200,100,0.18)] focus-within:border-[#c9a84c]/50" : "border-amber-400/16 opacity-75"}`}><textarea value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitReply(); } }} disabled={!canReply || sending || attaching} rows={2} className="block w-full resize-none bg-transparent px-2 py-1.5 text-sm leading-6 text-[#f5edd6] outline-none placeholder:text-[#687487]" placeholder={canReply ? "Nhập tin nhắn… Enter để gửi, Shift + Enter để xuống dòng" : "Cửa sổ tư vấn 7 ngày đã hết"} /><div className="flex flex-col gap-2 px-1 pb-0.5 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap items-center gap-1.5"><button type="button" onClick={() => imageInputRef.current?.click()} disabled={!canReply || sending || attaching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-xs text-[#b8c1cf] transition hover:border-[#c9a84c]/30 hover:text-[#f0d77e] disabled:opacity-40"><ImageIcon size={14} /> Ảnh</button><button type="button" onClick={() => fileInputRef.current?.click()} disabled={!canReply || sending || attaching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-xs text-[#b8c1cf] transition hover:border-[#c9a84c]/30 hover:text-[#f0d77e] disabled:opacity-40"><FileUp size={14} /> Tệp</button>{attaching && <span className="inline-flex items-center gap-1.5 text-[11px] text-[#d6b75b]"><Loader2 size={13} className="animate-spin" /> Đang tải lên và gửi…</span>}</div><button onClick={() => void submitReply()} disabled={!draft.trim() || !canReply || sending || attaching} className={`${goldButton} h-9 shrink-0 px-3`}>{sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Gửi</button></div></div>
-          <p className="mt-2 text-[10px] leading-4 text-[#687487]">Gửi trực tiếp từ CRM: ảnh tối đa 5 MB; PDF, Word, Excel, ZIP hoặc TXT tối đa 10 MB. Mọi tin gửi từ OA Manager vẫn được đồng bộ qua webhook.</p>
+          <p className="mt-2 text-[10px] leading-4 text-[#687487]">Gửi trực tiếp từ CRM: ảnh tối đa 1 MB; PDF, Word, Excel, ZIP hoặc TXT tối đa 10 MB. Mọi tin gửi từ OA Manager vẫn được đồng bộ qua webhook.</p>
         </div>
       </> : <Empty text="Chọn một hội thoại Zalo OA để xem và trả lời." />}</main>
     </div>
