@@ -1,0 +1,145 @@
+.lightTheme {
+  --zalo-canvas: #f4f7fb;
+  --zalo-surface: #ffffff;
+  --zalo-surface-soft: #f8fafc;
+  --zalo-border: #dbe3ee;
+  --zalo-border-strong: #c8d3e0;
+  --zalo-text: #172033;
+  --zalo-text-secondary: #526173;
+  --zalo-text-muted: #738196;
+  --zalo-gold: #9a7418;
+  --zalo-gold-soft: #fff7dd;
+  background: var(--zalo-canvas);
+  color: var(--zalo-text);
+}
+
+.lightTheme [class*='bg-[#1a1200]'],
+.lightTheme [class*='bg-[#130f08]'],
+.lightTheme [class*='rgba(31,22,3,0.96)'] {
+  background: var(--zalo-surface) !important;
+}
+
+.lightTheme [class*='bg-[#110d05]'],
+.lightTheme [class*='bg-[#0d0b06]'],
+.lightTheme [class*='bg-[#0c1320]'],
+.lightTheme [class*='bg-[#0b111d]'],
+.lightTheme [class~='bg-black/10'],
+.lightTheme [class~='bg-black/15'],
+.lightTheme [class~='bg-black/20'] {
+  background: var(--zalo-surface-soft) !important;
+}
+
+.lightTheme [class*='linear-gradient(145deg,#172133,#0c1220)'] {
+  background: linear-gradient(145deg, #f8fafc, #eaf0f6) !important;
+}
+
+.lightTheme [class*='linear-gradient(90deg,rgba(16,60,43,0.34)'] {
+  background: linear-gradient(90deg, #ecfdf5, #ffffff) !important;
+}
+
+.lightTheme [class*='border-[rgba(255,200,100'],
+.lightTheme [class~='border-white/6'],
+.lightTheme [class~='border-white/8'],
+.lightTheme [class~='border-white/10'] {
+  border-color: var(--zalo-border) !important;
+}
+
+.lightTheme [class*='divide-[rgba(255,200,100'] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--zalo-border) !important;
+}
+
+.lightTheme [class*='text-[rgba(245,237,214'],
+.lightTheme [class*='text-[#8f99aa]'],
+.lightTheme [class*='text-[#7e899b]'],
+.lightTheme [class*='text-[#778396]'],
+.lightTheme [class*='text-[#7f899a]'],
+.lightTheme [class*='text-[#687487]'],
+.lightTheme [class*='text-[#697587]'],
+.lightTheme [class*='text-[#738095]'],
+.lightTheme [class*='text-[#7b8798]'],
+.lightTheme [class*='text-[#6f7b8d]'],
+.lightTheme [class*='text-[#536071]'],
+.lightTheme [class*='text-[#9ca6b7]'],
+.lightTheme [class*='text-[#a99a72]'] {
+  color: var(--zalo-text-muted) !important;
+}
+
+.lightTheme [class*='text-[#f5edd6]'],
+.lightTheme [class*='text-[#d8d0c1]'],
+.lightTheme [class*='text-[#b5bdca]'],
+.lightTheme [class*='text-[#b6bfcc]'],
+.lightTheme [class*='text-[#b8c1cf]'],
+.lightTheme [class*='text-[#a5aebc]'],
+.lightTheme [class*='text-[#c0c7d2]'] {
+  color: var(--zalo-text) !important;
+}
+
+.lightTheme input,
+.lightTheme textarea,
+.lightTheme select {
+  color: var(--zalo-text) !important;
+}
+
+.lightTheme input::placeholder,
+.lightTheme textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.lightTheme table thead {
+  background: #f1f5f9 !important;
+  color: #526173 !important;
+}
+
+.lightTheme table tbody tr:hover {
+  background: #f8fafc !important;
+}
+
+.lightTheme [class*='shadow-[0_18px_55px'],
+.lightTheme [class*='shadow-[0_18px_50px'] {
+  box-shadow: 0 10px 30px rgba(30, 48, 72, 0.08) !important;
+}
+
+.lightTheme [class*='text-[#c9a84c]'],
+.lightTheme [class*='text-[#d6b75b]'],
+.lightTheme [class*='text-[#e0c66f]'],
+.lightTheme [class*='text-[#e3c86f]'],
+.lightTheme [class*='text-[#e4c96e]'],
+.lightTheme [class*='text-[#f0d77e]'] {
+  color: var(--zalo-gold) !important;
+}
+
+.lightTheme [class*='bg-[#c9a84c]/10'],
+.lightTheme [class*='bg-[#c9a84c]/12'],
+.lightTheme [class*='bg-[#c9a84c]/[0.05]'],
+.lightTheme [class*='bg-[#c9a84c]/[0.06]'],
+.lightTheme [class*='bg-[#c9a84c]/[0.07]'],
+.lightTheme [class*='bg-[#c9a84c]/[0.08]'] {
+  background: var(--zalo-gold-soft) !important;
+}
+
+.lightTheme [class*='text-emerald-100'],
+.lightTheme [class*='text-emerald-200'],
+.lightTheme [class*='text-emerald-300'] {
+  color: #087a55 !important;
+}
+
+.lightTheme [class*='text-sky-200'],
+.lightTheme [class*='text-sky-300'] {
+  color: #0369a1 !important;
+}
+
+.lightTheme [class*='text-amber-100'],
+.lightTheme [class*='text-amber-200'],
+.lightTheme [class*='text-amber-300'] {
+  color: #9a6200 !important;
+}
+
+.lightTheme [class*='text-red-200'],
+.lightTheme [class*='text-red-300'] {
+  color: #b42318 !important;
+}
+
+.lightTheme [class*='text-violet-200'],
+.lightTheme [class*='text-violet-300'] {
+  color: #6d28d9 !important;
+}
