@@ -550,10 +550,10 @@ function InboxTab({ conversations, selectedUser, setSelectedUser, selected, mess
           const hasAttachment = Array.isArray(item.attachment?.items) && item.attachment.items.length > 0;
           const renderContent = shouldRenderMessageContent(item);
           const attachmentOnly = hasAttachment && !renderContent;
-          return <div key={item.id} className={`w-fit max-w-[88%] self-start rounded-2xl border sm:max-w-[70%] ${attachmentOnly ? "p-2" : "px-3.5 py-2.5"} ${item.direction === "outbound" ? "ml-auto self-end rounded-br-md border-[#c9a84c]/22 bg-[#c9a84c]/12" : "mr-auto rounded-bl-md border-white/10 bg-[#0c1320]"}`}>
+          return <div key={item.id} className={`w-fit max-w-[88%] self-start rounded-2xl border sm:max-w-[70%] ${attachmentOnly ? "p-2" : "px-3.5 py-2.5"} ${item.direction === "outbound" ? `ml-auto self-end rounded-br-md ${styles.outboundBubble}` : `mr-auto rounded-bl-md ${styles.inboundBubble}`}`}>
             <MessageAttachments attachment={item.attachment} hasBody={renderContent} />
             {renderContent && <p className="max-w-full whitespace-pre-wrap break-words text-sm leading-6">{item.content}</p>}
-            <div className="mt-1.5 flex items-center justify-end gap-2 whitespace-nowrap text-[10px] text-[#7f899a]"><span>{formatDate(item.createdAt)}</span>{item.direction === "outbound" && <span className={item.status === "failed" ? "text-red-300" : item.status === "read" ? "text-emerald-300" : "text-[#a99a72]"}>{messageStatusLabel(item)}</span>}</div>
+            <div className={`${styles.messageMeta} mt-1.5 flex items-center justify-end gap-2 whitespace-nowrap text-[10px] text-[#7f899a]`}><span>{formatDate(item.createdAt)}</span>{item.direction === "outbound" && <span className={item.status === "failed" ? "text-red-200" : item.status === "read" ? "text-emerald-200" : "text-white/75"}>{messageStatusLabel(item)}</span>}</div>
             {item.error && <p className="mt-2 max-w-[320px] text-xs text-red-300">{item.error}</p>}
           </div>;
         }) : <Empty text="Chưa có nội dung trong hội thoại." />}</div>
