@@ -18,6 +18,7 @@ export interface ZaloHistorySyncSummary {
   messagesInserted: number;
   messagesSkipped: number;
   profilesUpdated: number;
+  tagsSynced: number;
   warnings: string[];
   error: string;
 }
@@ -77,7 +78,46 @@ export interface ZaloConversation {
   lastMessageAt: string | null;
   unreadCount: number;
   tags: string[];
+  tagIds: string[];
   aiStatus: string;
+}
+
+export interface ZaloCustomerTag {
+  id: string;
+  name: string;
+  color: string;
+  source: "oa" | "crm";
+  zaloTagId: string;
+  customerCount: number;
+  updatedAt: string;
+}
+
+export interface ZaloCustomerSegment {
+  id: string;
+  name: string;
+  description: string;
+  tagIds: string[];
+  matchType: "any" | "all";
+  activeWithinDays: number;
+  customerCount: number;
+  eligibleCount: number;
+  updatedAt: string;
+}
+
+export interface ZaloCampaign {
+  id: string;
+  name: string;
+  segmentId: string;
+  segmentName: string;
+  content: string;
+  status: "draft" | "sending" | "completed" | "partial" | "failed";
+  totalCount: number;
+  eligibleCount: number;
+  sentCount: number;
+  failedCount: number;
+  excludedCount: number;
+  createdAt: string;
+  sentAt: string | null;
 }
 
 export interface ZaloMessageRecord {
@@ -129,6 +169,9 @@ export interface ZaloDashboard {
   conversations: ZaloConversation[];
   messages: ZaloMessageRecord[];
   aiQueue: ZaloAiQueueItem[];
+  customerTags: ZaloCustomerTag[];
+  segments: ZaloCustomerSegment[];
+  campaigns: ZaloCampaign[];
 }
 
 const DEFAULT_MODEL = "gpt-5.6-terra";
@@ -228,10 +271,84 @@ export async function initZaloOASchema(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS crm_zalo_tags (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL DEFAULT '#C9A84C',
+      source TEXT NOT NULL DEFAULT 'crm',
+      zalo_tag_id TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS crm_zalo_tags_name_source_idx ON crm_zalo_tags (LOWER(name), source);
+
+    CREATE TABLE IF NOT EXISTS crm_zalo_customer_tags (
+      user_id TEXT NOT NULL,
+      tag_id TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'crm',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, tag_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS crm_zalo_segments (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      tag_ids JSONB NOT NULL DEFAULT '[]',
+      match_type TEXT NOT NULL DEFAULT 'any',
+      active_within_days INTEGER NOT NULL DEFAULT 7,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS crm_zalo_campaigns (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      segment_id TEXT NOT NULL DEFAULT '',
+      content TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'draft',
+      total_count INTEGER NOT NULL DEFAULT 0,
+      eligible_count INTEGER NOT NULL DEFAULT 0,
+      sent_count INTEGER NOT NULL DEFAULT 0,
+      failed_count INTEGER NOT NULL DEFAULT 0,
+      excluded_count INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      approved_at TIMESTAMPTZ,
+      sent_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS crm_zalo_campaign_recipients (
+      campaign_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      error TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sent_at TIMESTAMPTZ,
+      PRIMARY KEY (campaign_id, user_id)
+    );
+
     CREATE INDEX IF NOT EXISTS crm_zalo_messages_user_idx ON crm_zalo_messages(conversation_user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS crm_zalo_messages_status_idx ON crm_zalo_messages(status, created_at DESC);
     CREATE INDEX IF NOT EXISTS crm_zalo_ai_queue_status_idx ON crm_zalo_ai_queue(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS crm_zalo_customer_tags_tag_idx ON crm_zalo_customer_tags(tag_id, user_id);
+    CREATE INDEX IF NOT EXISTS crm_zalo_campaigns_created_idx ON crm_zalo_campaigns(created_at DESC);
     INSERT INTO crm_zalo_config (id) VALUES ('default') ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO crm_zalo_tags (id,name,source)
+    SELECT 'legacy-' || md5(tag_name), tag_name, 'crm'
+    FROM crm_zalo_conversations c
+    CROSS JOIN LATERAL jsonb_array_elements_text(c.tags) AS tag_name
+    WHERE tag_name <> ''
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO crm_zalo_customer_tags (user_id,tag_id,source)
+    SELECT c.user_id, 'legacy-' || md5(tag_name), 'crm'
+    FROM crm_zalo_conversations c
+    CROSS JOIN LATERAL jsonb_array_elements_text(c.tags) AS tag_name
+    WHERE tag_name <> ''
+    ON CONFLICT (user_id,tag_id) DO NOTHING;
   `);
 
   const defaults: Array<[string, string, ZaloMessageCategory, string, string[]]> = [
@@ -343,6 +460,7 @@ function mapHistorySync(row?: Record<string, unknown>): ZaloHistorySyncSummary {
     messagesInserted: Number(raw.messagesInserted || 0),
     messagesSkipped: Number(raw.messagesSkipped || 0),
     profilesUpdated: Number(raw.profilesUpdated || 0),
+    tagsSynced: Number(raw.tagsSynced || 0),
     warnings,
     error: String(row?.history_sync_error || raw.error || ""),
   };
@@ -387,7 +505,8 @@ function mapConversation(row: Record<string, unknown>): ZaloConversation {
     userId: String(row.user_id), displayName: String(row.display_name || "Khách Zalo"), phone: String(row.phone || ""),
     avatar: String(row.avatar || ""), lastUserInteraction: row.last_user_interaction ? String(row.last_user_interaction) : null,
     lastMessagePreview: String(row.last_message_preview || ""), lastMessageAt: row.last_message_at ? String(row.last_message_at) : null,
-    unreadCount: Number(row.unread_count || 0), tags: asArray(row.tags), aiStatus: String(row.ai_status || "idle"),
+    unreadCount: Number(row.unread_count || 0), tags: asArray(row.resolved_tags ?? row.tags),
+    tagIds: asArray(row.tag_ids), aiStatus: String(row.ai_status || "idle"),
   };
 }
 
@@ -413,12 +532,56 @@ function mapQueue(row: Record<string, unknown>): ZaloAiQueueItem {
   };
 }
 
+const TAG_COLORS = ["#C9A84C", "#38BDF8", "#A78BFA", "#34D399", "#FB923C", "#F87171"];
+
+function stableTagId(name: string, source: "oa" | "crm"): string {
+  return `${source}-${createHash("sha256").update(name.trim().toLocaleLowerCase("vi")).digest("hex").slice(0, 20)}`;
+}
+
+function stableTagColor(name: string): string {
+  const value = createHash("sha256").update(name).digest().readUInt16BE(0);
+  return TAG_COLORS[value % TAG_COLORS.length];
+}
+
+function mapCustomerTag(row: Record<string, unknown>): ZaloCustomerTag {
+  return {
+    id: String(row.id), name: String(row.name), color: String(row.color || "#C9A84C"),
+    source: String(row.source) === "oa" ? "oa" : "crm", zaloTagId: String(row.zalo_tag_id || ""),
+    customerCount: Number(row.customer_count || 0), updatedAt: String(row.updated_at),
+  };
+}
+
+function mapCampaign(row: Record<string, unknown>): ZaloCampaign {
+  return {
+    id: String(row.id), name: String(row.name), segmentId: String(row.segment_id || ""),
+    segmentName: String(row.segment_name || "Khách đã chọn"), content: String(row.content || ""),
+    status: String(row.status) as ZaloCampaign["status"], totalCount: Number(row.total_count || 0),
+    eligibleCount: Number(row.eligible_count || 0), sentCount: Number(row.sent_count || 0),
+    failedCount: Number(row.failed_count || 0), excludedCount: Number(row.excluded_count || 0),
+    createdAt: String(row.created_at), sentAt: row.sent_at ? String(row.sent_at) : null,
+  };
+}
+
+function enrichedConversationQuery(where = "", limit = "") {
+  return `SELECT c.*,COALESCE(tag_data.tag_ids,'[]'::jsonb) AS tag_ids,
+    COALESCE(tag_data.tag_names,c.tags,'[]'::jsonb) AS resolved_tags
+    FROM crm_zalo_conversations c
+    LEFT JOIN LATERAL (
+      SELECT jsonb_agg(ct.tag_id ORDER BY LOWER(t.name)) AS tag_ids,
+        jsonb_agg(t.name ORDER BY LOWER(t.name)) AS tag_names
+      FROM crm_zalo_customer_tags ct
+      JOIN crm_zalo_tags t ON t.id=ct.tag_id
+      WHERE ct.user_id=c.user_id
+    ) tag_data ON true
+    ${where} ORDER BY c.last_message_at DESC NULLS LAST ${limit}`;
+}
+
 export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
   await initZaloOASchema();
-  const [config, templates, conversationRows, messageRows, queueRows, statRows] = await Promise.all([
+  const [config, templates, conversationRows, messageRows, queueRows, statRows, tagRows, segmentRows, campaignRows] = await Promise.all([
     getZaloOAConfig(),
     getZaloTemplates(),
-    query<Record<string, unknown>>(`SELECT * FROM crm_zalo_conversations ORDER BY last_message_at DESC NULLS LAST LIMIT 100`),
+    query<Record<string, unknown>>(enrichedConversationQuery()),
     query<Record<string, unknown>>(`SELECT m.*,c.display_name FROM crm_zalo_messages m LEFT JOIN crm_zalo_conversations c ON c.user_id=m.conversation_user_id ORDER BY m.created_at DESC LIMIT 200`),
     query<Record<string, unknown>>(`SELECT * FROM crm_zalo_ai_queue ORDER BY created_at DESC LIMIT 100`),
     query<Record<string, unknown>>(`SELECT
@@ -428,9 +591,36 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
       COUNT(*) FILTER (WHERE status='pending')::int AS pending,
       COUNT(*) FILTER (WHERE status IN ('sent','delivered','read') AND created_at >= CURRENT_DATE)::int AS sent_today
       FROM crm_zalo_messages`),
+    query<Record<string, unknown>>(`SELECT t.*,COUNT(ct.user_id)::int AS customer_count
+      FROM crm_zalo_tags t LEFT JOIN crm_zalo_customer_tags ct ON ct.tag_id=t.id
+      GROUP BY t.id ORDER BY LOWER(t.name)`),
+    query<Record<string, unknown>>(`SELECT * FROM crm_zalo_segments ORDER BY updated_at DESC`),
+    query<Record<string, unknown>>(`SELECT c.*,COALESCE(s.name,'Khách đã chọn') AS segment_name
+      FROM crm_zalo_campaigns c LEFT JOIN crm_zalo_segments s ON s.id=c.segment_id
+      ORDER BY c.created_at DESC LIMIT 50`),
   ]);
   const conversations = conversationRows.map(mapConversation);
   const aiQueue = queueRows.map(mapQueue);
+  const segments = segmentRows.map(row => {
+    const tagIds = asArray(row.tag_ids);
+    const matchType = String(row.match_type) === "all" ? "all" : "any";
+    const activeWithinDays = Math.max(0, Number(row.active_within_days || 0));
+    const matching = conversations.filter(customer => {
+      const tagMatch = !tagIds.length || (matchType === "all"
+        ? tagIds.every(id => customer.tagIds.includes(id))
+        : tagIds.some(id => customer.tagIds.includes(id)));
+      if (!tagMatch) return false;
+      if (!activeWithinDays) return true;
+      if (!customer.lastUserInteraction) return false;
+      return Date.now() - new Date(customer.lastUserInteraction).getTime() <= activeWithinDays * 86_400_000;
+    });
+    return {
+      id: String(row.id), name: String(row.name), description: String(row.description || ""), tagIds,
+      matchType, activeWithinDays, customerCount: matching.length,
+      eligibleCount: matching.filter(customer => isWithinSevenDays(customer.lastUserInteraction)).length,
+      updatedAt: String(row.updated_at),
+    } satisfies ZaloCustomerSegment;
+  });
   const s = statRows[0] || {};
   const { appSecret: _appSecret, oaSecretKey: _oaSecretKey, accessToken: _accessToken, refreshToken: _refreshToken, ...safeConfig } = config;
   const configMeta = await query<Record<string, unknown>>(
@@ -456,6 +646,7 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
       aiDrafts: aiQueue.filter(item => item.status === "draft").length, sentToday: Number(s.sent_today || 0),
     },
     templates, conversations, messages: messageRows.map(mapMessage), aiQueue,
+    customerTags: tagRows.map(mapCustomerTag), segments, campaigns: campaignRows.map(mapCampaign),
   };
 }
 
@@ -477,10 +668,37 @@ export async function getZaloConversationMessages(userId: string, limit = 300): 
 export async function getZaloConversation(userId: string): Promise<ZaloConversation | null> {
   await initZaloOASchema();
   const rows = await query<Record<string, unknown>>(
-    `SELECT * FROM crm_zalo_conversations WHERE user_id=$1 LIMIT 1`,
+    enrichedConversationQuery(`WHERE c.user_id=$1`, "LIMIT 1"),
     [userId],
   );
   return rows[0] ? mapConversation(rows[0]) : null;
+}
+
+async function replaceOATagsForUser(userId: string, tagNames: string[]): Promise<void> {
+  const normalized = Array.from(new Set(tagNames.map(name => name.trim()).filter(Boolean)));
+  await query(`DELETE FROM crm_zalo_customer_tags WHERE user_id=$1 AND source='oa'`, [userId]);
+  for (const name of normalized) {
+    const id = stableTagId(name, "oa");
+    await query(
+      `INSERT INTO crm_zalo_tags (id,name,color,source,zalo_tag_id)
+       VALUES ($1,$2,$3,'oa',$2)
+       ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color,
+         zalo_tag_id=EXCLUDED.zalo_tag_id,updated_at=NOW()`,
+      [id, name, stableTagColor(name)],
+    );
+    await query(
+      `INSERT INTO crm_zalo_customer_tags (user_id,tag_id,source) VALUES ($1,$2,'oa')
+       ON CONFLICT (user_id,tag_id) DO UPDATE SET source='oa'`,
+      [userId, id],
+    );
+  }
+}
+
+function zaloProfileDate(value: unknown): string | null {
+  const raw = String(value || "").trim();
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+  if (!match) return null;
+  return `${match[3]}-${match[2]}-${match[1]}T00:00:00+07:00`;
 }
 
 export async function syncZaloUserProfile(userId: string): Promise<ZaloConversation | null> {
@@ -497,22 +715,33 @@ export async function syncZaloUserProfile(userId: string): Promise<ZaloConversat
     const body = await response.json().catch(() => ({})) as {
       error?: number;
       message?: string;
-      data?: { display_name?: string; name?: string; avatar?: string; avatar_url?: string; user_id?: string };
+      data?: {
+        display_name?: string; name?: string; avatar?: string; avatar_url?: string; user_id?: string;
+        user_last_interaction_date?: string;
+        tags_and_notes_info?: { tag_names?: unknown };
+        shared_info?: { phone?: string | number; name?: string };
+      };
     };
     if (!response.ok || Number(body.error || 0) !== 0 || !body.data) return stored;
 
     const displayName = String(body.data.display_name || body.data.name || "").trim();
     const avatar = String(body.data.avatar || body.data.avatar_url || "").trim();
-    if (!displayName && !avatar) return stored;
+    const phone = String(body.data.shared_info?.phone || "").trim();
+    const lastInteraction = zaloProfileDate(body.data.user_last_interaction_date);
+    const hasTagPayload = body.data.tags_and_notes_info?.tag_names !== undefined;
+    const tagNames = asArray(body.data.tags_and_notes_info?.tag_names);
 
     await query(
       `UPDATE crm_zalo_conversations SET
        display_name=CASE WHEN $2<>'' THEN $2 ELSE display_name END,
        avatar=CASE WHEN $3<>'' THEN $3 ELSE avatar END,
+       phone=CASE WHEN $4<>'' THEN $4 ELSE phone END,
+       last_user_interaction=CASE WHEN $5::timestamptz IS NOT NULL AND (last_user_interaction IS NULL OR last_user_interaction<$5::timestamptz) THEN $5::timestamptz ELSE last_user_interaction END,
        updated_at=NOW()
        WHERE user_id=$1`,
-      [userId, displayName, avatar],
+      [userId, displayName, avatar, phone, lastInteraction],
     );
+    if (hasTagPayload) await replaceOATagsForUser(userId, tagNames);
     return await getZaloConversation(userId);
   } catch {
     // Hồ sơ chỉ làm giàu giao diện; lỗi API không được làm gián đoạn hội thoại.
@@ -594,7 +823,7 @@ export async function syncZaloOAHistory(): Promise<ZaloHistorySyncSummary> {
     status: "running", startedAt, finishedAt: null,
     customersSeen: 0, customersUpserted: 0, conversationsSeen: 0,
     messagesSeen: 0, messagesInserted: 0, messagesSkipped: 0,
-    profilesUpdated: 0, warnings: [], error: "",
+    profilesUpdated: 0, tagsSynced: 0, warnings: [], error: "",
   };
   await saveHistorySync(summary);
 
@@ -625,7 +854,7 @@ export async function syncZaloOAHistory(): Promise<ZaloHistorySyncSummary> {
       }
     };
 
-    await collectUsers("Danh sách người quan tâm", "https://openapi.zalo.me/v2.0/oa/getfollowers", 50, 500);
+    await collectUsers("Danh sách người dùng OA", "https://openapi.zalo.me/v3.0/oa/user/getlist", 50, 10_000);
     await collectUsers("Danh sách hội thoại gần đây", "https://openapi.zalo.me/v2.0/oa/listrecentchat", 10, 500);
     summary.customersSeen = users.size;
 
@@ -639,6 +868,7 @@ export async function syncZaloOAHistory(): Promise<ZaloHistorySyncSummary> {
       const before = await getZaloConversation(userId);
       const profile = await syncZaloUserProfile(userId);
       if (profile && before && (profile.displayName !== before.displayName || profile.avatar !== before.avatar)) summary.profilesUpdated += 1;
+      summary.tagsSynced += profile?.tagIds.filter(id => id.startsWith("oa-")).length || 0;
 
       let offset = 0;
       let conversationAvailable = true;
@@ -716,6 +946,153 @@ export async function syncZaloOAHistory(): Promise<ZaloHistorySyncSummary> {
   summary.finishedAt = new Date().toISOString();
   await saveHistorySync(summary);
   return summary;
+}
+
+export async function createZaloCustomerTag(input: { name: string; color?: string }): Promise<ZaloCustomerTag> {
+  await initZaloOASchema();
+  const name = input.name.trim();
+  if (!name) throw new Error("Tên tag là bắt buộc.");
+  const id = stableTagId(name, "crm");
+  const rows = await query<Record<string, unknown>>(
+    `INSERT INTO crm_zalo_tags (id,name,color,source,zalo_tag_id)
+     VALUES ($1,$2,$3,'crm','')
+     ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color,updated_at=NOW()
+     RETURNING *,0::int AS customer_count`,
+    [id, name, input.color || stableTagColor(name)],
+  );
+  return mapCustomerTag(rows[0]);
+}
+
+export async function assignZaloCustomerTag(input: { userIds: string[]; tagId: string }): Promise<void> {
+  await initZaloOASchema();
+  const userIds = Array.from(new Set(input.userIds.map(String).map(id => id.trim()).filter(Boolean))).slice(0, 5_000);
+  if (!userIds.length || !input.tagId) throw new Error("Chọn khách hàng và tag cần gắn.");
+  const tags = await query<{ id: string; source: string }>(`SELECT id,source FROM crm_zalo_tags WHERE id=$1`, [input.tagId]);
+  if (!tags.length) throw new Error("Tag không tồn tại.");
+  if (tags[0].source === "oa") throw new Error("Tag Zalo OA được đồng bộ một chiều. Hãy tạo tag CRM để phân loại nội bộ.");
+  for (const userId of userIds) {
+    await query(
+      `INSERT INTO crm_zalo_customer_tags (user_id,tag_id,source) VALUES ($1,$2,'crm')
+       ON CONFLICT (user_id,tag_id) DO NOTHING`,
+      [userId, input.tagId],
+    );
+  }
+}
+
+export async function saveZaloCustomerSegment(input: {
+  id?: string; name: string; description?: string; tagIds?: string[];
+  matchType?: "any" | "all"; activeWithinDays?: number;
+}): Promise<string> {
+  await initZaloOASchema();
+  const name = input.name.trim();
+  if (!name) throw new Error("Tên nhóm khách hàng là bắt buộc.");
+  const id = input.id || `zs-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const tagIds = Array.from(new Set((input.tagIds || []).map(String).filter(Boolean)));
+  const activeWithinDays = Math.max(0, Math.min(3650, Math.trunc(Number(input.activeWithinDays || 0))));
+  await query(
+    `INSERT INTO crm_zalo_segments (id,name,description,tag_ids,match_type,active_within_days)
+     VALUES ($1,$2,$3,$4::jsonb,$5,$6)
+     ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,description=EXCLUDED.description,
+       tag_ids=EXCLUDED.tag_ids,match_type=EXCLUDED.match_type,
+       active_within_days=EXCLUDED.active_within_days,updated_at=NOW()`,
+    [id, name, input.description?.trim() || "", JSON.stringify(tagIds), input.matchType === "all" ? "all" : "any", activeWithinDays],
+  );
+  return id;
+}
+
+function matchesSegment(customer: ZaloConversation, segment: Record<string, unknown>): boolean {
+  const tagIds = asArray(segment.tag_ids);
+  const matchType = String(segment.match_type) === "all" ? "all" : "any";
+  const tagMatch = !tagIds.length || (matchType === "all"
+    ? tagIds.every(id => customer.tagIds.includes(id))
+    : tagIds.some(id => customer.tagIds.includes(id)));
+  if (!tagMatch) return false;
+  const activeWithinDays = Math.max(0, Number(segment.active_within_days || 0));
+  if (!activeWithinDays) return true;
+  if (!customer.lastUserInteraction) return false;
+  return Date.now() - new Date(customer.lastUserInteraction).getTime() <= activeWithinDays * 86_400_000;
+}
+
+export async function createZaloCampaign(input: {
+  name: string; content: string; segmentId?: string; userIds?: string[];
+}): Promise<ZaloCampaign> {
+  await initZaloOASchema();
+  const name = input.name.trim();
+  const content = input.content.trim();
+  if (!name || !content) throw new Error("Tên chiến dịch và nội dung tin nhắn là bắt buộc.");
+  let customers = (await query<Record<string, unknown>>(enrichedConversationQuery())).map(mapConversation);
+  const selectedIds = new Set((input.userIds || []).map(String).filter(Boolean));
+  let segmentName = "Khách đã chọn";
+  if (input.segmentId) {
+    const segments = await query<Record<string, unknown>>(`SELECT * FROM crm_zalo_segments WHERE id=$1`, [input.segmentId]);
+    if (!segments.length) throw new Error("Nhóm khách hàng không tồn tại.");
+    segmentName = String(segments[0].name);
+    customers = customers.filter(customer => matchesSegment(customer, segments[0]));
+  } else {
+    customers = customers.filter(customer => selectedIds.has(customer.userId));
+  }
+  if (!customers.length) throw new Error("Không có khách hàng phù hợp với chiến dịch.");
+
+  const id = `zc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const eligibleCount = customers.filter(customer => isWithinSevenDays(customer.lastUserInteraction)).length;
+  await query(
+    `INSERT INTO crm_zalo_campaigns
+     (id,name,segment_id,content,status,total_count,eligible_count,excluded_count)
+     VALUES ($1,$2,$3,$4,'draft',$5,$6,$7)`,
+    [id, name, input.segmentId || "", content, customers.length, eligibleCount, customers.length - eligibleCount],
+  );
+  for (const customer of customers) {
+    const eligible = isWithinSevenDays(customer.lastUserInteraction);
+    await query(
+      `INSERT INTO crm_zalo_campaign_recipients (campaign_id,user_id,status,error)
+       VALUES ($1,$2,$3,$4) ON CONFLICT (campaign_id,user_id) DO NOTHING`,
+      [id, customer.userId, eligible ? "pending" : "excluded", eligible ? "" : "Ngoài cửa sổ tương tác 7 ngày"],
+    );
+  }
+  const created = await query<Record<string, unknown>>(
+    `SELECT c.*,$2::text AS segment_name FROM crm_zalo_campaigns c WHERE c.id=$1`,
+    [id, segmentName],
+  );
+  return mapCampaign(created[0]);
+}
+
+export async function sendZaloCampaign(campaignId: string, batchSize = 50): Promise<ZaloCampaign> {
+  await initZaloOASchema();
+  const campaigns = await query<Record<string, unknown>>(`SELECT * FROM crm_zalo_campaigns WHERE id=$1`, [campaignId]);
+  if (!campaigns.length) throw new Error("Chiến dịch không tồn tại.");
+  const campaign = campaigns[0];
+  await query(`UPDATE crm_zalo_campaigns SET status='sending',approved_at=COALESCE(approved_at,NOW()),updated_at=NOW() WHERE id=$1`, [campaignId]);
+  const recipients = await query<{ user_id: string }>(
+    `SELECT user_id FROM crm_zalo_campaign_recipients WHERE campaign_id=$1 AND status='pending'
+     ORDER BY created_at,user_id LIMIT $2`,
+    [campaignId, Math.max(1, Math.min(100, Math.trunc(batchSize)))],
+  );
+  for (const recipient of recipients) {
+    const result = await sendZaloConsultation({ userId: recipient.user_id, content: String(campaign.content), source: "manual" });
+    await query(
+      `UPDATE crm_zalo_campaign_recipients SET status=$3,error=$4,sent_at=CASE WHEN $3='sent' THEN NOW() ELSE sent_at END
+       WHERE campaign_id=$1 AND user_id=$2`,
+      [campaignId, recipient.user_id, result.ok ? "sent" : "failed", result.error || ""],
+    );
+  }
+  const counts = (await query<Record<string, unknown>>(
+    `SELECT COUNT(*) FILTER (WHERE status='pending')::int AS pending,
+      COUNT(*) FILTER (WHERE status='sent')::int AS sent,
+      COUNT(*) FILTER (WHERE status='failed')::int AS failed,
+      COUNT(*) FILTER (WHERE status='excluded')::int AS excluded
+     FROM crm_zalo_campaign_recipients WHERE campaign_id=$1`,
+    [campaignId],
+  ))[0] || {};
+  const pending = Number(counts.pending || 0);
+  const failed = Number(counts.failed || 0);
+  const status: ZaloCampaign["status"] = pending > 0 || failed > 0 ? "partial" : "completed";
+  const updated = await query<Record<string, unknown>>(
+    `UPDATE crm_zalo_campaigns SET status=$2,sent_count=$3,failed_count=$4,excluded_count=$5,
+      sent_at=CASE WHEN $2='completed' THEN NOW() ELSE sent_at END,updated_at=NOW()
+     WHERE id=$1 RETURNING *,'Khách đã chọn'::text AS segment_name`,
+    [campaignId, status, Number(counts.sent || 0), failed, Number(counts.excluded || 0)],
+  );
+  return mapCampaign(updated[0]);
 }
 
 export async function markZaloConversationRead(userId: string): Promise<void> {
@@ -1146,6 +1523,32 @@ export async function recordZaloWebhookEvent(payload: Record<string, unknown>): 
   const recipient = asRecord(event.recipient);
   const message = Object.keys(asRecord(event.message)).length ? asRecord(event.message) : undefined;
   if (await updateZaloDeliveryReceipt(eventName, event, message)) return { handled: true, aiQueued: false };
+  if (eventName === "add_user_to_tag" || eventName === "remove_user_from_tag") {
+    const tag = asRecord(event.tag);
+    const name = String(tag.name || "").trim();
+    const userIds = asArray(tag.user_ids);
+    if (!name || !userIds.length) return { handled: false };
+    const tagId = stableTagId(name, "oa");
+    await query(
+      `INSERT INTO crm_zalo_tags (id,name,color,source,zalo_tag_id)
+       VALUES ($1,$2,$3,'oa',$2)
+       ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,color=EXCLUDED.color,
+         zalo_tag_id=EXCLUDED.zalo_tag_id,updated_at=NOW()`,
+      [tagId, name, stableTagColor(name)],
+    );
+    for (const userId of userIds) {
+      if (eventName === "add_user_to_tag") {
+        await query(
+          `INSERT INTO crm_zalo_customer_tags (user_id,tag_id,source) VALUES ($1,$2,'oa')
+           ON CONFLICT (user_id,tag_id) DO UPDATE SET source='oa'`,
+          [userId, tagId],
+        );
+      } else {
+        await query(`DELETE FROM crm_zalo_customer_tags WHERE user_id=$1 AND tag_id=$2 AND source='oa'`, [userId, tagId]);
+      }
+    }
+    return { handled: true, aiQueued: false };
+  }
   const inbound = eventName.startsWith("user_send_") || eventName.startsWith("anonymous_send_");
   const outbound = eventName.startsWith("oa_send_") && !eventName.startsWith("oa_send_group_");
   if (!inbound && !outbound) return { handled: false };

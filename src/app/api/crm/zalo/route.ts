@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { SITE_URL } from "@/lib/site-url";
 import {
+  assignZaloCustomerTag,
+  createZaloCampaign,
+  createZaloCustomerTag,
   deleteZaloTemplate,
   generateZaloAiDraft,
   getZaloConversationMessages,
@@ -10,7 +13,9 @@ import {
   reviewZaloAiQueue,
   refreshZaloOAAccessToken,
   saveZaloOAConfig,
+  saveZaloCustomerSegment,
   saveZaloTemplate,
+  sendZaloCampaign,
   sendZaloConsultation,
   sendZaloZbs,
   syncZaloOAHistory,
@@ -51,7 +56,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as Record<string, unknown>;
     const action = String(body.action || "");
-    const adminActions = new Set(["save_config", "save_template", "delete_template", "test_connection", "refresh_token", "sync_history"]);
+    const adminActions = new Set([
+      "save_config", "save_template", "delete_template", "test_connection", "refresh_token", "sync_history",
+      "create_customer_tag", "assign_customer_tag", "save_customer_segment", "create_campaign", "send_campaign",
+    ]);
     if (adminActions.has(action) && !session.isAdmin) {
       return NextResponse.json({ ok: false, error: "Chỉ admin được thay đổi cấu hình Zalo OA." }, { status: 403 });
     }
@@ -122,6 +130,41 @@ export async function POST(req: NextRequest) {
     if (action === "sync_history") {
       const summary = await syncZaloOAHistory();
       return NextResponse.json({ ok: true, summary });
+    }
+    if (action === "create_customer_tag") {
+      const tag = await createZaloCustomerTag({ name: String(body.name || ""), color: String(body.color || "") || undefined });
+      return NextResponse.json({ ok: true, tag });
+    }
+    if (action === "assign_customer_tag") {
+      await assignZaloCustomerTag({
+        userIds: Array.isArray(body.userIds) ? body.userIds.map(String) : [],
+        tagId: String(body.tagId || ""),
+      });
+      return NextResponse.json({ ok: true });
+    }
+    if (action === "save_customer_segment") {
+      const segmentId = await saveZaloCustomerSegment({
+        id: String(body.id || "") || undefined,
+        name: String(body.name || ""),
+        description: String(body.description || ""),
+        tagIds: Array.isArray(body.tagIds) ? body.tagIds.map(String) : [],
+        matchType: String(body.matchType) === "all" ? "all" : "any",
+        activeWithinDays: Number(body.activeWithinDays || 0),
+      });
+      return NextResponse.json({ ok: true, segmentId });
+    }
+    if (action === "create_campaign") {
+      const campaign = await createZaloCampaign({
+        name: String(body.name || ""),
+        content: String(body.content || ""),
+        segmentId: String(body.segmentId || "") || undefined,
+        userIds: Array.isArray(body.userIds) ? body.userIds.map(String) : [],
+      });
+      return NextResponse.json({ ok: true, campaign });
+    }
+    if (action === "send_campaign") {
+      const campaign = await sendZaloCampaign(String(body.id || ""));
+      return NextResponse.json({ ok: true, campaign });
     }
     throw new Error("Hành động Zalo OA không được hỗ trợ.");
   } catch (error) {
