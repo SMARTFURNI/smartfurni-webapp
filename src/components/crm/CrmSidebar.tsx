@@ -41,6 +41,7 @@ import {
   Megaphone,
   BrainCircuit,
   Facebook,
+  Sparkles,
   Menu,
   X,
 } from "lucide-react";
@@ -95,6 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Marketing & CS",
     items: [
+      { label: "Trợ lý Điều hành AI", href: "/crm/ai-command", icon: Sparkles, permissionKey: "ai_command_view" },
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true, permissionKey: "email_marketing_view" },
       { label: "Content Marketing AI", href: "/crm/content", icon: Clapperboard, permissionKey: "content_marketing_view" },
       { label: "AI Google Ads Agent", href: "/crm/google-ads-agent", icon: Megaphone, permissionKey: "content_marketing_view" },

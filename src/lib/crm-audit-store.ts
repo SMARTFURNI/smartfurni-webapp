@@ -11,7 +11,9 @@ export type AuditAction =
   | "settings.updated"
   | "auth.login" | "auth.logout" | "auth.failed"
   | "data.exported" | "data.imported"
-  | "apikey.created" | "apikey.revoked";
+  | "apikey.created" | "apikey.revoked"
+  | "ai.thread_created" | "ai.run_started" | "ai.run_completed" | "ai.run_failed"
+  | "ai.approval_requested" | "ai.approval_decided" | "ai.tool_executed";
 
 export interface AuditLog {
   id: string;
