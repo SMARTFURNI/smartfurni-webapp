@@ -2,21 +2,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   MessageCircle, Search, Send, RefreshCw, X,
-  ChevronLeft, Image as ImageIcon, Smile,
-  CheckCheck, MoreVertical, ExternalLink,
-  Facebook, Users, Inbox, AlertCircle, Loader2,
-  Clock, Check, Settings, Key, Save, Eye, EyeOff,
+  ChevronLeft, CheckCheck, ExternalLink,
+  Facebook, Inbox, AlertCircle, Loader2,
+  Clock, Settings, Key, Save, Eye, EyeOff,
 } from "lucide-react";
 
 // ─── Design Tokens (Light workspace — đồng bộ Zalo OA) ───────────────────────
 const T = {
-  bg: "#f4f7fb",
+  bg: "#f2f6fb",
   sidebar: "#ffffff",
   sidebarBorder: "#dbe3ee",
   sidebarHover: "#f1f5f9",
-  sidebarActive: "#eff6ff",
-  sidebarActiveBorder: "#1877f2",
-  chatBg: "#f4f7fb",
+  sidebarActive: "linear-gradient(135deg, #fffdf2 0%, #f8edc7 100%)",
+  sidebarActiveBorder: "#c99e32",
+  chatBg: "linear-gradient(145deg, #f7f9fc 0%, #edf3f9 100%)",
   headerBg: "rgba(255,255,255,0.97)",
   headerBorder: "#dbe3ee",
   bubbleSelf: "linear-gradient(135deg, #1877f2 0%, #0a5dc2 100%)",
@@ -29,14 +28,18 @@ const T = {
   textPrimary: "#172033",
   textSecondary: "#526173",
   textMuted: "#738196",
-  accent: "#1877f2",
-  accentHover: "#0a5dc2",
+  accent: "#9a7418",
+  accentHover: "#74540c",
   fbBlue: "#1877f2",
   badge: "#ef4444",
   gold: "#9a7418",
   success: "#10b981",
   divider: "#dbe3ee",
 };
+
+interface FacebookInboxClientProps {
+  embedded?: boolean;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface FbPage {
@@ -145,7 +148,7 @@ function Avatar({ name, src, size = 40 }: { name: string; src?: string | null; s
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function FacebookInboxClient() {
+export default function FacebookInboxClient({ embedded = false }: FacebookInboxClientProps) {
   // State
   const [pages, setPages] = useState<FbPage[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
@@ -166,6 +169,7 @@ export default function FacebookInboxClient() {
   const [msgPaging, setMsgPaging] = useState<{ cursors?: { before?: string } } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   // Pancake Settings
   const [showPancakeSettings, setShowPancakeSettings] = useState(false);
   const [pancakeConfig, setPancakeConfig] = useState<{ enabled: boolean; pages: { fbPageId: string; pancakePageId: string; pageAccessToken: string; pageName?: string }[] }>({ enabled: true, pages: [] });
@@ -176,6 +180,14 @@ export default function FacebookInboxClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const sync = () => setIsMobile(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   // Load Pancake config
   useEffect(() => {
@@ -357,19 +369,19 @@ export default function FacebookInboxClient() {
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div style={{
-      display: "flex", height: "calc(100vh - 80px)", background: T.bg,
-      borderRadius: 16, overflow: "hidden",
+      display: "flex", height: embedded ? "clamp(680px, calc(100vh - 245px), 820px)" : "calc(100vh - 80px)", background: T.bg,
+      borderRadius: 18, overflow: "hidden",
       border: `1px solid ${T.divider}`,
+      boxShadow: "0 18px 46px rgba(34, 51, 78, 0.12)",
       fontFamily: "'Inter', -apple-system, sans-serif",
-    }}>
+    }} aria-label="Hộp thư hội thoại Fanpage">
 
       {/* ── CỘT 1: FANPAGE SELECTOR ─────────────────────────────────────── */}
       <div style={{
         width: 220, flexShrink: 0, background: T.sidebar,
         borderRight: `1px solid ${T.sidebarBorder}`,
         display: "flex", flexDirection: "column",
-        // Mobile: ẩn khi đang xem conv/chat
-        ...(mobileView !== "pages" ? { display: "none" } : {}),
+        ...(isMobile && mobileView !== "pages" ? { display: "none" } : {}),
       }} className="fb-inbox-pages">
         {/* Header */}
         <div style={{
@@ -379,18 +391,19 @@ export default function FacebookInboxClient() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <div style={{
               width: 28, height: 28, borderRadius: 8,
-              background: T.fbBlue,
+              background: "linear-gradient(145deg, #2787f5, #125cc5)",
+              boxShadow: "0 7px 16px rgba(24,119,242,.22)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <Facebook size={16} color="#fff" />
             </div>
             <span style={{ color: T.textPrimary, fontWeight: 700, fontSize: 15 }}>
-              Facebook Inbox
+              Hội thoại Fanpage
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <p style={{ color: T.textMuted, fontSize: 11, margin: 0 }}>
-              {pages.length} fanpage đang kết nối
+              {pages.length} Fanpage đang kết nối
             </p>
             <button
               onClick={() => setShowPancakeSettings(true)}
@@ -442,6 +455,7 @@ export default function FacebookInboxClient() {
                     <div style={{
                       width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                       background: T.fbBlue,
+                      boxShadow: isActive ? "0 8px 18px rgba(24,119,242,.24)" : "none",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 14, fontWeight: 700, color: "#fff",
                     }}>
@@ -496,8 +510,7 @@ export default function FacebookInboxClient() {
         borderRight: `1px solid ${T.sidebarBorder}`,
         display: "flex", flexDirection: "column",
         background: "#f7f8fa",
-        ...(mobileView === "chat" ? { display: "none" } : {}),
-        ...(mobileView === "pages" ? { display: "none" } : {}),
+        ...(isMobile && mobileView !== "convs" ? { display: "none" } : {}),
       }} className="fb-inbox-convs">
         {/* Header */}
         <div style={{
@@ -506,13 +519,15 @@ export default function FacebookInboxClient() {
           background: T.headerBg,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <button
-              onClick={() => setMobileView("pages")}
-              title="Quay lại danh sách fanpage"
-              style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex", flexShrink: 0 }}
-            >
-              <ChevronLeft size={18} />
-            </button>
+            {isMobile ? (
+              <button
+                onClick={() => setMobileView("pages")}
+                title="Quay lại danh sách fanpage"
+                style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex", flexShrink: 0 }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+            ) : null}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: T.textPrimary, fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {selectedPage?.pageName || "Chọn fanpage"}
@@ -586,7 +601,7 @@ export default function FacebookInboxClient() {
                     style={{
                       width: "100%", textAlign: "left", border: "none", cursor: "pointer",
                       padding: "12px 14px",
-                      background: isSelected ? "rgba(99,102,241,0.15)" : "transparent",
+                      background: isSelected ? "linear-gradient(135deg, #fffdf3, #f7edce)" : "transparent",
                       borderLeft: `3px solid ${isSelected ? T.accent : "transparent"}`,
                       borderBottom: `1px solid ${T.divider}`,
                       transition: "all 0.12s",
@@ -666,7 +681,7 @@ export default function FacebookInboxClient() {
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
         background: T.chatBg, minWidth: 0,
-        ...(mobileView === "pages" || mobileView === "convs" ? { display: "none" } : {}),
+        ...(isMobile && mobileView !== "chat" ? { display: "none" } : {}),
       }} className="fb-inbox-chat">
         {!selectedConv ? (
           /* Empty state */
@@ -677,14 +692,16 @@ export default function FacebookInboxClient() {
           }}>
             <div style={{
               width: 80, height: 80, borderRadius: "50%",
-              background: "rgba(99,102,241,0.12)",
+              background: "linear-gradient(145deg, #fffdf3, #f4e2a9)",
+              border: "1px solid #ead795",
+              boxShadow: "0 12px 28px rgba(154,116,24,.14)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <MessageCircle size={36} color={T.accent} />
             </div>
             <div style={{ textAlign: "center" }}>
               <h3 style={{ color: T.textPrimary, margin: "0 0 6px", fontSize: 18, fontWeight: 600 }}>
-                Facebook Inbox
+                Hộp thư chăm sóc khách hàng
               </h3>
               <p style={{ color: T.textMuted, margin: 0, fontSize: 14 }}>
                 Chọn một hội thoại để bắt đầu trả lời
@@ -715,13 +732,15 @@ export default function FacebookInboxClient() {
               display: "flex", alignItems: "center", gap: 10,
               backdropFilter: "blur(8px)",
             }}>
-              <button
-                onClick={() => setMobileView("convs")}
-                title="Quay lại danh sách hội thoại"
-                style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex", flexShrink: 0 }}
-              >
-                <ChevronLeft size={20} />
-              </button>
+              {isMobile ? (
+                <button
+                  onClick={() => setMobileView("convs")}
+                  title="Quay lại danh sách hội thoại"
+                  style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex", flexShrink: 0 }}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              ) : null}
               <Avatar name={selectedConv.user?.name || "?"} src={selectedConv.user?.avatarUrl} size={36} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: T.textPrimary, fontWeight: 600, fontSize: 14 }}>
@@ -1145,9 +1164,7 @@ export default function FacebookInboxClient() {
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
-          .fb-inbox-pages { display: flex !important; width: 100% !important; }
-          .fb-inbox-convs { display: flex !important; width: 100% !important; }
-          .fb-inbox-chat { display: flex !important; width: 100% !important; }
+          .fb-inbox-pages, .fb-inbox-convs, .fb-inbox-chat { width: 100% !important; }
         }
       `}</style>
     </div>

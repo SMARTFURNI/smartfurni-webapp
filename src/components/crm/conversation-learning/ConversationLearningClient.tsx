@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 import type {
   ConversationAnalysis,
   ConversationLearningOverview,
-  ConversationLearningSource,
   SalesScript,
   SalesWorkflow,
 } from "@/types/conversation-learning";
@@ -46,6 +45,7 @@ import type {
 } from "@/types/fanpage-care-center";
 import type { FanpageCareSettings } from "@/lib/fanpage-care-settings";
 import lightStyles from "@/components/crm/CrmLightWorkspace.module.css";
+import FacebookInboxClient from "@/components/crm/facebook-inbox/FacebookInboxClient";
 
 type TabKey = "overview" | "care-plans" | "conversations" | "analysis" | "scripts" | "workflows" | "settings";
 
@@ -98,11 +98,6 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 function formatDate(value?: string) {
   if (!value) return "-";
   return new Date(value).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" });
-}
-
-function maskPhone(value?: string) {
-  if (!value) return "-";
-  return value.replace(/(\d{3})\d+(\d{3})/, "$1***$2");
 }
 
 function shortText(value: string, max = 140) {
@@ -202,7 +197,6 @@ function ActionButton({
 export function ConversationLearningClient() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [overview, setOverview] = useState<ConversationLearningOverview | null>(null);
-  const [sources, setSources] = useState<ConversationLearningSource[]>([]);
   const [analyses, setAnalyses] = useState<ConversationAnalysis[]>([]);
   const [scripts, setScripts] = useState<SalesScript[]>([]);
   const [workflows, setWorkflows] = useState<SalesWorkflow[]>([]);
@@ -223,16 +217,14 @@ export function ConversationLearningClient() {
     setLoading(true);
     setError(null);
     try {
-      const [overviewData, sourceData, analysisData, scriptData, workflowData, careData] = await Promise.all([
+      const [overviewData, analysisData, scriptData, workflowData, careData] = await Promise.all([
         fetchJson<{ overview: ConversationLearningOverview }>("/api/crm/conversation-learning/overview"),
-        fetchJson<{ sources: ConversationLearningSource[] }>("/api/crm/conversation-learning/conversations?limit=50"),
         fetchJson<{ analyses: ConversationAnalysis[] }>("/api/crm/conversation-learning/analysis?limit=100"),
         fetchJson<{ scripts: SalesScript[] }>("/api/crm/conversation-learning/scripts"),
         fetchJson<{ workflows: SalesWorkflow[] }>("/api/crm/conversation-learning/workflows"),
         fetchJson<CareCenterResponse>("/api/crm/conversation-learning/care-center?limit=200"),
       ]);
       setOverview(overviewData.overview);
-      setSources(sourceData.sources);
       setAnalyses(analysisData.analyses);
       setScripts(scriptData.scripts);
       setWorkflows(workflowData.workflows);
@@ -929,37 +921,7 @@ export function ConversationLearningClient() {
       ) : null}
 
       {activeTab === "conversations" ? (
-        <Card className="p-5">
-          <SectionTitle title="Hội thoại Fanpage" subtitle="Nguồn dữ liệu CRM đã được che bớt thông tin nhạy cảm trên giao diện." />
-          <div className="mt-5 space-y-3">
-            {sources.map(source => {
-              const latest = source.messages[source.messages.length - 1];
-              return (
-                <div key={source.conversationId} className="rounded-xl border border-[rgba(118,138,166,0.16)] bg-[#0d1420]/55 p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-[#F5EDD6]">{source.customerName || "Khách chưa có tên"}</h3>
-                        <Pill className="border-[rgba(118,138,166,0.18)] bg-white/[0.035] text-[rgba(245,237,214,0.58)]">{maskPhone(source.facebookUserId)}</Pill>
-                        {source.assignedSale ? <Pill className="border-amber-300/25 bg-amber-500/10 text-amber-100">{source.assignedSale}</Pill> : null}
-                      </div>
-                      <p className="mt-2 text-sm text-[rgba(245,237,214,0.52)]">{shortText(latest?.content || "Không có nội dung tin nhắn", 180)}</p>
-                    </div>
-                    <div className="text-sm text-[rgba(245,237,214,0.34)]">{formatDate(source.latestMessageAt)}</div>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Pill className="border-sky-300/20 bg-sky-500/10 text-sky-100">{source.messages.length} tin nhắn</Pill>
-                    {source.orderStatus ? <Pill className="border-emerald-300/20 bg-emerald-500/10 text-emerald-100">{source.orderStatus}</Pill> : null}
-                    {source.tags.slice(0, 5).map(tag => (
-                      <Pill key={tag} className="border-[rgba(118,138,166,0.18)] bg-white/[0.035] text-[rgba(245,237,214,0.58)]">{tag}</Pill>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            {!sources.length ? <EmptyState text="Chưa tìm thấy hội thoại phù hợp trong CRM." /> : null}
-          </div>
-        </Card>
+        <FacebookInboxClient embedded />
       ) : null}
 
       {activeTab === "analysis" ? (

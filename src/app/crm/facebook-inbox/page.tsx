@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
-import { requireCrmAccess } from "@/lib/admin-auth";
-import FacebookInboxClient from "@/components/crm/facebook-inbox/FacebookInboxClient";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Facebook Inbox — SmartFurni CRM",
@@ -8,6 +7,5 @@ export const metadata = {
 };
 
 export default async function FacebookInboxPage() {
-  await requireCrmAccess();
-  return <FacebookInboxClient />;
+  redirect("/crm/conversation-learning?tab=conversations");
 }
