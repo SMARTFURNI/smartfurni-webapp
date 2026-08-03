@@ -16,6 +16,7 @@ import ZaloTemplatesTab, {
   type ZaloTemplateSyncView,
   type ZaloTemplateView as Template,
 } from "./ZaloTemplatesTab";
+import styles from "./ZaloOAClient.module.css";
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
 type Tab = "overview" | "inbox" | "customers" | "ai" | "templates" | "history" | "automation" | "settings";
@@ -356,9 +357,9 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     } finally { setBusy(""); }
   }
 
-  if (loading && !data) return <div className="flex min-h-[70vh] items-center justify-center text-[rgba(245,237,214,0.55)]"><Loader2 className="mr-2 animate-spin text-[#c9a84c]" /> Đang tải trung tâm Zalo OA...</div>;
+  if (loading && !data) return <div className={`${styles.lightTheme} flex min-h-[70vh] items-center justify-center bg-[#f4f7fb] text-[#526173]`}><Loader2 className="mr-2 animate-spin text-[#9a7418]" /> Đang tải trung tâm Zalo OA...</div>;
 
-  return <div className="min-h-full space-y-4 bg-[radial-gradient(circle_at_top_right,rgba(201,168,76,0.08),transparent_28%),linear-gradient(180deg,rgba(6,8,13,0.2),rgba(13,9,2,0.1))] p-4 text-[#f5edd6] md:p-7">
+  return <div className={`${styles.lightTheme} min-h-full space-y-4 bg-[#f4f7fb] p-4 text-[#172033] md:p-7`}>
     <section className={`${panel} overflow-hidden`}>
       <div className="flex flex-col gap-5 border-b border-[rgba(255,200,100,0.10)] bg-[radial-gradient(circle_at_88%_0%,rgba(201,168,76,0.10),transparent_34%)] p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7 lg:py-6">
         <div className="flex items-start gap-4">
