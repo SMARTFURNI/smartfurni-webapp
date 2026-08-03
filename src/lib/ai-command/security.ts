@@ -12,7 +12,34 @@ export function assertTrustedJsonRequest(req: NextRequest) {
   const fetchSite = req.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site") throw new AiCommandAccessError("Yêu cầu khác nguồn đã bị chặn.", 403);
   const origin = req.headers.get("origin");
-  if (origin && new URL(origin).host !== req.nextUrl.host) {
+  if (!origin || fetchSite === "same-origin") return;
+
+  let originHost: string;
+  try {
+    originHost = new URL(origin).host.toLowerCase();
+  } catch {
+    throw new AiCommandAccessError("Nguồn gửi yêu cầu không hợp lệ.", 403);
+  }
+
+  const trustedHosts = new Set<string>();
+  const addHost = (value: string | null) => {
+    const host = value?.split(",")[0]?.trim().toLowerCase();
+    if (host) trustedHosts.add(host);
+  };
+  addHost(req.nextUrl.host);
+  addHost(req.headers.get("host"));
+  addHost(req.headers.get("x-forwarded-host"));
+
+  for (const configuredUrl of [process.env.NEXT_PUBLIC_BASE_URL, process.env.NEXT_PUBLIC_APP_URL]) {
+    if (!configuredUrl) continue;
+    try {
+      trustedHosts.add(new URL(configuredUrl).host.toLowerCase());
+    } catch {
+      // Ignore malformed optional deployment configuration.
+    }
+  }
+
+  if (!trustedHosts.has(originHost)) {
     throw new AiCommandAccessError("Nguồn gửi yêu cầu không hợp lệ.", 403);
   }
 }
