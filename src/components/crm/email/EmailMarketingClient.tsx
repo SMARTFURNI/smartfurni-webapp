@@ -11,6 +11,7 @@ import type {
   EmailCampaign, EmailTemplate, EmailSegment, EmailTemplateCategory,
 } from "@/lib/crm-email-store";
 import { SEGMENT_LABELS, TEMPLATE_CATEGORY_LABELS } from "@/lib/crm-email-store";
+import styles from "./EmailMarketingClient.module.css";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type Tab = "campaigns" | "templates" | "builder" | "workflows" | "performance" | "settings";
@@ -56,16 +57,16 @@ interface AutomationConfig {
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  draft:     { label: "Bản nháp",    color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
-  scheduled: { label: "Đã lên lịch", color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
-  sending:   { label: "Đang gửi",    color: "#C9A84C", bg: "rgba(201,168,76,0.12)" },
-  sent:      { label: "Đã gửi",      color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
-  failed:    { label: "Thất bại",    color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+  draft:     { label: "Bản nháp",    color: "#526173", bg: "linear-gradient(135deg,#f8fafc,#e9eef4)" },
+  scheduled: { label: "Đã lên lịch", color: "#1d5fa8", bg: "linear-gradient(135deg,#eff8ff,#dcefff)" },
+  sending:   { label: "Đang gửi",    color: "#8f5d00", bg: "linear-gradient(135deg,#fffbeb,#fff0c2)" },
+  sent:      { label: "Đã gửi",      color: "#087a55", bg: "linear-gradient(135deg,#ecfdf5,#dcf8ed)" },
+  failed:    { label: "Thất bại",    color: "#b42318", bg: "linear-gradient(135deg,#fff1f0,#ffe0dd)" },
 };
 const WORKFLOW_STATUS_CONFIG = {
-  active:   { label: "Đang chạy", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
-  inactive: { label: "Tạm dừng",  color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
-  draft:    { label: "Bản nháp",  color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
+  active:   { label: "Đang chạy", color: "#087a55", bg: "linear-gradient(135deg,#ecfdf5,#dcf8ed)" },
+  inactive: { label: "Tạm dừng",  color: "#526173", bg: "linear-gradient(135deg,#f8fafc,#e9eef4)" },
+  draft:    { label: "Bản nháp",  color: "#1d5fa8", bg: "linear-gradient(135deg,#eff8ff,#dcefff)" },
 };
 const TRIGGER_LABELS: Record<string, string> = {
   new_lead:      "Lead mới được tạo",
@@ -187,18 +188,19 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
   );
 
   return (
-    <div className="flex h-full flex-col bg-[#f4f7fb] text-[#172033]">
+    <div className={`${styles.theme} flex h-full flex-col bg-[#f4f7fb] text-[#172033]`}>
       {/* ── Header ── */}
-      <div className="crm-admin-page-header m-5 mb-0 flex-shrink-0 rounded-2xl bg-white px-6 pt-5 pb-0 shadow-[0_10px_30px_rgba(30,48,72,0.08)]" style={{ border: "1px solid #dbe3ee" }}>
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Mail size={20} style={{ color: "#C9A84C" }} />
-              Email Marketing
-            </h1>
-            <p className="text-xs mt-0.5 text-gray-500">
-              Quản lý chiến dịch, mẫu email, workflow tự động và theo dõi hiệu suất
-            </p>
+      <div className={`${styles.hero} crm-admin-page-header flex-shrink-0`}>
+        <div className={`${styles.heroTop} mb-5 flex items-center justify-between gap-5`}>
+          <div className="flex min-w-0 items-center gap-4">
+            <span className={styles.heroIcon}><Mail size={22} /></span>
+            <div className="min-w-0">
+              <div className={styles.eyebrow}>Email Customer Care Center</div>
+              <h1 className={styles.title}>Trung tâm Email Marketing</h1>
+              <p className={styles.subtitle}>
+                Quản lý chiến dịch, mẫu email, workflow tự động và theo dõi hiệu suất trên cùng dữ liệu CRM.
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -207,27 +209,27 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm..."
-                className="pl-8 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-44"
+                className={`${styles.searchBox} pl-8 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-44`}
                 style={{ background: "#f1f5f9", border: "1px solid #dbe3ee" }}
               />
             </div>
             {tab === "campaigns" && (
               <button onClick={() => setShowNewCampaign(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-black"
+                className={`${styles.primaryAction} flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-black`}
                 style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
                 <Plus size={14} /> Tạo chiến dịch
               </button>
             )}
             {tab === "templates" && (
               <button onClick={() => setShowNewTemplate(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-black"
+                className={`${styles.primaryAction} flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-black`}
                 style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
                 <Plus size={14} /> Tạo template
               </button>
             )}
             {tab === "workflows" && (
               <button onClick={() => setShowNewWorkflow(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-black"
+                className={`${styles.primaryAction} flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-black`}
                 style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}>
                 <Plus size={14} /> Tạo workflow
               </button>
@@ -235,7 +237,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
             {tab === "builder" && (
               <button
                 onClick={() => setSendTestFor({ sourceType: "builder", sourceName: "Email Builder", subject: "", htmlContent: "" })}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+                className={`${styles.secondaryAction} flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold`}
                 style={{ background: "rgba(96,165,250,0.1)", color: "#3b82f6", border: "1px solid rgba(96,165,250,0.3)" }}>
                 <FlaskConical size={14} /> Gửi email test
               </button>
@@ -244,17 +246,17 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
         </div>
 
         {/* KPI Row */}
-        <div className="grid grid-cols-5 gap-3 mb-4">
+        <div className={`${styles.kpiGrid} grid grid-cols-5 gap-3 mb-4`}>
           {[
-            { label: "Chiến dịch",   value: campaigns.length,                                  icon: Send,       color: "#60a5fa" },
-            { label: "Đã gửi",       value: campaigns.filter(c => c.status === "sent").length, icon: CheckCircle,color: "#22c55e" },
-            { label: "Tổng email",   value: totalSent.toLocaleString("vi-VN"),                 icon: Mail,       color: "#C9A84C" },
-            { label: "Tỷ lệ mở",    value: `${avgOpenRate}%`,                                 icon: Eye,        color: "#a78bfa" },
-            { label: "Tỷ lệ click", value: `${avgClickRate}%`,                                icon: Target,     color: "#f87171" },
+            { label: "Chiến dịch",   value: campaigns.length,                                  icon: Send,       color: "#3b82f6", tone: "blue" },
+            { label: "Đã gửi",       value: campaigns.filter(c => c.status === "sent").length, icon: CheckCircle,color: "#0f9f6e", tone: "emerald" },
+            { label: "Tổng email",   value: totalSent.toLocaleString("vi-VN"),                 icon: Mail,       color: "#9a7418", tone: "gold" },
+            { label: "Tỷ lệ mở",    value: `${avgOpenRate}%`,                                 icon: Eye,        color: "#7c56b8", tone: "violet" },
+            { label: "Tỷ lệ click", value: `${avgClickRate}%`,                                icon: Target,     color: "#d94f61", tone: "rose" },
           ].map((kpi, i) => (
-            <div key={i} className="rounded-xl px-3 py-2.5 flex items-center gap-2.5"
+            <div key={i} data-email-tone={kpi.tone} className={`${styles.kpiCard} rounded-xl px-3 py-2.5 flex items-center gap-2.5`}
               style={{ background: "#f8fafc", border: "1px solid #dbe3ee" }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              <div className={`${styles.kpiIcon} w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0`}
                 style={{ background: `${kpi.color}18` }}>
                 <kpi.icon size={14} style={{ color: kpi.color }} />
               </div>
@@ -267,24 +269,21 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 overflow-x-auto">
+        <div className={`${styles.tabs} flex gap-0 overflow-x-auto`}>
           {TABS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setTab(id)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold relative transition-colors whitespace-nowrap"
+              data-active={tab === id}
+              className={`${styles.tab} flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold relative transition-colors whitespace-nowrap`}
               style={{ color: tab === id ? "#C9A84C" : "#6b7280" }}>
               <Icon size={13} />
               {label}
-              {tab === id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  style={{ background: "#C9A84C" }} />
-              )}
             </button>
           ))}
         </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className={`${styles.content} flex-1 overflow-y-auto p-6`}>
 
         {/* ── TAB: Chiến dịch ── */}
         {tab === "campaigns" && (
@@ -308,13 +307,13 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 const openRate = campaign.sentCount > 0 ? Math.round((campaign.openCount / campaign.sentCount) * 100) : 0;
                 const clickRate = campaign.sentCount > 0 ? Math.round((campaign.clickCount / campaign.sentCount) * 100) : 0;
                 return (
-                  <div key={campaign.id} className="rounded-2xl p-4 transition-all hover:shadow-sm"
+                  <div key={campaign.id} className={`${styles.surfaceCard} rounded-2xl p-4 transition-all hover:shadow-sm`}
                     style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-bold text-gray-900 truncate">{campaign.name}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                          <span className={`${styles.statusTag} text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0`}
                             style={{ background: sc.bg, color: sc.color }}>
                             {sc.label}
                           </span>
@@ -429,7 +428,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                 {filteredTemplates.map(template => {
                   const catColor = CATEGORY_COLORS[template.category];
                   return (
-                    <div key={template.id} className="rounded-2xl overflow-hidden hover:shadow-sm transition-all group"
+                    <div key={template.id} className={`${styles.surfaceCard} rounded-2xl overflow-hidden hover:shadow-sm transition-all group`}
                       style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                       <div className="h-28 overflow-hidden relative cursor-pointer" onClick={() => setPreviewTemplate(template)}
                         style={{ background: "#050505" }}>
@@ -448,7 +447,7 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
                       <div className="p-3">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <span className="text-sm font-semibold text-gray-900 truncate flex-1">{template.name}</span>
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                          <span className={`${styles.tag} text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0`}
                             style={{ background: `${catColor}15`, color: catColor }}>
                             {TEMPLATE_CATEGORY_LABELS[template.category]}
                           </span>
@@ -534,13 +533,13 @@ export default function EmailMarketingClient({ initialCampaigns, initialTemplate
               workflows.map(wf => {
                 const wsc = WORKFLOW_STATUS_CONFIG[wf.status];
                 return (
-                  <div key={wf.id} className="rounded-2xl p-4 transition-all hover:shadow-sm"
+                  <div key={wf.id} className={`${styles.surfaceCard} rounded-2xl p-4 transition-all hover:shadow-sm`}
                     style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-bold text-gray-900">{wf.name}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                          <span className={`${styles.statusTag} text-[10px] font-semibold px-2 py-0.5 rounded-full`}
                             style={{ background: wsc.bg, color: wsc.color }}>
                             {wsc.label}
                           </span>
@@ -791,7 +790,7 @@ function EmailBuilderTab({ templates, onTemplateSaved, onSendTest }: { templates
   }
 
   return (
-    <div className="grid grid-cols-2 gap-6" style={{ minHeight: "600px" }}>
+    <div className={`${styles.builderArea} grid grid-cols-2 gap-6`} style={{ minHeight: "600px" }}>
       {/* Left: Editor */}
       <div className="space-y-4">
         <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
@@ -961,14 +960,14 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-4">
+      <div className={`${styles.performanceGrid} grid grid-cols-4 gap-4`}>
         {[
           { label: "Tổng email đã gửi",   value: totalSent.toLocaleString("vi-VN"),  icon: Send,       color: "#60a5fa" },
           { label: "Tổng email được mở",  value: totalOpened.toLocaleString("vi-VN"), icon: Eye,        color: "#a78bfa" },
           { label: "Tỷ lệ mở trung bình", value: `${avgOpenRate}%`,                  icon: TrendingUp, color: "#22c55e" },
           { label: "Tỷ lệ click",         value: `${avgClickRate}%`,                 icon: Target,     color: "#C9A84C" },
         ].map((kpi, i) => (
-          <div key={i} className="rounded-2xl p-4" style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
+          <div key={i} className={`${styles.surfaceCard} rounded-2xl p-4`} style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
             <div className="flex items-center justify-between mb-3">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                 style={{ background: `${kpi.color}15` }}>
@@ -982,7 +981,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         ))}
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #dbe3ee" }}>
+      <div className={`${styles.surfaceCard} rounded-2xl overflow-hidden`} style={{ border: "1px solid #dbe3ee" }}>
         <div className="px-5 py-3.5 flex items-center justify-between"
           style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
           <h3 className="text-sm font-bold text-gray-900">Hiệu suất từng chiến dịch</h3>
@@ -1039,7 +1038,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
       </div>
 
       {/* Thống kê Inbox vs Promotions */}
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
+      <div className={`${styles.surfaceCard} rounded-2xl p-5`} style={{ border: "1px solid #dbe3ee", background: "#fff" }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-900">Phân loại hộp thư (Inbox vs Quảng cáo)</h3>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Dựa trên tỷ lệ mở email</span>
@@ -1100,7 +1099,7 @@ function PerformanceTab({ campaigns }: { campaigns: EmailCampaign[] }) {
         </div>
       </div>
 
-      <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
+      <div className={`${styles.surfaceCard} rounded-2xl p-5`} style={{ border: "1px solid #dbe3ee", background: "#f8fafc" }}>
         <h3 className="text-sm font-bold text-gray-900 mb-3">Benchmark ngành B2B</h3>
         <div className="grid grid-cols-3 gap-4 text-sm">
           {[
@@ -1188,7 +1187,7 @@ function SettingsTab() {
   }
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className={`${styles.settingsArea} max-w-2xl space-y-5`}>
 
       {/* ── Thông tin người gửi ── */}
       <div className="rounded-2xl p-5" style={{ border: "1px solid #dbe3ee" }}>
@@ -1778,11 +1777,11 @@ function WorkflowModal({ templates, onClose, onCreated, editing }: {
 // ─── Template Preview Modal ────────────────────────────────────────────────────
 function TemplatePreviewModal({ template, onClose }: { template: EmailTemplate; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className={`${styles.modalOverlay} fixed inset-0 z-50 flex items-center justify-center p-4`}
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+      <div className={`${styles.modalCard} bg-white rounded-2xl overflow-hidden flex flex-col`}
         style={{ width: "680px", maxHeight: "85vh", border: "1px solid #dbe3ee" }}>
-        <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+        <div className={`${styles.modalHeader} flex items-center justify-between px-5 py-3.5 flex-shrink-0`}
           style={{ borderBottom: "1px solid #dbe3ee" }}>
           <div>
             <div className="text-sm font-bold text-gray-900">{template.name}</div>
@@ -1827,11 +1826,11 @@ function Modal({ title, onClose, children, wide }: {
   title: string; onClose: () => void; children: React.ReactNode; wide?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className={`${styles.modalOverlay} fixed inset-0 z-50 flex items-center justify-center p-4`}
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+      <div className={`${styles.modalCard} bg-white rounded-2xl overflow-hidden flex flex-col`}
         style={{ width: wide ? "680px" : "480px", maxHeight: "85vh", border: "1px solid #dbe3ee" }}>
-        <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+        <div className={`${styles.modalHeader} flex items-center justify-between px-5 py-3.5 flex-shrink-0`}
           style={{ borderBottom: "1px solid #dbe3ee" }}>
           <span className="text-sm font-bold text-gray-900">{title}</span>
           <button onClick={onClose}
@@ -1924,13 +1923,13 @@ function SendTestEmailModal({
   const srcColor = SOURCE_COLORS[sourceType] || "#C9A84C";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className={`${styles.modalOverlay} fixed inset-0 z-50 flex items-center justify-center p-4`}
       style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col"
+      <div className={`${styles.modalCard} bg-white rounded-2xl overflow-hidden flex flex-col`}
         style={{ width: "520px", maxHeight: "85vh", border: "1px solid #dbe3ee" }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+        <div className={`${styles.modalHeader} flex items-center justify-between px-5 py-3.5 flex-shrink-0`}
           style={{ borderBottom: "1px solid #dbe3ee" }}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -2125,10 +2124,10 @@ function LaunchCampaignModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col" style={{ maxHeight: "90vh" }}>
+    <div className={`${styles.modalOverlay} fixed inset-0 z-50 flex items-center justify-center p-4`} style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className={`${styles.modalCard} bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col`} style={{ maxHeight: "90vh" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid #dbe3ee" }}>
+        <div className={`${styles.modalHeader} flex items-center justify-between px-5 py-4 flex-shrink-0`} style={{ borderBottom: "1px solid #dbe3ee" }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#C9A84C,#E2C97E)" }}>
               <Rocket size={16} style={{ color: "#000" }} />
@@ -2401,13 +2400,13 @@ SmartFurni · smartfurni.vn<br>
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    <div className={`${styles.modalOverlay} fixed inset-0 z-50 flex items-center justify-center p-4`}
       style={{ background: "rgba(0,0,0,0.6)" }}>
-      <div className="bg-white rounded-2xl flex flex-col overflow-hidden"
+      <div className={`${styles.modalCard} bg-white rounded-2xl flex flex-col overflow-hidden`}
         style={{ width: "min(1100px, 96vw)", height: "90vh", border: "1px solid #dbe3ee" }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0"
+        <div className={`${styles.modalHeader} flex items-center justify-between px-5 py-3.5 flex-shrink-0`}
           style={{ borderBottom: "1px solid #dbe3ee", background: "#f8fafc" }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
