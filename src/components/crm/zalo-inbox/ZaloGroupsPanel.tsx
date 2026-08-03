@@ -154,22 +154,22 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Quản lý nhóm</h2>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-200">
+        <h2 className="font-semibold text-gray-900 dark:text-gray-900 text-sm">Quản lý nhóm</h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => tab === "list" ? loadGroups() : loadInvites()} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+          <button onClick={() => tab === "list" ? loadGroups() : loadInvites()} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
-          {onClose && <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"><X size={14} /></button>}
+          {onClose && <button onClick={onClose} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500"><X size={14} /></button>}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <div className="flex border-b border-gray-200 dark:border-gray-200 overflow-x-auto">
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1 px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-blue-500 text-blue-600 dark:text-blue-400" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}>
+          <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1 px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-blue-500 text-blue-600 dark:text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}>
             {t.icon} {t.label}
             {t.badge ? <span className="bg-red-500 text-white text-[10px] rounded-full px-1 min-w-[16px] text-center">{t.badge}</span> : null}
           </button>
@@ -182,10 +182,10 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
         {/* Groups List */}
         {tab === "list" && (
           <div>
-            <div className="p-3 border-b border-gray-100 dark:border-gray-800">
+            <div className="p-3 border-b border-gray-100 dark:border-gray-100">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Tìm kiếm nhóm..." className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Tìm kiếm nhóm..." className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
             </div>
             {loading ? (
@@ -199,10 +199,10 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 <div className="px-4 py-2 text-xs text-gray-400">{groups.length} nhóm</div>
                 {groups.map(g => (
-                  <div key={g.groupId} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 group cursor-pointer" onClick={() => setSelectedGroup(selectedGroup?.groupId === g.groupId ? null : g)}>
+                  <div key={g.groupId} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-100 group cursor-pointer" onClick={() => setSelectedGroup(selectedGroup?.groupId === g.groupId ? null : g)}>
                     <GroupAvatar name={g.name} avatar={g.avatar} size={40} />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{g.name}</div>
+                      <div className="font-medium text-sm text-gray-900 dark:text-gray-900 truncate">{g.name}</div>
                       <div className="text-xs text-gray-400">{g.totalMember || 0} thành viên{g.maxMember ? ` / ${g.maxMember}` : ""}</div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -219,17 +219,17 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
                 ))}
                 {/* Group detail panel */}
                 {selectedGroup && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border-t border-blue-100 dark:border-blue-800 px-4 py-3 space-y-2">
+                  <div className="bg-blue-50 dark:bg-blue-50 border-t border-blue-100 dark:border-blue-800 px-4 py-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{selectedGroup.name}</span>
                       <button onClick={() => setSelectedGroup(null)} className="text-blue-400 hover:text-blue-600"><X size={12} /></button>
                     </div>
-                    {selectedGroup.desc && <p className="text-xs text-blue-600 dark:text-blue-400">{selectedGroup.desc}</p>}
+                    {selectedGroup.desc && <p className="text-xs text-blue-600 dark:text-blue-600">{selectedGroup.desc}</p>}
                     <div className="flex flex-wrap gap-2">
-                      <button onClick={() => handleGetLink(selectedGroup.groupId)} className="flex items-center gap-1 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50">
+                      <button onClick={() => handleGetLink(selectedGroup.groupId)} className="flex items-center gap-1 px-2 py-1 text-xs bg-white dark:bg-gray-50 border border-blue-200 dark:border-blue-200 text-blue-600 dark:text-blue-600 rounded-lg hover:bg-blue-50">
                         <Link size={11} /> Lấy link
                       </button>
-                      <button onClick={() => handleLeaveGroup(selectedGroup.groupId, selectedGroup.name)} className="flex items-center gap-1 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-red-200 dark:border-red-700 text-red-500 rounded-lg hover:bg-red-50">
+                      <button onClick={() => handleLeaveGroup(selectedGroup.groupId, selectedGroup.name)} className="flex items-center gap-1 px-2 py-1 text-xs bg-white dark:bg-gray-50 border border-red-200 dark:border-red-200 text-red-500 rounded-lg hover:bg-red-50">
                         <LogOut size={11} /> Rời nhóm
                       </button>
                     </div>
@@ -258,7 +258,7 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
                       <Users size={18} className="text-indigo-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-900 dark:text-white">{inv.name || `Nhóm ${inv.groupId}`}</div>
+                      <div className="font-medium text-sm text-gray-900 dark:text-gray-900">{inv.name || `Nhóm ${inv.groupId}`}</div>
                       {inv.inviterId && <div className="text-xs text-gray-400">Được mời bởi {inv.inviterId}</div>}
                     </div>
                     <button onClick={() => handleAcceptInvite(inv.groupId)} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg">
@@ -276,11 +276,11 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
           <div className="p-4 space-y-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tên nhóm (tùy chọn)</label>
-              <input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nhập tên nhóm..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Nhập tên nhóm..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Thành viên (ID Zalo, cách nhau bởi dấu phẩy)</label>
-              <textarea value={createMemberIds} onChange={e => setCreateMemberIds(e.target.value)} rows={3} placeholder="userId1, userId2, userId3..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
+              <textarea value={createMemberIds} onChange={e => setCreateMemberIds(e.target.value)} rows={3} placeholder="userId1, userId2, userId3..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none" />
               <p className="text-xs text-gray-400 mt-1">Cần ít nhất 2 thành viên</p>
             </div>
             <button onClick={handleCreateGroup} className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2">
@@ -294,7 +294,7 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
           <div className="p-4 space-y-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Link tham gia nhóm</label>
-              <input value={joinLink} onChange={e => setJoinLink(e.target.value)} onKeyDown={e => e.key === "Enter" && handleJoinByLink()} placeholder="Dán link nhóm vào đây..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              <input value={joinLink} onChange={e => setJoinLink(e.target.value)} onKeyDown={e => e.key === "Enter" && handleJoinByLink()} placeholder="Dán link nhóm vào đây..." className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-white dark:bg-gray-50 text-gray-900 dark:text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500" />
             </div>
             <button onClick={handleJoinByLink} disabled={!joinLink.trim()} className="w-full py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2">
               <ExternalLink size={14} /> Tham gia nhóm
@@ -306,15 +306,15 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
       {/* Group Link Modal */}
       {groupLink && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-5 w-80 shadow-xl">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Link tham gia nhóm</h3>
+          <div className="bg-white dark:bg-white rounded-xl p-5 w-80 shadow-xl">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-900 mb-3">Link tham gia nhóm</h3>
             <div className="flex gap-2">
-              <input readOnly value={groupLink} className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white" />
+              <input readOnly value={groupLink} className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-50 text-gray-900 dark:text-gray-900" />
               <button onClick={() => { navigator.clipboard.writeText(groupLink); showToast("Đã sao chép link!"); setGroupLink(null); }} className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
                 <Copy size={14} />
               </button>
             </div>
-            <button onClick={() => setGroupLink(null)} className="w-full mt-3 py-2 text-sm text-gray-500 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">Đóng</button>
+            <button onClick={() => setGroupLink(null)} className="w-full mt-3 py-2 text-sm text-gray-500 border border-gray-200 dark:border-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-100">Đóng</button>
           </div>
         </div>
       )}

@@ -8,16 +8,16 @@ import {
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const T = {
-  sidebarBg: "#111827",
-  sidebarBorder: "#1F2937",
-  sidebarHover: "#1F2937",
-  sidebarActiveBg: "#1E3A5F",
-  chatBg: "#0F172A",
-  headerBg: "rgba(15,23,42,0.95)",
-  headerBorder: "#1E293B",
-  textPrimary: "#F1F5F9",
-  textSecondary: "#94A3B8",
-  textMuted: "#64748B",
+  sidebarBg: "#FFFFFF",
+  sidebarBorder: "#DBE3EE",
+  sidebarHover: "#F1F5F9",
+  sidebarActiveBg: "#EFF6FF",
+  chatBg: "#F4F7FB",
+  headerBg: "rgba(255,255,255,0.97)",
+  headerBorder: "#DBE3EE",
+  textPrimary: "#172033",
+  textSecondary: "#526173",
+  textMuted: "#738196",
   accent: "#3B82F6",
   accentHover: "#2563EB",
   success: "#10B981",
@@ -110,7 +110,7 @@ function FriendNotifToast({ request, onAccept, onReject, onDismiss }: {
   return (
     <div style={{
       position: "fixed", bottom: 24, right: 24, zIndex: 9999,
-      background: "#1E293B", border: `1px solid ${T.sidebarBorder}`,
+      background: "#FFFFFF", border: `1px solid ${T.sidebarBorder}`,
       borderRadius: 14, padding: "14px 16px", minWidth: 300, maxWidth: 360,
       boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
       animation: "slideInRight 0.3s ease",
@@ -121,7 +121,7 @@ function FriendNotifToast({ request, onAccept, onReject, onDismiss }: {
           <div style={{
             position: "absolute", bottom: -2, right: -2,
             width: 18, height: 18, borderRadius: "50%",
-            background: T.accent, border: `2px solid #1E293B`,
+            background: T.accent, border: `2px solid #FFFFFF`,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <UserPlus size={9} color="#fff" />
@@ -515,7 +515,7 @@ export default function ZaloFriendPanel() {
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c8d3e0; border-radius: 4px; }
       `}</style>
     </div>
   );
@@ -565,7 +565,7 @@ function IncomingRequestItem({ request, actionLoading, onAccept, onReject }: {
           {request.message && (
             <div style={{
               fontSize: 12, color: T.textSecondary,
-              background: "rgba(255,255,255,0.04)", borderRadius: 6, padding: "5px 8px",
+              background: "#F1F5F9", borderRadius: 6, padding: "5px 8px",
               borderLeft: `2px solid ${T.accent}`,
               fontStyle: "italic",
               overflow: "hidden", textOverflow: "ellipsis",
@@ -634,7 +634,7 @@ function FoundUserCard({ user, status, requestMessage, setRequestMessage, onSend
   return (
     <div style={{
       borderRadius: 12, border: `1px solid ${T.sidebarBorder}`,
-      background: "rgba(255,255,255,0.03)", overflow: "hidden",
+      background: "#F8FAFC", overflow: "hidden",
     }}>
       {/* User info */}
       <div style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", gap: 12 }}>
