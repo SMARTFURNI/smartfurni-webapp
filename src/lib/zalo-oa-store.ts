@@ -6,6 +6,7 @@ export type ZaloMessageCategory = "consultation" | "zbs_transaction" | "zbs_afte
 export type ZaloMessageStatus = "pending" | "sent" | "delivered" | "read" | "failed";
 export type ZaloQueueStatus = "draft" | "approved" | "sent" | "rejected" | "failed";
 export type ZaloHistorySyncStatus = "never" | "running" | "completed" | "partial" | "failed";
+export type ZaloTemplateApprovalStatus = "LOCAL" | "PENDING_REVIEW" | "ENABLE" | "REJECT" | "DISABLE" | "DELETE";
 
 export interface ZaloHistorySyncSummary {
   status: ZaloHistorySyncStatus;
@@ -19,6 +20,19 @@ export interface ZaloHistorySyncSummary {
   messagesSkipped: number;
   profilesUpdated: number;
   tagsSynced: number;
+  warnings: string[];
+  error: string;
+}
+
+export interface ZaloTemplateSyncSummary {
+  status: ZaloHistorySyncStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  disabled: number;
   warnings: string[];
   error: string;
 }
@@ -54,6 +68,7 @@ export interface ZaloOAPublicConfig extends Omit<ZaloOAConfig, "appSecret" | "oa
   webhookLastStatus: string;
   webhookLastError: string;
   historySync: ZaloHistorySyncSummary;
+  templateSync: ZaloTemplateSyncSummary;
 }
 
 export interface ZaloTemplate {
@@ -65,6 +80,17 @@ export interface ZaloTemplate {
   variables: string[];
   isActive: boolean;
   requiresApproval: boolean;
+  approvalStatus: ZaloTemplateApprovalStatus;
+  quality: "HIGH" | "MEDIUM" | "LOW" | "UNDEFINED";
+  templateTag: string;
+  reason: string;
+  previewUrl: string;
+  priceSdt: string;
+  priceUid: string;
+  buttons: Array<{ type: number; title: string; content: string }>;
+  source: "crm" | "zalo";
+  zaloCreatedAt: string | null;
+  syncedAt: string | null;
   updatedAt: string;
 }
 
@@ -210,6 +236,11 @@ export async function initZaloOASchema(): Promise<void> {
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_finished_at TIMESTAMPTZ;
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_summary JSONB NOT NULL DEFAULT '{}';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_error TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_status TEXT NOT NULL DEFAULT 'never';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_started_at TIMESTAMPTZ;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_finished_at TIMESTAMPTZ;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_summary JSONB NOT NULL DEFAULT '{}';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_error TEXT NOT NULL DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS crm_zalo_templates (
       id TEXT PRIMARY KEY,
@@ -223,6 +254,18 @@ export async function initZaloOASchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS approval_status TEXT NOT NULL DEFAULT 'LOCAL';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS quality TEXT NOT NULL DEFAULT 'UNDEFINED';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS template_tag TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS reason TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS preview_url TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS price_sdt TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS price_uid TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS buttons JSONB NOT NULL DEFAULT '[]';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'crm';
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS zalo_created_at TIMESTAMPTZ;
+    ALTER TABLE crm_zalo_templates ADD COLUMN IF NOT EXISTS synced_at TIMESTAMPTZ;
 
     CREATE TABLE IF NOT EXISTS crm_zalo_conversations (
       user_id TEXT PRIMARY KEY,
@@ -445,6 +488,17 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function asRecordArray(value: unknown): Record<string, unknown>[] {
+  if (Array.isArray(value)) return value.map(asRecord).filter(item => Object.keys(item).length > 0);
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed.map(asRecord).filter(item => Object.keys(item).length > 0) : [];
+    } catch { return []; }
+  }
+  return [];
+}
+
 function mapHistorySync(row?: Record<string, unknown>): ZaloHistorySyncSummary {
   const raw = asRecord(row?.history_sync_summary);
   const warnings = Array.isArray(raw.warnings) ? raw.warnings.map(String) : [];
@@ -466,18 +520,56 @@ function mapHistorySync(row?: Record<string, unknown>): ZaloHistorySyncSummary {
   };
 }
 
+function mapTemplateSync(row?: Record<string, unknown>): ZaloTemplateSyncSummary {
+  const raw = asRecord(row?.template_sync_summary);
+  const warnings = Array.isArray(raw.warnings) ? raw.warnings.map(String) : [];
+  const status = String(row?.template_sync_status || raw.status || "never") as ZaloHistorySyncStatus;
+  return {
+    status: ["never", "running", "completed", "partial", "failed"].includes(status) ? status : "never",
+    startedAt: row?.template_sync_started_at ? String(row.template_sync_started_at) : raw.startedAt ? String(raw.startedAt) : null,
+    finishedAt: row?.template_sync_finished_at ? String(row.template_sync_finished_at) : raw.finishedAt ? String(raw.finishedAt) : null,
+    total: Number(raw.total || 0),
+    approved: Number(raw.approved || 0),
+    pending: Number(raw.pending || 0),
+    rejected: Number(raw.rejected || 0),
+    disabled: Number(raw.disabled || 0),
+    warnings,
+    error: String(row?.template_sync_error || raw.error || ""),
+  };
+}
+
 function mapTemplate(row: Record<string, unknown>): ZaloTemplate {
+  const approvalStatus = String(row.approval_status || "LOCAL") as ZaloTemplateApprovalStatus;
+  const quality = String(row.quality || "UNDEFINED") as ZaloTemplate["quality"];
   return {
     id: String(row.id), name: String(row.name), category: String(row.category) as ZaloMessageCategory,
     content: String(row.content || ""), zbsTemplateId: String(row.zbs_template_id || ""),
     variables: asArray(row.variables), isActive: Boolean(row.is_active),
-    requiresApproval: row.requires_approval !== false, updatedAt: String(row.updated_at),
+    requiresApproval: row.requires_approval !== false,
+    approvalStatus: ["LOCAL", "PENDING_REVIEW", "ENABLE", "REJECT", "DISABLE", "DELETE"].includes(approvalStatus) ? approvalStatus : "LOCAL",
+    quality: ["HIGH", "MEDIUM", "LOW", "UNDEFINED"].includes(quality) ? quality : "UNDEFINED",
+    templateTag: String(row.template_tag || ""), reason: String(row.reason || ""),
+    previewUrl: String(row.preview_url || ""), priceSdt: String(row.price_sdt || ""), priceUid: String(row.price_uid || ""),
+    buttons: asRecordArray(row.buttons).map(item => ({ type: Number(item.type || 0), title: String(item.title || ""), content: String(item.content || "") })),
+    source: String(row.source || "crm") === "zalo" ? "zalo" : "crm",
+    zaloCreatedAt: row.zalo_created_at ? String(row.zalo_created_at) : null,
+    syncedAt: row.synced_at ? String(row.synced_at) : null,
+    updatedAt: String(row.updated_at),
   };
 }
 
 export async function getZaloTemplates(): Promise<ZaloTemplate[]> {
   await initZaloOASchema();
-  return (await query<Record<string, unknown>>(`SELECT * FROM crm_zalo_templates ORDER BY updated_at DESC`)).map(mapTemplate);
+  return (await query<Record<string, unknown>>(`
+    SELECT t.* FROM crm_zalo_templates t
+    WHERE NOT (
+      t.source='zalo' AND t.zbs_template_id<>'' AND EXISTS (
+        SELECT 1 FROM crm_zalo_templates local
+        WHERE local.source='crm' AND local.zbs_template_id=t.zbs_template_id
+      )
+    )
+    ORDER BY COALESCE(t.zalo_created_at,t.updated_at) DESC
+  `)).map(mapTemplate);
 }
 
 export async function saveZaloTemplate(input: Partial<ZaloTemplate> & { name: string; category: ZaloMessageCategory }): Promise<ZaloTemplate> {
@@ -498,6 +590,169 @@ export async function saveZaloTemplate(input: Partial<ZaloTemplate> & { name: st
 export async function deleteZaloTemplate(id: string): Promise<void> {
   await initZaloOASchema();
   await query(`DELETE FROM crm_zalo_templates WHERE id=$1`, [id]);
+}
+
+function normalizeTemplateStatus(value: unknown): ZaloTemplateApprovalStatus {
+  const status = String(value || "").trim().toUpperCase();
+  if (status === "ENABLE" || status === "APPROVED") return "ENABLE";
+  if (status === "PENDING_REVIEW" || status === "PENDING" || status === "REVIEWING") return "PENDING_REVIEW";
+  if (status === "REJECT" || status === "REJECTED") return "REJECT";
+  if (status === "DISABLE" || status === "DISABLED") return "DISABLE";
+  if (status === "DELETE" || status === "DELETED") return "DELETE";
+  return "PENDING_REVIEW";
+}
+
+function normalizeTemplateQuality(value: unknown): ZaloTemplate["quality"] {
+  const quality = String(value || "UNDEFINED").trim().toUpperCase() as ZaloTemplate["quality"];
+  return ["HIGH", "MEDIUM", "LOW", "UNDEFINED"].includes(quality) ? quality : "UNDEFINED";
+}
+
+function templateCategory(value: unknown): ZaloMessageCategory {
+  const tag = String(value || "").toUpperCase();
+  return tag.includes("TRANSACTION") ? "zbs_transaction" : "zbs_after_sale";
+}
+
+function templateCreatedAt(value: unknown): string | null {
+  const timestamp = Number(value || 0);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
+  const date = new Date(timestamp > 10_000_000_000 ? timestamp : timestamp * 1000);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+async function fetchZaloTemplateApi(url: URL, accessToken: string): Promise<Record<string, unknown>> {
+  const response = await fetch(url, {
+    headers: { "Content-Type": "application/json", access_token: accessToken },
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+  if (!response.ok || Number(body.error || 0) !== 0) {
+    throw new Error(String(body.message || `Zalo HTTP ${response.status}`));
+  }
+  return body;
+}
+
+async function saveTemplateSync(summary: ZaloTemplateSyncSummary): Promise<void> {
+  summary.warnings = Array.from(new Set(summary.warnings)).slice(0, 30);
+  await query(
+    `UPDATE crm_zalo_config SET template_sync_status=$1,template_sync_started_at=$2,
+     template_sync_finished_at=$3,template_sync_summary=$4::jsonb,template_sync_error=$5,updated_at=NOW()
+     WHERE id='default'`,
+    [summary.status, summary.startedAt, summary.finishedAt, JSON.stringify(summary), summary.error.slice(0, 500)],
+  );
+}
+
+/** Đồng bộ toàn bộ vòng đời template theo API ZBS chính thức của Zalo. */
+export async function syncZaloTemplates(): Promise<ZaloTemplateSyncSummary> {
+  await initZaloOASchema();
+  const summary: ZaloTemplateSyncSummary = {
+    status: "running", startedAt: new Date().toISOString(), finishedAt: null,
+    total: 0, approved: 0, pending: 0, rejected: 0, disabled: 0, warnings: [], error: "",
+  };
+  await saveTemplateSync(summary);
+
+  try {
+    const config = await getZaloOAConfig();
+    if (!config.isActive || !config.accessToken) throw new Error("Zalo OA chưa kích hoạt hoặc thiếu Access Token.");
+
+    const items: Record<string, unknown>[] = [];
+    const limit = 100;
+    for (let offset = 0; offset < 1000; offset += limit) {
+      const url = new URL("https://business.openapi.zalo.me/template/all");
+      url.searchParams.set("offset", String(offset));
+      url.searchParams.set("limit", String(limit));
+      url.searchParams.set("filterPreset", "0");
+      const body = await fetchZaloTemplateApi(url, config.accessToken);
+      const page = Array.isArray(body.data) ? body.data.map(asRecord) : [];
+      items.push(...page.filter(item => Object.keys(item).length > 0));
+      const total = Number(asRecord(body.metadata).total || items.length);
+      if (page.length < limit || items.length >= total) break;
+      if (offset + limit >= 1000) summary.warnings.push("Đã chạm giới hạn an toàn 1.000 template trong một lần đồng bộ.");
+    }
+
+    const unique = new Map<string, Record<string, unknown>>();
+    for (const item of items) {
+      const templateId = String(item.templateId || item.template_id || "").trim();
+      if (templateId) unique.set(templateId, item);
+    }
+    summary.total = unique.size;
+
+    const list = Array.from(unique.entries());
+    const details = new Map<string, Record<string, unknown>>();
+    for (let index = 0; index < list.length; index += 8) {
+      const chunk = list.slice(index, index + 8);
+      const results = await Promise.all(chunk.map(async ([templateId]) => {
+        try {
+          const url = new URL("https://business.openapi.zalo.me/template/info/v2");
+          url.searchParams.set("template_id", templateId);
+          const body = await fetchZaloTemplateApi(url, config.accessToken);
+          return [templateId, asRecord(body.data), ""] as const;
+        } catch (error) {
+          return [templateId, {}, error instanceof Error ? error.message : "Không lấy được chi tiết"] as const;
+        }
+      }));
+      for (const [templateId, detail, error] of results) {
+        if (Object.keys(detail).length) details.set(templateId, detail);
+        if (error) summary.warnings.push(`Template ${templateId}: ${error}.`);
+      }
+    }
+
+    for (const [templateId, item] of list) {
+      const detail = { ...item, ...details.get(templateId) };
+      const status = normalizeTemplateStatus(detail.status);
+      const params = asRecordArray(detail.listParams || detail.list_params);
+      const buttons = asRecordArray(detail.listButtons || detail.list_buttons).map(button => ({
+        type: Number(button.type || 0), title: String(button.title || ""), content: String(button.content || ""),
+      }));
+      const tag = String(detail.templateTag || detail.template_tag || "");
+      const isActive = status === "ENABLE";
+      await query(
+        `INSERT INTO crm_zalo_templates
+          (id,name,category,content,zbs_template_id,variables,is_active,requires_approval,approval_status,
+           quality,template_tag,reason,preview_url,price_sdt,price_uid,buttons,source,zalo_created_at,synced_at)
+         VALUES ($1,$2,$3,'',$4,$5::jsonb,$6,false,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,'zalo',$15::timestamptz,NOW())
+         ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,category=EXCLUDED.category,
+           zbs_template_id=EXCLUDED.zbs_template_id,variables=EXCLUDED.variables,is_active=EXCLUDED.is_active,
+           requires_approval=false,approval_status=EXCLUDED.approval_status,quality=EXCLUDED.quality,
+           template_tag=EXCLUDED.template_tag,reason=EXCLUDED.reason,preview_url=EXCLUDED.preview_url,
+           price_sdt=EXCLUDED.price_sdt,price_uid=EXCLUDED.price_uid,buttons=EXCLUDED.buttons,source='zalo',
+           zalo_created_at=COALESCE(EXCLUDED.zalo_created_at,crm_zalo_templates.zalo_created_at),synced_at=NOW(),updated_at=NOW()`,
+        [
+          `zalo-${templateId}`, String(detail.templateName || detail.template_name || `Template ${templateId}`),
+          templateCategory(tag), templateId, JSON.stringify(params.map(param => String(param.name || "")).filter(Boolean)),
+          isActive, status, normalizeTemplateQuality(detail.templateQuality || detail.template_quality), tag,
+          String(detail.reason || ""), String(detail.previewUrl || detail.preview_url || ""),
+          String(detail.price_sdt || detail.priceSdt || ""), String(detail.price_uid || detail.priceUid || ""),
+          JSON.stringify(buttons), templateCreatedAt(detail.createdTime || detail.created_time),
+        ],
+      );
+    }
+
+    await query(`
+      UPDATE crm_zalo_templates local SET
+        approval_status=zalo.approval_status,quality=zalo.quality,template_tag=zalo.template_tag,
+        reason=zalo.reason,preview_url=zalo.preview_url,price_sdt=zalo.price_sdt,price_uid=zalo.price_uid,
+        buttons=zalo.buttons,zalo_created_at=zalo.zalo_created_at,synced_at=zalo.synced_at,
+        is_active=CASE WHEN zalo.approval_status='ENABLE' THEN local.is_active ELSE false END,updated_at=NOW()
+      FROM crm_zalo_templates zalo
+      WHERE local.source='crm' AND local.zbs_template_id<>'' AND zalo.source='zalo'
+        AND local.zbs_template_id=zalo.zbs_template_id
+    `);
+
+    const statuses = Array.from(unique.values()).map(item => normalizeTemplateStatus(item.status));
+    summary.approved = statuses.filter(status => status === "ENABLE").length;
+    summary.pending = statuses.filter(status => status === "PENDING_REVIEW").length;
+    summary.rejected = statuses.filter(status => status === "REJECT").length;
+    summary.disabled = statuses.filter(status => status === "DISABLE" || status === "DELETE").length;
+    summary.status = summary.warnings.length ? "partial" : "completed";
+  } catch (error) {
+    summary.status = "failed";
+    summary.error = error instanceof Error ? error.message : "Không đồng bộ được template Zalo OA.";
+  }
+
+  summary.finishedAt = new Date().toISOString();
+  await saveTemplateSync(summary);
+  return summary;
 }
 
 function mapConversation(row: Record<string, unknown>): ZaloConversation {
@@ -625,7 +880,8 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
   const { appSecret: _appSecret, oaSecretKey: _oaSecretKey, accessToken: _accessToken, refreshToken: _refreshToken, ...safeConfig } = config;
   const configMeta = await query<Record<string, unknown>>(
     `SELECT webhook_last_received_at,webhook_last_event,webhook_last_status,webhook_last_error,
-      history_sync_status,history_sync_started_at,history_sync_finished_at,history_sync_summary,history_sync_error
+      history_sync_status,history_sync_started_at,history_sync_finished_at,history_sync_summary,history_sync_error,
+      template_sync_status,template_sync_started_at,template_sync_finished_at,template_sync_summary,template_sync_error
      FROM crm_zalo_config WHERE id='default'`,
   );
   const meta = configMeta[0] || {};
@@ -639,6 +895,7 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
       webhookLastStatus: String(meta.webhook_last_status || ""),
       webhookLastError: String(meta.webhook_last_error || ""),
       historySync: mapHistorySync(meta),
+      templateSync: mapTemplateSync(meta),
     },
     stats: {
       total: Number(s.total || 0), sent: Number(s.sent || 0), failed: Number(s.failed || 0), pending: Number(s.pending || 0),
@@ -1285,6 +1542,11 @@ export async function sendZaloZbs(input: {
   if (!config.isActive || !config.zbsEnabled || !config.accessToken) return { ok: false, error: "ZBS chưa được kích hoạt hoặc thiếu Access Token." };
   if (!input.templateId.trim()) return { ok: false, error: "Cần chọn mẫu ZBS đã được Zalo duyệt." };
   if (!input.userId && !input.phone) return { ok: false, error: "Cần Zalo UID hoặc số điện thoại đã có căn cứ đồng ý nhận tin." };
+  const approvedTemplate = await query<{ id: string }>(
+    `SELECT id FROM crm_zalo_templates WHERE zbs_template_id=$1 AND approval_status='ENABLE' LIMIT 1`,
+    [input.templateId.trim()],
+  );
+  if (!approvedTemplate.length) return { ok: false, error: "Template chưa được Zalo duyệt hoặc CRM chưa đồng bộ trạng thái mới nhất." };
   const recipient = input.userId || normalizePhone(input.phone || "");
   const content = `ZBS #${input.templateId}: ${JSON.stringify(input.templateData)}`;
   const id = await insertOutboundMessage({ userId: recipient, content, category: input.category, source: input.source || "manual", templateId: input.templateId });

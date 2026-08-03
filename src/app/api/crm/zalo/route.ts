@@ -19,6 +19,7 @@ import {
   sendZaloConsultation,
   sendZaloZbs,
   syncZaloOAHistory,
+  syncZaloTemplates,
   syncZaloUserProfile,
   testZaloConnection,
   type ZaloMessageCategory,
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as Record<string, unknown>;
     const action = String(body.action || "");
     const adminActions = new Set([
-      "save_config", "save_template", "delete_template", "test_connection", "refresh_token", "sync_history",
+      "save_config", "save_template", "delete_template", "test_connection", "refresh_token", "sync_history", "sync_templates",
       "create_customer_tag", "assign_customer_tag", "save_customer_segment", "create_campaign", "send_campaign",
     ]);
     if (adminActions.has(action) && !session.isAdmin) {
@@ -130,6 +131,10 @@ export async function POST(req: NextRequest) {
     if (action === "sync_history") {
       const summary = await syncZaloOAHistory();
       return NextResponse.json({ ok: true, summary });
+    }
+    if (action === "sync_templates") {
+      const result = await syncZaloTemplates();
+      return NextResponse.json({ ok: result.status !== "failed", templateSync: result }, { status: result.status === "failed" ? 422 : 200 });
     }
     if (action === "create_customer_tag") {
       const tag = await createZaloCustomerTag({ name: String(body.name || ""), color: String(body.color || "") || undefined });
