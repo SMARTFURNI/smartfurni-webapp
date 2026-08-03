@@ -71,10 +71,10 @@ export default function GroupGrowthLeads() {
   }), [rows]);
 
   const cards = [
-    { label: "Lead từ Group", value: stats.leads, icon: Users },
-    { label: "Đã vào Messenger", value: stats.messenger, icon: MessageSquare },
-    { label: "Đã có báo giá", value: stats.quotes, icon: BadgeDollarSign },
-    { label: "Đã có đơn hàng", value: stats.orders, icon: ShoppingCart },
+    { label: "Lead từ Group", value: stats.leads, icon: Users, tone: "gold" },
+    { label: "Đã vào Messenger", value: stats.messenger, icon: MessageSquare, tone: "blue" },
+    { label: "Đã có báo giá", value: stats.quotes, icon: BadgeDollarSign, tone: "emerald" },
+    { label: "Đã có đơn hàng", value: stats.orders, icon: ShoppingCart, tone: "violet" },
   ];
 
   return (
@@ -84,7 +84,7 @@ export default function GroupGrowthLeads() {
       </div>}
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(({ label, value, icon: Icon }) => <article key={label}
+        {cards.map(({ label, value, icon: Icon, tone }) => <article key={label} data-fbg-tone={tone}
           className="rounded-2xl border border-amber-200/10 bg-[#111722]/90 p-4">
           <div className="flex items-center justify-between">
             <span className="grid h-10 w-10 place-items-center rounded-xl border border-amber-300/15 bg-amber-300/10 text-amber-300">
