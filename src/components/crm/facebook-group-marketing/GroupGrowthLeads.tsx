@@ -78,7 +78,7 @@ export default function GroupGrowthLeads() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="fbg-leads space-y-5">
       {error && <div className="flex items-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-200">
         <AlertTriangle size={17} /> {error}
       </div>}
