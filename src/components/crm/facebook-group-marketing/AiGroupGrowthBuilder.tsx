@@ -238,7 +238,7 @@ export default function AiGroupGrowthBuilder({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="fbg-builder space-y-5">
       {notice && <div className="flex items-center gap-2 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-sm text-emerald-200">
         <CheckCircle2 size={17} /> {notice}
       </div>}
