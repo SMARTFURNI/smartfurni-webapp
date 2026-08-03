@@ -13,6 +13,7 @@ import {
   saveZaloTemplate,
   sendZaloConsultation,
   sendZaloZbs,
+  syncZaloOAHistory,
   syncZaloUserProfile,
   testZaloConnection,
   type ZaloMessageCategory,
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as Record<string, unknown>;
     const action = String(body.action || "");
-    const adminActions = new Set(["save_config", "save_template", "delete_template", "test_connection", "refresh_token"]);
+    const adminActions = new Set(["save_config", "save_template", "delete_template", "test_connection", "refresh_token", "sync_history"]);
     if (adminActions.has(action) && !session.isAdmin) {
       return NextResponse.json({ ok: false, error: "Chỉ admin được thay đổi cấu hình Zalo OA." }, { status: 403 });
     }
@@ -117,6 +118,10 @@ export async function POST(req: NextRequest) {
     if (action === "refresh_token") {
       const result = await refreshZaloOAAccessToken();
       return NextResponse.json(result, { status: result.ok ? 200 : 422 });
+    }
+    if (action === "sync_history") {
+      const summary = await syncZaloOAHistory();
+      return NextResponse.json({ ok: true, summary });
     }
     throw new Error("Hành động Zalo OA không được hỗ trợ.");
   } catch (error) {

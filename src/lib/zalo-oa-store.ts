@@ -5,6 +5,22 @@ import { query } from "@/lib/db";
 export type ZaloMessageCategory = "consultation" | "zbs_transaction" | "zbs_after_sale";
 export type ZaloMessageStatus = "pending" | "sent" | "delivered" | "read" | "failed";
 export type ZaloQueueStatus = "draft" | "approved" | "sent" | "rejected" | "failed";
+export type ZaloHistorySyncStatus = "never" | "running" | "completed" | "partial" | "failed";
+
+export interface ZaloHistorySyncSummary {
+  status: ZaloHistorySyncStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  customersSeen: number;
+  customersUpserted: number;
+  conversationsSeen: number;
+  messagesSeen: number;
+  messagesInserted: number;
+  messagesSkipped: number;
+  profilesUpdated: number;
+  warnings: string[];
+  error: string;
+}
 
 export interface ZaloOAConfig {
   oaId: string;
@@ -36,6 +52,7 @@ export interface ZaloOAPublicConfig extends Omit<ZaloOAConfig, "appSecret" | "oa
   webhookLastEvent: string;
   webhookLastStatus: string;
   webhookLastError: string;
+  historySync: ZaloHistorySyncSummary;
 }
 
 export interface ZaloTemplate {
@@ -71,7 +88,7 @@ export interface ZaloMessageRecord {
   category: ZaloMessageCategory;
   content: string;
   status: ZaloMessageStatus;
-  source: "manual" | "ai" | "webhook";
+  source: "manual" | "ai" | "webhook" | "sync";
   templateId: string;
   zaloMessageId: string;
   aiConfidence: number | null;
@@ -145,6 +162,11 @@ export async function initZaloOASchema(): Promise<void> {
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_event TEXT NOT NULL DEFAULT '';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_status TEXT NOT NULL DEFAULT '';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_error TEXT NOT NULL DEFAULT '';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_status TEXT NOT NULL DEFAULT 'never';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_started_at TIMESTAMPTZ;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_finished_at TIMESTAMPTZ;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_summary JSONB NOT NULL DEFAULT '{}';
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS history_sync_error TEXT NOT NULL DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS crm_zalo_templates (
       id TEXT PRIMARY KEY,
@@ -306,6 +328,26 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function mapHistorySync(row?: Record<string, unknown>): ZaloHistorySyncSummary {
+  const raw = asRecord(row?.history_sync_summary);
+  const warnings = Array.isArray(raw.warnings) ? raw.warnings.map(String) : [];
+  const status = String(row?.history_sync_status || raw.status || "never") as ZaloHistorySyncStatus;
+  return {
+    status: ["never", "running", "completed", "partial", "failed"].includes(status) ? status : "never",
+    startedAt: row?.history_sync_started_at ? String(row.history_sync_started_at) : raw.startedAt ? String(raw.startedAt) : null,
+    finishedAt: row?.history_sync_finished_at ? String(row.history_sync_finished_at) : raw.finishedAt ? String(raw.finishedAt) : null,
+    customersSeen: Number(raw.customersSeen || 0),
+    customersUpserted: Number(raw.customersUpserted || 0),
+    conversationsSeen: Number(raw.conversationsSeen || 0),
+    messagesSeen: Number(raw.messagesSeen || 0),
+    messagesInserted: Number(raw.messagesInserted || 0),
+    messagesSkipped: Number(raw.messagesSkipped || 0),
+    profilesUpdated: Number(raw.profilesUpdated || 0),
+    warnings,
+    error: String(row?.history_sync_error || raw.error || ""),
+  };
+}
+
 function mapTemplate(row: Record<string, unknown>): ZaloTemplate {
   return {
     id: String(row.id), name: String(row.name), category: String(row.category) as ZaloMessageCategory,
@@ -354,7 +396,7 @@ function mapMessage(row: Record<string, unknown>): ZaloMessageRecord {
     id: String(row.id), userId: String(row.conversation_user_id), displayName: String(row.display_name || "Khách Zalo"),
     direction: String(row.direction) as "inbound" | "outbound", category: String(row.category) as ZaloMessageCategory,
     content: String(row.content || ""), status: String(row.status) as ZaloMessageStatus,
-    source: String(row.source) as "manual" | "ai" | "webhook", templateId: String(row.template_id || ""),
+    source: String(row.source) as "manual" | "ai" | "webhook" | "sync", templateId: String(row.template_id || ""),
     zaloMessageId: String(row.zalo_message_id || ""), aiConfidence: row.ai_confidence == null ? null : Number(row.ai_confidence),
     error: String(row.error || ""), attachment: asRecord(row.attachment), createdAt: String(row.created_at),
     sentAt: row.sent_at ? String(row.sent_at) : null, deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
@@ -391,18 +433,22 @@ export async function getZaloDashboard(baseUrl = ""): Promise<ZaloDashboard> {
   const aiQueue = queueRows.map(mapQueue);
   const s = statRows[0] || {};
   const { appSecret: _appSecret, oaSecretKey: _oaSecretKey, accessToken: _accessToken, refreshToken: _refreshToken, ...safeConfig } = config;
-  const webhookMeta = await query<Record<string, unknown>>(
-    `SELECT webhook_last_received_at,webhook_last_event,webhook_last_status,webhook_last_error FROM crm_zalo_config WHERE id='default'`,
+  const configMeta = await query<Record<string, unknown>>(
+    `SELECT webhook_last_received_at,webhook_last_event,webhook_last_status,webhook_last_error,
+      history_sync_status,history_sync_started_at,history_sync_finished_at,history_sync_summary,history_sync_error
+     FROM crm_zalo_config WHERE id='default'`,
   );
+  const meta = configMeta[0] || {};
   return {
     config: {
       ...safeConfig,
       appSecretConfigured: Boolean(config.appSecret), oaSecretKeyConfigured: Boolean(config.oaSecretKey), accessTokenConfigured: Boolean(config.accessToken),
       refreshTokenConfigured: Boolean(config.refreshToken), webhookUrl: `${baseUrl}${WEBHOOK_PATH}`,
-      webhookLastReceivedAt: webhookMeta[0]?.webhook_last_received_at ? String(webhookMeta[0].webhook_last_received_at) : null,
-      webhookLastEvent: String(webhookMeta[0]?.webhook_last_event || ""),
-      webhookLastStatus: String(webhookMeta[0]?.webhook_last_status || ""),
-      webhookLastError: String(webhookMeta[0]?.webhook_last_error || ""),
+      webhookLastReceivedAt: meta.webhook_last_received_at ? String(meta.webhook_last_received_at) : null,
+      webhookLastEvent: String(meta.webhook_last_event || ""),
+      webhookLastStatus: String(meta.webhook_last_status || ""),
+      webhookLastError: String(meta.webhook_last_error || ""),
+      historySync: mapHistorySync(meta),
     },
     stats: {
       total: Number(s.total || 0), sent: Number(s.sent || 0), failed: Number(s.failed || 0), pending: Number(s.pending || 0),
@@ -472,6 +518,204 @@ export async function syncZaloUserProfile(userId: string): Promise<ZaloConversat
     // Hồ sơ chỉ làm giàu giao diện; lỗi API không được làm gián đoạn hội thoại.
     return stored;
   }
+}
+
+function historyItems(body: Record<string, unknown>): Record<string, unknown>[] {
+  const data = asRecord(body.data);
+  const candidates = [
+    body.items, body.followers, body.conversations, body.messages,
+    data.items, data.followers, data.conversations, data.messages, data.users,
+  ];
+  for (const value of candidates) {
+    if (Array.isArray(value)) return value.map(asRecord).filter(item => Object.keys(item).length > 0);
+  }
+  return Array.isArray(body.data) ? body.data.map(asRecord).filter(item => Object.keys(item).length > 0) : [];
+}
+
+async function fetchZaloHistoryPage(
+  path: string,
+  data: Record<string, unknown>,
+  accessToken: string,
+): Promise<Record<string, unknown>> {
+  const url = new URL(path);
+  url.searchParams.set("data", JSON.stringify(data));
+  const response = await fetch(url, {
+    headers: { access_token: accessToken },
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+  const errorCode = Number(body.error || 0);
+  if (!response.ok || errorCode !== 0) {
+    throw new Error(String(body.message || body.error_name || `Zalo HTTP ${response.status}`));
+  }
+  return body;
+}
+
+function historyUserId(item: Record<string, unknown>, oaId: string): string {
+  const direct = String(item.user_id || item.uid || item.anonymous_id || "").trim();
+  if (direct && direct !== oaId) return direct;
+  const sender = zaloPartyId(asRecord(item.sender));
+  const recipient = zaloPartyId(asRecord(item.recipient));
+  if (sender && sender !== oaId) return sender;
+  if (recipient && recipient !== oaId) return recipient;
+  const id = String(item.id || "").trim();
+  return id && id !== oaId ? id : "";
+}
+
+function historyDirection(item: Record<string, unknown>, userId: string, oaId: string): "inbound" | "outbound" {
+  const value = String(item.direction || item.event_name || item.type || "").toLowerCase();
+  if (value === "outbound" || value.startsWith("oa_send_")) return "outbound";
+  if (value === "inbound" || value.startsWith("user_send_") || value.startsWith("anonymous_send_")) return "inbound";
+  const sender = zaloPartyId(asRecord(item.sender));
+  if (sender === oaId) return "outbound";
+  if (sender === userId) return "inbound";
+  return "inbound";
+}
+
+async function saveHistorySync(summary: ZaloHistorySyncSummary): Promise<void> {
+  summary.warnings = Array.from(new Set(summary.warnings)).slice(0, 30);
+  await query(
+    `UPDATE crm_zalo_config SET history_sync_status=$1,history_sync_started_at=$2,
+     history_sync_finished_at=$3,history_sync_summary=$4::jsonb,history_sync_error=$5,updated_at=NOW()
+     WHERE id='default'`,
+    [summary.status, summary.startedAt, summary.finishedAt, JSON.stringify(summary), summary.error.slice(0, 500)],
+  );
+}
+
+/**
+ * Nhập phần lịch sử mà OA OpenAPI hiện tại thực sự cho phép đọc. Các endpoint V2
+ * không còn được cấp cho mọi ứng dụng, vì vậy kết quả luôn ghi rõ completed/partial/failed.
+ */
+export async function syncZaloOAHistory(): Promise<ZaloHistorySyncSummary> {
+  await initZaloOASchema();
+  const startedAt = new Date().toISOString();
+  const summary: ZaloHistorySyncSummary = {
+    status: "running", startedAt, finishedAt: null,
+    customersSeen: 0, customersUpserted: 0, conversationsSeen: 0,
+    messagesSeen: 0, messagesInserted: 0, messagesSkipped: 0,
+    profilesUpdated: 0, warnings: [], error: "",
+  };
+  await saveHistorySync(summary);
+
+  try {
+    const config = await getZaloOAConfig();
+    if (!config.isActive || !config.accessToken) throw new Error("Zalo OA chưa kích hoạt hoặc thiếu Access Token.");
+
+    const users = new Set<string>();
+    const existing = await query<{ user_id: string }>(`SELECT user_id FROM crm_zalo_conversations`);
+    existing.forEach(row => row.user_id && users.add(String(row.user_id)));
+
+    const collectUsers = async (label: string, path: string, pageSize: number, maxItems: number) => {
+      let offset = 0;
+      try {
+        while (offset < maxItems) {
+          const body = await fetchZaloHistoryPage(path, { offset, count: pageSize }, config.accessToken);
+          const items = historyItems(body);
+          for (const item of items) {
+            const userId = historyUserId(item, config.oaId);
+            if (userId) users.add(userId);
+          }
+          if (items.length < pageSize) break;
+          offset += items.length;
+        }
+        if (offset >= maxItems) summary.warnings.push(`${label}: đã chạm giới hạn an toàn ${maxItems} bản ghi mỗi lần chạy.`);
+      } catch (error) {
+        summary.warnings.push(`${label}: ${error instanceof Error ? error.message : "API không khả dụng"}.`);
+      }
+    };
+
+    await collectUsers("Danh sách người quan tâm", "https://openapi.zalo.me/v2.0/oa/getfollowers", 50, 500);
+    await collectUsers("Danh sách hội thoại gần đây", "https://openapi.zalo.me/v2.0/oa/listrecentchat", 10, 500);
+    summary.customersSeen = users.size;
+
+    for (const userId of users) {
+      await query(
+        `INSERT INTO crm_zalo_conversations (user_id,display_name,unread_count,ai_status)
+         VALUES ($1,'Khách Zalo',0,'idle') ON CONFLICT (user_id) DO NOTHING`,
+        [userId],
+      );
+      summary.customersUpserted += 1;
+      const before = await getZaloConversation(userId);
+      const profile = await syncZaloUserProfile(userId);
+      if (profile && before && (profile.displayName !== before.displayName || profile.avatar !== before.avatar)) summary.profilesUpdated += 1;
+
+      let offset = 0;
+      let conversationAvailable = true;
+      while (offset < 200 && conversationAvailable) {
+        let items: Record<string, unknown>[] = [];
+        try {
+          const body = await fetchZaloHistoryPage(
+            "https://openapi.zalo.me/v2.0/oa/conversation",
+            { user_id: userId, offset, count: 10 },
+            config.accessToken,
+          );
+          items = historyItems(body);
+        } catch (error) {
+          summary.warnings.push(`Hội thoại ${userId}: ${error instanceof Error ? error.message : "API không khả dụng"}.`);
+          conversationAvailable = false;
+          break;
+        }
+        if (!items.length) break;
+        summary.conversationsSeen += offset === 0 ? 1 : 0;
+        for (const raw of items) {
+          const message = Object.keys(asRecord(raw.message)).length ? asRecord(raw.message) : raw;
+          const eventName = String(raw.event_name || message.event_name || raw.type || message.type || "");
+          const direction = historyDirection(raw, userId, config.oaId);
+          const { content, attachment } = zaloEventContent(eventName, message);
+          const eventAt = zaloEventTime({ ...raw, created_at: raw.created_at || message.created_at || message.time || message.timestamp });
+          const messageId = zaloMessageId(raw, message) || String(raw.msg_id || raw.message_id || raw.id || "").trim();
+          const stable = createHash("sha256")
+            .update(JSON.stringify([userId, direction, eventAt, content, attachment]))
+            .digest("hex").slice(0, 32);
+          const id = messageId ? `zalo-${messageId}` : `zsync-${stable}`;
+          summary.messagesSeen += 1;
+          const duplicate = await query<{ id: string }>(
+            `SELECT id FROM crm_zalo_messages WHERE id=$1 OR ($2<>'' AND zalo_message_id=$2) LIMIT 1`,
+            [id, messageId],
+          );
+          if (duplicate.length) {
+            summary.messagesSkipped += 1;
+            continue;
+          }
+          const inserted = await query<{ id: string }>(
+            `INSERT INTO crm_zalo_messages
+             (id,conversation_user_id,direction,category,content,attachment,status,source,zalo_message_id,created_at,sent_at,delivered_at)
+             VALUES ($1,$2,$3,'consultation',$4,$5::jsonb,'delivered','sync',$6,$7::timestamptz,
+               CASE WHEN $3='outbound' THEN $7::timestamptz ELSE NULL END,$7::timestamptz)
+             ON CONFLICT (id) DO NOTHING RETURNING id`,
+            [id, userId, direction, content, JSON.stringify(attachment), messageId, eventAt],
+          );
+          if (inserted.length) summary.messagesInserted += 1;
+          else summary.messagesSkipped += 1;
+          await query(
+            `UPDATE crm_zalo_conversations SET
+             last_user_interaction=CASE WHEN $2='inbound' AND (last_user_interaction IS NULL OR last_user_interaction<$3) THEN $3 ELSE last_user_interaction END,
+             last_message_preview=CASE WHEN last_message_at IS NULL OR last_message_at<$3 THEN $4 ELSE last_message_preview END,
+             last_message_at=CASE WHEN last_message_at IS NULL OR last_message_at<$3 THEN $3 ELSE last_message_at END,
+             updated_at=NOW() WHERE user_id=$1`,
+            [userId, direction, eventAt, content],
+          );
+        }
+        if (items.length < 10) break;
+        offset += items.length;
+      }
+      if (offset >= 200) summary.warnings.push(`Hội thoại ${userId}: đã chạm giới hạn an toàn 200 tin mỗi lần chạy.`);
+    }
+
+    if (!users.size) {
+      summary.status = "failed";
+      summary.error = "Zalo không trả về danh sách khách hoặc hội thoại lịch sử cho quyền OpenAPI hiện tại.";
+    } else {
+      summary.status = summary.warnings.length ? "partial" : "completed";
+    }
+  } catch (error) {
+    summary.status = "failed";
+    summary.error = error instanceof Error ? error.message : "Không thể đồng bộ lịch sử Zalo OA.";
+  }
+  summary.finishedAt = new Date().toISOString();
+  await saveHistorySync(summary);
+  return summary;
 }
 
 export async function markZaloConversationRead(userId: string): Promise<void> {

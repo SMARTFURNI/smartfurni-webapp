@@ -10,6 +10,22 @@ import {
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
 type Tab = "overview" | "inbox" | "ai" | "templates" | "history" | "automation" | "settings";
+type HistorySyncStatus = "never" | "running" | "completed" | "partial" | "failed";
+
+interface HistorySyncSummary {
+  status: HistorySyncStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  customersSeen: number;
+  customersUpserted: number;
+  conversationsSeen: number;
+  messagesSeen: number;
+  messagesInserted: number;
+  messagesSkipped: number;
+  profilesUpdated: number;
+  warnings: string[];
+  error: string;
+}
 
 interface PublicConfig {
   oaId: string;
@@ -33,6 +49,7 @@ interface PublicConfig {
   webhookLastEvent: string;
   webhookLastStatus: string;
   webhookLastError: string;
+  historySync: HistorySyncSummary;
 }
 
 interface Template {
@@ -68,7 +85,7 @@ interface MessageRecord {
   category: Category;
   content: string;
   status: "pending" | "sent" | "delivered" | "read" | "failed";
-  source: "manual" | "ai" | "webhook";
+  source: "manual" | "ai" | "webhook" | "sync";
   templateId: string;
   zaloMessageId: string;
   aiConfidence: number | null;
@@ -117,6 +134,11 @@ const EMPTY_CONFIG: PublicConfig = {
   zbsEnabled: false, appSecretConfigured: false, accessTokenConfigured: false,
   oaSecretKeyConfigured: false, refreshTokenConfigured: false, webhookUrl: "",
   webhookLastReceivedAt: null, webhookLastEvent: "", webhookLastStatus: "", webhookLastError: "",
+  historySync: {
+    status: "never", startedAt: null, finishedAt: null, customersSeen: 0,
+    customersUpserted: 0, conversationsSeen: 0, messagesSeen: 0,
+    messagesInserted: 0, messagesSkipped: 0, profilesUpdated: 0, warnings: [], error: "",
+  },
 };
 
 const CATEGORY_LABELS: Record<Category, string> = {
@@ -152,7 +174,7 @@ function withinSevenDays(value: string | null) {
 
 async function postAction(payload: Record<string, unknown>) {
   const res = await fetch("/api/crm/zalo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-  const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string; name?: string };
+  const data = await res.json().catch(() => ({})) as { ok?: boolean; error?: string; name?: string; summary?: HistorySyncSummary };
   if (!res.ok || data.ok === false) throw new Error(data.error || "Không thể xử lý yêu cầu.");
   return data;
 }
@@ -248,6 +270,30 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     setSecrets({ appSecret: "", oaSecretKey: "", accessToken: "", refreshToken: "" });
   }
 
+  async function syncHistory() {
+    setBusy("sync-history");
+    setNotice(null);
+    try {
+      const result = await postAction({ action: "sync_history" });
+      const summary = result.summary;
+      if (!summary) throw new Error("CRM không trả về báo cáo đồng bộ.");
+      await load(false);
+      const label = summary.status === "completed"
+        ? "Đồng bộ hoàn tất"
+        : summary.status === "partial"
+          ? "Đồng bộ một phần"
+          : "Đồng bộ thất bại";
+      setNotice({
+        type: summary.status === "failed" ? "error" : "ok",
+        text: `${label}: ${summary.customersUpserted} khách đã xử lý, ${summary.messagesInserted} tin mới, ${summary.messagesSkipped} tin trùng.`,
+      });
+    } catch (error) {
+      setNotice({ type: "error", text: error instanceof Error ? error.message : "Không đồng bộ được lịch sử Zalo OA." });
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function sendReply(content: string) {
     if (!selectedUser) return;
     setBusy(`reply-${selectedUser}`); setNotice(null);
@@ -308,6 +354,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     {tab === "automation" && <AutomationTab config={config} setConfig={setConfig} save={() => void saveConfig()} busy={busy === "save-config"} />}
     {tab === "settings" && <div className="space-y-4">
       <SettingsTab config={config} setConfig={setConfig} secrets={secrets} setSecrets={setSecrets} save={() => void saveConfig()} test={() => void run("test", () => postAction({ action: "test_connection" }), "Kết nối Zalo OA hợp lệ.")} busy={busy} />
+      <HistorySyncCard summary={config.historySync} configured={Boolean(config.isActive && config.accessTokenConfigured)} busy={busy === "sync-history"} sync={() => void syncHistory()} />
       <div className={`${panel} flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between`}>
         <div><div className="text-sm font-medium">Vòng đời Access Token</div><p className="mt-1 text-xs text-[#8f99aa]">Làm mới token bằng Refresh Token đã mã hóa trong cấu hình máy chủ; token mới không được trả về trình duyệt.</p></div>
         <button className={secondaryButton} disabled={Boolean(busy)} onClick={() => void run("refresh-token", () => postAction({ action: "refresh_token" }), "Đã làm mới Access Token Zalo OA.")}><RefreshCw size={15} /> Làm mới token</button>
@@ -586,6 +633,59 @@ function SettingsTab({ config, setConfig, secrets, setSecrets, save, test, busy 
       <a href="https://developers.zalo.me/docs" target="_blank" rel="noreferrer" className={`${secondaryButton} mt-5 w-full`}>Mở tài liệu Zalo Platform</a>
     </section>
   </div>;
+}
+
+function HistorySyncCard({ summary, configured, busy, sync }: {
+  summary: HistorySyncSummary;
+  configured: boolean;
+  busy: boolean;
+  sync: () => void;
+}) {
+  const status = {
+    never: { label: "Chưa chạy", classes: "border-white/10 bg-white/[0.03] text-[rgba(245,237,214,0.55)]" },
+    running: { label: "Đang đồng bộ", classes: "border-sky-400/25 bg-sky-400/10 text-sky-200" },
+    completed: { label: "Hoàn tất", classes: "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" },
+    partial: { label: "Một phần", classes: "border-amber-400/25 bg-amber-400/10 text-amber-200" },
+    failed: { label: "Thất bại", classes: "border-red-400/25 bg-red-400/10 text-red-200" },
+  }[summary.status];
+  const metrics = [
+    ["Khách đã xử lý", summary.customersUpserted],
+    ["Tin mới", summary.messagesInserted],
+    ["Tin trùng", summary.messagesSkipped],
+    ["Hồ sơ cập nhật", summary.profilesUpdated],
+  ] as const;
+
+  return <section className={`${panel} p-5 md:p-6`}>
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="max-w-3xl">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-lg font-semibold">Nhập khách hàng & lịch sử Zalo OA</h2>
+          <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.classes}`}>{status.label}</span>
+        </div>
+        <p className="mt-1 text-sm leading-6 text-[#8f99aa]">Nhập khách và tin nhắn cũ mà OA OpenAPI cho phép truy cập. Có thể chạy lại an toàn: CRM đối chiếu mã tin nhắn và bỏ qua dữ liệu đã tồn tại.</p>
+      </div>
+      <button className={goldButton} disabled={busy || !configured} onClick={sync}>
+        {busy ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+        {busy ? "Đang đồng bộ..." : "Đồng bộ khách hàng & lịch sử"}
+      </button>
+    </div>
+
+    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {metrics.map(([label, value]) => <div key={label} className="rounded-xl border border-[rgba(255,200,100,0.10)] bg-black/10 p-4"><strong className="text-xl text-[#e0c66f]">{value}</strong><div className="mt-1 text-xs text-[rgba(245,237,214,0.42)]">{label}</div></div>)}
+    </div>
+
+    {(summary.startedAt || summary.finishedAt) && <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[rgba(245,237,214,0.45)]">
+      {summary.startedAt && <span>Bắt đầu: {formatDate(summary.startedAt)}</span>}
+      {summary.finishedAt && <span>Hoàn thành: {formatDate(summary.finishedAt)}</span>}
+    </div>}
+    {summary.error && <div className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[0.06] p-3 text-xs leading-5 text-red-200">{summary.error}</div>}
+    {summary.warnings.length > 0 && <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4">
+      <div className="text-xs font-semibold text-amber-100">Lưu ý từ lần đồng bộ gần nhất</div>
+      <ul className="mt-2 space-y-1.5 text-xs leading-5 text-amber-100/70">{summary.warnings.slice(0, 5).map(item => <li key={item} className="flex gap-2"><span>•</span><span>{item}</span></li>)}</ul>
+    </div>}
+    {!configured && <div className="mt-4 text-xs text-amber-200">Hãy kích hoạt kết nối OA và lưu Access Token trước khi đồng bộ.</div>}
+    <p className="mt-4 text-xs leading-5 text-[rgba(245,237,214,0.34)]">Phạm vi dữ liệu cũ phụ thuộc quyền ứng dụng, phiên bản OpenAPI và thời hạn Zalo còn cung cấp. Báo cáo “Một phần” nghĩa là CRM đã giữ dữ liệu lấy được và ghi rõ phần bị Zalo giới hạn.</p>
+  </section>;
 }
 
 function SendModal({ config, templates, conversations, initialUserId, busy, close, submit }: { config: PublicConfig; templates: Template[]; conversations: Conversation[]; initialUserId: string; busy: boolean; close: () => void; submit: (body: Record<string, unknown>) => void }) {
