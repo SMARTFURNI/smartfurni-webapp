@@ -7,6 +7,7 @@ import { getDb, query, queryOne } from "@/lib/db";
 import { getZaloOAConfig, refreshZaloOAAccessToken } from "@/lib/zalo-oa-store";
 import { decodeImageDataUrl, generateBlogImageVariants, getImageGenerationErrorMessage } from "@/lib/openai-blog-images";
 import { sanitizeMediaSegment, storeMediaObject } from "@/lib/media-storage";
+import { recordZaloGmfAttributionEvent } from "@/lib/zalo-gmf-attribution-store";
 
 export type ZaloGmfContentStatus = "draft" | "pending" | "approved" | "rejected";
 export type ZaloGmfScheduleStatus = "pending" | "sending" | "sent" | "failed" | "cancelled";
@@ -726,7 +727,7 @@ export async function recordZaloGmfWebhookEvent(payload: Record<string, unknown>
   await initZaloGmfSchema();
   const eventName = String(payload.event_name || "");
   const groupId = String(payload.group_id || "");
-  const supported = new Set(["user_join_group", "user_out_group", "accept_request_join_group", "reject_request_join_group", "create_group", "update_group_info", "delete_group"]);
+  const supported = new Set(["user_request_join_group", "user_join_group", "user_out_group", "user_leave_group", "accept_request_join_group", "reject_request_join_group", "create_group", "update_group_info", "delete_group"]);
   if (!supported.has(eventName) || !groupId) return { handled: false };
   const at = eventDate(payload.timestamp);
   const users = records(payload.users);
@@ -757,8 +758,12 @@ export async function recordZaloGmfWebhookEvent(payload: Record<string, unknown>
   for (const user of users) {
     const userId = String(user.id || user.user_id || "");
     if (!userId) continue;
-    const type = eventName === "user_join_group" ? "joined" : eventName === "user_out_group" ? "left" : eventName === "accept_request_join_group" ? "approved" : "rejected";
+    const type = eventName === "user_request_join_group" ? "requested"
+      : eventName === "user_join_group" ? "joined"
+        : eventName === "user_out_group" || eventName === "user_leave_group" ? "left"
+          : eventName === "accept_request_join_group" ? "approved" : "rejected";
     await addMemberEvent(groupId, userId, type, at, "webhook", payload);
+    await recordZaloGmfAttributionEvent(groupId, userId, type, at);
     if (type === "joined") {
       await query(
         `INSERT INTO crm_zalo_gmf_members (group_id,user_id,status,joined_at,first_seen_at,last_seen_at)
@@ -770,7 +775,7 @@ export async function recordZaloGmfWebhookEvent(payload: Record<string, unknown>
     }
   }
   if (eventName === "user_join_group") await query(`UPDATE crm_zalo_gmf_groups SET total_member=total_member+$2,updated_at=NOW() WHERE group_id=$1`, [groupId, users.length]);
-  if (eventName === "user_out_group") await query(`UPDATE crm_zalo_gmf_groups SET total_member=GREATEST(0,total_member-$2),updated_at=NOW() WHERE group_id=$1`, [groupId, users.length]);
+  if (eventName === "user_out_group" || eventName === "user_leave_group") await query(`UPDATE crm_zalo_gmf_groups SET total_member=GREATEST(0,total_member-$2),updated_at=NOW() WHERE group_id=$1`, [groupId, users.length]);
   await query(`UPDATE crm_zalo_gmf_webhook_receipts SET processed=true,processed_at=NOW() WHERE event_key=$1`, [receiptKey]);
   return { handled: true };
 }

@@ -4,7 +4,7 @@ import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } f
 import {
   Activity, AlertTriangle, Bot, Check, CheckCircle2, FileText, FileUp,
   History, ImageIcon, Inbox, Loader2, MessageCircle, Paperclip,
-  RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
+  QrCode, RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
   Trash2, Users, X, Zap,
 } from "lucide-react";
 import ZaloCustomersTab, {
@@ -20,7 +20,7 @@ import ZaloGmfWorkspace, { type ZaloGmfView } from "./ZaloGmfWorkspace";
 import styles from "./ZaloOAClient.module.css";
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
-type Tab = "overview" | "inbox" | "customers" | "gmf" | "gmf-content" | "gmf-members" | "gmf-reports" | "ai" | "templates" | "history" | "automation" | "settings";
+type Tab = "overview" | "inbox" | "customers" | "gmf" | "gmf-content" | "gmf-members" | "gmf-links" | "gmf-reports" | "ai" | "templates" | "history" | "automation" | "settings";
 type HistorySyncStatus = "never" | "running" | "completed" | "partial" | "failed";
 
 interface HistorySyncSummary {
@@ -163,6 +163,7 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Activity }> = [
   { id: "gmf", label: "Nhóm GMF", icon: MessageCircle },
   { id: "gmf-content", label: "Nội dung & lịch", icon: Send },
   { id: "gmf-members", label: "Thành viên", icon: Users },
+  { id: "gmf-links", label: "Link & QR", icon: QrCode },
   { id: "gmf-reports", label: "Báo cáo GMF", icon: Activity },
   { id: "ai", label: "Chờ duyệt AI", icon: Bot },
   { id: "templates", label: "Mẫu tin & ZBS", icon: FileText },
@@ -280,7 +281,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     : data?.conversations.find(item => item.userId === selectedUser) || null;
   const selectedMessages = threadMessages;
   const drafts = (data?.aiQueue || []).filter(item => item.status === "draft");
-  const gmfView = ({ gmf: "groups", "gmf-content": "content", "gmf-members": "members", "gmf-reports": "reports" } as Partial<Record<Tab, ZaloGmfView>>)[tab];
+  const gmfView = ({ gmf: "groups", "gmf-content": "content", "gmf-members": "members", "gmf-links": "links", "gmf-reports": "reports" } as Partial<Record<Tab, ZaloGmfView>>)[tab];
 
   async function saveConfig() {
     await run("save-config", () => postAction({ action: "save_config", config: { ...config, ...secrets } }), "Đã lưu cấu hình Zalo OA và AI Agent.");
