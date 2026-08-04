@@ -128,7 +128,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Tổng quan", href: "/crm/facebook-group-marketing", icon: LayoutDashboard, exact: true, permissionKey: "facebook_group_marketing_view" },
       { label: "Hệ thống Group", href: "/crm/facebook-group-marketing/groups", icon: Users, permissionKey: "facebook_group_marketing_view" },
       { label: "Group Builder", href: "/crm/facebook-group-marketing/builder", icon: BrainCircuit, permissionKey: "facebook_group_manage" },
-      { label: "Lịch nội dung", href: "/crm/facebook-group-marketing/content", icon: FileText, permissionKey: "facebook_group_marketing_view" },
+      { label: "Content Factory", href: "/crm/facebook-group-marketing/content", icon: FileText, permissionKey: "facebook_group_marketing_view" },
       { label: "Publishing Desk", href: "/crm/facebook-group-marketing/tasks", icon: CheckSquare, permissionKey: "facebook_group_marketing_view" },
       { label: "Community Center", href: "/crm/facebook-group-marketing/comments", icon: MessageSquare, permissionKey: "facebook_group_marketing_view" },
       { label: "Group Leads", href: "/crm/facebook-group-marketing/leads", icon: Users, permissionKey: "facebook_group_sales" },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   addRevenueAttribution, analyzeGroupRules, approveContent,
+  approveContentAndPreparePublishingTask,
   attachFacebookGroupContentImage,
   completePostCheckTask, createFacebookGroupMarketing, exportFacebookGroupsCsv, getFacebookGroupDashboard, importFacebookGroups,
   createFacebookGroupTopic, deleteFacebookGroupTopic, discoverFacebookGroups,
@@ -152,6 +153,82 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
     if (resource === "content" && entityId === "suggest") {
       return NextResponse.json(await suggestFacebookGroupContent(body, auth.actor));
     }
+    if (resource === "content" && entityId === "factory") {
+      const groupIds = Array.isArray(body.groupIds)
+        ? [...new Set(body.groupIds.map(String).filter(Boolean))].slice(0, 4)
+        : [];
+      const productId = String(body.productId || "");
+      const campaignId = String(body.campaignId || "");
+      if (!groupIds.length || !productId || !campaignId) {
+        return NextResponse.json({ error: "Chọn chiến dịch, sản phẩm và ít nhất một Group." }, { status: 400 });
+      }
+      const results: Array<Record<string, unknown>> = [];
+      for (const groupId of groupIds) {
+        try {
+          const suggestion = await suggestFacebookGroupContent({
+            groupId,
+            productId,
+            campaignId,
+            contentType: body.contentType,
+            brief: body.brief,
+            aiModel: body.aiModel,
+          }, auth.actor);
+          const created = await createFacebookGroupMarketing("content", {
+            groupId,
+            productId,
+            campaignId,
+            contentType: suggestion.contentType,
+            opening: suggestion.opening,
+            body: suggestion.body,
+            cta: suggestion.cta,
+            status: "pending_approval",
+            aiMetadata: {
+              generatedByAi: true,
+              factory: true,
+              ...((suggestion.ai && typeof suggestion.ai === "object") ? suggestion.ai : {}),
+            },
+            data: { workflow: "content_factory", imageRequested: body.generateImages !== false },
+          }, auth.actor) as Record<string, unknown>;
+          let image: Record<string, unknown> | null = null;
+          let imageError: string | null = null;
+          if (body.generateImages !== false) {
+            try {
+              const generated = await generateFacebookGroupContentImages(String(created.id), {
+                opening: suggestion.opening,
+                body: suggestion.body,
+                cta: suggestion.cta,
+                brief: body.imageBrief,
+                aspectRatio: body.aspectRatio || "4:3",
+              }, auth.actor);
+              const selected = generated.variants[0];
+              if (!selected) throw new Error("AI chưa trả về ảnh.");
+              const stored = await persistFacebookGroupGeneratedImage(String(created.id), selected.dataUrl);
+              image = await attachFacebookGroupContentImage(String(created.id), {
+                ...stored,
+                model: generated.model,
+                aspectRatio: generated.aspectRatio,
+                usedProductReferences: generated.usedProductReferences,
+              }, auth.actor) as Record<string, unknown>;
+            } catch (error) {
+              imageError = error instanceof Error ? error.message : "Không tạo được ảnh.";
+            }
+          }
+          results.push({ ok: true, groupId, contentId: created.id, image, imageError });
+        } catch (error) {
+          results.push({
+            ok: false,
+            groupId,
+            error: error instanceof Error ? error.message : "Không tạo được gói nội dung.",
+          });
+        }
+      }
+      return NextResponse.json({
+        total: results.length,
+        completed: results.filter(item => item.ok).length,
+        withImage: results.filter(item => item.image).length,
+        results,
+      });
+    }
     if (resource === "content" && entityId && action === "ai-rewrite") {
       return NextResponse.json(await rewriteFacebookGroupContentWithAi(
         entityId,
@@ -223,8 +300,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ path: 
       return NextResponse.json(await updateFacebookGroupMarketing("groups", entityId, { status }, auth.actor));
     }
     if (resource === "content" && entityId && action === "approve") {
-      await approveContent(entityId, true, auth.actor);
-      return NextResponse.json({ ok: true });
+      return NextResponse.json(await approveContentAndPreparePublishingTask(entityId, body, auth.actor));
     }
     if (resource === "content" && entityId && action === "reject") {
       await approveContent(entityId, false, auth.actor, String(body.reason || ""));

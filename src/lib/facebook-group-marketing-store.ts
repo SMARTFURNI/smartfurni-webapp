@@ -6,6 +6,7 @@ import { sendPushNotification } from "./pwa-server";
 import {
   calculateFacebookGroupScore, contentSimilarityPercent,
   buildFacebookGroupContactCta, extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
+  getNextFacebookGroupPostingSlot,
   keepGroundedFacebookGroupSuggestions, parseFacebookGroupAiSuggestion,
   parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
   validateFacebookGroupSchedule,
@@ -133,10 +134,19 @@ export async function getFacebookGroupMarketingOptions() {
        ORDER BY name`,
     ),
     query(
-      `SELECT id, name, code, page_id AS "pageId", status
-       FROM facebook_group_campaigns
-       WHERE deleted_at IS NULL
-       ORDER BY created_at DESC`,
+      `SELECT campaign.id, campaign.name, campaign.code,
+              campaign.page_id AS "pageId", campaign.product_ids AS "productIds",
+              campaign.owner_id AS "ownerId", campaign.status,
+              COALESCE(
+                jsonb_agg(target.group_id ORDER BY target.created_at)
+                  FILTER (WHERE target.id IS NOT NULL),
+                '[]'::jsonb
+              ) AS "groupIds"
+       FROM facebook_group_campaigns campaign
+       LEFT JOIN facebook_group_campaign_targets target ON target.campaign_id = campaign.id
+       WHERE campaign.deleted_at IS NULL
+       GROUP BY campaign.id
+       ORDER BY campaign.created_at DESC`,
     ),
     query(
       `SELECT id, opening, source_code AS "sourceCode",
@@ -417,7 +427,23 @@ export async function listFacebookGroupMarketing(resource: string, filters: Filt
       `SELECT t.*, g.name AS "groupName", g.group_url AS "groupUrl", p.name AS "pageName",
               c.opening, c.body, c.cta, c.source_code AS "sourceCode",
               x.name AS "campaignName",
-              COALESCE(staff.data->>'fullName', staff.username) AS "staffName"
+              COALESCE(staff.data->>'fullName', staff.username) AS "staffName",
+              COALESCE((
+                SELECT jsonb_agg(
+                  jsonb_build_object(
+                    'id', asset.id,
+                    'assetType', asset.asset_type,
+                    'url', asset.url,
+                    'name', asset.name,
+                    'metadata', asset.metadata,
+                    'createdAt', asset.created_at
+                  )
+                  ORDER BY COALESCE((asset.metadata->>'isPrimary')::boolean, false) DESC,
+                           asset.created_at DESC
+                )
+                FROM facebook_group_content_assets asset
+                WHERE asset.content_id = c.id
+              ), '[]'::jsonb) AS assets
        FROM facebook_group_publishing_tasks t
        JOIN facebook_groups g ON g.id = t.group_id
        JOIN facebook_pages p ON p.id = t.page_id
@@ -644,6 +670,7 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
   }
   const rulesPassed = violations.length === 0 && duplicateRatio <= settings.maxDuplicateRatio;
   const status = duplicateRatio > 60 || violations.length ? "rewrite_required" : text(input.status, 30) || "draft";
+  const aiMetadata = asObject(input.aiMetadata);
   const entityId = id("fbcd");
   const row = await queryOne(
     `INSERT INTO facebook_group_content_drafts
@@ -657,7 +684,8 @@ async function createContent(input: Record<string, unknown>, actor: Actor) {
       cta, sourceCode, status, duplicateRatio,
       Math.min(100, Math.max(0, number(input.spamRiskScore))),
       JSON.stringify({ passed: rulesPassed, violations, closestContentId: match?.id || null }),
-      JSON.stringify({ generatedByAi: false }), JSON.stringify(asObject(input.data)), actor.id],
+      JSON.stringify({ generatedByAi: Boolean(aiMetadata.generatedByAi), ...aiMetadata }),
+      JSON.stringify(asObject(input.data)), actor.id],
   );
   await logActivity(actor, "content.created", "content", entityId, undefined, { duplicateRatio, sourceCode });
   return row;
@@ -1488,6 +1516,98 @@ export async function approveContent(contentId: string, approved: boolean, actor
       JSON.stringify(reason ? { rejectionReason: reason } : {}), contentId],
   );
   await logActivity(actor, approved ? "content.approved" : "content.rejected", "content", contentId);
+}
+
+export async function approveContentAndPreparePublishingTask(
+  contentId: string,
+  input: Record<string, unknown>,
+  actor: Actor,
+) {
+  const context = await queryOne<{
+    group_id: string | null;
+    campaign_id: string | null;
+    page_id: string | null;
+    campaign_owner_id: string | null;
+    assigned_staff_id: string | null;
+    next_allowed_post_at: Date | null;
+    group_status: string | null;
+    membership_status: string | null;
+    campaign_status: string | null;
+    page_status: string | null;
+    asset_count: number;
+  }>(
+    `SELECT content.group_id, content.campaign_id,
+            campaign.page_id, campaign.owner_id AS campaign_owner_id,
+            groups.assigned_staff_id, groups.next_allowed_post_at,
+            groups.status AS group_status,
+            COALESCE(membership.status, groups.membership_status) AS membership_status,
+            campaign.status AS campaign_status, pages.status AS page_status,
+            (SELECT COUNT(*)::int FROM facebook_group_content_assets asset
+             WHERE asset.content_id = content.id) AS asset_count
+     FROM facebook_group_content_drafts content
+     LEFT JOIN facebook_groups groups ON groups.id = content.group_id
+     LEFT JOIN facebook_group_campaigns campaign ON campaign.id = content.campaign_id
+     LEFT JOIN facebook_pages pages ON pages.id = campaign.page_id
+     LEFT JOIN facebook_group_memberships membership
+       ON membership.group_id = groups.id AND membership.page_id = campaign.page_id
+     WHERE content.id = $1 AND content.deleted_at IS NULL`,
+    [contentId],
+  );
+  if (!context) throw new Error("Không tìm thấy nội dung.");
+  if (input.requireImage !== false && Number(context.asset_count || 0) === 0) {
+    throw new Error("Bài viết chưa có ảnh đã lưu. Hãy tạo hoặc chọn ảnh trước khi duyệt.");
+  }
+
+  await approveContent(contentId, true, actor);
+
+  const warnings: string[] = [];
+  if (!context.group_id) warnings.push("Nội dung chưa gắn Group.");
+  if (!context.campaign_id) warnings.push("Nội dung chưa gắn chiến dịch.");
+  if (!context.page_id) warnings.push("Chiến dịch chưa chọn Fanpage.");
+  if (context.group_status !== "active") warnings.push("Group chưa ở trạng thái hoạt động.");
+  if (context.membership_status !== "joined") warnings.push("Fanpage chưa được xác nhận đã tham gia Group.");
+  if (context.campaign_status !== "active") warnings.push("Chiến dịch chưa hoạt động.");
+  if (context.page_status && context.page_status !== "active") warnings.push("Fanpage đang tạm dừng.");
+  if (warnings.length || !context.group_id || !context.page_id) {
+    return { approved: true, task: null, warnings };
+  }
+
+  const settings = await getFacebookGroupSettings();
+  const requestedAt = text(input.scheduledAt, 60);
+  const requestedDate = requestedAt ? new Date(requestedAt) : null;
+  const floor = new Date(Math.max(
+    Date.now() + 30 * 60_000,
+    context.next_allowed_post_at?.getTime() || 0,
+    requestedDate && !Number.isNaN(requestedDate.getTime()) ? requestedDate.getTime() : 0,
+  ));
+  let candidate = getNextFacebookGroupPostingSlot(floor, settings);
+  let lastError = "Không tìm được lịch đăng phù hợp.";
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    try {
+      const task = await createPublishingTask({
+        pageId: context.page_id,
+        groupId: context.group_id,
+        campaignId: context.campaign_id,
+        contentId,
+        assignedStaffId: text(input.assignedStaffId, 120)
+          || context.assigned_staff_id
+          || context.campaign_owner_id
+          || null,
+        scheduledAt: candidate.toISOString(),
+        dueAt: new Date(candidate.getTime() + 45 * 60_000).toISOString(),
+        priority: text(input.priority, 20) || "medium",
+        notes: "Nhiệm vụ được tự động tạo sau khi nội dung và ảnh được duyệt.",
+      }, actor);
+      return { approved: true, task, scheduledAt: candidate.toISOString(), warnings };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : lastError;
+      candidate = getNextFacebookGroupPostingSlot(
+        new Date(candidate.getTime() + Math.max(30, settings.minPagePostIntervalMinutes) * 60_000),
+        settings,
+      );
+    }
+  }
+  return { approved: true, task: null, warnings: [...warnings, lastError] };
 }
 
 export async function markPublishingTaskPosted(taskId: string, input: Record<string, unknown>, actor: Actor) {

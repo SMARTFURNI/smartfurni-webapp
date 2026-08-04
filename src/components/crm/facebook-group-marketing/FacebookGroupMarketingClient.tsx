@@ -51,9 +51,9 @@ type Permissions = {
 
 const sections = [
   ["overview", "Tổng quan"], ["groups", "Hệ thống Group"], ["builder", "Group Builder"],
-  ["content", "Lịch nội dung"], ["tasks", "Publishing Desk"],
-  ["comments", "Community Center"], ["leads", "Group Leads"],
-  ["reports", "Analytics"], ["settings", "AI & quy tắc"],
+  ["content", "Content Factory"], ["tasks", "Publishing Desk"],
+  ["comments", "Chăm sóc tương tác"], ["leads", "Group Leads"],
+  ["reports", "Hiệu quả"], ["settings", "AI & quy tắc"],
 ] as const;
 
 const legacySectionTitles: Record<string, string> = {
@@ -82,7 +82,8 @@ const emptyOptions: FormOptions = {
 const statusLabel: Record<string, string> = {
   active: "Hoạt động", paused: "Tạm dừng", needs_review: "Cần kiểm tra",
   joined: "Đã tham gia", not_joined: "Chưa tham gia", pending: "Chờ duyệt",
-  requested: "Đã gửi yêu cầu", draft: "Bản nháp", pending_approval: "Chờ duyệt",
+  requested: "Đã gửi yêu cầu", ai_generating: "AI đang tạo", draft: "Bản nháp",
+  review: "Đang kiểm tra", pending_approval: "Chờ duyệt", rewrite_required: "Cần viết lại",
   approved: "Đã duyệt", scheduled: "Đã xếp lịch", due: "Đến hạn", posted: "Đã đăng",
   pending_moderation: "Chờ group duyệt", rejected: "Bị từ chối", tracking: "Đang theo dõi",
   completed: "Đã hoàn tất", owned: "Group sở hữu",
@@ -600,8 +601,8 @@ export default function FacebookGroupMarketingClient({
 
   const canCreate = section === "groups" ? permissions.manage
     : section === "campaigns" ? permissions.campaigns
-      : section === "content" ? permissions.content
-        : ["calendar", "tasks"].includes(section) ? permissions.schedule
+      : section === "content" || section === "tasks" ? false
+        : section === "calendar" ? permissions.schedule
           : section === "comments" ? permissions.publish : false;
 
   const title = sections.find(item => item[0] === section)?.[1]
@@ -618,7 +619,7 @@ export default function FacebookGroupMarketingClient({
           </div>
           <h1 className="fbg-admin-title text-3xl font-black text-white">{title}</h1>
           <p className="fbg-admin-subtitle mt-1.5 max-w-3xl text-sm text-slate-400">
-            AI xây kế hoạch và nội dung; nhân viên kiểm duyệt, tạo Group và đăng trực tiếp trên Facebook.
+            AI sản xuất nội dung và hình ảnh, quản lý phê duyệt và đóng gói nhiệm vụ; nhân viên chỉ sao chép và mở đúng Group để đăng.
           </p>
         </div>
         <div className="fbg-admin-actions flex flex-wrap gap-2">
@@ -667,7 +668,7 @@ export default function FacebookGroupMarketingClient({
       {section === "content" && <div className="mb-5 flex flex-wrap gap-2">
         <Link href="/crm/facebook-group-marketing/content"
           className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-200">
-          Kho nội dung
+          Content Factory
         </Link>
         <Link href="/crm/facebook-group-marketing/calendar"
           className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400">
@@ -677,7 +678,7 @@ export default function FacebookGroupMarketingClient({
       {section === "tasks" && <div className="mb-5 flex flex-wrap gap-2">
         <Link href="/crm/facebook-group-marketing/tasks"
           className="rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-200">
-          Nhiệm vụ cần đăng
+          Bài sẵn sàng đăng
         </Link>
         <Link href="/crm/facebook-group-marketing/posts"
           className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-400">
@@ -720,6 +721,21 @@ export default function FacebookGroupMarketingClient({
           onAddPage={() => setModal("page")}
           onEditPage={pageRow => { setEditingResource("pages"); setEditingRow(pageRow); }}
           onDeletePage={pageRow => requestDelete("pages", pageRow)} />
+      ) : section === "content" ? (
+        <ContentFactory
+          rows={rows}
+          options={formOptions}
+          permissions={permissions}
+          onEdit={row => { setEditingResource("content"); setEditingRow(row); }}
+          onRefresh={load}
+        />
+      ) : section === "tasks" ? (
+        <PublishingDesk
+          rows={rows}
+          permissions={permissions}
+          onEdit={row => { setEditingResource("tasks"); setEditingRow(row); }}
+          onRefresh={load}
+        />
       ) : (
         <>
           {section === "groups" && (
@@ -1393,6 +1409,362 @@ function Ranking({ title, rows, format }: { title: string; rows: Row[]; format: 
         <b className="shrink-0 text-[#e5d386]">{format(row.value)}</b>
       </div>
     )) : <p className="text-sm text-slate-500">Chưa có dữ liệu.</p>}</div>
+  </div>;
+}
+
+function facebookGroupPostText(row: Row) {
+  return [value(row, "opening"), value(row, "body"), value(row, "cta")]
+    .map(item => String(item || "").trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function ContentFactory({
+  rows, options, permissions, onEdit, onRefresh,
+}: {
+  rows: Row[];
+  options: FormOptions;
+  permissions: Permissions;
+  onEdit: (row: Row) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const campaigns = options.campaigns.filter(item => item.status === "active");
+  const [campaignId, setCampaignId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [contentType, setContentType] = useState("community_share");
+  const [brief, setBrief] = useState("");
+  const [imageBrief, setImageBrief] = useState("");
+  const [aspectRatio, setAspectRatio] = useState("4:3");
+  const [aiModel, setAiModel] = useState(options.aiModels.defaultSelection || "");
+  const [generateImages, setGenerateImages] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [approvingId, setApprovingId] = useState("");
+  const [message, setMessage] = useState("");
+  const [localError, setLocalError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const selectedCampaign = campaigns.find(item => String(item.id) === campaignId) || null;
+  const campaignProductIds = new Set(Array.isArray(selectedCampaign?.productIds) ? selectedCampaign.productIds.map(String) : []);
+  const campaignGroupIds = new Set(Array.isArray(selectedCampaign?.groupIds) ? selectedCampaign.groupIds.map(String) : []);
+  const products = options.products.filter(product => !selectedCampaign || campaignProductIds.has(String(product.id)));
+  const eligibleGroups = options.groups.filter(group => (
+    (!selectedCampaign || campaignGroupIds.has(String(group.id)))
+    && group.status === "active"
+    && group.membershipStatus === "joined"
+    && group.allowsPages !== "no"
+  ));
+
+  useEffect(() => {
+    if (!campaigns.length || campaignId) return;
+    setCampaignId(String(campaigns[0].id));
+  }, [campaignId, campaigns]);
+
+  useEffect(() => {
+    if (!selectedCampaign) return;
+    const nextProducts = options.products.filter(product => campaignProductIds.has(String(product.id)));
+    setProductId(current => campaignProductIds.has(current) ? current : String(nextProducts[0]?.id || ""));
+    setSelectedGroups(current => {
+      const valid = current.filter(groupId => eligibleGroups.some(group => String(group.id) === groupId));
+      return valid.length ? valid : eligibleGroups.slice(0, 4).map(group => String(group.id));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, options.campaigns, options.groups, options.products]);
+
+  useEffect(() => {
+    const configuredModels = options.aiModels.models.filter(item => item.configured);
+    if (!configuredModels.some(item => item.id === aiModel)) {
+      setAiModel(configuredModels[0]?.id || "");
+    }
+  }, [aiModel, options.aiModels.models]);
+
+  const createPackages = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true); setLocalError(""); setMessage("");
+    try {
+      const result = await api("content/factory", {
+        method: "POST",
+        body: JSON.stringify({
+          campaignId, productId, groupIds: selectedGroups, contentType, brief,
+          imageBrief, aspectRatio, aiModel, generateImages,
+        }),
+      });
+      const failed = Number(result.total || 0) - Number(result.completed || 0);
+      const missingImage = Number(result.completed || 0) - Number(result.withImage || 0);
+      setMessage(`Đã tạo ${result.completed}/${result.total} gói bài; ${result.withImage} gói có ảnh${missingImage ? `, ${missingImage} gói cần tạo lại ảnh` : ""}${failed ? `, ${failed} gói tạo chưa thành công` : ""}.`);
+      await onRefresh();
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : "Content Factory chưa tạo được gói bài.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const approveAndPrepare = async (row: Row) => {
+    setApprovingId(String(row.id)); setLocalError(""); setMessage("");
+    try {
+      const result = await api(`content/${row.id}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ requireImage: true }),
+      });
+      const warnings = Array.isArray(result.warnings) ? result.warnings.map(String) : [];
+      setMessage(result.task
+        ? `Đã duyệt và tự động tạo nhiệm vụ đăng lúc ${formatDate(result.scheduledAt)}.`
+        : `Đã duyệt nhưng chưa tạo được nhiệm vụ${warnings.length ? `: ${warnings.join(" ")}` : "."}`);
+      await onRefresh();
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : "Không thể duyệt và chuẩn bị bài đăng.");
+    } finally {
+      setApprovingId("");
+    }
+  };
+
+  const counts = {
+    all: rows.length,
+    pending_approval: rows.filter(row => row.status === "pending_approval").length,
+    rewrite_required: rows.filter(row => row.status === "rewrite_required").length,
+    scheduled: rows.filter(row => ["approved", "scheduled", "used"].includes(String(row.status))).length,
+  };
+  const visibleRows = statusFilter === "all" ? rows
+    : statusFilter === "scheduled" ? rows.filter(row => ["approved", "scheduled", "used"].includes(String(row.status)))
+      : rows.filter(row => row.status === statusFilter);
+
+  return <div className="space-y-5">
+    <section className="fbg-production-hero overflow-hidden rounded-3xl border p-5 lg:p-6">
+      <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+        <div>
+          <span className="fbg-production-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[.16em]">
+            <Sparkles size={13} /> Content Factory
+          </span>
+          <h2 className="mt-4 text-2xl font-black text-white">Từ kế hoạch thành bài đăng hoàn chỉnh</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
+            AI tự đọc sản phẩm CRM, nội quy từng Group và chiến dịch để tạo bài khác nhau, kiểm tra trùng lặp và tạo ảnh 4:3. Mỗi gói dừng ở bước chờ duyệt.
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 xl:grid-cols-2">
+            {[
+              ["01", "Đọc dữ liệu"], ["02", "Viết theo Group"], ["03", "Tạo ảnh"], ["04", "Chờ duyệt"],
+            ].map(([step, label]) => <div key={step} className="fbg-production-step rounded-2xl border p-3">
+              <b className="text-amber-200">{step}</b><span className="ml-2 text-slate-300">{label}</span>
+            </div>)}
+          </div>
+        </div>
+
+        <form onSubmit={createPackages} className="fbg-production-form grid gap-3 rounded-2xl border p-4 md:grid-cols-2">
+          <label className="grid gap-1.5 text-xs text-slate-400">Chiến dịch đang chạy
+            <select required value={campaignId} onChange={event => setCampaignId(event.target.value)} className="fbg-production-input">
+              <option value="">Chọn chiến dịch</option>
+              {campaigns.map(item => <option key={String(item.id)} value={String(item.id)}>{String(item.name)}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-xs text-slate-400">Sản phẩm CRM
+            <select required value={productId} onChange={event => setProductId(event.target.value)} className="fbg-production-input">
+              <option value="">Chọn sản phẩm</option>
+              {products.map(item => <option key={String(item.id)} value={String(item.id)}>{String(item.name)}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-xs text-slate-400">Góc nội dung
+            <select value={contentType} onChange={event => setContentType(event.target.value)} className="fbg-production-input">
+              <option value="community_share">Chia sẻ cộng đồng</option>
+              <option value="education">Kiến thức hữu ích</option>
+              <option value="story">Câu chuyện tình huống</option>
+              <option value="sales">Bán hàng có kiểm soát</option>
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-xs text-slate-400">Mô hình AI
+            <select value={aiModel} onChange={event => setAiModel(event.target.value)} className="fbg-production-input">
+              {options.aiModels.models.filter(item => item.configured).map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1.5 text-xs text-slate-400 md:col-span-2">Yêu cầu nội dung
+            <textarea rows={2} value={brief} onChange={event => setBrief(event.target.value)}
+              placeholder="Ví dụ: tập trung căn hộ nhỏ, giọng tư vấn tự nhiên, tránh quảng cáo trực diện…" className="fbg-production-input resize-none" />
+          </label>
+          <label className="grid gap-1.5 text-xs text-slate-400">Yêu cầu hình ảnh
+            <input value={imageBrief} onChange={event => setImageBrief(event.target.value)}
+              placeholder="Không có người, ánh sáng tự nhiên…" className="fbg-production-input" />
+          </label>
+          <label className="grid gap-1.5 text-xs text-slate-400">Tỷ lệ ảnh
+            <select value={aspectRatio} onChange={event => setAspectRatio(event.target.value)} className="fbg-production-input">
+              <option value="4:3">4:3 · Khuyến nghị</option><option value="3:2">3:2 · Phối cảnh</option><option value="16:9">16:9 · Toàn cảnh</option>
+            </select>
+          </label>
+          <div className="md:col-span-2">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+              <span className="font-bold text-slate-300">Group nhận nội dung ({selectedGroups.length}/4)</span>
+              <button type="button" onClick={() => setSelectedGroups(eligibleGroups.slice(0, 4).map(group => String(group.id)))}
+                className="text-amber-200">Chọn Group hợp lệ</button>
+            </div>
+            <div className="grid max-h-36 gap-2 overflow-y-auto rounded-xl border border-white/8 p-2 sm:grid-cols-2">
+              {eligibleGroups.map(group => <label key={String(group.id)} className="flex items-start gap-2 rounded-lg px-2 py-2 text-xs text-slate-300 hover:bg-white/5">
+                <input type="checkbox" checked={selectedGroups.includes(String(group.id))}
+                  onChange={event => setSelectedGroups(current => event.target.checked
+                    ? [...current, String(group.id)].slice(0, 4)
+                    : current.filter(id => id !== String(group.id)))} />
+                <span>{String(group.name)}<small className="mt-0.5 block text-slate-500">{String(group.topic || "Chưa phân loại")}</small></span>
+              </label>)}
+              {!eligibleGroups.length && <p className="p-2 text-xs text-amber-200">Chiến dịch chưa có Group đang hoạt động và đã tham gia.</p>}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-slate-300 md:col-span-2">
+            <input type="checkbox" checked={generateImages} onChange={event => setGenerateImages(event.target.checked)} />
+            Tự động tạo và lưu ảnh cho từng bài
+          </label>
+          <button type="submit" disabled={busy || !permissions.content || !selectedGroups.length}
+            className="fbg-primary-button md:col-span-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-black disabled:opacity-40">
+            {busy ? <Loader2 size={17} className="animate-spin" /> : <Sparkles size={17} />}
+            {busy ? "AI đang sản xuất gói bài…" : `Tạo trọn gói ${selectedGroups.length || ""} bài`}
+          </button>
+        </form>
+      </div>
+    </section>
+
+    {(message || localError) && <div className={`fbg-alert rounded-xl border p-3 text-sm ${localError ? "border-red-400/25 bg-red-500/10 text-red-200" : "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"}`}>
+      {localError || message}
+    </div>}
+
+    <section>
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div><h2 className="text-lg font-black text-white">Hàng kiểm duyệt nội dung</h2><p className="mt-1 text-xs text-slate-500">Duyệt bài có ảnh sẽ tự động tạo lịch và nhiệm vụ cho nhân viên.</p></div>
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["all", "Tất cả"], ["pending_approval", "Chờ duyệt"], ["rewrite_required", "Cần sửa"], ["scheduled", "Đã chuẩn bị"],
+          ] as const).map(([key, label]) => <button key={key} onClick={() => setStatusFilter(key)}
+            className={`rounded-full border px-3 py-1.5 text-[11px] font-bold ${statusFilter === key ? "border-amber-300/40 bg-amber-300/15 text-amber-100" : "border-white/10 text-slate-500"}`}>
+            {label} · {counts[key]}
+          </button>)}
+        </div>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {visibleRows.map(row => {
+          const asset = primaryContentAsset(row);
+          const ruleCheck = row.rule_check && typeof row.rule_check === "object" ? row.rule_check as Row : {};
+          const canApprove = permissions.approve && ["pending_approval", "draft", "review"].includes(String(row.status));
+          return <article key={String(row.id)} className="fbg-content-package overflow-hidden rounded-2xl border">
+            <div className="grid min-h-full sm:grid-cols-[180px_1fr]">
+              <div className="relative min-h-44 bg-black/25">
+                {asset?.url ? <img src={String(asset.url)} alt="Ảnh bài Facebook Group" className="h-full w-full object-cover" />
+                  : <div className="grid h-full min-h-44 place-items-center text-center text-xs text-slate-600"><span><ImageIcon className="mx-auto mb-2" />Chưa có ảnh</span></div>}
+                <span className="absolute left-3 top-3"><Status status={row.status} /></span>
+              </div>
+              <div className="flex min-w-0 flex-col p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-amber-200/70">{String(row.groupName || "Chưa gắn Group")}</p>
+                    <h3 className="mt-1 line-clamp-2 text-sm font-black text-white">{String(row.opening || "Bài chưa có câu mở đầu")}</h3></div>
+                  <button onClick={() => onEdit(row)} className="fbg-secondary-button shrink-0 rounded-lg border p-2" title="Mở biên tập"><Pencil size={15} /></button>
+                </div>
+                <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-400">{String(row.body || "")}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-[10px]">
+                  <span className="rounded-full border border-white/8 px-2 py-1 text-slate-400">Trùng {Number(row.duplicate_ratio || 0)}%</span>
+                  <span className={`rounded-full border px-2 py-1 ${ruleCheck.passed === true ? "border-emerald-400/20 text-emerald-300" : "border-red-400/20 text-red-300"}`}>{ruleCheck.passed === true ? "Đạt nội quy" : "Cần kiểm tra nội quy"}</span>
+                  <span className="rounded-full border border-white/8 px-2 py-1 text-slate-400">{asset ? "Có ảnh" : "Thiếu ảnh"}</span>
+                </div>
+                <div className="mt-auto flex flex-wrap justify-end gap-2 pt-4">
+                  {canApprove && <button disabled={!asset || approvingId === String(row.id)} onClick={() => void approveAndPrepare(row)}
+                    className="fbg-primary-button inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-black disabled:opacity-40">
+                    {approvingId === String(row.id) ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    Duyệt & tạo nhiệm vụ
+                  </button>}
+                  {!asset && <button onClick={() => onEdit(row)} className="fbg-secondary-button inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold"><ImageIcon size={14} /> Tạo ảnh</button>}
+                </div>
+              </div>
+            </div>
+          </article>;
+        })}
+        {!visibleRows.length && <div className="fbg-empty-state col-span-full grid min-h-44 place-items-center rounded-2xl border border-dashed text-sm text-slate-500">Không có bài trong trạng thái này.</div>}
+      </div>
+    </section>
+  </div>;
+}
+
+function PublishingDesk({
+  rows, permissions, onEdit, onRefresh,
+}: {
+  rows: Row[];
+  permissions: Permissions;
+  onEdit: (row: Row) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [copyingImageId, setCopyingImageId] = useState("");
+  const activeRows = rows.filter(row => !["posted", "approved", "cancelled"].includes(String(row.status)));
+  const completedRows = rows.filter(row => ["posted", "approved"].includes(String(row.status)));
+
+  const copyPost = async (row: Row, openGroup = false) => {
+    setError(""); setNotice("");
+    try {
+      const copying = navigator.clipboard.writeText(facebookGroupPostText(row));
+      if (openGroup && row.groupUrl) window.open(String(row.groupUrl), "_blank", "noopener,noreferrer");
+      await copying;
+      setNotice(openGroup ? "Đã sao chép nội dung và mở đúng Group." : "Đã sao chép toàn bộ nội dung bài đăng.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không sao chép được nội dung.");
+    }
+  };
+
+  const copyImage = async (row: Row) => {
+    const asset = primaryContentAsset(row);
+    if (!asset?.url) return;
+    setCopyingImageId(String(row.id)); setError(""); setNotice("");
+    try {
+      await copyImageDataUrl(String(asset.url));
+      setNotice("Đã sao chép ảnh. Mở Group và dán ảnh cùng nội dung đã chuẩn bị.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không sao chép được ảnh; hãy tải ảnh xuống.");
+    } finally {
+      setCopyingImageId("");
+    }
+  };
+
+  return <div className="space-y-5">
+    <section className="fbg-desk-summary grid gap-3 rounded-3xl border p-5 md:grid-cols-[1fr_auto_auto] md:items-center">
+      <div><span className="text-[10px] font-black uppercase tracking-[.16em] text-amber-200">Publishing Desk</span>
+        <h2 className="mt-1 text-xl font-black text-white">Bài đã sẵn sàng để nhân viên đăng</h2>
+        <p className="mt-1 text-xs text-slate-400">Nội dung, ảnh, thời gian và link Group đã được đóng gói sau phê duyệt.</p></div>
+      <div className="rounded-2xl border border-amber-300/15 bg-amber-300/10 px-5 py-3 text-center"><b className="block text-2xl text-amber-100">{activeRows.length}</b><span className="text-[10px] text-slate-400">Cần đăng</span></div>
+      <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/10 px-5 py-3 text-center"><b className="block text-2xl text-emerald-200">{completedRows.length}</b><span className="text-[10px] text-slate-400">Hoàn tất</span></div>
+    </section>
+    {(notice || error) && <div className={`fbg-alert rounded-xl border p-3 text-sm ${error ? "border-red-400/25 bg-red-500/10 text-red-200" : "border-emerald-400/25 bg-emerald-500/10 text-emerald-200"}`}>{error || notice}</div>}
+    <div className="grid gap-4 xl:grid-cols-2">
+      {rows.map(row => {
+        const asset = primaryContentAsset(row);
+        const ready = Boolean(asset?.url && row.groupUrl && facebookGroupPostText(row));
+        return <article key={String(row.id)} className="fbg-publishing-package overflow-hidden rounded-2xl border">
+          <div className="grid sm:grid-cols-[210px_1fr]">
+            <div className="relative min-h-52 bg-black/25">
+              {asset?.url ? <img src={String(asset.url)} alt="Ảnh đã duyệt" className="h-full w-full object-cover" />
+                : <div className="grid h-full min-h-52 place-items-center text-xs text-slate-600"><span><ImageIcon className="mx-auto mb-2" />Thiếu ảnh</span></div>}
+              <span className="absolute left-3 top-3"><Status status={row.status} /></span>
+            </div>
+            <div className="flex min-w-0 flex-col p-4">
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-[10px] font-black uppercase tracking-[.12em] text-amber-200/70">{String(row.pageName || "Fanpage")} → {String(row.groupName || "Group")}</p>
+                <h3 className="mt-1 line-clamp-2 text-sm font-black text-white">{String(row.opening || "Bài đăng")}</h3></div>
+                {permissions.schedule && <button onClick={() => onEdit(row)} className="fbg-secondary-button shrink-0 rounded-lg border p-2"><Pencil size={14} /></button>}</div>
+              <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-400">{String(row.body || "")}</p>
+              <div className="mt-3 grid gap-2 text-[10px] sm:grid-cols-2">
+                <span className="rounded-lg border border-white/8 px-2 py-1.5 text-slate-400"><CalendarDays size={12} className="mr-1 inline" />{formatDate(row.scheduled_at)}</span>
+                <span className="rounded-lg border border-white/8 px-2 py-1.5 text-slate-400"><Users size={12} className="mr-1 inline" />{String(row.staffName || "Chưa phân công")}</span>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <button onClick={() => void copyPost(row)} className="fbg-secondary-button inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold"><ClipboardCopy size={14} /> Sao chép nội dung</button>
+                <button disabled={!asset?.url || copyingImageId === String(row.id)} onClick={() => void copyImage(row)} className="fbg-secondary-button inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold disabled:opacity-40">
+                  {copyingImageId === String(row.id) ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />} Sao chép ảnh
+                </button>
+                <button disabled={!ready} onClick={() => void copyPost(row, true)} className="fbg-primary-button sm:col-span-2 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black disabled:opacity-40"><ExternalLink size={16} /> Sao chép bài & mở Group</button>
+                {Boolean(asset?.url) && <a href={String(asset?.url)} target="_blank" rel="noreferrer" download
+                  className="fbg-secondary-button inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold"><ImageIcon size={14} /> Mở / tải ảnh</a>}
+                {permissions.publish && !["posted", "approved"].includes(String(row.status)) && <MarkPosted task={row} onAction={async (endpoint, body) => {
+                  await api(endpoint, { method: "POST", body: JSON.stringify(body || {}) });
+                  setNotice("Đã ghi nhận bài đăng và tạo lịch theo dõi.");
+                  await onRefresh();
+                }} />}
+              </div>
+            </div>
+          </div>
+        </article>;
+      })}
+      {!rows.length && <div className="fbg-empty-state col-span-full grid min-h-56 place-items-center rounded-2xl border border-dashed text-center text-sm text-slate-500"><div><CheckCircle2 className="mx-auto mb-3 text-emerald-300" /><b className="block text-slate-300">Chưa có nhiệm vụ đăng</b><span className="mt-1 block text-xs">Duyệt bài trong Content Factory để hệ thống tự tạo nhiệm vụ.</span></div></div>}
+    </div>
   </div>;
 }
 
