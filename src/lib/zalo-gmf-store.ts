@@ -4,12 +4,14 @@ import { createHash, randomUUID } from "crypto";
 import OpenAI from "openai";
 import sharp from "sharp";
 import { getDb, query, queryOne } from "@/lib/db";
-import { getZaloOAConfig } from "@/lib/zalo-oa-store";
+import { getZaloOAConfig, refreshZaloOAAccessToken } from "@/lib/zalo-oa-store";
 import { decodeImageDataUrl, generateBlogImageVariants, getImageGenerationErrorMessage } from "@/lib/openai-blog-images";
 import { sanitizeMediaSegment, storeMediaObject } from "@/lib/media-storage";
 
 export type ZaloGmfContentStatus = "draft" | "pending" | "approved" | "rejected";
 export type ZaloGmfScheduleStatus = "pending" | "sending" | "sent" | "failed" | "cancelled";
+
+let zaloTokenRefreshInFlight: Promise<{ ok: boolean; expiresIn?: number; error?: string }> | null = null;
 
 export interface ZaloGmfSettings {
   autoPublish: boolean;
@@ -230,24 +232,52 @@ function absoluteSiteUrl(path: string): string {
   return new URL(path, base).toString();
 }
 
-async function zaloRequest(url: URL | string, init: RequestInit = {}): Promise<Record<string, unknown>> {
-  const config = await getZaloOAConfig();
-  if (!config.isActive || !config.accessToken) throw new Error("Zalo OA chưa kích hoạt hoặc thiếu Access Token.");
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      access_token: config.accessToken,
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...(init.headers || {}),
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(20_000),
-  });
-  const body = await response.json().catch(() => ({})) as Record<string, unknown>;
-  if (!response.ok || Number(body.error || 0) !== 0) {
-    throw new Error(String(body.message || `Zalo GMF HTTP ${response.status}`));
+function isExpiredZaloToken(body: Record<string, unknown>): boolean {
+  const message = String(body.message || "");
+  const code = Number(body.error || 0);
+  return code === -201 || /access\s*token.*expired|token.*expired|access\s*token.*hết hạn|token.*hết hạn/i.test(message);
+}
+
+function humanizeZaloGmfError(message: string): string {
+  if (/personal information is limited due to ip address not inside vietnam/i.test(message)) {
+    return "Nhóm đã đồng bộ; Zalo tạm giới hạn hồ sơ thành viên vì máy chủ Railway đặt ngoài Việt Nam. Tổng thành viên và biến động webhook vẫn được ghi nhận.";
   }
-  return body;
+  return message;
+}
+
+async function refreshExpiredZaloToken() {
+  if (!zaloTokenRefreshInFlight) {
+    zaloTokenRefreshInFlight = refreshZaloOAAccessToken().finally(() => {
+      zaloTokenRefreshInFlight = null;
+    });
+  }
+  return zaloTokenRefreshInFlight;
+}
+
+async function zaloRequest(url: URL | string, init: RequestInit = {}): Promise<Record<string, unknown>> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const config = await getZaloOAConfig();
+    if (!config.isActive || !config.accessToken) throw new Error("Zalo OA chưa kích hoạt hoặc thiếu Access Token.");
+    const response = await fetch(url, {
+      ...init,
+      headers: {
+        access_token: config.accessToken,
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(init.headers || {}),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
+    });
+    const body = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (response.ok && Number(body.error || 0) === 0) return body;
+    if (attempt === 0 && isExpiredZaloToken(body) && config.refreshToken) {
+      const refreshed = await refreshExpiredZaloToken();
+      if (refreshed.ok) continue;
+      throw new Error(`Access Token Zalo đã hết hạn và không thể tự gia hạn: ${refreshed.error || "Refresh Token không hợp lệ."}`);
+    }
+    throw new Error(humanizeZaloGmfError(String(body.message || `Zalo GMF HTTP ${response.status}`)));
+  }
+  throw new Error("Không thể gọi Zalo GMF OpenAPI sau khi gia hạn token.");
 }
 
 async function listRemoteGroups(): Promise<Record<string, unknown>[]> {
@@ -318,7 +348,7 @@ export async function syncZaloGmfGroups(options: { syncMembers?: boolean } = {})
         memberCount += result.active;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không đồng bộ được nhóm";
+      const message = humanizeZaloGmfError(error instanceof Error ? error.message : "Không đồng bộ được nhóm");
       warnings.push(`${String(item.name || groupId)}: ${message}`);
       if (groupId) await query(`UPDATE crm_zalo_gmf_groups SET sync_error=$2,updated_at=NOW() WHERE group_id=$1`, [groupId, message.slice(0, 300)]);
     }
@@ -754,7 +784,7 @@ export async function getZaloGmfDashboard(): Promise<ZaloGmfDashboard> {
     query<Record<string, unknown>>(`SELECT
       (SELECT COUNT(*) FROM crm_zalo_gmf_groups)::int AS groups,
       (SELECT COUNT(*) FROM crm_zalo_gmf_groups WHERE status='enabled')::int AS active_groups,
-      (SELECT COUNT(*) FROM crm_zalo_gmf_members WHERE status='active' AND member_type='user')::int AS members,
+      COALESCE((SELECT SUM(total_member) FROM crm_zalo_gmf_groups WHERE status='enabled'),0)::int AS members,
       (SELECT COUNT(*) FROM crm_zalo_gmf_member_events WHERE event_type='joined' AND occurred_at>=NOW()-INTERVAL '30 days')::int AS joined_30d,
       (SELECT COUNT(*) FROM crm_zalo_gmf_member_events WHERE event_type='left' AND occurred_at>=NOW()-INTERVAL '30 days')::int AS left_30d,
       (SELECT COUNT(*) FROM crm_zalo_gmf_contents WHERE status IN ('draft','pending'))::int AS pending_approval,
