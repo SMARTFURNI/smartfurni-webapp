@@ -24,6 +24,7 @@ vi.mock("@/lib/zalo-gmf-attribution-store", () => ({
 vi.mock("@/lib/zalo-gmf-store", () => ({ initZaloGmfSchema }));
 
 import { GET as GET_OPEN } from "@/app/api/zalo-group/[slug]/open/route";
+import { GET as GET_LANDING_QR } from "@/app/api/zalo-group/[slug]/qr/route";
 import { GET as GET_TARGET_QR } from "@/app/api/zalo-group/[slug]/target-qr/route";
 
 describe("Zalo group focused join page QR", () => {
@@ -38,7 +39,12 @@ describe("Zalo group focused join page QR", () => {
   });
 
   it("renders an SVG QR that points to the tracked group opener", async () => {
-    const response = await GET_TARGET_QR(new Request("https://www.smartfurni.com.vn/api/zalo-group/showroom-a/target-qr"), {
+    const response = await GET_TARGET_QR(new Request("http://localhost:3000/api/zalo-group/showroom-a/target-qr", {
+      headers: {
+        "x-forwarded-host": "www.smartfurni.com.vn",
+        "x-forwarded-proto": "https",
+      },
+    }), {
       params: Promise.resolve({ slug: "showroom-a" }),
     });
 
@@ -66,6 +72,20 @@ describe("Zalo group focused join page QR", () => {
       queryParams: { via: "qr" },
     }));
     expect(markZaloGmfVisitOpened).toHaveBeenCalledWith("showroom-a", "visit-1");
+  });
+
+  it("never embeds Railway localhost in the source-link QR", async () => {
+    await GET_LANDING_QR(new Request("http://localhost:3000/api/zalo-group/showroom-a/qr", {
+      headers: {
+        "x-forwarded-host": "www.smartfurni.com.vn",
+        "x-forwarded-proto": "https",
+      },
+    }), { params: Promise.resolve({ slug: "showroom-a" }) });
+
+    expect(qrToString).toHaveBeenCalledWith(
+      "https://www.smartfurni.com.vn/zalo-group/showroom-a",
+      expect.objectContaining({ errorCorrectionLevel: "H" }),
+    );
   });
 
   it("returns 404 when the source link is unavailable", async () => {

@@ -246,9 +246,19 @@ function MembersView({ data, busy, isAdmin, run }: { data: Dashboard; busy: stri
 }
 
 function MemberGrowthReport({ initial }: { initial: MemberReport }) {
+  type ReportPreset = "today" | "yesterday" | "7d" | "30d" | "60d" | "custom";
+  const presets: Array<{ id: ReportPreset; label: string; days?: number; offset?: number }> = [
+    { id: "today", label: "Hôm nay", days: 1 },
+    { id: "yesterday", label: "Hôm qua", days: 1, offset: -1 },
+    { id: "7d", label: "7 ngày", days: 7 },
+    { id: "30d", label: "30 ngày", days: 30 },
+    { id: "60d", label: "60 ngày", days: 60 },
+    { id: "custom", label: "Tùy chọn" },
+  ];
   const [report, setReport] = useState(initial);
   const [from, setFrom] = useState(initial.range.from);
   const [to, setTo] = useState(initial.range.to);
+  const [preset, setPreset] = useState<ReportPreset>("30d");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const maxDaily = Math.max(1, ...report.daily.flatMap(item => [item.joined, item.left]));
@@ -267,19 +277,26 @@ function MemberGrowthReport({ initial }: { initial: MemberReport }) {
     } finally { setLoading(false); }
   }
 
-  function usePreset(days: number) {
-    const nextFrom = vietnamDateInput(-(days - 1)); const nextTo = vietnamDateInput();
+  function usePreset(nextPreset: ReportPreset, days?: number, offset = 0) {
+    setPreset(nextPreset);
+    if (!days) return;
+    const nextTo = vietnamDateInput(offset);
+    const nextFrom = vietnamDateInput(offset - (days - 1));
     setFrom(nextFrom); setTo(nextTo); void loadRange(nextFrom, nextTo);
   }
 
   return <section className={`${card} overflow-hidden`}>
     <div className="flex flex-col gap-4 border-b border-[#e7edf4] bg-[radial-gradient(circle_at_90%_0%,rgba(16,185,129,0.10),transparent_18rem),linear-gradient(135deg,#fff,#f8fffc)] p-5 xl:flex-row xl:items-end xl:justify-between">
       <div><div className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Member Growth</div><h2 className="text-lg font-semibold text-[#172033]">Báo cáo thành viên tham gia nhóm</h2><p className="mt-1 text-sm text-[#738196]">Tính theo múi giờ Việt Nam, từ webhook và các lần đối soát GMF.</p></div>
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="flex gap-1 rounded-xl border border-[#dbe3ee] bg-white p-1">{[7, 30, 90].map(days => <button key={days} onClick={() => usePreset(days)} disabled={loading} className="rounded-lg px-3 py-2 text-xs font-semibold text-[#526173] hover:bg-amber-50 hover:text-amber-800">{days} ngày</button>)}</div>
-        <label className="text-[11px] font-semibold text-[#526173]">Từ ngày<input type="date" className={`${field} mt-1 min-w-40`} value={from} max={to} onChange={event => setFrom(event.target.value)} /></label>
-        <label className="text-[11px] font-semibold text-[#526173]">Đến ngày<input type="date" className={`${field} mt-1 min-w-40`} value={to} min={from} max={vietnamDateInput()} onChange={event => setTo(event.target.value)} /></label>
-        <button className={primary} disabled={loading || !from || !to} onClick={() => void loadRange()}>{loading ? <Loader2 size={16} className="animate-spin" /> : <BarChart3 size={16} />} Xem báo cáo</button>
+      <div className="flex max-w-[760px] flex-col items-stretch gap-2 xl:items-end">
+        <div className="flex flex-wrap gap-1 rounded-xl border border-[#dbe3ee] bg-white p-1">
+          {presets.map(item => <button key={item.id} type="button" onClick={() => usePreset(item.id, item.days, item.offset)} disabled={loading} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${preset === item.id ? "bg-[linear-gradient(135deg,#fff2bf,#efd16d)] text-[#6d4d08] shadow-sm" : "text-[#526173] hover:bg-amber-50 hover:text-amber-800"}`}>{item.label}</button>)}
+        </div>
+        {preset === "custom" && <div className="flex flex-wrap items-end justify-end gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+          <label className="text-[11px] font-semibold text-[#526173]">Từ ngày<input type="date" className={`${field} mt-1 min-w-40`} value={from} max={to} onChange={event => setFrom(event.target.value)} /></label>
+          <label className="text-[11px] font-semibold text-[#526173]">Đến ngày<input type="date" className={`${field} mt-1 min-w-40`} value={to} min={from} max={vietnamDateInput()} onChange={event => setTo(event.target.value)} /></label>
+          <button className={primary} disabled={loading || !from || !to} onClick={() => void loadRange()}>{loading ? <Loader2 size={16} className="animate-spin" /> : <BarChart3 size={16} />} Xem khoảng ngày</button>
+        </div>}
       </div>
     </div>
     {error && <div className="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}

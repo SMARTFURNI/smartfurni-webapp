@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { getPublicZaloGmfSourceLink } from "@/lib/zalo-gmf-attribution-store";
 import { initZaloGmfSchema } from "@/lib/zalo-gmf-store";
+import { getPublicRequestOrigin } from "@/lib/public-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const link = await getPublicZaloGmfSourceLink(slug);
   if (!link) return new NextResponse("Not found", { status: 404 });
 
-  const origin = new URL(req.url).origin;
+  const origin = getPublicRequestOrigin(req);
   const openUrl = `${origin}/api/zalo-group/${encodeURIComponent(slug)}/open?via=qr`;
   const svg = await QRCode.toString(openUrl, {
     type: "svg",
