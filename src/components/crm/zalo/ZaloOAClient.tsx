@@ -52,6 +52,8 @@ interface PublicConfig {
   businessHoursStart: string;
   businessHoursEnd: string;
   zbsEnabled: boolean;
+  followWelcomeEnabled: boolean;
+  followWelcomeMessage: string;
   appSecretConfigured: boolean;
   oaSecretKeyConfigured: boolean;
   accessTokenConfigured: boolean;
@@ -87,7 +89,7 @@ interface MessageRecord {
   category: Category;
   content: string;
   status: "pending" | "sent" | "delivered" | "read" | "failed";
-  source: "manual" | "ai" | "webhook" | "sync";
+  source: "manual" | "ai" | "automation" | "webhook" | "sync";
   templateId: string;
   zaloMessageId: string;
   aiConfidence: number | null;
@@ -136,7 +138,9 @@ const EMPTY_CONFIG: PublicConfig = {
   oaId: "", appId: "", isActive: false, aiEnabled: true, aiAutoSend: false,
   requireApproval: true, aiModel: "gpt-5.6-terra", aiConfidenceThreshold: 0.9,
   maxAutoMessagesPerDay: 30, businessHoursStart: "08:00", businessHoursEnd: "20:00",
-  zbsEnabled: false, appSecretConfigured: false, accessTokenConfigured: false,
+  zbsEnabled: false, followWelcomeEnabled: false,
+  followWelcomeMessage: "Chào {{name}}, cảm ơn Anh/Chị đã quan tâm Zalo OA SmartFurni. Anh/Chị đang quan tâm sofa giường, giường thông minh hay cần tư vấn theo không gian?",
+  appSecretConfigured: false, accessTokenConfigured: false,
   oaSecretKeyConfigured: false, refreshTokenConfigured: false, webhookUrl: "",
   webhookLastReceivedAt: null, webhookLastEvent: "", webhookLastStatus: "", webhookLastError: "",
   historySync: {
@@ -591,7 +595,53 @@ function AutomationTab({ config, setConfig, save, busy }: { config: PublicConfig
   const gates = [
     ["Đúng đối tượng", "Chỉ trả lời hội thoại có Zalo UID thật."], ["Trong 7 ngày", "Tin tư vấn bị chặn khi quá cửa sổ tương tác."], ["Đúng giờ", `${config.businessHoursStart}–${config.businessHoursEnd} · Asia/Ho_Chi_Minh`], ["Đủ tin cậy", `Tối thiểu ${Math.round(config.aiConfidenceThreshold * 100)}%`], ["Giới hạn ngày", `Tối đa ${config.maxAutoMessagesPerDay} tin AI/ngày`], ["Đúng loại tin", "Giao dịch/hậu mãi bắt buộc dùng ZBS."],
   ];
-  return <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]"><section className={`${panel} p-5 md:p-6`}><h2 className="text-lg font-semibold">Chế độ AI Agent</h2><p className="mt-1 text-sm text-[#8f99aa]">Mặc định an toàn là tạo nháp và chờ duyệt.</p><div className="mt-5 space-y-4"><SettingToggle label="AI phân tích tin nhắn mới" hint="Tạo câu trả lời dựa trên lịch sử hội thoại." value={config.aiEnabled} set={value => setConfig({ ...config, aiEnabled: value })} /><SettingToggle label="Yêu cầu admin duyệt" hint="Khuyến nghị bật khi mới vận hành." value={config.requireApproval} set={value => setConfig({ ...config, requireApproval: value })} /><SettingToggle label="Cho phép AI tự gửi" hint="Chỉ có hiệu lực khi tắt yêu cầu duyệt và vượt toàn bộ cổng an toàn." value={config.aiAutoSend} set={value => setConfig({ ...config, aiAutoSend: value })} /></div><div className="mt-5 grid grid-cols-2 gap-3"><Label text="Giờ bắt đầu"><input type="time" className={field} value={config.businessHoursStart} onChange={e => setConfig({ ...config, businessHoursStart: e.target.value })} /></Label><Label text="Giờ kết thúc"><input type="time" className={field} value={config.businessHoursEnd} onChange={e => setConfig({ ...config, businessHoursEnd: e.target.value })} /></Label><Label text="Ngưỡng tin cậy (%)"><input type="number" min={50} max={100} className={field} value={Math.round(config.aiConfidenceThreshold * 100)} onChange={e => setConfig({ ...config, aiConfidenceThreshold: Number(e.target.value) / 100 })} /></Label><Label text="Giới hạn AI/ngày"><input type="number" min={1} max={500} className={field} value={config.maxAutoMessagesPerDay} onChange={e => setConfig({ ...config, maxAutoMessagesPerDay: Number(e.target.value) })} /></Label></div><button onClick={save} disabled={busy} className={`${goldButton} mt-5 w-full`}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu tự động hóa</button></section><section className={`${panel} p-5 md:p-6`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10"><ShieldCheck className="text-emerald-300" /></div><div><h2 className="text-lg font-semibold">6 cổng trước khi tự gửi</h2><p className="text-sm text-[#8f99aa]">Sai một điều kiện là chuyển về hàng chờ admin.</p></div></div><div className="mt-5 grid gap-3 sm:grid-cols-2">{gates.map(([title, hint]) => <div key={title} className="rounded-xl border border-white/8 bg-black/10 p-4"><div className="flex items-center gap-2 font-medium"><CheckCircle2 size={15} className="text-emerald-300" />{title}</div><p className="mt-1.5 text-xs leading-5 text-[#8f99aa]">{hint}</p></div>)}</div><div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4 text-xs leading-5 text-amber-100/75">Bật tự gửi không mở rộng quyền API của OA. Zalo vẫn có thể từ chối nếu ứng dụng chưa được cấp quyền, mẫu ZBS chưa duyệt hoặc người dùng chưa đồng ý nhận tin.</div></section></div>;
+  return <div className="space-y-5">
+    <section className={`${panel} p-5 md:p-6`}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9a84c]/10"><MessageCircle className="text-[#d6b75b]" /></div>
+            <div><h2 className="text-lg font-semibold">Lời chào khi khách quan tâm OA</h2><p className="text-sm text-[#8f99aa]">Webhook <span className="font-mono">follow</span> tạo khách hàng, mở cửa sổ tương tác và chỉ gửi một lần cho mỗi sự kiện.</p></div>
+          </div>
+        </div>
+        <StatusBadge active={config.followWelcomeEnabled} on="Đang tự động gửi" off="Đang tạm tắt" />
+      </div>
+      <div className="mt-5 space-y-4">
+        <SettingToggle label="Tự động chào khách mới quan tâm" hint="Tin được gửi bằng quyền Tin tư vấn đã được Zalo duyệt; webhook gửi lại sẽ không làm khách nhận trùng." value={config.followWelcomeEnabled} set={value => setConfig({ ...config, followWelcomeEnabled: value })} />
+        <Label text="Nội dung lời chào">
+          <textarea rows={4} maxLength={2000} className={`${field} resize-y leading-6`} value={config.followWelcomeMessage} onChange={event => setConfig({ ...config, followWelcomeMessage: event.target.value })} placeholder="Nhập nội dung chào khách mới..." />
+        </Label>
+        <div className="flex flex-col gap-3 rounded-xl border border-sky-400/15 bg-sky-400/[0.05] p-4 text-xs leading-5 text-[#9eb2c9] sm:flex-row sm:items-center sm:justify-between">
+          <span>Dùng biến <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[#d8d0c1]">{"{{name}}"}</span> để chèn tên Zalo. Nếu OA Manager đang bật lời chào tự động, hãy tắt một trong hai nơi để khách không nhận hai tin.</span>
+          <span className="shrink-0">{config.followWelcomeMessage.length}/2000 ký tự</span>
+        </div>
+      </div>
+    </section>
+
+    <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]">
+      <section className={`${panel} p-5 md:p-6`}>
+        <h2 className="text-lg font-semibold">Chế độ AI Agent</h2>
+        <p className="mt-1 text-sm text-[#8f99aa]">Mặc định an toàn là tạo nháp và chờ duyệt.</p>
+        <div className="mt-5 space-y-4">
+          <SettingToggle label="AI phân tích tin nhắn mới" hint="Tạo câu trả lời dựa trên lịch sử hội thoại." value={config.aiEnabled} set={value => setConfig({ ...config, aiEnabled: value })} />
+          <SettingToggle label="Yêu cầu admin duyệt" hint="Khuyến nghị bật khi mới vận hành." value={config.requireApproval} set={value => setConfig({ ...config, requireApproval: value })} />
+          <SettingToggle label="Cho phép AI tự gửi" hint="Chỉ có hiệu lực khi tắt yêu cầu duyệt và vượt toàn bộ cổng an toàn." value={config.aiAutoSend} set={value => setConfig({ ...config, aiAutoSend: value })} />
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Label text="Giờ bắt đầu"><input type="time" className={field} value={config.businessHoursStart} onChange={event => setConfig({ ...config, businessHoursStart: event.target.value })} /></Label>
+          <Label text="Giờ kết thúc"><input type="time" className={field} value={config.businessHoursEnd} onChange={event => setConfig({ ...config, businessHoursEnd: event.target.value })} /></Label>
+          <Label text="Ngưỡng tin cậy (%)"><input type="number" min={50} max={100} className={field} value={Math.round(config.aiConfidenceThreshold * 100)} onChange={event => setConfig({ ...config, aiConfidenceThreshold: Number(event.target.value) / 100 })} /></Label>
+          <Label text="Giới hạn AI/ngày"><input type="number" min={1} max={500} className={field} value={config.maxAutoMessagesPerDay} onChange={event => setConfig({ ...config, maxAutoMessagesPerDay: Number(event.target.value) })} /></Label>
+        </div>
+      </section>
+      <section className={`${panel} p-5 md:p-6`}>
+        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10"><ShieldCheck className="text-emerald-300" /></div><div><h2 className="text-lg font-semibold">6 cổng trước khi tự gửi</h2><p className="text-sm text-[#8f99aa]">Sai một điều kiện là chuyển về hàng chờ admin.</p></div></div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">{gates.map(([title, hint]) => <div key={title} className="rounded-xl border border-white/8 bg-black/10 p-4"><div className="flex items-center gap-2 font-medium"><CheckCircle2 size={15} className="text-emerald-300" />{title}</div><p className="mt-1.5 text-xs leading-5 text-[#8f99aa]">{hint}</p></div>)}</div>
+        <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4 text-xs leading-5 text-amber-100/75">Bật tự gửi không mở rộng quyền API của OA. Zalo vẫn có thể từ chối nếu ứng dụng chưa được cấp quyền, mẫu ZBS chưa duyệt hoặc người dùng chưa đồng ý nhận tin.</div>
+      </section>
+    </div>
+    <button onClick={save} disabled={busy || !config.followWelcomeMessage.trim()} className={`${goldButton} w-full`}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu tự động hóa</button>
+  </div>;
 }
 
 type ZaloSecrets = { appSecret: string; oaSecretKey: string; accessToken: string; refreshToken: string };

@@ -54,6 +54,8 @@ export interface ZaloOAConfig {
   businessHoursStart: string;
   businessHoursEnd: string;
   zbsEnabled: boolean;
+  followWelcomeEnabled: boolean;
+  followWelcomeMessage: string;
   updatedAt: string;
 }
 
@@ -154,7 +156,7 @@ export interface ZaloMessageRecord {
   category: ZaloMessageCategory;
   content: string;
   status: ZaloMessageStatus;
-  source: "manual" | "ai" | "webhook" | "sync";
+  source: "manual" | "ai" | "automation" | "webhook" | "sync";
   templateId: string;
   zaloMessageId: string;
   aiConfidence: number | null;
@@ -201,6 +203,7 @@ export interface ZaloDashboard {
 }
 
 const DEFAULT_MODEL = "gpt-5.6-terra";
+const DEFAULT_FOLLOW_WELCOME_MESSAGE = "Chào {{name}}, cảm ơn Anh/Chị đã quan tâm Zalo OA SmartFurni. Anh/Chị đang quan tâm sofa giường, giường thông minh hay cần tư vấn theo không gian?";
 const WEBHOOK_PATH = "/api/crm/zalo/webhook";
 
 export async function initZaloOASchema(): Promise<void> {
@@ -227,6 +230,8 @@ export async function initZaloOASchema(): Promise<void> {
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS business_hours_start TEXT NOT NULL DEFAULT '08:00';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS business_hours_end TEXT NOT NULL DEFAULT '20:00';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS zbs_enabled BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS follow_welcome_enabled BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS follow_welcome_message TEXT NOT NULL DEFAULT '${DEFAULT_FOLLOW_WELCOME_MESSAGE.replaceAll("'", "''")}';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_received_at TIMESTAMPTZ;
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_event TEXT NOT NULL DEFAULT '';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS webhook_last_status TEXT NOT NULL DEFAULT '';
@@ -298,6 +303,16 @@ export async function initZaloOASchema(): Promise<void> {
       sent_at TIMESTAMPTZ,
       delivered_at TIMESTAMPTZ,
       read_at TIMESTAMPTZ
+    );
+
+    CREATE TABLE IF NOT EXISTS crm_zalo_follow_events (
+      event_key TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      event_at TIMESTAMPTZ NOT NULL,
+      status TEXT NOT NULL DEFAULT 'processing',
+      error TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS crm_zalo_ai_queue (
@@ -374,6 +389,7 @@ export async function initZaloOASchema(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS crm_zalo_messages_user_idx ON crm_zalo_messages(conversation_user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS crm_zalo_messages_status_idx ON crm_zalo_messages(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS crm_zalo_follow_events_user_idx ON crm_zalo_follow_events(user_id, event_at DESC);
     CREATE INDEX IF NOT EXISTS crm_zalo_ai_queue_status_idx ON crm_zalo_ai_queue(status, created_at DESC);
     CREATE INDEX IF NOT EXISTS crm_zalo_customer_tags_tag_idx ON crm_zalo_customer_tags(tag_id, user_id);
     CREATE INDEX IF NOT EXISTS crm_zalo_campaigns_created_idx ON crm_zalo_campaigns(created_at DESC);
@@ -427,6 +443,8 @@ function mapConfig(row?: Record<string, unknown>): ZaloOAConfig {
     businessHoursStart: String(row?.business_hours_start || "08:00"),
     businessHoursEnd: String(row?.business_hours_end || "20:00"),
     zbsEnabled: Boolean(row?.zbs_enabled),
+    followWelcomeEnabled: Boolean(row?.follow_welcome_enabled),
+    followWelcomeMessage: String(row?.follow_welcome_message || DEFAULT_FOLLOW_WELCOME_MESSAGE),
     updatedAt: String(row?.updated_at || new Date().toISOString()),
   };
 }
@@ -446,7 +464,8 @@ export async function saveZaloOAConfig(input: Partial<ZaloOAConfig>): Promise<vo
       oa_id=$1, app_id=$2, app_secret=$3, oa_secret_key=$4, access_token=$5, refresh_token=$6,
       is_active=$7, ai_enabled=$8, ai_auto_send=$9, require_approval=$10,
       ai_model=$11, ai_confidence_threshold=$12, max_auto_messages_per_day=$13,
-      business_hours_start=$14, business_hours_end=$15, zbs_enabled=$16, updated_at=NOW()
+      business_hours_start=$14, business_hours_end=$15, zbs_enabled=$16,
+      follow_welcome_enabled=$17, follow_welcome_message=$18, updated_at=NOW()
      WHERE id='default'`,
     [
       input.oaId ?? current.oaId,
@@ -465,6 +484,8 @@ export async function saveZaloOAConfig(input: Partial<ZaloOAConfig>): Promise<vo
       input.businessHoursStart || current.businessHoursStart,
       input.businessHoursEnd || current.businessHoursEnd,
       input.zbsEnabled ?? current.zbsEnabled,
+      input.followWelcomeEnabled ?? current.followWelcomeEnabled,
+      String(input.followWelcomeMessage ?? current.followWelcomeMessage).trim().slice(0, 2000) || DEFAULT_FOLLOW_WELCOME_MESSAGE,
     ],
   );
 }
@@ -770,7 +791,7 @@ function mapMessage(row: Record<string, unknown>): ZaloMessageRecord {
     id: String(row.id), userId: String(row.conversation_user_id), displayName: String(row.display_name || "Khách Zalo"),
     direction: String(row.direction) as "inbound" | "outbound", category: String(row.category) as ZaloMessageCategory,
     content: String(row.content || ""), status: String(row.status) as ZaloMessageStatus,
-    source: String(row.source) as "manual" | "ai" | "webhook" | "sync", templateId: String(row.template_id || ""),
+    source: String(row.source) as "manual" | "ai" | "automation" | "webhook" | "sync", templateId: String(row.template_id || ""),
     zaloMessageId: String(row.zalo_message_id || ""), aiConfidence: row.ai_confidence == null ? null : Number(row.ai_confidence),
     error: String(row.error || ""), attachment: asRecord(row.attachment), createdAt: String(row.created_at),
     sentAt: row.sent_at ? String(row.sent_at) : null, deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
@@ -1358,7 +1379,7 @@ export async function markZaloConversationRead(userId: string): Promise<void> {
 }
 
 async function insertOutboundMessage(input: {
-  userId: string; content: string; category: ZaloMessageCategory; source: "manual" | "ai";
+  userId: string; content: string; category: ZaloMessageCategory; source: "manual" | "ai" | "automation";
   templateId?: string; aiConfidence?: number; attachment?: Record<string, unknown>;
 }): Promise<string> {
   const id = `zm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1398,7 +1419,7 @@ async function parseZaloResponse(res: Response): Promise<{ ok: boolean; messageI
 }
 
 export async function sendZaloConsultation(input: {
-  userId: string; content: string; source?: "manual" | "ai"; aiConfidence?: number;
+  userId: string; content: string; source?: "manual" | "ai" | "automation"; aiConfidence?: number;
 }): Promise<{ ok: boolean; error?: string }> {
   await initZaloOASchema();
   const [config, conversationRows] = await Promise.all([
@@ -1462,7 +1483,7 @@ export async function sendZaloAttachment(input: {
   filename: string;
   mimeType: string;
   kind: ZaloAttachmentKind;
-  source?: "manual" | "ai";
+  source?: "manual" | "ai" | "automation";
 }): Promise<{ ok: boolean; error?: string }> {
   await initZaloOASchema();
   const context = await getConsultationContext(input.userId);
@@ -1776,11 +1797,84 @@ export async function recordZaloWebhookReceipt(input: {
   );
 }
 
-export async function recordZaloWebhookEvent(payload: Record<string, unknown>): Promise<{ handled: boolean; aiQueued?: boolean }> {
+function renderFollowWelcome(message: string, displayName: string): string {
+  const name = displayName && displayName !== "Khách Zalo" ? displayName : "Anh/Chị";
+  return message.replaceAll("{{name}}", name).trim();
+}
+
+async function recordZaloFollowEvent(
+  payload: Record<string, unknown>,
+  event: Record<string, unknown>,
+): Promise<{ handled: boolean; aiQueued: false; welcomeSent?: boolean; duplicate?: boolean }> {
+  const eventSender = asRecord(event.sender);
+  const sender = Object.keys(eventSender).length ? eventSender : asRecord(payload.sender);
+  const eventData = asRecord(event.data);
+  const eventUser = asRecord(event.user);
+  const user = Object.keys(eventUser).length ? eventUser : asRecord(payload.user);
+  const userId = zaloPartyId(sender) || zaloPartyId(user) || String(
+    event.user_id || eventData.user_id || payload.user_id || asRecord(payload.data).user_id || "",
+  ).trim();
+  if (!userId) return { handled: false, aiQueued: false };
+
+  const displayName = String(
+    sender.name || sender.display_name || user.name || user.display_name ||
+    event.user_name || eventData.user_name || payload.user_name || asRecord(payload.data).user_name || "Khách Zalo",
+  ).trim() || "Khách Zalo";
+  const avatar = String(sender.avatar || sender.avatar_url || user.avatar || user.avatar_url || "").trim();
+  const eventAt = zaloEventTime({ ...payload, ...event });
+  const eventId = String(event.event_id || event.id || payload.event_id || payload.id || "").trim();
+  const timestamp = String(event.timestamp || payload.timestamp || "").trim();
+  const fingerprint = eventId || timestamp
+    ? `follow:${userId}:${eventId || timestamp}`
+    : `follow:${userId}:${JSON.stringify(payload)}`;
+  const eventKey = createHash("sha256").update(fingerprint).digest("hex");
+
+  const inserted = await query<{ event_key: string }>(
+    `INSERT INTO crm_zalo_follow_events (event_key,user_id,event_at,status)
+     VALUES ($1,$2,$3,'processing')
+     ON CONFLICT (event_key) DO NOTHING RETURNING event_key`,
+    [eventKey, userId, eventAt],
+  );
+  if (!inserted.length) return { handled: true, aiQueued: false, welcomeSent: false, duplicate: true };
+
+  await query(
+    `INSERT INTO crm_zalo_conversations
+      (user_id,display_name,avatar,last_user_interaction,last_message_preview,last_message_at,unread_count,ai_status)
+     VALUES ($1,$2,$3,$4,'Đã quan tâm Zalo OA',$4,0,'idle')
+     ON CONFLICT (user_id) DO UPDATE SET
+       display_name=CASE WHEN EXCLUDED.display_name='Khách Zalo' THEN crm_zalo_conversations.display_name ELSE EXCLUDED.display_name END,
+       avatar=CASE WHEN EXCLUDED.avatar='' THEN crm_zalo_conversations.avatar ELSE EXCLUDED.avatar END,
+       last_user_interaction=EXCLUDED.last_user_interaction,
+       last_message_preview=CASE WHEN crm_zalo_conversations.last_message_at IS NULL OR crm_zalo_conversations.last_message_at <= EXCLUDED.last_message_at THEN EXCLUDED.last_message_preview ELSE crm_zalo_conversations.last_message_preview END,
+       last_message_at=GREATEST(COALESCE(crm_zalo_conversations.last_message_at,EXCLUDED.last_message_at),EXCLUDED.last_message_at),
+       updated_at=NOW()`,
+    [userId, displayName, avatar, eventAt],
+  );
+
+  const config = await getZaloOAConfig();
+  const welcome = renderFollowWelcome(config.followWelcomeMessage, displayName);
+  if (!config.followWelcomeEnabled || !welcome) {
+    await query(
+      `UPDATE crm_zalo_follow_events SET status='skipped',updated_at=NOW() WHERE event_key=$1`,
+      [eventKey],
+    );
+    return { handled: true, aiQueued: false, welcomeSent: false };
+  }
+
+  const result = await sendZaloConsultation({ userId, content: welcome, source: "automation" });
+  await query(
+    `UPDATE crm_zalo_follow_events SET status=$2,error=$3,updated_at=NOW() WHERE event_key=$1`,
+    [eventKey, result.ok ? "sent" : "failed", String(result.error || "").slice(0, 500)],
+  );
+  return { handled: true, aiQueued: false, welcomeSent: result.ok };
+}
+
+export async function recordZaloWebhookEvent(payload: Record<string, unknown>): Promise<{ handled: boolean; aiQueued?: boolean; welcomeSent?: boolean; duplicate?: boolean }> {
   await initZaloOASchema();
   const nested = payload.data && typeof payload.data === "object" ? payload.data as Record<string, unknown> : null;
   const event = nested && nested.event_name ? nested : payload;
   const eventName = String(event.event_name || payload.event_name || "").trim();
+  if (eventName === "follow") return recordZaloFollowEvent(payload, event);
   const sender = asRecord(event.sender);
   const recipient = asRecord(event.recipient);
   const message = Object.keys(asRecord(event.message)).length ? asRecord(event.message) : undefined;

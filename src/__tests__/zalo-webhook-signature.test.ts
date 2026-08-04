@@ -19,6 +19,8 @@ const config: ZaloOAConfig = {
   businessHoursStart: "08:00",
   businessHoursEnd: "20:00",
   zbsEnabled: false,
+  followWelcomeEnabled: false,
+  followWelcomeMessage: "Chào {{name}}",
   updatedAt: new Date(0).toISOString(),
 };
 
