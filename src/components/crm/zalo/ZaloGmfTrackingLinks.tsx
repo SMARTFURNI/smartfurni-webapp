@@ -18,6 +18,16 @@ interface TrackingReport {
   links: SourceLink[];
 }
 interface ResponseData { groups: Group[]; trackingReport: TrackingReport }
+type ReportPreset = "today" | "yesterday" | "7d" | "30d" | "60d" | "custom";
+
+const REPORT_PRESETS: Array<{ id: ReportPreset; label: string; days?: number; offset?: number }> = [
+  { id: "today", label: "Hôm nay", days: 1 },
+  { id: "yesterday", label: "Hôm qua", days: 1, offset: -1 },
+  { id: "7d", label: "7 ngày", days: 7 },
+  { id: "30d", label: "30 ngày", days: 30 },
+  { id: "60d", label: "60 ngày", days: 60 },
+  { id: "custom", label: "Tùy chọn" },
+];
 
 const card = "rounded-2xl border border-[#dbe3ee] bg-white shadow-[0_12px_32px_rgba(30,48,72,0.08)]";
 const field = "w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-sm text-[#172033] outline-none transition placeholder:text-[#94a3b8] focus:border-[#d4af45] focus:ring-4 focus:ring-[#d4af45]/10";
@@ -36,25 +46,29 @@ export default function ZaloGmfTrackingLinks({ isAdmin }: { isAdmin: boolean }) 
   const [data, setData] = useState<ResponseData | null>(null);
   const [from, setFrom] = useState(vietnamDate(-29));
   const [to, setTo] = useState(vietnamDate());
+  const [reportPreset, setReportPreset] = useState<ReportPreset>("30d");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState("");
   const [form, setForm] = useState({ groupId: "", sourceName: "", channel: "", campaign: "", expiresAt: "" });
 
-  const load = useCallback(async (nextFrom = from, nextTo = to, spinner = true) => {
+  const load = useCallback(async (nextFrom: string, nextTo: string, spinner = true) => {
     if (spinner) setLoading(true);
     try {
-      const response = await fetch(`/api/crm/zalo/gmf?from=${nextFrom}&to=${nextTo}`, { cache: "no-store" });
+      const params = new URLSearchParams({ from: nextFrom, to: nextTo });
+      const response = await fetch(`/api/crm/zalo/gmf?${params}`, { cache: "no-store" });
       const result = await response.json() as ResponseData & { error?: string };
       if (!response.ok) throw new Error(result.error || "Không tải được báo cáo nguồn.");
       setData(result);
+      setFrom(result.trackingReport.range.from);
+      setTo(result.trackingReport.range.to);
       setForm(value => ({ ...value, groupId: value.groupId || result.groups.find(group => group.status === "enabled")?.groupId || "" }));
       setNotice("");
     } catch (error) { setNotice(error instanceof Error ? error.message : "Không tải được báo cáo nguồn."); }
     finally { if (spinner) setLoading(false); }
-  }, [from, to]);
-  useEffect(() => { void load(); }, [load]);
+  }, []);
+  useEffect(() => { void load(vietnamDate(-29), vietnamDate()); }, [load]);
 
   async function action(key: string, payload: Record<string, unknown>, success: string) {
     setBusy(key); setNotice("");
@@ -77,8 +91,11 @@ export default function ZaloGmfTrackingLinks({ isAdmin }: { isAdmin: boolean }) 
     setCopied(link.id); setTimeout(() => setCopied(""), 1600);
   }
 
-  function preset(days: number) {
-    const nextFrom = vietnamDate(-(days - 1)); const nextTo = vietnamDate();
+  function usePreset(nextPreset: ReportPreset, days?: number, offset = 0) {
+    setReportPreset(nextPreset);
+    if (!days) return;
+    const nextTo = vietnamDate(offset);
+    const nextFrom = vietnamDate(offset - (days - 1));
     setFrom(nextFrom); setTo(nextTo); void load(nextFrom, nextTo);
   }
 
@@ -90,7 +107,16 @@ export default function ZaloGmfTrackingLinks({ isAdmin }: { isAdmin: boolean }) 
     <section className={`${card} overflow-hidden`}>
       <div className="flex flex-col gap-4 border-b border-[#e7edf4] bg-[radial-gradient(circle_at_90%_0%,rgba(59,130,246,0.12),transparent_20rem),linear-gradient(135deg,#fff,#f7fbff)] p-5 xl:flex-row xl:items-center xl:justify-between">
         <div><div className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-700">Source Attribution</div><h2 className="mt-1 text-lg font-semibold text-[#172033]">Link & QR theo nguồn</h2><p className="mt-1 text-sm text-[#738196]">Mỗi điểm đặt QR hoặc link có tên nguồn riêng; thành viên chỉ được gắn nguồn khi UID Zalo và webhook GMF khớp nhau.</p></div>
-        <div className="flex flex-wrap items-end gap-2"><div className="flex gap-1 rounded-xl border border-[#dbe3ee] bg-white p-1">{[7, 30, 90].map(days => <button key={days} onClick={() => preset(days)} className="rounded-lg px-3 py-2 text-xs font-semibold text-[#526173] hover:bg-blue-50">{days} ngày</button>)}</div><input type="date" className={`${field} w-auto`} value={from} max={to} onChange={event => setFrom(event.target.value)} /><input type="date" className={`${field} w-auto`} value={to} min={from} max={vietnamDate()} onChange={event => setTo(event.target.value)} /><button className={secondary} onClick={() => void load()}><BarChart3 size={15} /> Xem</button></div>
+        <div className="flex max-w-[760px] flex-col items-stretch gap-2 xl:items-end">
+          <div className="flex flex-wrap gap-1 rounded-xl border border-[#dbe3ee] bg-white p-1">
+            {REPORT_PRESETS.map(item => <button key={item.id} type="button" disabled={loading} onClick={() => usePreset(item.id, item.days, item.offset)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${reportPreset === item.id ? "bg-[linear-gradient(135deg,#dbeafe,#bfdbfe)] text-blue-800 shadow-sm" : "text-[#526173] hover:bg-blue-50 hover:text-blue-800"}`}>{item.label}</button>)}
+          </div>
+          {reportPreset === "custom" && <div className="flex flex-wrap items-end justify-end gap-2 rounded-xl border border-blue-200 bg-blue-50/70 p-3">
+            <label className="text-[11px] font-semibold text-[#526173]">Từ ngày<input type="date" className={`${field} mt-1 min-w-40`} value={from} max={to} onChange={event => setFrom(event.target.value)} /></label>
+            <label className="text-[11px] font-semibold text-[#526173]">Đến ngày<input type="date" className={`${field} mt-1 min-w-40`} value={to} min={from} max={vietnamDate()} onChange={event => setTo(event.target.value)} /></label>
+            <button className={secondary} disabled={loading || !from || !to} onClick={() => void load(from, to)}>{loading ? <Loader2 size={15} className="animate-spin" /> : <BarChart3 size={15} />} Xem khoảng ngày</button>
+          </div>}
+        </div>
       </div>
       <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-6">
         <Metric icon={MousePointerClick} label="Lượt truy cập" value={report.summary.visits} hint={`${report.summary.uniqueVisitors} thiết bị`} tone="from-blue-50 to-white border-blue-200 text-blue-700" />
