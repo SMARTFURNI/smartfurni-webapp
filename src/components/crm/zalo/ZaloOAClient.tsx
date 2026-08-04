@@ -16,10 +16,11 @@ import ZaloTemplatesTab, {
   type ZaloTemplateSyncView,
   type ZaloTemplateView as Template,
 } from "./ZaloTemplatesTab";
+import ZaloGmfWorkspace, { type ZaloGmfView } from "./ZaloGmfWorkspace";
 import styles from "./ZaloOAClient.module.css";
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
-type Tab = "overview" | "inbox" | "customers" | "ai" | "templates" | "history" | "automation" | "settings";
+type Tab = "overview" | "inbox" | "customers" | "gmf" | "gmf-content" | "gmf-members" | "gmf-reports" | "ai" | "templates" | "history" | "automation" | "settings";
 type HistorySyncStatus = "never" | "running" | "completed" | "partial" | "failed";
 
 interface HistorySyncSummary {
@@ -159,6 +160,10 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Activity }> = [
   { id: "overview", label: "Tổng quan", icon: Activity },
   { id: "inbox", label: "Hội thoại OA", icon: Inbox },
   { id: "customers", label: "Khách hàng", icon: Users },
+  { id: "gmf", label: "Nhóm GMF", icon: MessageCircle },
+  { id: "gmf-content", label: "Nội dung & lịch", icon: Send },
+  { id: "gmf-members", label: "Thành viên", icon: Users },
+  { id: "gmf-reports", label: "Báo cáo GMF", icon: Activity },
   { id: "ai", label: "Chờ duyệt AI", icon: Bot },
   { id: "templates", label: "Mẫu tin & ZBS", icon: FileText },
   { id: "history", label: "Lịch sử gửi", icon: History },
@@ -215,6 +220,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Partial<Template> | null>(null);
   const [campaignRequest, setCampaignRequest] = useState(0);
+  const [gmfRefresh, setGmfRefresh] = useState(0);
   const visibleTabs = useMemo(() => isAdmin ? TABS : TABS.filter(item => !["templates", "automation", "settings"].includes(item.id)), [isAdmin]);
 
   const load = useCallback(async (showSpinner = true) => {
@@ -274,6 +280,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     : data?.conversations.find(item => item.userId === selectedUser) || null;
   const selectedMessages = threadMessages;
   const drafts = (data?.aiQueue || []).filter(item => item.status === "draft");
+  const gmfView = ({ gmf: "groups", "gmf-content": "content", "gmf-members": "members", "gmf-reports": "reports" } as Partial<Record<Tab, ZaloGmfView>>)[tab];
 
   async function saveConfig() {
     await run("save-config", () => postAction({ action: "save_config", config: { ...config, ...secrets } }), "Đã lưu cấu hình Zalo OA và AI Agent.");
@@ -364,9 +371,9 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex flex-col gap-5 border-b border-[rgba(255,200,100,0.10)] bg-[radial-gradient(circle_at_88%_0%,rgba(201,168,76,0.10),transparent_34%)] p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7 lg:py-6">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/10 shadow-[inset_0_0_24px_rgba(201,168,76,0.05)]"><MessageCircle className="text-[#d6b75b]" /></div>
-          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">{tab === "customers" ? "Khách hàng Zalo OA" : tab === "templates" ? "Mẫu tin Zalo OA" : "Trung tâm chăm sóc khách hàng Zalo OA"}</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">{tab === "customers" ? "Đồng bộ, phân nhóm và chăm sóc khách hàng theo tag từ Zalo OA." : tab === "templates" ? "Theo dõi vòng đời kiểm duyệt, nội dung xem trước và chi phí gửi của từng ZBS Template." : "Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi."}</p></div>
+          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">{tab === "customers" ? "Khách hàng Zalo OA" : tab === "templates" ? "Mẫu tin Zalo OA" : gmfView ? "Trung tâm vận hành nhóm GMF" : "Trung tâm chăm sóc khách hàng Zalo OA"}</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">{tab === "customers" ? "Đồng bộ, phân nhóm và chăm sóc khách hàng theo tag từ Zalo OA." : tab === "templates" ? "Theo dõi vòng đời kiểm duyệt, nội dung xem trước và chi phí gửi của từng ZBS Template." : gmfView ? "Quản lý GMF100, sản xuất nội dung, duyệt lịch đăng và theo dõi biến động thành viên bằng OpenAPI chính thức." : "Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi."}</p></div>
         </div>
-        <div className="flex flex-wrap items-center gap-2"><StatusBadge active={Boolean(config.isActive && config.accessTokenConfigured)} /><button className={secondaryButton} disabled={Boolean(busy)} onClick={() => tab === "customers" ? void syncHistory() : void load()}>{busy === "sync-history" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} {tab === "customers" ? "Đồng bộ ngay" : "Làm mới"}</button><button className={goldButton} onClick={() => { if (tab === "customers") setCampaignRequest(value => value + 1); else setSendOpen(true); }}><Send size={15} /> {tab === "customers" ? "Tạo chiến dịch" : "Soạn tin"}</button></div>
+        <div className="flex flex-wrap items-center gap-2"><StatusBadge active={Boolean(config.isActive && config.accessTokenConfigured)} /><button className={secondaryButton} disabled={Boolean(busy)} onClick={() => { if (tab === "customers") void syncHistory(); else if (gmfView) setGmfRefresh(value => value + 1); else void load(); }}>{busy === "sync-history" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} {tab === "customers" ? "Đồng bộ ngay" : "Làm mới"}</button>{!gmfView && <button className={goldButton} onClick={() => { if (tab === "customers") setCampaignRequest(value => value + 1); else setSendOpen(true); }}><Send size={15} /> {tab === "customers" ? "Tạo chiến dịch" : "Soạn tin"}</button>}</div>
       </div>
       <nav className="flex gap-1 overflow-x-auto bg-[#110d05]/65 p-2.5">
         {visibleTabs.map(item => { const Icon = item.icon; const count = item.id === "ai" ? drafts.length : item.id === "inbox" ? data?.stats.unread : 0; return <button key={item.id} onClick={() => setTab(item.id)} className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition ${tab === item.id ? "border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/12 text-[#f0d77e] shadow-[inset_0_0_16px_rgba(201,168,76,0.04)]" : "border-transparent text-[rgba(245,237,214,0.46)] hover:border-[rgba(255,200,100,0.08)] hover:bg-white/[0.025] hover:text-[rgba(245,237,214,0.78)]"}`}><Icon size={15} />{item.label}{Boolean(count) && <span className="rounded-full bg-[#c9a84c] px-1.5 py-0.5 text-[10px] font-bold text-black">{count}</span>}</button>; })}
@@ -378,6 +385,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     {tab === "overview" && <Overview data={data!} config={config} go={setTab} isAdmin={isAdmin} />}
     {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} sendReply={sendReply} sendAttachment={sendAttachment} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
     {tab === "customers" && <ZaloCustomersTab customers={data?.conversations || []} tags={data?.customerTags || []} segments={data?.segments || []} campaigns={data?.campaigns || []} busy={busy} isAdmin={isAdmin} campaignRequest={campaignRequest} sync={() => void syncHistory()} runAction={(key, payload, success) => run(key, () => postAction(payload), success)} />}
+    {gmfView && <ZaloGmfWorkspace key={`${gmfView}-${gmfRefresh}`} view={gmfView} isAdmin={isAdmin} />}
     {tab === "ai" && <AiQueue items={data?.aiQueue || []} busy={busy} review={(id, decision) => void run(`${decision}-${id}`, () => postAction({ action: "review_ai", id, decision }), decision === "approve" ? "Đã duyệt và gửi tin tư vấn qua OA." : "Đã từ chối bản nháp AI.")} />}
     {tab === "templates" && <ZaloTemplatesTab templates={data?.templates || []} syncSummary={config.templateSync} configured={Boolean(config.isActive && config.accessTokenConfigured)} busy={busy === "sync-templates"} sync={() => void syncTemplates()} open={(item) => { setEditingTemplate(item || { category: "consultation", isActive: true, requiresApproval: true, variables: [], approvalStatus: "LOCAL", quality: "UNDEFINED", templateTag: "", reason: "", previewUrl: "", priceSdt: "", priceUid: "", buttons: [], source: "crm", zaloCreatedAt: null, syncedAt: null }); setTemplateOpen(true); }} />}
     {tab === "history" && <HistoryTab messages={data?.messages || []} />}
