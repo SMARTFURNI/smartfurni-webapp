@@ -23,9 +23,14 @@ function errorResponse(error: unknown, status = 400) {
   return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Yêu cầu GMF không hợp lệ." }, { status });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  try { return NextResponse.json(await getZaloGmfDashboard()); }
+  try {
+    return NextResponse.json(await getZaloGmfDashboard({
+      from: req.nextUrl.searchParams.get("from") || undefined,
+      to: req.nextUrl.searchParams.get("to") || undefined,
+    }));
+  }
   catch (error) { return errorResponse(error, 500); }
 }
 

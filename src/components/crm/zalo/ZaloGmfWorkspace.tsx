@@ -45,11 +45,19 @@ interface Schedule {
   attempts: number; nextAttemptAt: string | null; messageId: string; error: string; sentAt: string | null; createdAt: string;
 }
 
+interface MemberReport {
+  range: { from: string; to: string };
+  todayJoined: number; yesterdayJoined: number; last7DaysJoined: number;
+  selectedJoined: number; selectedLeft: number; selectedNet: number;
+  daily: Array<{ date: string; joined: number; left: number; net: number }>;
+  groups: Array<{ groupId: string; groupName: string; totalMember: number; joined: number; left: number; net: number }>;
+}
+
 interface Dashboard {
   configured: boolean;
   settings: Settings;
   stats: { groups: number; activeGroups: number; members: number; joined30d: number; left30d: number; pendingApproval: number; scheduled: number; sent30d: number; failed30d: number };
-  groups: Group[]; members: Member[]; memberEvents: MemberEvent[]; contents: Content[]; schedules: Schedule[];
+  groups: Group[]; members: Member[]; memberEvents: MemberEvent[]; memberReport: MemberReport; contents: Content[]; schedules: Schedule[];
 }
 
 const card = "rounded-2xl border border-[#dbe3ee] bg-white shadow-[0_12px_32px_rgba(30,48,72,0.08)]";
@@ -71,6 +79,16 @@ function localDateTime(hours = 1) {
 function isoFromLocal(value: string) {
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date.toISOString() : "";
+}
+
+function vietnamDateInput(daysFromToday = 0) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(Date.now() + daysFromToday * 86_400_000));
+}
+
+function formatReportDate(value: string) {
+  return new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" })
+    .format(new Date(`${value}T00:00:00+07:00`));
 }
 
 async function gmfAction(payload: Record<string, unknown>) {
@@ -225,10 +243,68 @@ function MembersView({ data, busy, isAdmin, run }: { data: Dashboard; busy: stri
   </div>;
 }
 
+function MemberGrowthReport({ initial }: { initial: MemberReport }) {
+  const [report, setReport] = useState(initial);
+  const [from, setFrom] = useState(initial.range.from);
+  const [to, setTo] = useState(initial.range.to);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const maxDaily = Math.max(1, ...report.daily.flatMap(item => [item.joined, item.left]));
+
+  async function loadRange(nextFrom = from, nextTo = to) {
+    if (!nextFrom || !nextTo) return;
+    setLoading(true); setError("");
+    try {
+      const params = new URLSearchParams({ from: nextFrom, to: nextTo });
+      const response = await fetch(`/api/crm/zalo/gmf?${params}`, { cache: "no-store" });
+      const result = await response.json() as Dashboard & { error?: string };
+      if (!response.ok) throw new Error(result.error || "Không tải được báo cáo thành viên.");
+      setReport(result.memberReport); setFrom(result.memberReport.range.from); setTo(result.memberReport.range.to);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không tải được báo cáo thành viên.");
+    } finally { setLoading(false); }
+  }
+
+  function usePreset(days: number) {
+    const nextFrom = vietnamDateInput(-(days - 1)); const nextTo = vietnamDateInput();
+    setFrom(nextFrom); setTo(nextTo); void loadRange(nextFrom, nextTo);
+  }
+
+  return <section className={`${card} overflow-hidden`}>
+    <div className="flex flex-col gap-4 border-b border-[#e7edf4] bg-[radial-gradient(circle_at_90%_0%,rgba(16,185,129,0.10),transparent_18rem),linear-gradient(135deg,#fff,#f8fffc)] p-5 xl:flex-row xl:items-end xl:justify-between">
+      <div><div className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Member Growth</div><h2 className="text-lg font-semibold text-[#172033]">Báo cáo thành viên tham gia nhóm</h2><p className="mt-1 text-sm text-[#738196]">Tính theo múi giờ Việt Nam, từ webhook và các lần đối soát GMF.</p></div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex gap-1 rounded-xl border border-[#dbe3ee] bg-white p-1">{[7, 30, 90].map(days => <button key={days} onClick={() => usePreset(days)} disabled={loading} className="rounded-lg px-3 py-2 text-xs font-semibold text-[#526173] hover:bg-amber-50 hover:text-amber-800">{days} ngày</button>)}</div>
+        <label className="text-[11px] font-semibold text-[#526173]">Từ ngày<input type="date" className={`${field} mt-1 min-w-40`} value={from} max={to} onChange={event => setFrom(event.target.value)} /></label>
+        <label className="text-[11px] font-semibold text-[#526173]">Đến ngày<input type="date" className={`${field} mt-1 min-w-40`} value={to} min={from} max={vietnamDateInput()} onChange={event => setTo(event.target.value)} /></label>
+        <button className={primary} disabled={loading || !from || !to} onClick={() => void loadRange()}>{loading ? <Loader2 size={16} className="animate-spin" /> : <BarChart3 size={16} />} Xem báo cáo</button>
+      </div>
+    </div>
+    {error && <div className="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+    <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-6">
+      <Metric icon={UserPlus} label="Hôm nay" value={report.todayJoined} hint="Thành viên tham gia" tone="green" />
+      <Metric icon={UserPlus} label="Hôm qua" value={report.yesterdayJoined} hint="Thành viên tham gia" tone="blue" />
+      <Metric icon={Users} label="7 ngày" value={report.last7DaysJoined} hint="Gồm hôm nay" tone="violet" />
+      <Metric icon={UserPlus} label="Tham gia" value={report.selectedJoined} hint={`${formatReportDate(report.range.from)} – ${formatReportDate(report.range.to)}`} tone="green" />
+      <Metric icon={UserMinus} label="Rời nhóm" value={report.selectedLeft} hint="Trong khoảng đã chọn" tone="rose" />
+      <Metric icon={Activity} label="Tăng ròng" value={report.selectedNet >= 0 ? `+${report.selectedNet}` : report.selectedNet} hint="Tham gia trừ rời" tone="amber" />
+    </div>
+    <div className="grid border-t border-[#e7edf4] xl:grid-cols-[1.35fr_1fr]">
+      <div className="border-b border-[#e7edf4] p-5 xl:border-b-0 xl:border-r">
+        <div className="mb-4"><h3 className="font-semibold text-[#172033]">Biến động theo ngày</h3><p className="text-xs text-[#94a3b8]">Thanh xanh là tham gia, thanh đỏ là rời nhóm.</p></div>
+        <div className="max-h-[430px] space-y-2 overflow-auto pr-1">{report.daily.map(item => <div key={item.date} className="grid grid-cols-[86px_1fr_42px_42px_50px] items-center gap-2 rounded-xl border border-[#edf1f5] bg-slate-50/60 px-3 py-2 text-xs"><span className="font-medium text-[#526173]">{formatReportDate(item.date).slice(0, 5)}</span><div className="space-y-1"><div className="h-1.5 overflow-hidden rounded-full bg-emerald-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${item.joined / maxDaily * 100}%` }} /></div><div className="h-1.5 overflow-hidden rounded-full bg-rose-100"><div className="h-full rounded-full bg-rose-400" style={{ width: `${item.left / maxDaily * 100}%` }} /></div></div><strong className="text-right text-emerald-700">+{item.joined}</strong><strong className="text-right text-rose-700">-{item.left}</strong><strong className={`text-right ${item.net >= 0 ? "text-blue-700" : "text-red-700"}`}>{item.net >= 0 ? `+${item.net}` : item.net}</strong></div>)}</div>
+      </div>
+      <div className="p-5"><div className="mb-4"><h3 className="font-semibold text-[#172033]">Theo từng nhóm</h3><p className="text-xs text-[#94a3b8]">So sánh tăng trưởng trong khoảng đã chọn.</p></div><div className="overflow-auto"><table className="w-full text-left text-sm"><thead className="text-[10px] uppercase tracking-wide text-[#94a3b8]"><tr><th className="pb-3">Nhóm</th><th className="pb-3 text-right">+ Vào</th><th className="pb-3 text-right">- Rời</th><th className="pb-3 text-right">Ròng</th></tr></thead><tbody className="divide-y divide-[#edf1f5]">{report.groups.map(group => <tr key={group.groupId}><td className="max-w-52 py-3"><div className="truncate font-medium text-[#334155]">{group.groupName}</div><div className="text-[11px] text-[#94a3b8]">Hiện có {group.totalMember}</div></td><td className="py-3 text-right font-semibold text-emerald-700">+{group.joined}</td><td className="py-3 text-right font-semibold text-rose-700">-{group.left}</td><td className={`py-3 text-right font-bold ${group.net >= 0 ? "text-blue-700" : "text-red-700"}`}>{group.net >= 0 ? `+${group.net}` : group.net}</td></tr>)}</tbody></table>{!report.groups.length && <div className="py-8 text-center text-sm text-[#94a3b8]">Chưa có nhóm GMF.</div>}</div></div>
+    </div>
+    <div className="border-t border-amber-100 bg-amber-50/70 px-5 py-3 text-xs text-amber-800">Dữ liệu lịch sử chỉ được ghi nhận từ thời điểm SmartFurni bật webhook hoặc bắt đầu đối soát GMF; thành viên có trước thời điểm đó không được tính là lượt tham gia mới.</div>
+  </section>;
+}
+
 function ReportsView({ data, busy, isAdmin, run }: { data: Dashboard; busy: string; isAdmin: boolean; run: (key: string, payload: Record<string, unknown>, success: string) => Promise<void> }) {
   const [settings, setSettings] = useState(data.settings);
   useEffect(() => setSettings(data.settings), [data.settings]);
   return <div className="space-y-4">
+    <MemberGrowthReport initial={data.memberReport} />
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Metric icon={Send} label="Đã gửi 30 ngày" value={data.stats.sent30d} hint="OpenAPI xác nhận" tone="green" /><Metric icon={AlertTriangle} label="Gửi lỗi 30 ngày" value={data.stats.failed30d} hint="Có thể thử lại" tone="rose" /><Metric icon={CalendarClock} label="Đã xếp lịch" value={data.stats.scheduled} hint="Đang chờ worker" tone="amber" /><Metric icon={UserPlus} label="Tăng ròng" value={data.stats.joined30d - data.stats.left30d} hint="30 ngày gần nhất" tone="violet" /><Metric icon={Activity} label="Nhóm hoạt động" value={`${data.stats.activeGroups}/${data.stats.groups}`} hint="Theo trạng thái Zalo" tone="blue" /></div>
     <section className={`${card} overflow-hidden`}><div className="border-b border-[#e7edf4] p-4"><h2 className="font-semibold text-[#172033]">Hiệu quả theo nhóm</h2></div><div className="overflow-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-[#738196]"><tr><th className="px-4 py-3">Nhóm</th><th className="px-4 py-3">Loại</th><th className="px-4 py-3">Thành viên</th><th className="px-4 py-3">+ 7 ngày</th><th className="px-4 py-3">- 7 ngày</th><th className="px-4 py-3">Bài chờ</th><th className="px-4 py-3">Bài gần nhất</th></tr></thead><tbody className="divide-y divide-[#edf1f5]">{data.groups.map(group => <tr key={group.groupId}><td className="px-4 py-3 font-medium text-[#172033]">{group.name}</td><td className="px-4 py-3 uppercase text-violet-700">{group.assetType}</td><td className="px-4 py-3">{group.totalMember}/{group.maxMember || "—"}</td><td className="px-4 py-3 text-emerald-700">+{group.joined7d}</td><td className="px-4 py-3 text-rose-700">-{group.left7d}</td><td className="px-4 py-3">{group.pendingPosts}</td><td className="px-4 py-3 text-[#738196]">{formatDate(group.lastPostAt)}</td></tr>)}</tbody></table></div></section>
     <section className={`${card} overflow-hidden`}><div className="border-b border-[#e7edf4] p-4"><h2 className="font-semibold text-[#172033]">Lịch đăng và kết quả gửi</h2></div><div className="max-h-[460px] overflow-auto"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-[#738196]"><tr><th className="px-4 py-3">Nội dung</th><th className="px-4 py-3">Nhóm</th><th className="px-4 py-3">Thời gian</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Thao tác</th></tr></thead><tbody className="divide-y divide-[#edf1f5]">{data.schedules.map(item => <tr key={item.id}><td className="max-w-72 px-4 py-3"><div className="truncate font-medium text-[#172033]">{item.contentTitle}</div>{item.error && <div className="mt-1 line-clamp-2 text-xs text-red-600">{item.error}</div>}{item.messageId && <div className="mt-1 text-[11px] text-[#94a3b8]">Message ID: {item.messageId}</div>}</td><td className="px-4 py-3 text-[#526173]">{item.groupName}</td><td className="px-4 py-3 text-[#738196]">{formatDate(item.nextAttemptAt || item.scheduledAt)}</td><td className="px-4 py-3"><StatusPill status={item.status} /></td><td className="px-4 py-3">{isAdmin && item.status === "failed" && <button className={secondary} disabled={Boolean(busy)} onClick={() => void run(`retry-${item.id}`, { action: "retry_schedule", id: item.id }, "Đã đưa bài lỗi trở lại hàng đợi.")}><RotateCcw size={14} /> Thử lại</button>}{isAdmin && item.status === "pending" && <button className={secondary} disabled={Boolean(busy)} onClick={() => void run(`cancel-${item.id}`, { action: "cancel_schedule", id: item.id }, "Đã hủy lịch đăng.")}><XCircle size={14} /> Hủy</button>}</td></tr>)}</tbody></table>{!data.schedules.length && <div className="p-8 text-center text-sm text-[#94a3b8]">Chưa có lịch đăng GMF.</div>}</div></section>

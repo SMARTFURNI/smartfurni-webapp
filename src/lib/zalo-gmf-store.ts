@@ -112,6 +112,18 @@ export interface ZaloGmfSchedule {
   createdAt: string;
 }
 
+export interface ZaloGmfMemberReport {
+  range: { from: string; to: string };
+  todayJoined: number;
+  yesterdayJoined: number;
+  last7DaysJoined: number;
+  selectedJoined: number;
+  selectedLeft: number;
+  selectedNet: number;
+  daily: Array<{ date: string; joined: number; left: number; net: number }>;
+  groups: Array<{ groupId: string; groupName: string; totalMember: number; joined: number; left: number; net: number }>;
+}
+
 export interface ZaloGmfDashboard {
   configured: boolean;
   settings: ZaloGmfSettings;
@@ -129,6 +141,7 @@ export interface ZaloGmfDashboard {
   groups: ZaloGmfGroup[];
   members: ZaloGmfMember[];
   memberEvents: ZaloGmfMemberEvent[];
+  memberReport: ZaloGmfMemberReport;
   contents: ZaloGmfContent[];
   schedules: ZaloGmfSchedule[];
 }
@@ -762,9 +775,26 @@ export async function recordZaloGmfWebhookEvent(payload: Record<string, unknown>
   return { handled: true };
 }
 
-export async function getZaloGmfDashboard(): Promise<ZaloGmfDashboard> {
+function vietnamDate(daysFromToday = 0): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(Date.now() + daysFromToday * 86_400_000));
+}
+
+function validateReportRange(input: { from?: string; to?: string } = {}) {
+  const valid = (value: string | undefined) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && Number.isFinite(Date.parse(`${value}T00:00:00Z`));
+  const from = valid(input.from) ? input.from! : vietnamDate(-29);
+  const to = valid(input.to) ? input.to! : vietnamDate();
+  const fromTime = Date.parse(`${from}T00:00:00Z`);
+  const toTime = Date.parse(`${to}T00:00:00Z`);
+  if (fromTime > toTime) throw new Error("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+  if ((toTime - fromTime) / 86_400_000 > 365) throw new Error("Khoảng báo cáo tối đa là 366 ngày.");
+  return { from, to };
+}
+
+export async function getZaloGmfDashboard(reportRange: { from?: string; to?: string } = {}): Promise<ZaloGmfDashboard> {
   await initZaloGmfSchema();
   const config = await getZaloOAConfig();
+  const range = validateReportRange(reportRange);
   const [settingsRow, groupRows, memberRows, eventRows, contentRows, scheduleRows, statRows] = await Promise.all([
     queryOne<Record<string, unknown>>(`SELECT * FROM crm_zalo_gmf_settings WHERE id='default'`),
     query<Record<string, unknown>>(`SELECT g.*,
@@ -792,7 +822,44 @@ export async function getZaloGmfDashboard(): Promise<ZaloGmfDashboard> {
       (SELECT COUNT(*) FROM crm_zalo_gmf_schedules WHERE status='sent' AND sent_at>=NOW()-INTERVAL '30 days')::int AS sent_30d,
       (SELECT COUNT(*) FROM crm_zalo_gmf_schedules WHERE status='failed' AND updated_at>=NOW()-INTERVAL '30 days')::int AS failed_30d`),
   ]);
+  const [memberSummary, memberDailyRows, memberGroupRows] = await Promise.all([
+    queryOne<Record<string, unknown>>(`WITH bounds AS (
+      SELECT
+        date_trunc('day',NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh') AT TIME ZONE 'Asia/Ho_Chi_Minh' AS today_start,
+        (date_trunc('day',NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')+INTERVAL '1 day') AT TIME ZONE 'Asia/Ho_Chi_Minh' AS tomorrow_start,
+        (date_trunc('day',NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')-INTERVAL '1 day') AT TIME ZONE 'Asia/Ho_Chi_Minh' AS yesterday_start,
+        (date_trunc('day',NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')-INTERVAL '6 days') AT TIME ZONE 'Asia/Ho_Chi_Minh' AS seven_day_start,
+        $1::date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh' AS selected_start,
+        ($2::date+1)::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh' AS selected_end
+    ) SELECT
+      COUNT(e.event_key) FILTER (WHERE e.event_type='joined' AND e.occurred_at>=b.today_start AND e.occurred_at<b.tomorrow_start)::int AS today_joined,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='joined' AND e.occurred_at>=b.yesterday_start AND e.occurred_at<b.today_start)::int AS yesterday_joined,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='joined' AND e.occurred_at>=b.seven_day_start AND e.occurred_at<b.tomorrow_start)::int AS last_7_days_joined,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='joined' AND e.occurred_at>=b.selected_start AND e.occurred_at<b.selected_end)::int AS selected_joined,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='left' AND e.occurred_at>=b.selected_start AND e.occurred_at<b.selected_end)::int AS selected_left
+      FROM bounds b LEFT JOIN crm_zalo_gmf_member_events e ON true`, [range.from, range.to]),
+    query<Record<string, unknown>>(`WITH days AS (
+      SELECT generate_series($1::date,$2::date,INTERVAL '1 day')::date AS day
+    ) SELECT TO_CHAR(d.day,'YYYY-MM-DD') AS date,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='joined')::int AS joined,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='left')::int AS left
+      FROM days d LEFT JOIN crm_zalo_gmf_member_events e
+        ON e.occurred_at >= (d.day::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+       AND e.occurred_at < ((d.day+1)::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+      GROUP BY d.day ORDER BY d.day`, [range.from, range.to]),
+    query<Record<string, unknown>>(`SELECT g.group_id,g.name AS group_name,g.total_member,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='joined')::int AS joined,
+      COUNT(e.event_key) FILTER (WHERE e.event_type='left')::int AS left
+      FROM crm_zalo_gmf_groups g LEFT JOIN crm_zalo_gmf_member_events e
+        ON e.group_id=g.group_id
+       AND e.occurred_at >= ($1::date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+       AND e.occurred_at < (($2::date+1)::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+      GROUP BY g.group_id,g.name,g.total_member ORDER BY joined DESC,g.name`, [range.from, range.to]),
+  ]);
   const stats = statRows[0] || {};
+  const reportSummary = memberSummary || {};
+  const selectedJoined = Number(reportSummary.selected_joined || 0);
+  const selectedLeft = Number(reportSummary.selected_left || 0);
   return {
     configured: Boolean(config.isActive && config.accessToken), settings: mapSettings(settingsRow),
     stats: {
@@ -818,6 +885,23 @@ export async function getZaloGmfDashboard(): Promise<ZaloGmfDashboard> {
       eventKey: String(row.event_key), groupId: String(row.group_id), groupName: String(row.group_name), userId: String(row.user_id),
       memberName: String(row.member_name), eventType: String(row.event_type), source: String(row.source), occurredAt: String(row.occurred_at),
     })),
+    memberReport: {
+      range,
+      todayJoined: Number(reportSummary.today_joined || 0),
+      yesterdayJoined: Number(reportSummary.yesterday_joined || 0),
+      last7DaysJoined: Number(reportSummary.last_7_days_joined || 0),
+      selectedJoined,
+      selectedLeft,
+      selectedNet: selectedJoined - selectedLeft,
+      daily: memberDailyRows.map(row => {
+        const joined = Number(row.joined || 0); const left = Number(row.left || 0);
+        return { date: String(row.date), joined, left, net: joined - left };
+      }),
+      groups: memberGroupRows.map(row => {
+        const joined = Number(row.joined || 0); const left = Number(row.left || 0);
+        return { groupId: String(row.group_id), groupName: String(row.group_name), totalMember: Number(row.total_member || 0), joined, left, net: joined - left };
+      }),
+    },
     contents: contentRows.map(mapContent),
     schedules: scheduleRows.map(row => ({
       id: String(row.id), contentId: String(row.content_id), contentTitle: String(row.content_title), groupId: String(row.group_id), groupName: String(row.group_name),
