@@ -2,10 +2,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+const HIDDEN_ROUTE_PREFIXES = ["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed", "/zalo-group/"];
+
 export default function ScrollToTop() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
-  const hasFloatingContactButtons = !["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed"].some((prefix) =>
+  const isHidden = HIDDEN_ROUTE_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
+  const hasFloatingContactButtons = !HIDDEN_ROUTE_PREFIXES.some((prefix) =>
     pathname?.startsWith(prefix)
   );
 
@@ -21,7 +24,7 @@ export default function ScrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (!visible) return null;
+  if (!visible || isHidden) return null;
 
   return (
     <button
