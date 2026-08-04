@@ -364,7 +364,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     } finally { setBusy(""); }
   }
 
-  if (loading && !data) return <div className={`${styles.lightTheme} flex min-h-[70vh] items-center justify-center bg-[#f4f7fb] text-[#526173]`}><Loader2 className="mr-2 animate-spin text-[#9a7418]" /> Đang tải trung tâm Zalo OA...</div>;
+  if (loading && !data) return <div className={`${styles.lightTheme} flex h-full min-h-full w-full items-center justify-center bg-[#f4f7fb] text-[#526173]`}><Loader2 className="mr-2 animate-spin text-[#9a7418]" /> Đang tải trung tâm Zalo OA...</div>;
 
   return <div className={`${styles.lightTheme} min-h-full space-y-4 bg-[#f4f7fb] p-4 text-[#172033] md:p-7`}>
     <section className={`${panel} overflow-hidden`}>
