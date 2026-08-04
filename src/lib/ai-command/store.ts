@@ -8,9 +8,11 @@ import type {
   AiCommandActor,
   AiCommandSnapshot,
   AiCommandSurface,
+  AiCommandMode,
   AiRiskLevel,
   AiRunRecord,
   AiRunStatus,
+  AiToolCallRecord,
 } from "./types";
 
 let initialized = false;
@@ -29,6 +31,7 @@ export async function initAiCommandSchema() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await query(`ALTER TABLE ai_chat_threads ADD COLUMN IF NOT EXISTS previous_response_id TEXT`);
   await query(`
     CREATE TABLE IF NOT EXISTS ai_chat_messages (
       id TEXT PRIMARY KEY,
@@ -108,6 +111,7 @@ function mapThread(row: Record<string, unknown>): AiChatThread {
     id: String(row.id), ownerId: String(row.owner_id), ownerKind: row.owner_kind as AiChatThread["ownerKind"],
     surface: row.surface as AiCommandSurface, title: String(row.title), status: row.status as AiChatThread["status"],
     createdAt: iso(row.created_at), updatedAt: iso(row.updated_at),
+    previousResponseId: row.previous_response_id ? String(row.previous_response_id) : undefined,
   };
 }
 
@@ -119,12 +123,23 @@ function mapMessage(row: Record<string, unknown>): AiChatMessage {
 }
 
 function mapRun(row: Record<string, unknown>): AiRunRecord {
+  const usage = (row.usage || {}) as Record<string, unknown>;
   return {
     id: String(row.id), threadId: String(row.thread_id), actorId: String(row.actor_id),
     actorKind: row.actor_kind as AiRunRecord["actorKind"], model: String(row.model), status: row.status as AiRunStatus,
     input: String(row.input), output: row.output ? String(row.output) : undefined,
-    error: row.error ? String(row.error) : undefined, usage: (row.usage || {}) as Record<string, unknown>,
+    error: row.error ? String(row.error) : undefined, usage,
     createdAt: iso(row.created_at), updatedAt: iso(row.updated_at),
+    mode: (["quick", "deep", "execute"].includes(String(usage.mode)) ? String(usage.mode) : "deep") as AiCommandMode,
+  };
+}
+
+function mapToolCall(row: Record<string, unknown>): AiToolCallRecord {
+  return {
+    id: String(row.id), runId: String(row.run_id), threadId: String(row.thread_id),
+    toolName: String(row.tool_name), riskLevel: row.risk_level as AiRiskLevel,
+    status: row.status as AiToolCallRecord["status"], error: row.error ? String(row.error) : undefined,
+    durationMs: Number(row.duration_ms || 0), createdAt: iso(row.created_at),
   };
 }
 
@@ -173,6 +188,11 @@ export async function touchThread(threadId: string) {
   await query(`UPDATE ai_chat_threads SET updated_at = NOW() WHERE id = $1`, [threadId]);
 }
 
+export async function updateThreadResponseContext(threadId: string, previousResponseId?: string) {
+  if (!previousResponseId) return;
+  await query(`UPDATE ai_chat_threads SET previous_response_id = $2, updated_at = NOW() WHERE id = $1`, [threadId, previousResponseId]);
+}
+
 export async function addMessage(threadId: string, role: AiChatMessage["role"], content: string, metadata: Record<string, unknown> = {}) {
   await initAiCommandSchema();
   const row = await queryOne<Record<string, unknown>>(
@@ -194,12 +214,12 @@ export async function listMessages(threadId: string, limit = 100) {
   return rows.map(mapMessage);
 }
 
-export async function createRun(params: { threadId: string; actor: AiCommandActor; model: string; input: string }) {
+export async function createRun(params: { threadId: string; actor: AiCommandActor; model: string; input: string; mode: AiCommandMode }) {
   await initAiCommandSchema();
   const row = await queryOne<Record<string, unknown>>(
-    `INSERT INTO ai_runs (id, thread_id, actor_id, actor_kind, model, status, input)
-     VALUES ($1, $2, $3, $4, $5, 'running', $6) RETURNING *`,
-    [randomUUID(), params.threadId, params.actor.id, params.actor.kind, params.model, params.input],
+    `INSERT INTO ai_runs (id, thread_id, actor_id, actor_kind, model, status, input, usage)
+     VALUES ($1, $2, $3, $4, $5, 'running', $6, $7::jsonb) RETURNING *`,
+    [randomUUID(), params.threadId, params.actor.id, params.actor.kind, params.model, params.input, JSON.stringify({ mode: params.mode })],
   );
   return mapRun(row!);
 }
@@ -219,7 +239,7 @@ export async function updateRun(runId: string, updates: {
 }) {
   const row = await queryOne<Record<string, unknown>>(
     `UPDATE ai_runs SET status = $2, output = COALESCE($3, output), error = $4,
-       state_json = $5, usage = COALESCE($6::jsonb, usage), updated_at = NOW()
+       state_json = $5, usage = CASE WHEN $6::jsonb IS NULL THEN usage ELSE usage || $6::jsonb END, updated_at = NOW()
      WHERE id = $1 RETURNING *`,
     [runId, updates.status, updates.output ?? null, updates.error ?? null, updates.stateJson ?? null,
       updates.usage ? JSON.stringify(updates.usage) : null],
@@ -284,6 +304,14 @@ export async function listApprovals(threadId: string) {
   return rows.map(mapApproval);
 }
 
+export async function listToolCalls(threadId: string) {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT id, run_id, thread_id, tool_name, risk_level, status, error, duration_ms, created_at
+     FROM ai_tool_calls WHERE thread_id = $1 ORDER BY created_at DESC LIMIT 80`, [threadId],
+  );
+  return rows.map(mapToolCall);
+}
+
 export async function startToolCall(params: {
   runId: string; threadId: string; toolName: string; riskLevel: AiRiskLevel; arguments: Record<string, unknown>;
 }) {
@@ -306,8 +334,8 @@ export async function finishToolCall(id: string, startedAt: number, result: Reco
 export async function getSnapshot(threadId: string, actor: AiCommandActor): Promise<AiCommandSnapshot | null> {
   const thread = await getOwnedThread(threadId, actor);
   if (!thread) return null;
-  const [messages, runs, approvals] = await Promise.all([
-    listMessages(threadId), listRuns(threadId), listApprovals(threadId),
+  const [messages, runs, approvals, toolCalls] = await Promise.all([
+    listMessages(threadId), listRuns(threadId), listApprovals(threadId), listToolCalls(threadId),
   ]);
-  return { thread, messages, runs, approvals };
+  return { thread, messages, runs, approvals, toolCalls };
 }

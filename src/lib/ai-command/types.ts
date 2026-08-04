@@ -1,6 +1,7 @@
 import type { RolePermissions } from "@/lib/crm-roles-store";
 
 export type AiCommandSurface = "crm" | "admin";
+export type AiCommandMode = "quick" | "deep" | "execute";
 export type AiCommandActorKind = "admin" | "staff";
 export type AiRunStatus = "running" | "awaiting_approval" | "completed" | "failed" | "cancelled";
 export type AiApprovalStatus = "pending" | "approved" | "rejected" | "expired";
@@ -29,6 +30,7 @@ export interface AiChatThread {
   status: "active" | "archived";
   createdAt: string;
   updatedAt: string;
+  previousResponseId?: string;
 }
 
 export interface AiChatMessage {
@@ -53,6 +55,19 @@ export interface AiRunRecord {
   usage: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  mode: AiCommandMode;
+}
+
+export interface AiToolCallRecord {
+  id: string;
+  runId: string;
+  threadId: string;
+  toolName: string;
+  riskLevel: AiRiskLevel;
+  status: "running" | "completed" | "failed";
+  error?: string;
+  durationMs: number;
+  createdAt: string;
 }
 
 export interface AiApprovalRequest {
@@ -76,4 +91,5 @@ export interface AiCommandSnapshot {
   messages: AiChatMessage[];
   runs: AiRunRecord[];
   approvals: AiApprovalRequest[];
+  toolCalls: AiToolCallRecord[];
 }

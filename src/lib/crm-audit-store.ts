@@ -13,7 +13,7 @@ export type AuditAction =
   | "data.exported" | "data.imported"
   | "apikey.created" | "apikey.revoked"
   | "ai.thread_created" | "ai.run_started" | "ai.run_completed" | "ai.run_failed"
-  | "ai.approval_requested" | "ai.approval_decided" | "ai.tool_executed";
+  | "ai.approval_requested" | "ai.approval_decided" | "ai.tool_executed" | "ai.external_message_sent";
 
 export interface AuditLog {
   id: string;

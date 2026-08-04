@@ -9,7 +9,7 @@ import { decideApproval, getApproval, getOwnedThread, getRunWithState, updateRun
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const BodySchema = z.object({ decision: z.enum(["approve", "reject"]) });
 
@@ -39,8 +39,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const stateJson = runRow?.state_json ? String(runRow.state_json) : "";
     if (!stateJson) return NextResponse.json({ error: "Phiên AI không còn trạng thái để tiếp tục." }, { status: 409 });
 
-    const context = { actor: access.actor, threadId: approval.threadId, runId: approval.runId };
-    const { agent, state, runner } = await resumeCommand(stateJson, context);
+    const usage = (runRow?.usage || {}) as Record<string, unknown>;
+    const mode = (["quick", "deep", "execute"].includes(String(usage.mode)) ? String(usage.mode) : "deep") as "quick" | "deep" | "execute";
+    const model = String(runRow?.model || "gpt-5.6-sol");
+    const context = { actor: access.actor, threadId: approval.threadId, runId: approval.runId, mode, surface: thread.surface };
+    const { agent, state, runner } = await resumeCommand(stateJson, context, model);
     const interruption = state.getInterruptions().find((item: any) => callId(item) === approval.toolCallId);
     if (!interruption) return NextResponse.json({ error: "Không khớp được tác vụ đang chờ duyệt." }, { status: 409 });
     if (decision === "approve") state.approve(interruption);
@@ -53,8 +56,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       metadata: { decision, runId: approval.runId, threadId: approval.threadId, toolName: approval.toolName },
     });
     await updateRun(approval.runId, { status: "running", stateJson: state.toString() });
-    const result = await runner.run(agent, state, { maxTurns: 10 });
-    const snapshot = await persistAgentResult({ result, runId: approval.runId, threadId: approval.threadId, actor: access.actor });
+    const result = await runner.run(agent, state, { maxTurns: 24 });
+    const snapshot = await persistAgentResult({ result, runId: approval.runId, threadId: approval.threadId, actor: access.actor, mode, model });
     return NextResponse.json({ snapshot, access: { canApprove: access.canApprove, actor: access.actor } });
   } catch (error) {
     if (activeRunId) {

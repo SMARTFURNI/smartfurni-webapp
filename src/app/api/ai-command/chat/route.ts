@@ -2,19 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { logAudit } from "@/lib/audit-helper";
 import { AiCommandAccessError, requireAiCommandAccess } from "@/lib/ai-command/access";
-import { AI_COMMAND_MODEL, runCommand } from "@/lib/ai-command/orchestrator";
+import { resolveAiCommandModel, runCommand } from "@/lib/ai-command/orchestrator";
 import { persistAgentResult } from "@/lib/ai-command/runtime";
 import { assertTrustedJsonRequest, enforceAiCommandRateLimit } from "@/lib/ai-command/security";
 import { addMessage, createRun, createThread, getOwnedThread, hasActiveRun, listMessages, updateRun } from "@/lib/ai-command/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const BodySchema = z.object({
   threadId: z.string().uuid().optional(),
   message: z.string().trim().min(1).max(4000),
   surface: z.enum(["crm", "admin"]).default("crm"),
+  mode: z.enum(["quick", "deep", "execute"]).default("deep"),
 });
 
 function safeError(error: unknown) {
@@ -49,21 +50,31 @@ export async function POST(req: NextRequest) {
     if (await hasActiveRun(thread.id)) {
       return NextResponse.json({ error: "Cuộc hội thoại đang có tác vụ chờ xử lý hoặc phê duyệt." }, { status: 409 });
     }
-    await addMessage(thread.id, "user", body.message);
-    const history = await listMessages(thread.id, 16);
+    const model = resolveAiCommandModel(body.mode);
+    await addMessage(thread.id, "user", body.message, { mode: body.mode, model });
+    const history = await listMessages(thread.id, 40);
     const transcript = history.map(item => `${item.role === "user" ? "Người dùng" : "Trợ lý"}: ${item.content}`).join("\n\n");
-    const run = await createRun({ threadId: thread.id, actor: access.actor, model: AI_COMMAND_MODEL, input: body.message });
+    const run = await createRun({ threadId: thread.id, actor: access.actor, model, input: body.message, mode: body.mode });
     runId = run.id;
     await logAudit({
       action: "ai.run_started", entityType: "ai_run", entityId: run.id, entityName: "Trợ lý Điều hành AI",
-      actorId: access.actor.id, actorName: access.actor.name, metadata: { threadId: thread.id, model: AI_COMMAND_MODEL },
+      actorId: access.actor.id, actorName: access.actor.name, metadata: { threadId: thread.id, model, mode: body.mode },
     });
 
-    const result = await runCommand(
-      `Đây là lịch sử gần nhất của cuộc hội thoại nội bộ. Hãy xử lý yêu cầu cuối cùng.\n\n${transcript}`,
-      { actor: access.actor, threadId: thread.id, runId: run.id },
-    );
-    const snapshot = await persistAgentResult({ result, runId: run.id, threadId: thread.id, actor: access.actor });
+    const context = { actor: access.actor, threadId: thread.id, runId: run.id, mode: body.mode, surface: body.surface };
+    let result;
+    try {
+      result = await runCommand(
+        thread.previousResponseId ? body.message : `Lịch sử cuộc hội thoại nội bộ:\n\n${transcript}\n\nHãy giải quyết yêu cầu cuối cùng.`,
+        context,
+        thread.previousResponseId,
+      );
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "";
+      if (!thread.previousResponseId || !/previous.?response|response.*not found|404/i.test(reason)) throw error;
+      result = await runCommand(`Lịch sử cuộc hội thoại nội bộ:\n\n${transcript}\n\nHãy giải quyết yêu cầu cuối cùng.`, context);
+    }
+    const snapshot = await persistAgentResult({ result, runId: run.id, threadId: thread.id, actor: access.actor, mode: body.mode, model });
     return NextResponse.json({ snapshot, access: { canApprove: access.canApprove, actor: access.actor } });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Nội dung yêu cầu chưa hợp lệ.", details: error.flatten() }, { status: 400 });
