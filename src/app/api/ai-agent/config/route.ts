@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCrmSession } from '@/lib/admin-auth';
 
 // Type definitions for config
 interface AIAgentConfig {
@@ -50,9 +51,9 @@ let configStorage: AIAgentConfig = {
 
 // Helper function to check admin access
 async function isAdmin(request: NextRequest): Promise<boolean> {
-  // In production, verify JWT token or session
-  // For now, accept all requests (in development mode)
-  return true;
+  void request;
+  const session = await getCrmSession();
+  return session?.isAdmin === true;
 }
 
 // GET - Retrieve current configuration (masked sensitive data)

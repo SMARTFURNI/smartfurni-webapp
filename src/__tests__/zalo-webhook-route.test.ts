@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const { recordZaloWebhookEvent, recordZaloWebhookReceipt, verifyZaloWebhookSignature } = vi.hoisted(() => ({
+const { recordZaloWebhookEvent, recordZaloWebhookReceipt, recordZaloGmfWebhookEvent, verifyZaloWebhookSignature } = vi.hoisted(() => ({
   recordZaloWebhookEvent: vi.fn(),
   recordZaloWebhookReceipt: vi.fn().mockResolvedValue(undefined),
+  recordZaloGmfWebhookEvent: vi.fn().mockResolvedValue({ handled: false }),
   verifyZaloWebhookSignature: vi.fn().mockReturnValue(false),
 }));
 
@@ -18,6 +19,8 @@ vi.mock("@/lib/zalo-oa-store", () => ({
   verifyZaloWebhookSignature,
 }));
 
+vi.mock("@/lib/zalo-gmf-store", () => ({ recordZaloGmfWebhookEvent }));
+
 import { POST } from "@/app/api/crm/zalo/webhook/route";
 
 function request(body: string) {
@@ -31,6 +34,7 @@ function request(body: string) {
 describe("Zalo OA webhook verification", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    recordZaloGmfWebhookEvent.mockResolvedValue({ handled: false });
   });
 
   it("accepts Zalo's empty connectivity probe", async () => {
@@ -115,5 +119,29 @@ describe("Zalo OA webhook verification", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ ok: true, handled: false });
     expect(recordZaloWebhookReceipt).not.toHaveBeenCalled();
+  });
+
+  it("routes a signed GMF join event to the group processor", async () => {
+    verifyZaloWebhookSignature.mockReturnValueOnce(true);
+    recordZaloGmfWebhookEvent.mockResolvedValueOnce({ handled: true });
+    const body = JSON.stringify({
+      event_name: "user_request_join_group",
+      app_id: "429156857373131074",
+      group_id: "gmf-100",
+      timestamp: "1785686400000",
+      users: [{ id: "zalo-user-1" }],
+    });
+    const signedRequest = new NextRequest("https://www.smartfurni.com.vn/api/crm/zalo/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-zevent-signature": "mac=valid" },
+      body,
+    });
+
+    const response = await POST(signedRequest);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, handled: true, channel: "gmf" });
+    expect(recordZaloGmfWebhookEvent).toHaveBeenCalledWith(expect.objectContaining({ group_id: "gmf-100" }));
+    expect(recordZaloWebhookEvent).not.toHaveBeenCalled();
   });
 });

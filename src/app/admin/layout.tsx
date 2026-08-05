@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
+import AiCommandLauncher from "@/components/ai-command/AiCommandLauncher";
 import "./admin-theme.css";
 
 export const viewport: Viewport = {
@@ -37,6 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <PwaDocumentConfig manifestHref="/admin-manifest.webmanifest" />
       <div className="sf-admin-ambient" aria-hidden="true" />
       <div className="relative z-[1] min-h-screen">{children}</div>
+      <AiCommandLauncher surface="admin" />
     </div>
   );
 }

@@ -2,6 +2,9 @@
   "name": "smartfurni-webapp",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build --experimental-build-mode=compile",
@@ -41,6 +44,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@google/generative-ai": "^0.21.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@openai/agents": "^0.3.9",
     "@types/nodemailer": "^7.0.11",
     "@types/nprogress": "^0.2.3",
     "@types/pg": "^8.18.0",

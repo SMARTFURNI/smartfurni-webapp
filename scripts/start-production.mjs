@@ -14,6 +14,7 @@ const migrationResult = await applyFacebookGroupMigrations({
     "008_add_fanpage_ai_care_center.sql",
     "009_add_ai_group_growth_foundation.sql",
     "010_add_media_assets.sql",
+    "011_add_zalo_gmf_workspace.sql",
   ],
 });
 if (migrationResult.applied.length) {
@@ -26,6 +27,7 @@ const intervalMs = Math.max(
 const cronUrl = `http://127.0.0.1:${port}/api/crm/facebook-group-marketing/cron`;
 const fanpageCareCronUrl = `http://127.0.0.1:${port}/api/crm/conversation-learning/cron`;
 const mediaCleanupUrl = `http://127.0.0.1:${port}/api/internal/media-cleanup`;
+const zaloGmfCronUrl = `http://127.0.0.1:${port}/api/crm/zalo/gmf/cron`;
 const fanpageCareIntervalMs = Math.max(
   5 * 60_000,
   Number(process.env.FANPAGE_AI_CRON_INTERVAL_MS || 15 * 60_000),
@@ -40,6 +42,7 @@ let stopping = false;
 let cronTimer;
 let fanpageCareTimer;
 let mediaCleanupTimer;
+let zaloGmfTimer;
 
 async function runFacebookGroupCron() {
   if (stopping) return;
@@ -120,12 +123,36 @@ async function runMediaCleanup() {
 
 mediaCleanupTimer = setTimeout(runMediaCleanup, 60_000);
 
+async function runZaloGmfCron() {
+  if (stopping) return;
+  try {
+    const response = await fetch(zaloGmfCronUrl, {
+      headers: { authorization: `Bearer ${cronSecret}` },
+      signal: AbortSignal.timeout(115_000),
+      cache: "no-store",
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("[Production Scheduler] Zalo GMF cron lỗi:", response.status, result);
+    } else if (result.sent > 0 || result.failed > 0 || result.deferred > 0 || result.reconciliation) {
+      console.log("[Production Scheduler] Zalo GMF cron:", result);
+    }
+  } catch (error) {
+    console.error("[Production Scheduler] Chưa gọi được Zalo GMF cron:", error instanceof Error ? error.message : error);
+  } finally {
+    if (!stopping) zaloGmfTimer = setTimeout(runZaloGmfCron, 60_000);
+  }
+}
+
+zaloGmfTimer = setTimeout(runZaloGmfCron, 35_000);
+
 function stop(signal) {
   if (stopping) return;
   stopping = true;
   if (cronTimer) clearTimeout(cronTimer);
   if (fanpageCareTimer) clearTimeout(fanpageCareTimer);
   if (mediaCleanupTimer) clearTimeout(mediaCleanupTimer);
+  if (zaloGmfTimer) clearTimeout(zaloGmfTimer);
   if (!nextProcess.killed) nextProcess.kill(signal);
 }
 
@@ -137,5 +164,6 @@ nextProcess.on("exit", (code, signal) => {
   if (cronTimer) clearTimeout(cronTimer);
   if (fanpageCareTimer) clearTimeout(fanpageCareTimer);
   if (mediaCleanupTimer) clearTimeout(mediaCleanupTimer);
+  if (zaloGmfTimer) clearTimeout(zaloGmfTimer);
   process.exit(code ?? (signal ? 0 : 1));
 });

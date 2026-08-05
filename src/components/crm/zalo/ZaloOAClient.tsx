@@ -4,7 +4,7 @@ import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } f
 import {
   Activity, AlertTriangle, Bot, Check, CheckCircle2, FileText, FileUp,
   History, ImageIcon, Inbox, Loader2, MessageCircle, Paperclip,
-  RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
+  QrCode, RefreshCw, Save, Search, Send, Settings, ShieldCheck, Sparkles,
   Trash2, Users, X, Zap,
 } from "lucide-react";
 import ZaloCustomersTab, {
@@ -16,10 +16,11 @@ import ZaloTemplatesTab, {
   type ZaloTemplateSyncView,
   type ZaloTemplateView as Template,
 } from "./ZaloTemplatesTab";
+import ZaloGmfWorkspace, { type ZaloGmfView } from "./ZaloGmfWorkspace";
 import styles from "./ZaloOAClient.module.css";
 
 type Category = "consultation" | "zbs_transaction" | "zbs_after_sale";
-type Tab = "overview" | "inbox" | "customers" | "ai" | "templates" | "history" | "automation" | "settings";
+type Tab = "overview" | "inbox" | "customers" | "gmf" | "gmf-content" | "gmf-members" | "gmf-links" | "gmf-reports" | "ai" | "templates" | "history" | "automation" | "settings";
 type HistorySyncStatus = "never" | "running" | "completed" | "partial" | "failed";
 
 interface HistorySyncSummary {
@@ -51,6 +52,8 @@ interface PublicConfig {
   businessHoursStart: string;
   businessHoursEnd: string;
   zbsEnabled: boolean;
+  followWelcomeEnabled: boolean;
+  followWelcomeMessage: string;
   appSecretConfigured: boolean;
   oaSecretKeyConfigured: boolean;
   accessTokenConfigured: boolean;
@@ -86,7 +89,7 @@ interface MessageRecord {
   category: Category;
   content: string;
   status: "pending" | "sent" | "delivered" | "read" | "failed";
-  source: "manual" | "ai" | "webhook" | "sync";
+  source: "manual" | "ai" | "automation" | "webhook" | "sync";
   templateId: string;
   zaloMessageId: string;
   aiConfidence: number | null;
@@ -135,7 +138,9 @@ const EMPTY_CONFIG: PublicConfig = {
   oaId: "", appId: "", isActive: false, aiEnabled: true, aiAutoSend: false,
   requireApproval: true, aiModel: "gpt-5.6-terra", aiConfidenceThreshold: 0.9,
   maxAutoMessagesPerDay: 30, businessHoursStart: "08:00", businessHoursEnd: "20:00",
-  zbsEnabled: false, appSecretConfigured: false, accessTokenConfigured: false,
+  zbsEnabled: false, followWelcomeEnabled: false,
+  followWelcomeMessage: "Chào {{name}}, cảm ơn Anh/Chị đã quan tâm Zalo OA SmartFurni. Anh/Chị đang quan tâm sofa giường, giường thông minh hay cần tư vấn theo không gian?",
+  appSecretConfigured: false, accessTokenConfigured: false,
   oaSecretKeyConfigured: false, refreshTokenConfigured: false, webhookUrl: "",
   webhookLastReceivedAt: null, webhookLastEvent: "", webhookLastStatus: "", webhookLastError: "",
   historySync: {
@@ -159,6 +164,11 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Activity }> = [
   { id: "overview", label: "Tổng quan", icon: Activity },
   { id: "inbox", label: "Hội thoại OA", icon: Inbox },
   { id: "customers", label: "Khách hàng", icon: Users },
+  { id: "gmf", label: "Nhóm GMF", icon: MessageCircle },
+  { id: "gmf-content", label: "Nội dung & lịch", icon: Send },
+  { id: "gmf-members", label: "Thành viên", icon: Users },
+  { id: "gmf-links", label: "Link & QR", icon: QrCode },
+  { id: "gmf-reports", label: "Báo cáo GMF", icon: Activity },
   { id: "ai", label: "Chờ duyệt AI", icon: Bot },
   { id: "templates", label: "Mẫu tin & ZBS", icon: FileText },
   { id: "history", label: "Lịch sử gửi", icon: History },
@@ -215,6 +225,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Partial<Template> | null>(null);
   const [campaignRequest, setCampaignRequest] = useState(0);
+  const [gmfRefresh, setGmfRefresh] = useState(0);
   const visibleTabs = useMemo(() => isAdmin ? TABS : TABS.filter(item => !["templates", "automation", "settings"].includes(item.id)), [isAdmin]);
 
   const load = useCallback(async (showSpinner = true) => {
@@ -274,6 +285,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     : data?.conversations.find(item => item.userId === selectedUser) || null;
   const selectedMessages = threadMessages;
   const drafts = (data?.aiQueue || []).filter(item => item.status === "draft");
+  const gmfView = ({ gmf: "groups", "gmf-content": "content", "gmf-members": "members", "gmf-links": "links", "gmf-reports": "reports" } as Partial<Record<Tab, ZaloGmfView>>)[tab];
 
   async function saveConfig() {
     await run("save-config", () => postAction({ action: "save_config", config: { ...config, ...secrets } }), "Đã lưu cấu hình Zalo OA và AI Agent.");
@@ -357,16 +369,16 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     } finally { setBusy(""); }
   }
 
-  if (loading && !data) return <div className={`${styles.lightTheme} flex min-h-[70vh] items-center justify-center bg-[#f4f7fb] text-[#526173]`}><Loader2 className="mr-2 animate-spin text-[#9a7418]" /> Đang tải trung tâm Zalo OA...</div>;
+  if (loading && !data) return <div className={`${styles.lightTheme} flex h-full min-h-full w-full items-center justify-center bg-[#f4f7fb] text-[#526173]`}><Loader2 className="mr-2 animate-spin text-[#9a7418]" /> Đang tải trung tâm Zalo OA...</div>;
 
   return <div className={`${styles.lightTheme} min-h-full space-y-4 bg-[#f4f7fb] p-4 text-[#172033] md:p-7`}>
     <section className={`${panel} overflow-hidden`}>
       <div className="flex flex-col gap-5 border-b border-[rgba(255,200,100,0.10)] bg-[radial-gradient(circle_at_88%_0%,rgba(201,168,76,0.10),transparent_34%)] p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7 lg:py-6">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/10 shadow-[inset_0_0_24px_rgba(201,168,76,0.05)]"><MessageCircle className="text-[#d6b75b]" /></div>
-          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">{tab === "customers" ? "Khách hàng Zalo OA" : tab === "templates" ? "Mẫu tin Zalo OA" : "Trung tâm chăm sóc khách hàng Zalo OA"}</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">{tab === "customers" ? "Đồng bộ, phân nhóm và chăm sóc khách hàng theo tag từ Zalo OA." : tab === "templates" ? "Theo dõi vòng đời kiểm duyệt, nội dung xem trước và chi phí gửi của từng ZBS Template." : "Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi."}</p></div>
+          <div><div className="mb-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a84c]">Zalo Official Account</div><h1 className="text-2xl font-semibold tracking-[-0.02em] md:text-3xl">{tab === "customers" ? "Khách hàng Zalo OA" : tab === "templates" ? "Mẫu tin Zalo OA" : gmfView ? "Trung tâm vận hành nhóm GMF" : "Trung tâm chăm sóc khách hàng Zalo OA"}</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-[rgba(245,237,214,0.50)]">{tab === "customers" ? "Đồng bộ, phân nhóm và chăm sóc khách hàng theo tag từ Zalo OA." : tab === "templates" ? "Theo dõi vòng đời kiểm duyệt, nội dung xem trước và chi phí gửi của từng ZBS Template." : gmfView ? "Quản lý GMF100, sản xuất nội dung, duyệt lịch đăng và theo dõi biến động thành viên bằng OpenAPI chính thức." : "Hội thoại, mẫu ZBS và bản nháp AI được quản lý trên cùng dữ liệu CRM, có kiểm soát trước khi gửi."}</p></div>
         </div>
-        <div className="flex flex-wrap items-center gap-2"><StatusBadge active={Boolean(config.isActive && config.accessTokenConfigured)} /><button className={secondaryButton} disabled={Boolean(busy)} onClick={() => tab === "customers" ? void syncHistory() : void load()}>{busy === "sync-history" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} {tab === "customers" ? "Đồng bộ ngay" : "Làm mới"}</button><button className={goldButton} onClick={() => { if (tab === "customers") setCampaignRequest(value => value + 1); else setSendOpen(true); }}><Send size={15} /> {tab === "customers" ? "Tạo chiến dịch" : "Soạn tin"}</button></div>
+        <div className="flex flex-wrap items-center gap-2"><StatusBadge active={Boolean(config.isActive && config.accessTokenConfigured)} /><button className={secondaryButton} disabled={Boolean(busy)} onClick={() => { if (tab === "customers") void syncHistory(); else if (gmfView) setGmfRefresh(value => value + 1); else void load(); }}>{busy === "sync-history" ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />} {tab === "customers" ? "Đồng bộ ngay" : "Làm mới"}</button>{!gmfView && <button className={goldButton} onClick={() => { if (tab === "customers") setCampaignRequest(value => value + 1); else setSendOpen(true); }}><Send size={15} /> {tab === "customers" ? "Tạo chiến dịch" : "Soạn tin"}</button>}</div>
       </div>
       <nav className="flex gap-1 overflow-x-auto bg-[#110d05]/65 p-2.5">
         {visibleTabs.map(item => { const Icon = item.icon; const count = item.id === "ai" ? drafts.length : item.id === "inbox" ? data?.stats.unread : 0; return <button key={item.id} onClick={() => setTab(item.id)} className={`flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm transition ${tab === item.id ? "border-[rgba(255,200,100,0.22)] bg-[#c9a84c]/12 text-[#f0d77e] shadow-[inset_0_0_16px_rgba(201,168,76,0.04)]" : "border-transparent text-[rgba(245,237,214,0.46)] hover:border-[rgba(255,200,100,0.08)] hover:bg-white/[0.025] hover:text-[rgba(245,237,214,0.78)]"}`}><Icon size={15} />{item.label}{Boolean(count) && <span className="rounded-full bg-[#c9a84c] px-1.5 py-0.5 text-[10px] font-bold text-black">{count}</span>}</button>; })}
@@ -378,6 +390,7 @@ export default function ZaloOAClient({ isAdmin }: { isAdmin: boolean }) {
     {tab === "overview" && <Overview data={data!} config={config} go={setTab} isAdmin={isAdmin} />}
     {tab === "inbox" && <InboxTab conversations={data?.conversations || []} selectedUser={selectedUser} setSelectedUser={setSelectedUser} selected={selectedConversation} messages={selectedMessages} busy={busy} sendReply={sendReply} sendAttachment={sendAttachment} generate={() => selectedUser && void run(`ai-${selectedUser}`, () => postAction({ action: "generate_ai", userId: selectedUser }), "AI đã tạo bản nháp và đưa vào hàng chờ duyệt.")} />}
     {tab === "customers" && <ZaloCustomersTab customers={data?.conversations || []} tags={data?.customerTags || []} segments={data?.segments || []} campaigns={data?.campaigns || []} busy={busy} isAdmin={isAdmin} campaignRequest={campaignRequest} sync={() => void syncHistory()} runAction={(key, payload, success) => run(key, () => postAction(payload), success)} />}
+    {gmfView && <ZaloGmfWorkspace key={`${gmfView}-${gmfRefresh}`} view={gmfView} isAdmin={isAdmin} />}
     {tab === "ai" && <AiQueue items={data?.aiQueue || []} busy={busy} review={(id, decision) => void run(`${decision}-${id}`, () => postAction({ action: "review_ai", id, decision }), decision === "approve" ? "Đã duyệt và gửi tin tư vấn qua OA." : "Đã từ chối bản nháp AI.")} />}
     {tab === "templates" && <ZaloTemplatesTab templates={data?.templates || []} syncSummary={config.templateSync} configured={Boolean(config.isActive && config.accessTokenConfigured)} busy={busy === "sync-templates"} sync={() => void syncTemplates()} open={(item) => { setEditingTemplate(item || { category: "consultation", isActive: true, requiresApproval: true, variables: [], approvalStatus: "LOCAL", quality: "UNDEFINED", templateTag: "", reason: "", previewUrl: "", priceSdt: "", priceUid: "", buttons: [], source: "crm", zaloCreatedAt: null, syncedAt: null }); setTemplateOpen(true); }} />}
     {tab === "history" && <HistoryTab messages={data?.messages || []} />}
@@ -582,7 +595,53 @@ function AutomationTab({ config, setConfig, save, busy }: { config: PublicConfig
   const gates = [
     ["Đúng đối tượng", "Chỉ trả lời hội thoại có Zalo UID thật."], ["Trong 7 ngày", "Tin tư vấn bị chặn khi quá cửa sổ tương tác."], ["Đúng giờ", `${config.businessHoursStart}–${config.businessHoursEnd} · Asia/Ho_Chi_Minh`], ["Đủ tin cậy", `Tối thiểu ${Math.round(config.aiConfidenceThreshold * 100)}%`], ["Giới hạn ngày", `Tối đa ${config.maxAutoMessagesPerDay} tin AI/ngày`], ["Đúng loại tin", "Giao dịch/hậu mãi bắt buộc dùng ZBS."],
   ];
-  return <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]"><section className={`${panel} p-5 md:p-6`}><h2 className="text-lg font-semibold">Chế độ AI Agent</h2><p className="mt-1 text-sm text-[#8f99aa]">Mặc định an toàn là tạo nháp và chờ duyệt.</p><div className="mt-5 space-y-4"><SettingToggle label="AI phân tích tin nhắn mới" hint="Tạo câu trả lời dựa trên lịch sử hội thoại." value={config.aiEnabled} set={value => setConfig({ ...config, aiEnabled: value })} /><SettingToggle label="Yêu cầu admin duyệt" hint="Khuyến nghị bật khi mới vận hành." value={config.requireApproval} set={value => setConfig({ ...config, requireApproval: value })} /><SettingToggle label="Cho phép AI tự gửi" hint="Chỉ có hiệu lực khi tắt yêu cầu duyệt và vượt toàn bộ cổng an toàn." value={config.aiAutoSend} set={value => setConfig({ ...config, aiAutoSend: value })} /></div><div className="mt-5 grid grid-cols-2 gap-3"><Label text="Giờ bắt đầu"><input type="time" className={field} value={config.businessHoursStart} onChange={e => setConfig({ ...config, businessHoursStart: e.target.value })} /></Label><Label text="Giờ kết thúc"><input type="time" className={field} value={config.businessHoursEnd} onChange={e => setConfig({ ...config, businessHoursEnd: e.target.value })} /></Label><Label text="Ngưỡng tin cậy (%)"><input type="number" min={50} max={100} className={field} value={Math.round(config.aiConfidenceThreshold * 100)} onChange={e => setConfig({ ...config, aiConfidenceThreshold: Number(e.target.value) / 100 })} /></Label><Label text="Giới hạn AI/ngày"><input type="number" min={1} max={500} className={field} value={config.maxAutoMessagesPerDay} onChange={e => setConfig({ ...config, maxAutoMessagesPerDay: Number(e.target.value) })} /></Label></div><button onClick={save} disabled={busy} className={`${goldButton} mt-5 w-full`}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu tự động hóa</button></section><section className={`${panel} p-5 md:p-6`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10"><ShieldCheck className="text-emerald-300" /></div><div><h2 className="text-lg font-semibold">6 cổng trước khi tự gửi</h2><p className="text-sm text-[#8f99aa]">Sai một điều kiện là chuyển về hàng chờ admin.</p></div></div><div className="mt-5 grid gap-3 sm:grid-cols-2">{gates.map(([title, hint]) => <div key={title} className="rounded-xl border border-white/8 bg-black/10 p-4"><div className="flex items-center gap-2 font-medium"><CheckCircle2 size={15} className="text-emerald-300" />{title}</div><p className="mt-1.5 text-xs leading-5 text-[#8f99aa]">{hint}</p></div>)}</div><div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4 text-xs leading-5 text-amber-100/75">Bật tự gửi không mở rộng quyền API của OA. Zalo vẫn có thể từ chối nếu ứng dụng chưa được cấp quyền, mẫu ZBS chưa duyệt hoặc người dùng chưa đồng ý nhận tin.</div></section></div>;
+  return <div className="space-y-5">
+    <section className={`${panel} p-5 md:p-6`}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9a84c]/10"><MessageCircle className="text-[#d6b75b]" /></div>
+            <div><h2 className="text-lg font-semibold">Lời chào khi khách quan tâm OA</h2><p className="text-sm text-[#8f99aa]">Webhook <span className="font-mono">follow</span> tạo khách hàng, mở cửa sổ tương tác và chỉ gửi một lần cho mỗi sự kiện.</p></div>
+          </div>
+        </div>
+        <StatusBadge active={config.followWelcomeEnabled} on="Đang tự động gửi" off="Đang tạm tắt" />
+      </div>
+      <div className="mt-5 space-y-4">
+        <SettingToggle label="Tự động chào khách mới quan tâm" hint="Tin được gửi bằng quyền Tin tư vấn đã được Zalo duyệt; webhook gửi lại sẽ không làm khách nhận trùng." value={config.followWelcomeEnabled} set={value => setConfig({ ...config, followWelcomeEnabled: value })} />
+        <Label text="Nội dung lời chào">
+          <textarea rows={4} maxLength={2000} className={`${field} resize-y leading-6`} value={config.followWelcomeMessage} onChange={event => setConfig({ ...config, followWelcomeMessage: event.target.value })} placeholder="Nhập nội dung chào khách mới..." />
+        </Label>
+        <div className="flex flex-col gap-3 rounded-xl border border-sky-400/15 bg-sky-400/[0.05] p-4 text-xs leading-5 text-[#9eb2c9] sm:flex-row sm:items-center sm:justify-between">
+          <span>Dùng biến <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[#d8d0c1]">{"{{name}}"}</span> để chèn tên Zalo. Nếu OA Manager đang bật lời chào tự động, hãy tắt một trong hai nơi để khách không nhận hai tin.</span>
+          <span className="shrink-0">{config.followWelcomeMessage.length}/2000 ký tự</span>
+        </div>
+      </div>
+    </section>
+
+    <div className="grid gap-5 xl:grid-cols-[1fr_1.1fr]">
+      <section className={`${panel} p-5 md:p-6`}>
+        <h2 className="text-lg font-semibold">Chế độ AI Agent</h2>
+        <p className="mt-1 text-sm text-[#8f99aa]">Mặc định an toàn là tạo nháp và chờ duyệt.</p>
+        <div className="mt-5 space-y-4">
+          <SettingToggle label="AI phân tích tin nhắn mới" hint="Tạo câu trả lời dựa trên lịch sử hội thoại." value={config.aiEnabled} set={value => setConfig({ ...config, aiEnabled: value })} />
+          <SettingToggle label="Yêu cầu admin duyệt" hint="Khuyến nghị bật khi mới vận hành." value={config.requireApproval} set={value => setConfig({ ...config, requireApproval: value })} />
+          <SettingToggle label="Cho phép AI tự gửi" hint="Chỉ có hiệu lực khi tắt yêu cầu duyệt và vượt toàn bộ cổng an toàn." value={config.aiAutoSend} set={value => setConfig({ ...config, aiAutoSend: value })} />
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Label text="Giờ bắt đầu"><input type="time" className={field} value={config.businessHoursStart} onChange={event => setConfig({ ...config, businessHoursStart: event.target.value })} /></Label>
+          <Label text="Giờ kết thúc"><input type="time" className={field} value={config.businessHoursEnd} onChange={event => setConfig({ ...config, businessHoursEnd: event.target.value })} /></Label>
+          <Label text="Ngưỡng tin cậy (%)"><input type="number" min={50} max={100} className={field} value={Math.round(config.aiConfidenceThreshold * 100)} onChange={event => setConfig({ ...config, aiConfidenceThreshold: Number(event.target.value) / 100 })} /></Label>
+          <Label text="Giới hạn AI/ngày"><input type="number" min={1} max={500} className={field} value={config.maxAutoMessagesPerDay} onChange={event => setConfig({ ...config, maxAutoMessagesPerDay: Number(event.target.value) })} /></Label>
+        </div>
+      </section>
+      <section className={`${panel} p-5 md:p-6`}>
+        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10"><ShieldCheck className="text-emerald-300" /></div><div><h2 className="text-lg font-semibold">6 cổng trước khi tự gửi</h2><p className="text-sm text-[#8f99aa]">Sai một điều kiện là chuyển về hàng chờ admin.</p></div></div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">{gates.map(([title, hint]) => <div key={title} className="rounded-xl border border-white/8 bg-black/10 p-4"><div className="flex items-center gap-2 font-medium"><CheckCircle2 size={15} className="text-emerald-300" />{title}</div><p className="mt-1.5 text-xs leading-5 text-[#8f99aa]">{hint}</p></div>)}</div>
+        <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-4 text-xs leading-5 text-amber-100/75">Bật tự gửi không mở rộng quyền API của OA. Zalo vẫn có thể từ chối nếu ứng dụng chưa được cấp quyền, mẫu ZBS chưa duyệt hoặc người dùng chưa đồng ý nhận tin.</div>
+      </section>
+    </div>
+    <button onClick={save} disabled={busy || !config.followWelcomeMessage.trim()} className={`${goldButton} w-full`}>{busy ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Lưu tự động hóa</button>
+  </div>;
 }
 
 type ZaloSecrets = { appSecret: string; oaSecretKey: string; accessToken: string; refreshToken: string };

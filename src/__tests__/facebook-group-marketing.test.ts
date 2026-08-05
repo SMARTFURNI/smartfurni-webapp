@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeFacebookGroupRules, buildFacebookGroupContactCta, calculateFacebookGroupScore, contentSimilarityPercent,
   extractFacebookGroupSourceCode, generateFacebookGroupSourceCode, parseFacebookGroupPostUrl,
+  getNextFacebookGroupPostingSlot,
   keepGroundedFacebookGroupSuggestions, parseFacebookGroupAiSuggestion,
   parseFacebookGroupDiscoveryResponse, parseFacebookGroupUrl,
   validateFacebookGroupSchedule,
@@ -137,6 +138,17 @@ describe("Facebook Group Marketing business rules", () => {
     }, settings);
     expect(result.errors.join(" ")).toContain("nội quy");
     expect(result.errors.join(" ")).toContain("trùng lặp");
+  });
+
+  it("tự tìm khung giờ đăng tiếp theo theo giờ Việt Nam và bỏ qua Chủ nhật", () => {
+    expect(getNextFacebookGroupPostingSlot(
+      new Date("2026-08-02T00:10:00.000Z"),
+      settings,
+    ).toISOString()).toBe("2026-08-03T01:00:00.000Z");
+    expect(getNextFacebookGroupPostingSlot(
+      new Date("2026-08-04T04:07:00.000Z"),
+      settings,
+    ).toISOString()).toBe("2026-08-04T04:15:00.000Z");
   });
 
   it("tạo mã nguồn ổn định và hỗ trợ phiên bản sau Z", () => {

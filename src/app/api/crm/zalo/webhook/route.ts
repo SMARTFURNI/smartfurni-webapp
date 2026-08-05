@@ -5,6 +5,7 @@ import {
   recordZaloWebhookReceipt,
   verifyZaloWebhookSignature,
 } from "@/lib/zalo-oa-store";
+import { recordZaloGmfWebhookEvent } from "@/lib/zalo-gmf-store";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const gmfResult = await recordZaloGmfWebhookEvent(payload);
+    if (gmfResult.handled) {
+      await recordZaloWebhookReceipt({
+        eventName: webhookEventName(payload),
+        status: "processed",
+        error: "",
+      });
+      return okResponse({ ok: true, handled: true, channel: "gmf" });
+    }
     const result = await recordZaloWebhookEvent(payload);
     // Only inbound message events that actually create/update a CRM
     // conversation should become the connection health receipt. Zalo also

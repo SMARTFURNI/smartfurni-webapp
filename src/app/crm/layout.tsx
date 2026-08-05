@@ -8,6 +8,7 @@ import CrmPushNotifications from "@/components/crm/CrmPushNotifications";
 import ItySoftphone from "@/components/crm/ItySoftphone";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
 import CrmAdminThemeBoundary from "@/components/crm/CrmAdminThemeBoundary";
+import AiCommandLauncher from "@/components/ai-command/AiCommandLauncher";
 import type { Metadata, Viewport } from "next";
 import "./facebook-group-marketing.css";
 import "./admin-refresh.css";
@@ -253,6 +254,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         {/* Real-time notification khi có lead mới vào Data Pool */}
         <DataPoolNotification />
         <CrmPushNotifications staffName={staffName || (session.isAdmin ? "Quản trị viên" : "Nhân viên")} />
+        <AiCommandLauncher surface="crm" enabled={session.isAdmin || rolePermissions?.ai_command_view === true} />
         {/* ITY Softphone — floating widget gọi điện trực tiếp trên CRM */}
         <ItySoftphone />
       </div>

@@ -119,6 +119,44 @@ export function validateFacebookGroupSchedule(
   return { ok: errors.length === 0, errors, warnings };
 }
 
+const VIETNAM_OFFSET_MS = 7 * 60 * 60_000;
+
+export function getNextFacebookGroupPostingSlot(from: Date, settings: FacebookGroupSettings) {
+  const toMinutes = (part: string) => {
+    const [hour, minute] = part.split(":").map(Number);
+    return Number.isFinite(hour) && Number.isFinite(minute) ? hour * 60 + minute : null;
+  };
+  const windows = settings.defaultPostingHours.flatMap(value => {
+    const [start, end] = value.split("-");
+    const startMinutes = toMinutes(start || "");
+    const endMinutes = toMinutes(end || "");
+    return startMinutes === null || endMinutes === null ? [] : [{ startMinutes, endMinutes }];
+  });
+  const postingWindows = windows.length ? windows : [{ startMinutes: 8 * 60, endMinutes: 20 * 60 }];
+  const local = new Date(from.getTime() + VIETNAM_OFFSET_MS);
+  local.setUTCSeconds(0, 0);
+  if (local.getUTCMinutes() % 15) {
+    local.setUTCMinutes(local.getUTCMinutes() + (15 - local.getUTCMinutes() % 15));
+  }
+
+  for (let dayOffset = 0; dayOffset < 21; dayOffset += 1) {
+    if (settings.workingDays.includes(local.getUTCDay())) {
+      const currentMinutes = local.getUTCHours() * 60 + local.getUTCMinutes();
+      const targetWindow = postingWindows.find(window => currentMinutes <= window.endMinutes);
+      if (targetWindow) {
+        const targetMinutes = Math.max(currentMinutes, targetWindow.startMinutes);
+        if (targetMinutes <= targetWindow.endMinutes) {
+          local.setUTCHours(Math.floor(targetMinutes / 60), targetMinutes % 60, 0, 0);
+          return new Date(local.getTime() - VIETNAM_OFFSET_MS);
+        }
+      }
+    }
+    local.setUTCDate(local.getUTCDate() + 1);
+    local.setUTCHours(Math.floor(postingWindows[0].startMinutes / 60), postingWindows[0].startMinutes % 60, 0, 0);
+  }
+  return new Date(from.getTime() + 60 * 60_000);
+}
+
 export function contentSimilarityPercent(left: string, right: string) {
   const words = (value: string) => new Set(
     normalize(value).replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(word => word.length > 2),
