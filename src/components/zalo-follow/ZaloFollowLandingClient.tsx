@@ -42,7 +42,8 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   const started = useRef(false);
   const hiddenAt = useRef(0);
   const touchStartX = useRef<number | null>(null);
-  const interactive = Boolean(appId) && (campaign.widgetMode === "interactive" || mobileMode === true);
+  const widgetHostRef = useRef<HTMLDivElement | null>(null);
+  const interactive = Boolean(appId) && campaign.widgetMode === "interactive";
   const widgetCanRender = mobileMode !== null;
   const images = useMemo(() => {
     const values = campaign.galleryImages?.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [];
@@ -62,6 +63,11 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
     updateMobileMode();
     window.addEventListener("resize", updateMobileMode);
     return () => window.removeEventListener("resize", updateMobileMode);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.add("zalo-follow-landing-active");
+    return () => document.body.classList.remove("zalo-follow-landing-active");
   }, []);
 
   useEffect(() => {
@@ -115,6 +121,31 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   }, [campaign, interactive, patchVisit, sdkKey, visitId, widgetCanRender]);
 
   useEffect(() => {
+    if (!visitId || !widgetCanRender || widgetState === "success" || widgetState === "error") return;
+    const host = widgetHostRef.current;
+    if (!host) return;
+    const detectRenderedWidget = () => {
+      const rendered = Boolean(host.querySelector(".zalo-follow-only-button iframe, .zalo-consent-widget iframe"));
+      if (!rendered) return false;
+      setWidgetState(current => current === "success" ? current : "ready");
+      return true;
+    };
+    if (detectRenderedWidget()) return;
+    const observer = new MutationObserver(detectRenderedWidget);
+    observer.observe(host, { childList: true, subtree: true, attributes: true });
+    const timeout = window.setTimeout(() => {
+      if (!detectRenderedWidget()) {
+        setWidgetState(current => current === "success" ? current : "error");
+        void patchVisit("error", { error: "zalo_widget_not_rendered" });
+      }
+    }, 7000);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timeout);
+    };
+  }, [patchVisit, sdkKey, visitId, widgetCanRender, widgetState]);
+
+  useEffect(() => {
     const pendingKey = `sf_zalo_follow_pending:${campaign.id}`;
     const markLeavingForZalo = () => {
       if (widgetState !== "ready") return;
@@ -146,12 +177,6 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       window.removeEventListener("focus", detectReturnFromZalo);
     };
   }, [campaign.id, widgetState]);
-
-  useEffect(() => {
-    if (widgetState !== "preparing") return;
-    const timeout = window.setTimeout(() => setWidgetState("error"), 9000);
-    return () => window.clearTimeout(timeout);
-  }, [sdkKey, widgetState]);
 
   useEffect(() => {
     if (images.length < 2) return;
@@ -193,15 +218,20 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
     window.setTimeout(() => window.ZaloSocialSDK?.reload?.(), 50);
   };
 
-  return <main className="relative min-h-[100svh] overflow-hidden bg-[#edf5ff] px-3 py-4 text-[#10213a] sm:px-6 sm:py-9">
+  return <main className="relative min-h-[100svh] overflow-hidden bg-[#edf5ff] px-2 py-2 text-[#10213a] sm:px-6 sm:py-9">
+    <style jsx global>{`
+      body.zalo-follow-landing-active > .no-print.fixed {
+        display: none !important;
+      }
+    `}</style>
     <Script key={sdkKey} src="https://sp.zalo.me/plugins/sdk.js" strategy="afterInteractive" onLoad={() => {
-      setWidgetState("ready"); void patchVisit("sdk_loaded"); window.ZaloSocialSDK?.reload?.();
+      void patchVisit("sdk_loaded"); window.ZaloSocialSDK?.reload?.();
     }} onError={() => { setWidgetState("error"); void patchVisit("error", { error: "zalo_sdk_load_failed" }); }} />
     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_4%,rgba(0,104,255,0.18),transparent_30rem),radial-gradient(circle_at_92%_94%,rgba(227,182,64,0.18),transparent_29rem)]" />
     <div className="pointer-events-none absolute left-[-7rem] top-[18%] h-72 w-72 rounded-full border-[60px] border-white/40" />
     <div className="pointer-events-none absolute right-[-5rem] top-[-5rem] h-64 w-64 rounded-full border-[52px] border-[#0068ff]/5" />
 
-    <section className="relative mx-auto grid w-full max-w-[1180px] overflow-hidden rounded-[26px] border border-white/90 bg-white shadow-[0_30px_90px_rgba(20,55,95,0.18)] lg:grid-cols-[1.06fr_0.94fr]">
+    <section className="relative mx-auto grid w-full max-w-[1180px] overflow-hidden rounded-[24px] border border-white/90 bg-white shadow-[0_24px_70px_rgba(20,55,95,0.16)] lg:grid-cols-[1.06fr_0.94fr] lg:rounded-[26px] lg:shadow-[0_30px_90px_rgba(20,55,95,0.18)]">
       <div className="contents lg:block lg:min-w-0 lg:border-r lg:border-[#e5edf6] lg:bg-[#f8fbff]">
         <div className="relative order-1 aspect-square w-full min-w-0 overflow-hidden bg-[linear-gradient(145deg,#0755ba,#1e8cff)] lg:order-none"
           onTouchStart={event => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
@@ -219,11 +249,11 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
           </>}
         </div>
 
-        {images.length > 1 && <div className="order-4 flex min-w-0 snap-x gap-2 overflow-x-auto border-b border-[#e3ebf4] bg-white p-3 [scrollbar-width:none] lg:order-none [&::-webkit-scrollbar]:hidden">
+        {images.length > 1 && <div className="order-2 flex min-w-0 snap-x gap-2 overflow-x-auto border-b border-[#e3ebf4] bg-white p-3 [scrollbar-width:none] lg:order-none [&::-webkit-scrollbar]:hidden">
           {images.map((image, index) => <button key={`${image}-thumb-${index}`} type="button" onClick={() => setActiveImage(index)} className={`relative h-16 w-[88px] shrink-0 snap-start overflow-hidden rounded-xl border-2 transition ${index === activeImage ? "border-[#0877ff] shadow-[0_5px_14px_rgba(0,104,255,0.22)]" : "border-transparent opacity-70 hover:opacity-100"}`}><img src={image} alt={`Chọn ảnh ${index + 1}`} className="h-full w-full object-cover" /></button>)}
         </div>}
 
-        <div className="order-5 min-w-0 bg-[#f8fbff] p-5 sm:p-7 lg:order-none lg:p-9">
+        <div className="order-3 min-w-0 border-b border-[#e6edf5] bg-white p-5 sm:p-7 lg:order-none lg:bg-[#f8fbff] lg:p-9">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff2bb] px-3 py-1.5 text-xs font-bold text-[#7a5700]"><Star size={14} fill="currentColor" /> Tư vấn chính hãng</div>
           <h1 className="mt-4 break-words text-[30px] font-black leading-[1.12] tracking-[-0.035em] text-[#10213a] sm:text-[39px] lg:text-[43px]">{campaign.headline}</h1>
           <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5f728a] sm:text-base">{campaign.description}</p>
@@ -231,17 +261,17 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       </div>
 
       <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:justify-center lg:p-10">
-        <div className="order-2 mx-5 mt-5 flex min-w-0 items-center gap-3 sm:mx-8 sm:mt-8 lg:order-none lg:mx-0 lg:mt-0">
+        <div className="hidden min-w-0 items-center gap-3 lg:order-none lg:mx-0 lg:mt-0 lg:flex">
           <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(145deg,#1684ff,#0059dc)] p-3 text-white shadow-[0_10px_24px_rgba(0,104,255,0.28)]"><MessageCircle size={27} /></div>
           <div><div className="text-xl font-black tracking-[-0.02em]">SmartFurni</div><div className="flex items-center gap-1 text-xs font-medium text-[#63758c]"><BadgeCheck size={14} className="text-[#087cff]" /> Zalo Official Account</div></div>
         </div>
 
-        <div className="order-6 mx-5 mt-5 rounded-2xl border border-[#dfe8f4] bg-[#f8fbff] p-4 sm:mx-8 lg:order-none lg:mx-0 lg:mt-6">
+        <div className="order-4 mx-4 mt-4 rounded-2xl border border-[#d9e7f7] bg-[#f6faff] p-4 sm:mx-8 lg:order-none lg:mx-0 lg:mt-6">
           <div className="text-sm font-bold text-[#21344f]">Anh/Chị sẽ nhận được</div>
           <ul className="mt-3 space-y-2.5">{benefits.map(item => <li key={item} className="flex items-start gap-2.5 text-sm leading-5 text-[#52667e]"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#dcf8ea] text-[#078455]"><Check size={13} strokeWidth={3} /></span>{item}</li>)}</ul>
         </div>
 
-        <div className="order-3 mx-4 mt-5 min-w-0 overflow-hidden rounded-[26px] border-2 border-[#cfe4ff] bg-white shadow-[0_20px_48px_rgba(0,104,255,0.16)] sm:mx-8 lg:order-none lg:mx-0 lg:mt-6">
+        <div className="order-5 mx-3 mt-4 min-w-0 overflow-hidden rounded-[22px] border-2 border-[#cfe4ff] bg-white shadow-[0_16px_38px_rgba(0,104,255,0.14)] sm:mx-8 lg:order-none lg:mx-0 lg:mt-6 lg:rounded-[26px] lg:shadow-[0_20px_48px_rgba(0,104,255,0.16)]">
           {showChat ? <div className="p-5 text-center">
             <CheckCircle2 size={46} className="mx-auto text-[#08a36c]" />
             <h2 className="mt-3 text-lg font-black">{widgetState === "success" ? "Đã ghi nhận Quan tâm" : "Tiếp tục trên Zalo"}</h2>
@@ -252,20 +282,25 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
               <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#0874ed] shadow-[0_10px_24px_rgba(0,31,84,0.22)]"><span className="absolute inset-0 animate-ping rounded-2xl bg-white/20" /><Sparkles size={22} className="relative" /></div>
               <div className="min-w-0"><div className="text-[17px] font-black leading-6 sm:text-lg">Quan tâm Zalo để nhận tư vấn</div><p className="mt-1 text-xs leading-5 text-white/80 sm:text-sm">Chạm nút chính thức của Zalo bên dưới · Chỉ mất vài giây</p></div>
             </div>
-            <div className="relative mt-4 flex min-h-[104px] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-[20px] border border-white/90 bg-white px-3 py-4 shadow-[0_14px_32px_rgba(0,35,95,0.28)] sm:min-h-[112px]">
-              <div className="pointer-events-none mb-3 inline-flex items-center gap-2 rounded-full bg-[#eaf4ff] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#075fc7]"><ArrowRight size={14} /> Bấm nút Quan tâm</div>
-              {widgetState === "preparing" && <div className="absolute inset-0 z-30 flex items-center justify-center bg-white text-sm font-bold text-[#1766bd]"><Loader2 size={19} className="mr-2 animate-spin" /> Đang tải nút Quan tâm...</div>}
-              <div className={`relative z-20 flex w-full min-w-0 origin-center justify-center [&_iframe]:max-w-full ${interactive ? "scale-100 lg:scale-[1.12]" : "scale-[1.18] sm:scale-[1.3] lg:scale-[1.42]"}`}>
-                {widgetCanRender ? interactive ? <div ref={node => { if (node) { node.setAttribute("user_external_id", visitId); node.setAttribute("status", "show"); } }} className="zalo-interaction-widget" data-oaid={campaign.oaId} data-appid={appId} data-callback="smartFurniZaloFollowCallback" data-reason-msg="SmartFurni xin phép kết nối để gửi tư vấn và báo giá theo yêu cầu của Anh/Chị." /> : <div className="zalo-follow-only-button" data-oaid={campaign.oaId} data-callback="smartFurniZaloFollowCallback" /> : null}
-              </div>
+            <div ref={widgetHostRef} className="relative mt-4 flex min-h-[76px] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/90 bg-white px-3 py-3 shadow-[0_14px_32px_rgba(0,35,95,0.28)] sm:min-h-[88px] sm:rounded-[20px]">
+              {widgetState === "error" ? <div className="flex w-full flex-col items-center px-1 py-1 text-center">
+                <div className="text-sm font-black text-[#17385f]">Zalo chưa tải được nút Quan tâm</div>
+                <p className="mt-1 text-xs leading-5 text-[#6a7e95]">Mở Zalo OA SmartFurni để Quan tâm và nhận tư vấn.</p>
+                <button type="button" onClick={() => { void patchVisit("fallback_open"); openChat(); }} className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#1181ff,#005ae0)] px-4 text-sm font-black text-white shadow-[0_10px_24px_rgba(0,104,255,0.25)]"><ExternalLink size={17} /> Mở Zalo để Quan tâm</button>
+                <button type="button" onClick={retry} className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-[#1766bd]"><RefreshCw size={13} /> Tải lại nút</button>
+              </div> : <>
+                {widgetState === "preparing" && <div className="absolute inset-0 z-30 flex items-center justify-center bg-white text-sm font-bold text-[#1766bd]"><Loader2 size={19} className="mr-2 animate-spin" /> Đang tải nút Quan tâm...</div>}
+                <div className={`relative z-20 flex w-full min-w-0 origin-center justify-center [&_iframe]:max-w-full ${interactive ? "scale-100 lg:scale-[1.12]" : "scale-100 sm:scale-[1.18] lg:scale-[1.42]"}`}>
+                  {widgetCanRender ? interactive ? <div ref={node => { if (node) { node.setAttribute("user_external_id", visitId); node.setAttribute("status", "show"); } }} className="zalo-consent-widget zalo-interaction-widget" data-oaid={campaign.oaId} data-appid={appId} data-callback="smartFurniZaloFollowCallback" data-reason-msg="SmartFurni xin phép kết nối để gửi tư vấn và báo giá theo yêu cầu của Anh/Chị." /> : <div className="zalo-follow-only-button" data-oaid={campaign.oaId} data-callback="smartFurniZaloFollowCallback" /> : null}
+                </div>
+              </>}
             </div>
             <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] font-semibold text-white/90"><ShieldCheck size={14} className="shrink-0 text-[#a9ffd9]" /> Không cần điền biểu mẫu · Không mất phí · Tư vấn trên Zalo</div>
-            {widgetState === "error" && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs leading-5 text-amber-800"><div className="font-bold">Nút Zalo chưa tải được</div><div>Hãy thử tải lại hoặc mở trực tiếp Zalo OA SmartFurni.</div><div className="mt-2 flex gap-2"><button type="button" onClick={retry} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-2 font-bold"><RefreshCw size={14} /> Thử lại</button><button type="button" onClick={() => { void patchVisit("fallback_open"); openChat(); }} className="inline-flex items-center gap-1.5 rounded-lg bg-[#0068ff] px-3 py-2 font-bold text-white"><ExternalLink size={14} /> Mở Zalo</button></div></div>}
           </div>}
         </div>
 
-        <div className="order-7 mx-5 mt-5 flex min-w-0 items-start gap-2.5 text-xs leading-5 text-[#77899e] sm:mx-8 lg:order-none lg:mx-0"><ShieldCheck size={17} className="mt-0.5 shrink-0 text-[#15976c]" /><span>Nút Quan tâm được tải từ SDK chính thức của Zalo. SmartFurni chỉ dùng dữ liệu để tư vấn, đo hiệu quả chiến dịch và chăm sóc khách hàng.</span></div>
-        <div className="order-8 mx-5 mb-5 mt-4 flex min-w-0 flex-wrap items-center justify-center gap-4 border-t border-[#edf1f5] pt-4 text-[11px] font-medium text-[#91a0b2] sm:mx-8 sm:mb-8 lg:order-none lg:mx-0 lg:mb-0"><span className="inline-flex items-center gap-1"><Tag size={13} /> {campaign.name}</span><span className="inline-flex items-center gap-1"><Images size={13} /> {images.length || 0} ảnh</span>{identified && <span className="inline-flex items-center gap-1 text-[#08865e]"><CheckCircle2 size={13} /> Đã xác minh nguồn</span>}</div>
+        <div className="order-6 mx-5 mt-5 flex min-w-0 items-start gap-2.5 text-xs leading-5 text-[#77899e] sm:mx-8 lg:order-none lg:mx-0"><ShieldCheck size={17} className="mt-0.5 shrink-0 text-[#15976c]" /><span>Nút Quan tâm được tải từ SDK chính thức của Zalo. SmartFurni chỉ dùng dữ liệu để tư vấn, đo hiệu quả chiến dịch và chăm sóc khách hàng.</span></div>
+        <div className="order-7 mx-5 mb-5 mt-4 flex min-w-0 flex-wrap items-center justify-center gap-4 border-t border-[#edf1f5] pt-4 text-[11px] font-medium text-[#91a0b2] sm:mx-8 sm:mb-8 lg:order-none lg:mx-0 lg:mb-0"><span className="inline-flex items-center gap-1"><Tag size={13} /> {campaign.name}</span><span className="inline-flex items-center gap-1"><Images size={13} /> {images.length || 0} ảnh</span>{identified && <span className="inline-flex items-center gap-1 text-[#08865e]"><CheckCircle2 size={13} /> Đã xác minh nguồn</span>}</div>
       </div>
     </section>
   </main>;
