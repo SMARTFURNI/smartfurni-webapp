@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-const HIDDEN_ROUTE_PREFIXES = ["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed", "/zalo-group/"];
+const HIDDEN_ROUTE_PREFIXES = ["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed", "/zalo-group/", "/zalo/quan-tam/"];
 
 export default function ScrollToTop() {
   const pathname = usePathname();

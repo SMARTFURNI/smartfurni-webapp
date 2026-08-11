@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 const CONTACT_PHONE_HREF = "tel:0918326552";
 const CONTACT_ZALO_HREF = "https://zalo.me/0918326552";
-const HIDDEN_ROUTE_PREFIXES = ["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed", "/zalo-group/"];
+const HIDDEN_ROUTE_PREFIXES = ["/lp/", "/admin", "/crm", "/dashboard", "/smart-bed", "/zalo-group/", "/zalo/quan-tam/"];
 
 function ZaloLogo() {
   return (

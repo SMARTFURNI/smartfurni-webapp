@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "crypto";
 import OpenAI from "openai";
 import { query } from "@/lib/db";
+import { attributeZaloFollowFromWebhook } from "@/lib/zalo-follow-campaign-store";
 
 export type ZaloMessageCategory = "consultation" | "zbs_transaction" | "zbs_after_sale";
 export type ZaloMessageStatus = "pending" | "sent" | "delivered" | "read" | "failed";
@@ -1851,8 +1852,12 @@ async function recordZaloFollowEvent(
     [userId, displayName, avatar, eventAt],
   );
 
+  const attribution = await attributeZaloFollowFromWebhook(userId, eventAt).catch(error => {
+    console.error("[Zalo OA follow attribution]", error);
+    return null;
+  });
   const config = await getZaloOAConfig();
-  const welcome = renderFollowWelcome(config.followWelcomeMessage, displayName);
+  const welcome = renderFollowWelcome(attribution?.welcomeMessage || config.followWelcomeMessage, displayName);
   if (!config.followWelcomeEnabled || !welcome) {
     await query(
       `UPDATE crm_zalo_follow_events SET status='skipped',updated_at=NOW() WHERE event_key=$1`,
@@ -1874,7 +1879,9 @@ export async function recordZaloWebhookEvent(payload: Record<string, unknown>): 
   const nested = payload.data && typeof payload.data === "object" ? payload.data as Record<string, unknown> : null;
   const event = nested && nested.event_name ? nested : payload;
   const eventName = String(event.event_name || payload.event_name || "").trim();
-  if (eventName === "follow") return recordZaloFollowEvent(payload, event);
+  if (new Set(["follow", "user_follow_official_account", "user_followed_oa"]).has(eventName)) {
+    return recordZaloFollowEvent(payload, event);
+  }
   const sender = asRecord(event.sender);
   const recipient = asRecord(event.recipient);
   const message = Object.keys(asRecord(event.message)).length ? asRecord(event.message) : undefined;
