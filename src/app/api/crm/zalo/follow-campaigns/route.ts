@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       description: String(campaign.description || ""),
       benefits: Array.isArray(campaign.benefits) ? campaign.benefits.map(String) : [],
       heroImage: String(campaign.heroImage || ""),
+      galleryImages: Array.isArray(campaign.galleryImages) ? campaign.galleryImages.map(String) : [],
       chatUrl: String(campaign.chatUrl || ""),
       welcomeMessage: String(campaign.welcomeMessage || ""),
       widgetMode: String(campaign.widgetMode) === "interactive" ? "interactive" : "follow",

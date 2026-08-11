@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, randomUUID } from "crypto";
 import { query, queryOne } from "@/lib/db";
 import { absoluteUrl } from "@/lib/site-url";
+import { buildZaloOaChatUrl, normalizeZaloOaId } from "@/lib/zalo-follow-links";
 
 export type ZaloFollowCampaignStatus = "active" | "paused";
 export type ZaloFollowWidgetMode = "follow" | "interactive";
@@ -17,6 +18,7 @@ export interface ZaloFollowCampaign {
   description: string;
   benefits: string[];
   heroImage: string;
+  galleryImages: string[];
   chatUrl: string;
   welcomeMessage: string;
   widgetMode: ZaloFollowWidgetMode;
@@ -67,6 +69,7 @@ export async function initZaloFollowCampaignSchema(): Promise<void> {
         description TEXT NOT NULL DEFAULT '',
         benefits JSONB NOT NULL DEFAULT '[]',
         hero_image TEXT NOT NULL DEFAULT '',
+        gallery_images JSONB NOT NULL DEFAULT '[]',
         chat_url TEXT NOT NULL DEFAULT '',
         welcome_message TEXT NOT NULL DEFAULT '',
         widget_mode TEXT NOT NULL DEFAULT 'follow',
@@ -109,6 +112,8 @@ export async function initZaloFollowCampaignSchema(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_zalo_follow_visit_visitor_time ON crm_zalo_follow_visits(visitor_key,created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_zalo_follow_visit_user_time ON crm_zalo_follow_visits(oa_user_id,created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_zalo_follow_attr_campaign_time ON crm_zalo_follow_attributions(campaign_id,verified_at DESC);
+
+      ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS gallery_images JSONB NOT NULL DEFAULT '[]';
 
       INSERT INTO crm_zalo_follow_campaigns
         (id,slug,name,product_key,headline,description,benefits,hero_image,welcome_message,widget_mode,status,created_by)
@@ -170,13 +175,18 @@ function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).map(item => item.trim()).filter(Boolean).slice(0, 6) : [];
 }
 
+function imageArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String).map(item => item.trim()).filter(Boolean).slice(0, 12) : [];
+}
+
 function campaignFromRow(row: Record<string, unknown>): ZaloFollowCampaign {
   const visits = Number(row.visits || 0);
   const followCallbacks = Number(row.follow_callbacks || 0);
   return {
     id: String(row.id), slug: String(row.slug), name: String(row.name), productKey: String(row.product_key || ""),
     headline: String(row.headline), description: String(row.description || ""), benefits: stringArray(row.benefits),
-    heroImage: String(row.hero_image || ""), chatUrl: String(row.chat_url || ""), welcomeMessage: String(row.welcome_message || ""),
+    heroImage: String(row.hero_image || ""), galleryImages: imageArray(row.gallery_images),
+    chatUrl: String(row.chat_url || "").trim(), welcomeMessage: String(row.welcome_message || ""),
     widgetMode: String(row.widget_mode) === "interactive" ? "interactive" : "follow",
     status: String(row.status) === "paused" ? "paused" : "active", trackingUrl: trackingUrl(String(row.slug)),
     createdAt: row.created_at ? new Date(String(row.created_at)).toISOString() : new Date().toISOString(),
@@ -234,20 +244,23 @@ export async function getZaloFollowReport(input: { from?: string; to?: string } 
 
 export async function saveZaloFollowCampaign(input: {
   id?: string; name: string; slug?: string; productKey?: string; headline: string; description?: string; benefits?: string[];
-  heroImage?: string; chatUrl?: string; welcomeMessage?: string; widgetMode?: ZaloFollowWidgetMode;
+  heroImage?: string; galleryImages?: string[]; chatUrl?: string; welcomeMessage?: string; widgetMode?: ZaloFollowWidgetMode;
 }, actor: string): Promise<{ id: string; slug: string; trackingUrl: string }> {
   await initZaloFollowCampaignSchema();
   const name = String(input.name || "").trim().slice(0, 120);
   const headline = String(input.headline || "").trim().slice(0, 180);
   if (name.length < 3 || headline.length < 8) throw new Error("Tên chiến dịch và tiêu đề popup chưa hợp lệ.");
+  const galleryImages = imageArray(input.galleryImages).map(item => item.slice(0, 1000));
+  const heroImage = String(galleryImages[0] || input.heroImage || "").trim().slice(0, 1000);
+  if (heroImage && !galleryImages.includes(heroImage)) galleryImages.unshift(heroImage);
   const values = [
     name, String(input.productKey || "").trim().slice(0, 80), headline, String(input.description || "").trim().slice(0, 600),
-    JSON.stringify(stringArray(input.benefits)), String(input.heroImage || "").trim().slice(0, 1000), String(input.chatUrl || "").trim().slice(0, 1000),
+    JSON.stringify(stringArray(input.benefits)), heroImage, JSON.stringify(galleryImages), String(input.chatUrl || "").trim().slice(0, 1000),
     String(input.welcomeMessage || "").trim().slice(0, 2000), input.widgetMode === "interactive" ? "interactive" : "follow",
   ];
   if (input.id) {
     const updated = await queryOne<{ id: string; slug: string }>(
-      `UPDATE crm_zalo_follow_campaigns SET name=$2,product_key=$3,headline=$4,description=$5,benefits=$6::jsonb,hero_image=$7,chat_url=$8,welcome_message=$9,widget_mode=$10,updated_at=NOW()
+      `UPDATE crm_zalo_follow_campaigns SET name=$2,product_key=$3,headline=$4,description=$5,benefits=$6::jsonb,hero_image=$7,gallery_images=$8::jsonb,chat_url=$9,welcome_message=$10,widget_mode=$11,updated_at=NOW()
        WHERE id=$1 RETURNING id,slug`, [input.id, ...values],
     );
     if (!updated) throw new Error("Không tìm thấy chiến dịch cần cập nhật.");
@@ -258,8 +271,8 @@ export async function saveZaloFollowCampaign(input: {
   const slug = await queryOne<{ slug: string }>(`SELECT slug FROM crm_zalo_follow_campaigns WHERE slug=$1`, [requestedSlug])
     ? `${requestedSlug}-${randomUUID().replace(/-/g, "").slice(0, 6)}` : requestedSlug;
   await query(
-    `INSERT INTO crm_zalo_follow_campaigns (id,slug,name,product_key,headline,description,benefits,hero_image,chat_url,welcome_message,widget_mode,status,created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,'active',$12)`,
+    `INSERT INTO crm_zalo_follow_campaigns (id,slug,name,product_key,headline,description,benefits,hero_image,gallery_images,chat_url,welcome_message,widget_mode,status,created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb,$10,$11,$12,'active',$13)`,
     [id, slug, ...values, actor],
   );
   return { id, slug, trackingUrl: trackingUrl(slug) };
@@ -282,8 +295,9 @@ export async function getPublicZaloFollowCampaign(slug: string): Promise<PublicZ
   );
   if (!row) return null;
   const campaign = campaignFromRow(row);
-  const oaId = String(row.oa_id || "");
-  return { ...campaign, oaId, chatUrl: campaign.chatUrl || (oaId ? `https://zalo.me/${encodeURIComponent(oaId)}` : "") };
+  const oaId = normalizeZaloOaId(row.oa_id);
+  const galleryImages = campaign.galleryImages.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [];
+  return { ...campaign, galleryImages, oaId, chatUrl: buildZaloOaChatUrl(campaign.chatUrl, oaId) };
 }
 
 export async function recordZaloFollowVisit(slug: string, input: {

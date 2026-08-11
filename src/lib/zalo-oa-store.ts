@@ -247,6 +247,7 @@ export async function initZaloOASchema(): Promise<void> {
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_finished_at TIMESTAMPTZ;
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_summary JSONB NOT NULL DEFAULT '{}';
     ALTER TABLE crm_zalo_config ADD COLUMN IF NOT EXISTS template_sync_error TEXT NOT NULL DEFAULT '';
+    UPDATE crm_zalo_config SET oa_id=BTRIM(oa_id) WHERE oa_id <> BTRIM(oa_id);
 
     CREATE TABLE IF NOT EXISTS crm_zalo_templates (
       id TEXT PRIMARY KEY,
@@ -428,7 +429,7 @@ export async function initZaloOASchema(): Promise<void> {
 
 function mapConfig(row?: Record<string, unknown>): ZaloOAConfig {
   return {
-    oaId: String(row?.oa_id || ""),
+    oaId: String(row?.oa_id || "").trim(),
     appId: String(row?.app_id || ""),
     appSecret: String(row?.app_secret || ""),
     oaSecretKey: String(row?.oa_secret_key || ""),
@@ -469,7 +470,7 @@ export async function saveZaloOAConfig(input: Partial<ZaloOAConfig>): Promise<vo
       follow_welcome_enabled=$17, follow_welcome_message=$18, updated_at=NOW()
      WHERE id='default'`,
     [
-      input.oaId ?? current.oaId,
+      String(input.oaId ?? current.oaId).trim(),
       input.appId ?? current.appId,
       keep(input.appSecret, current.appSecret),
       keep(input.oaSecretKey, current.oaSecretKey),

@@ -3,9 +3,9 @@
 import {
   BarChart3, CalendarDays, CheckCircle2, Copy, ExternalLink, Eye, Loader2,
   Megaphone, MessageCircle, MousePointerClick, PauseCircle, Pencil, PlayCircle,
-  Plus, RefreshCw, ShieldCheck,
+  ImagePlus, Plus, RefreshCw, ShieldCheck, Star, Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Metrics {
   visits: number; uniqueVisitors: number; sdkLoaded: number; followCallbacks: number;
@@ -14,7 +14,7 @@ interface Metrics {
 
 interface Campaign {
   id: string; slug: string; name: string; productKey: string; headline: string; description: string;
-  benefits: string[]; heroImage: string; chatUrl: string; welcomeMessage: string;
+  benefits: string[]; heroImage: string; galleryImages: string[]; chatUrl: string; welcomeMessage: string;
   widgetMode: "follow" | "interactive"; status: "active" | "paused"; trackingUrl: string; createdAt: string; metrics: Metrics;
 }
 
@@ -22,12 +22,13 @@ interface Report { range: { from: string; to: string }; summary: Metrics; campai
 
 interface FormValue {
   id?: string; name: string; slug: string; productKey: string; headline: string; description: string;
-  benefits: string; heroImage: string; chatUrl: string; welcomeMessage: string; widgetMode: "follow" | "interactive";
+  benefits: string; heroImage: string; galleryImages: string[]; chatUrl: string; welcomeMessage: string; widgetMode: "follow" | "interactive";
 }
 
 const EMPTY: FormValue = {
   name: "", slug: "", productKey: "", headline: "", description: "", benefits: "",
   heroImage: "/uploads/migrated/THAO_TA-CC-81C_SMF12_DA_PU_a880rv-2f2905c3e0.webp",
+  galleryImages: ["/uploads/migrated/THAO_TA-CC-81C_SMF12_DA_PU_a880rv-2f2905c3e0.webp"],
   chatUrl: "", welcomeMessage: "", widgetMode: "follow",
 };
 
@@ -46,6 +47,7 @@ export default function ZaloFollowCampaigns({ isAdmin, refreshKey = 0 }: { isAdm
   const [busy, setBusy] = useState("");
   const [form, setForm] = useState<FormValue | null>(null);
   const [notice, setNotice] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setNotice("");
@@ -68,13 +70,52 @@ export default function ZaloFollowCampaigns({ isAdmin, refreshKey = 0 }: { isAdm
     try {
       const response = await fetch("/api/crm/zalo/follow-campaigns", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", campaign: { ...form, benefits: form.benefits.split("\n").map(item => item.trim()).filter(Boolean) } }),
+        body: JSON.stringify({ action: "save", campaign: { ...form, heroImage: form.galleryImages[0] || form.heroImage, galleryImages: form.galleryImages, benefits: form.benefits.split("\n").map(item => item.trim()).filter(Boolean) } }),
       });
       const result = await response.json() as { ok?: boolean; error?: string };
       if (!response.ok || result.ok === false) throw new Error(result.error || "Không lưu được chiến dịch.");
       setForm(null); await load();
     } catch (error) { setNotice(error instanceof Error ? error.message : "Không lưu được chiến dịch."); }
     finally { setBusy(""); }
+  }
+
+  async function uploadGalleryImages(files: FileList | null) {
+    if (!form || !files?.length) return;
+    const selected = Array.from(files).filter(file => file.type.startsWith("image/")).slice(0, Math.max(0, 12 - form.galleryImages.length));
+    if (!selected.length) return;
+    setBusy("upload-images"); setNotice("");
+    try {
+      const uploaded: string[] = [];
+      for (const file of selected) {
+        const payload = new FormData();
+        payload.append("file", file);
+        payload.append("folder", "landing-pages");
+        payload.append("subfolder", form.slug || form.id || "zalo-follow");
+        const response = await fetch("/api/admin/upload", { method: "POST", body: payload });
+        const result = await response.json() as { url?: string; error?: string };
+        if (!response.ok || !result.url) throw new Error(result.error || `Không tải được ảnh ${file.name}.`);
+        uploaded.push(result.url);
+      }
+      setForm(current => current ? { ...current, galleryImages: Array.from(new Set([...current.galleryImages, ...uploaded])).slice(0, 12) } : current);
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Không tải được ảnh landing."); }
+    finally { setBusy(""); if (imageInputRef.current) imageInputRef.current.value = ""; }
+  }
+
+  function makePrimaryImage(index: number) {
+    setForm(current => {
+      if (!current) return current;
+      const image = current.galleryImages[index];
+      if (!image) return current;
+      return { ...current, heroImage: image, galleryImages: [image, ...current.galleryImages.filter((_, itemIndex) => itemIndex !== index)] };
+    });
+  }
+
+  function removeGalleryImage(index: number) {
+    setForm(current => {
+      if (!current) return current;
+      const galleryImages = current.galleryImages.filter((_, itemIndex) => itemIndex !== index);
+      return { ...current, galleryImages, heroImage: galleryImages[0] || "" };
+    });
   }
 
   async function setStatus(campaign: Campaign) {
@@ -132,7 +173,7 @@ export default function ZaloFollowCampaigns({ isAdmin, refreshKey = 0 }: { isAdm
             <div className="flex flex-wrap gap-2 p-3">
               <button type="button" onClick={() => { void navigator.clipboard.writeText(campaign.trackingUrl); setNotice("Đã sao chép link chiến dịch."); }} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d5e0eb] bg-white px-3 py-2 text-xs font-bold text-[#52657b]"><Copy size={14} /> Sao chép link</button>
               <a href={campaign.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#b9d5f6] bg-[#edf6ff] px-3 py-2 text-xs font-bold text-[#075fbf]"><ExternalLink size={14} /> Xem</a>
-              {isAdmin && <><button type="button" onClick={() => setForm({ id: campaign.id, name: campaign.name, slug: campaign.slug, productKey: campaign.productKey, headline: campaign.headline, description: campaign.description, benefits: campaign.benefits.join("\n"), heroImage: campaign.heroImage, chatUrl: campaign.chatUrl, welcomeMessage: campaign.welcomeMessage, widgetMode: campaign.widgetMode })} className="grid h-9 w-9 place-items-center rounded-lg border border-[#d5e0eb] bg-white text-[#596d83]"><Pencil size={14} /></button><button type="button" onClick={() => void setStatus(campaign)} disabled={busy === campaign.id} className="grid h-9 w-9 place-items-center rounded-lg border border-[#e5d7af] bg-[#fffbef] text-[#8b6815]">{busy === campaign.id ? <Loader2 size={14} className="animate-spin" /> : campaign.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}</button></>}
+              {isAdmin && <><button type="button" onClick={() => setForm({ id: campaign.id, name: campaign.name, slug: campaign.slug, productKey: campaign.productKey, headline: campaign.headline, description: campaign.description, benefits: campaign.benefits.join("\n"), heroImage: campaign.heroImage, galleryImages: campaign.galleryImages?.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [], chatUrl: campaign.chatUrl, welcomeMessage: campaign.welcomeMessage, widgetMode: campaign.widgetMode })} className="grid h-9 w-9 place-items-center rounded-lg border border-[#d5e0eb] bg-white text-[#596d83]"><Pencil size={14} /></button><button type="button" onClick={() => void setStatus(campaign)} disabled={busy === campaign.id} className="grid h-9 w-9 place-items-center rounded-lg border border-[#e5d7af] bg-[#fffbef] text-[#8b6815]">{busy === campaign.id ? <Loader2 size={14} className="animate-spin" /> : campaign.status === "active" ? <PauseCircle size={15} /> : <PlayCircle size={15} />}</button></>}
             </div>
           </article>)}
         </div>
@@ -144,7 +185,12 @@ export default function ZaloFollowCampaigns({ isAdmin, refreshKey = 0 }: { isAdm
       </section>
     </>}
 
-    {form && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#0b1930]/70 p-4 backdrop-blur-sm"><div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/70 bg-white shadow-[0_28px_80px_rgba(5,22,48,0.30)]"><div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#e5ebf2] bg-white/95 px-5 py-4 backdrop-blur"><div><h3 className="font-bold text-[#172033]">{form.id ? "Chỉnh sửa chiến dịch" : "Tạo chiến dịch Quan tâm"}</h3><p className="mt-0.5 text-xs text-[#7b899a]">Nội dung này hiển thị trên landing page quảng cáo.</p></div><button type="button" onClick={() => setForm(null)} className="rounded-lg border border-[#d8e1eb] px-3 py-2 text-xs font-bold text-[#63758a]">Đóng</button></div><div className="grid gap-4 p-5 sm:grid-cols-2"><FormField label="Tên chiến dịch *"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></FormField><FormField label="Slug URL (để trống sẽ tự tạo)"><input value={form.slug} disabled={Boolean(form.id)} onChange={e => setForm({ ...form, slug: e.target.value })} /></FormField><FormField label="Nhóm sản phẩm"><input value={form.productKey} onChange={e => setForm({ ...form, productKey: e.target.value })} placeholder="sofa_bed" /></FormField><FormField label="Chế độ widget"><select value={form.widgetMode} onChange={e => setForm({ ...form, widgetMode: e.target.value as FormValue["widgetMode"] })}><option value="follow">Nút Quan tâm cơ bản</option><option value="interactive">Widget tương tác có UID</option></select></FormField><div className="sm:col-span-2"><FormField label="Tiêu đề popup *"><input value={form.headline} onChange={e => setForm({ ...form, headline: e.target.value })} /></FormField></div><div className="sm:col-span-2"><FormField label="Mô tả"><textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></FormField></div><FormField label="Ảnh nền"><input value={form.heroImage} onChange={e => setForm({ ...form, heroImage: e.target.value })} /></FormField><FormField label="Link chat Zalo dự phòng"><input value={form.chatUrl} onChange={e => setForm({ ...form, chatUrl: e.target.value })} placeholder="Tự dùng OA ID nếu để trống" /></FormField><div className="sm:col-span-2"><FormField label="Quyền lợi (mỗi dòng một ý)"><textarea rows={4} value={form.benefits} onChange={e => setForm({ ...form, benefits: e.target.value })} /></FormField></div><div className="sm:col-span-2"><FormField label="Tin chào theo chiến dịch"><textarea rows={4} value={form.welcomeMessage} onChange={e => setForm({ ...form, welcomeMessage: e.target.value })} placeholder="Có thể dùng {{name}}" /></FormField></div></div><div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#e5ebf2] bg-white/95 px-5 py-4 backdrop-blur"><button type="button" onClick={() => setForm(null)} className="rounded-xl border border-[#d3dde8] px-4 py-2.5 text-sm font-bold text-[#5b6d82]">Hủy</button><button type="button" onClick={() => void save()} disabled={busy === "save" || form.name.trim().length < 3 || form.headline.trim().length < 8} className="inline-flex items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#f0d46e,#c99925)] px-5 py-2.5 text-sm font-bold text-[#2c2107] disabled:opacity-50">{busy === "save" ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Lưu chiến dịch</button></div></div></div>}
+    {form && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#0b1930]/70 p-4 backdrop-blur-sm"><div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/70 bg-white shadow-[0_28px_80px_rgba(5,22,48,0.30)]"><div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#e5ebf2] bg-white/95 px-5 py-4 backdrop-blur"><div><h3 className="font-bold text-[#172033]">{form.id ? "Chỉnh sửa chiến dịch" : "Tạo chiến dịch Quan tâm"}</h3><p className="mt-0.5 text-xs text-[#7b899a]">Tiêu đề hiển thị riêng dưới gallery; ảnh đầu tiên là ảnh chính.</p></div><button type="button" onClick={() => setForm(null)} className="rounded-lg border border-[#d8e1eb] px-3 py-2 text-xs font-bold text-[#63758a]">Đóng</button></div><div className="grid gap-4 p-5 sm:grid-cols-2"><FormField label="Tên chiến dịch *"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></FormField><FormField label="Slug URL (để trống sẽ tự tạo)"><input value={form.slug} disabled={Boolean(form.id)} onChange={e => setForm({ ...form, slug: e.target.value })} /></FormField><FormField label="Nhóm sản phẩm"><input value={form.productKey} onChange={e => setForm({ ...form, productKey: e.target.value })} placeholder="sofa_bed" /></FormField><FormField label="Chế độ widget"><select value={form.widgetMode} onChange={e => setForm({ ...form, widgetMode: e.target.value as FormValue["widgetMode"] })}><option value="follow">Nút Quan tâm cơ bản</option><option value="interactive">Widget tương tác có UID</option></select></FormField><div className="sm:col-span-2"><FormField label="Tiêu đề landing *"><input value={form.headline} onChange={e => setForm({ ...form, headline: e.target.value })} /></FormField></div><div className="sm:col-span-2"><FormField label="Mô tả"><textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></FormField></div>
+      <div className="sm:col-span-2 rounded-2xl border border-[#d8e4f1] bg-[#f8fbff] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2 text-sm font-bold text-[#203650]"><ImagePlus size={18} className="text-[#0877ff]" /> Gallery ảnh landing</div><p className="mt-1 text-xs text-[#7a8ba0]">Tối đa 12 ảnh. Ảnh đầu tiên hiển thị chính; khách có thể vuốt hoặc chọn ảnh nhỏ.</p></div><button type="button" disabled={busy === "upload-images" || form.galleryImages.length >= 12} onClick={() => imageInputRef.current?.click()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#1684ff,#0059db)] px-4 text-xs font-bold text-white shadow-[0_8px_18px_rgba(0,104,255,0.24)] disabled:opacity-50">{busy === "upload-images" ? <Loader2 size={15} className="animate-spin" /> : <ImagePlus size={15} />} Thêm ảnh</button><input ref={imageInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={event => void uploadGalleryImages(event.target.files)} /></div>
+        {form.galleryImages.length ? <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{form.galleryImages.map((image, index) => <div key={`${image}-${index}`} className={`overflow-hidden rounded-xl border-2 bg-white ${index === 0 ? "border-[#d2a228]" : "border-[#dce5ef]"}`}><div className="relative aspect-[4/3]"><img src={image} alt={`Ảnh landing ${index + 1}`} className="h-full w-full object-cover" />{index === 0 && <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-[#ffe177] px-2 py-1 text-[10px] font-black text-[#5c4100]"><Star size={11} fill="currentColor" /> ẢNH CHÍNH</span>}</div><div className="flex gap-1 p-2">{index > 0 && <button type="button" onClick={() => makePrimaryImage(index)} className="flex-1 rounded-lg border border-[#ead58c] bg-[#fff9df] px-2 py-1.5 text-[10px] font-bold text-[#755713]">Đặt chính</button>}<button type="button" onClick={() => removeGalleryImage(index)} className="grid h-8 w-8 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600"><Trash2 size={13} /></button></div></div>)}</div> : <button type="button" onClick={() => imageInputRef.current?.click()} className="mt-4 flex min-h-32 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#bad3ef] bg-white text-[#5c7693]"><ImagePlus size={26} /><span className="mt-2 text-sm font-bold">Tải ảnh đầu tiên</span></button>}
+        <label className="mt-4 block text-xs font-bold text-[#526479]">Hoặc nhập URL ảnh, mỗi dòng một ảnh<textarea rows={3} value={form.galleryImages.join("\n")} onChange={event => { const galleryImages = event.target.value.split("\n").map(item => item.trim()).filter(Boolean).slice(0, 12); setForm({ ...form, galleryImages, heroImage: galleryImages[0] || "" }); }} className="mt-1.5 w-full rounded-xl border border-[#ccd8e5] bg-white px-3.5 py-2.5 text-xs font-normal leading-5" /></label>
+      </div>
+      <FormField label="Link chat Zalo OA (để trống sẽ tự dùng OA ID)"><input value={form.chatUrl} onChange={e => setForm({ ...form, chatUrl: e.target.value })} placeholder="https://zalo.me/..." /></FormField><div className="sm:col-span-2"><FormField label="Quyền lợi (mỗi dòng một ý)"><textarea rows={4} value={form.benefits} onChange={e => setForm({ ...form, benefits: e.target.value })} /></FormField></div><div className="sm:col-span-2"><FormField label="Tin chào theo chiến dịch"><textarea rows={4} value={form.welcomeMessage} onChange={e => setForm({ ...form, welcomeMessage: e.target.value })} placeholder="Có thể dùng {{name}}" /></FormField></div></div><div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#e5ebf2] bg-white/95 px-5 py-4 backdrop-blur"><button type="button" onClick={() => setForm(null)} className="rounded-xl border border-[#d3dde8] px-4 py-2.5 text-sm font-bold text-[#5b6d82]">Hủy</button><button type="button" onClick={() => void save()} disabled={busy === "save" || busy === "upload-images" || form.name.trim().length < 3 || form.headline.trim().length < 8 || !form.galleryImages.length} className="inline-flex items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#f0d46e,#c99925)] px-5 py-2.5 text-sm font-bold text-[#2c2107] disabled:opacity-50">{busy === "save" ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Lưu chiến dịch</button></div></div></div>}
   </div>;
 }
 
