@@ -9,6 +9,23 @@ export type ZaloFollowCampaignStatus = "active" | "paused";
 export type ZaloFollowWidgetMode = "follow" | "interactive";
 export type ZaloFollowEventAction = "sdk_loaded" | "follow_success" | "chat_open" | "fallback_open" | "dismiss" | "error" | "identify";
 
+export interface ZaloFollowCareStep {
+  week: number;
+  title: string;
+  content: string;
+  cta: string;
+}
+
+export interface ZaloFollowSourceMetric {
+  source: string;
+  visits: number;
+  oaOpens: number;
+  followCallbacks: number;
+  verifiedFollowers: number;
+  openRate: number;
+  conversionRate: number;
+}
+
 export interface ZaloFollowCampaign {
   id: string;
   slug: string;
@@ -21,6 +38,11 @@ export interface ZaloFollowCampaign {
   galleryImages: string[];
   chatUrl: string;
   welcomeMessage: string;
+  offerTitle: string;
+  offerDescription: string;
+  ctaLabel: string;
+  audienceTags: string[];
+  carePlan: ZaloFollowCareStep[];
   widgetMode: ZaloFollowWidgetMode;
   status: ZaloFollowCampaignStatus;
   trackingUrl: string;
@@ -46,6 +68,7 @@ export interface ZaloFollowReport {
   range: { from: string; to: string };
   summary: ZaloFollowCampaign["metrics"];
   campaigns: ZaloFollowCampaign[];
+  sources: ZaloFollowSourceMetric[];
 }
 
 export interface VerifiedZaloFollowAttribution {
@@ -72,6 +95,11 @@ export async function initZaloFollowCampaignSchema(): Promise<void> {
         gallery_images JSONB NOT NULL DEFAULT '[]',
         chat_url TEXT NOT NULL DEFAULT '',
         welcome_message TEXT NOT NULL DEFAULT '',
+        offer_title TEXT NOT NULL DEFAULT '',
+        offer_description TEXT NOT NULL DEFAULT '',
+        cta_label TEXT NOT NULL DEFAULT '',
+        audience_tags JSONB NOT NULL DEFAULT '[]',
+        care_plan JSONB NOT NULL DEFAULT '[]',
         widget_mode TEXT NOT NULL DEFAULT 'follow',
         status TEXT NOT NULL DEFAULT 'active',
         created_by TEXT NOT NULL DEFAULT '',
@@ -114,6 +142,11 @@ export async function initZaloFollowCampaignSchema(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_zalo_follow_attr_campaign_time ON crm_zalo_follow_attributions(campaign_id,verified_at DESC);
 
       ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS gallery_images JSONB NOT NULL DEFAULT '[]';
+      ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS offer_title TEXT NOT NULL DEFAULT '';
+      ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS offer_description TEXT NOT NULL DEFAULT '';
+      ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS cta_label TEXT NOT NULL DEFAULT '';
+      ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS audience_tags JSONB NOT NULL DEFAULT '[]';
+      ALTER TABLE crm_zalo_follow_campaigns ADD COLUMN IF NOT EXISTS care_plan JSONB NOT NULL DEFAULT '[]';
 
       INSERT INTO crm_zalo_follow_campaigns
         (id,slug,name,product_key,headline,description,benefits,hero_image,welcome_message,widget_mode,status,created_by)
@@ -179,14 +212,56 @@ function imageArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).map(item => item.trim()).filter(Boolean).slice(0, 12) : [];
 }
 
+function productLabel(productKey: string): string {
+  return ({
+    sofa_bed: "Sofa giường",
+    electric_sofa: "Sofa chỉnh điện",
+    ergonomic_bed: "Giường công thái học",
+    care_bed: "Giường chăm sóc",
+    adjustable_frame: "Khung giường điều chỉnh",
+    mattress: "Nệm",
+    all_products: "Sản phẩm SmartFurni",
+  } as Record<string, string>)[productKey] || "Sản phẩm SmartFurni";
+}
+
+function defaultCarePlan(productKey: string): ZaloFollowCareStep[] {
+  const product = productLabel(productKey);
+  return [
+    { week: 1, title: "Chọn đúng kích thước", content: `Hướng dẫn chọn kích thước ${product} phù hợp với diện tích và nhu cầu sử dụng.`, cta: "Gửi kích thước phòng" },
+    { week: 2, title: "Xem công năng thực tế", content: `Video vận hành, vật liệu và các chi tiết quan trọng của ${product}.`, cta: "Xem mẫu phù hợp" },
+    { week: 3, title: "Công trình & trải nghiệm", content: `Case study thực tế giúp khách hàng hình dung ${product} trong không gian sử dụng.`, cta: "Yêu cầu báo giá" },
+    { week: 4, title: "Mẫu mới & showroom", content: `Cập nhật mẫu mới, hàng có sẵn và lịch trải nghiệm ${product} tại showroom.`, cta: "Đặt lịch xem" },
+  ];
+}
+
+function carePlanArray(value: unknown, productKey: string): ZaloFollowCareStep[] {
+  if (!Array.isArray(value)) return defaultCarePlan(productKey);
+  const rows = value.slice(0, 4).map((item, index) => {
+    const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
+    return {
+      week: index + 1,
+      title: String(row.title || "").trim().slice(0, 120),
+      content: String(row.content || "").trim().slice(0, 500),
+      cta: String(row.cta || "").trim().slice(0, 80),
+    };
+  }).filter(item => item.title || item.content || item.cta);
+  return rows.length ? rows : defaultCarePlan(productKey);
+}
+
 function campaignFromRow(row: Record<string, unknown>): ZaloFollowCampaign {
   const visits = Number(row.visits || 0);
   const followCallbacks = Number(row.follow_callbacks || 0);
+  const productKey = String(row.product_key || "");
+  const product = productLabel(productKey);
   return {
-    id: String(row.id), slug: String(row.slug), name: String(row.name), productKey: String(row.product_key || ""),
+    id: String(row.id), slug: String(row.slug), name: String(row.name), productKey,
     headline: String(row.headline), description: String(row.description || ""), benefits: stringArray(row.benefits),
     heroImage: String(row.hero_image || ""), galleryImages: imageArray(row.gallery_images),
     chatUrl: String(row.chat_url || "").trim(), welcomeMessage: String(row.welcome_message || ""),
+    offerTitle: String(row.offer_title || "").trim() || `Nhận catalogue & báo giá ${product}`,
+    offerDescription: String(row.offer_description || "").trim() || "Quyền lợi dành riêng cho người Quan tâm Zalo OA SmartFurni.",
+    ctaLabel: String(row.cta_label || "").trim() || "Mở Zalo nhận catalogue & báo giá",
+    audienceTags: stringArray(row.audience_tags), carePlan: carePlanArray(row.care_plan, productKey),
     widgetMode: String(row.widget_mode) === "interactive" ? "interactive" : "follow",
     status: String(row.status) === "paused" ? "paused" : "active", trackingUrl: trackingUrl(String(row.slug)),
     createdAt: row.created_at ? new Date(String(row.created_at)).toISOString() : new Date().toISOString(),
@@ -239,12 +314,37 @@ export async function getZaloFollowReport(input: { from?: string; to?: string } 
   );
   summary.uniqueVisitors = Number(unique?.count || 0);
   summary.conversionRate = summary.visits ? Math.round((summary.followCallbacks / summary.visits) * 1000) / 10 : 0;
-  return { range, summary, campaigns };
+  const sourceRows = await query<Record<string, unknown>>(
+    `SELECT COALESCE(NULLIF(LOWER(v.query_params->>'utm_source'),''),'trực tiếp / chưa rõ') AS source,
+       COUNT(DISTINCT v.id)::int AS visits,
+       COUNT(DISTINCT v.id) FILTER (WHERE v.fallback_opened_at IS NOT NULL OR v.chat_opened_at IS NOT NULL)::int AS oa_opens,
+       COUNT(DISTINCT v.id) FILTER (WHERE v.callback_at IS NOT NULL)::int AS follow_callbacks,
+       COUNT(DISTINCT a.user_id)::int AS verified_followers
+     FROM crm_zalo_follow_visits v
+     LEFT JOIN crm_zalo_follow_attributions a ON a.visit_id=v.id
+     WHERE v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh' >= $1::date
+       AND v.created_at AT TIME ZONE 'Asia/Ho_Chi_Minh' < $2::date + INTERVAL '1 day'
+     GROUP BY 1 ORDER BY visits DESC LIMIT 12`,
+    [range.from, range.to],
+  );
+  const sources = sourceRows.map(row => {
+    const visits = Number(row.visits || 0);
+    const oaOpens = Number(row.oa_opens || 0);
+    const followCallbacks = Number(row.follow_callbacks || 0);
+    return {
+      source: String(row.source || "trực tiếp / chưa rõ"), visits, oaOpens, followCallbacks,
+      verifiedFollowers: Number(row.verified_followers || 0),
+      openRate: visits ? Math.round((oaOpens / visits) * 1000) / 10 : 0,
+      conversionRate: visits ? Math.round((followCallbacks / visits) * 1000) / 10 : 0,
+    };
+  });
+  return { range, summary, campaigns, sources };
 }
 
 export async function saveZaloFollowCampaign(input: {
   id?: string; name: string; slug?: string; productKey?: string; headline: string; description?: string; benefits?: string[];
   heroImage?: string; galleryImages?: string[]; chatUrl?: string; welcomeMessage?: string; widgetMode?: ZaloFollowWidgetMode;
+  offerTitle?: string; offerDescription?: string; ctaLabel?: string; audienceTags?: string[]; carePlan?: ZaloFollowCareStep[];
 }, actor: string): Promise<{ id: string; slug: string; trackingUrl: string }> {
   await initZaloFollowCampaignSchema();
   const name = String(input.name || "").trim().slice(0, 120);
@@ -253,14 +353,18 @@ export async function saveZaloFollowCampaign(input: {
   const galleryImages = imageArray(input.galleryImages).map(item => item.slice(0, 1000));
   const heroImage = String(galleryImages[0] || input.heroImage || "").trim().slice(0, 1000);
   if (heroImage && !galleryImages.includes(heroImage)) galleryImages.unshift(heroImage);
+  const productKey = String(input.productKey || "").trim().slice(0, 80);
+  const carePlan = carePlanArray(input.carePlan, productKey);
   const values = [
-    name, String(input.productKey || "").trim().slice(0, 80), headline, String(input.description || "").trim().slice(0, 600),
+    name, productKey, headline, String(input.description || "").trim().slice(0, 600),
     JSON.stringify(stringArray(input.benefits)), heroImage, JSON.stringify(galleryImages), String(input.chatUrl || "").trim().slice(0, 1000),
     String(input.welcomeMessage || "").trim().slice(0, 2000), input.widgetMode === "interactive" ? "interactive" : "follow",
+    String(input.offerTitle || "").trim().slice(0, 180), String(input.offerDescription || "").trim().slice(0, 500),
+    String(input.ctaLabel || "").trim().slice(0, 100), JSON.stringify(stringArray(input.audienceTags)), JSON.stringify(carePlan),
   ];
   if (input.id) {
     const updated = await queryOne<{ id: string; slug: string }>(
-      `UPDATE crm_zalo_follow_campaigns SET name=$2,product_key=$3,headline=$4,description=$5,benefits=$6::jsonb,hero_image=$7,gallery_images=$8::jsonb,chat_url=$9,welcome_message=$10,widget_mode=$11,updated_at=NOW()
+      `UPDATE crm_zalo_follow_campaigns SET name=$2,product_key=$3,headline=$4,description=$5,benefits=$6::jsonb,hero_image=$7,gallery_images=$8::jsonb,chat_url=$9,welcome_message=$10,widget_mode=$11,offer_title=$12,offer_description=$13,cta_label=$14,audience_tags=$15::jsonb,care_plan=$16::jsonb,updated_at=NOW()
        WHERE id=$1 RETURNING id,slug`, [input.id, ...values],
     );
     if (!updated) throw new Error("Không tìm thấy chiến dịch cần cập nhật.");
@@ -271,8 +375,8 @@ export async function saveZaloFollowCampaign(input: {
   const slug = await queryOne<{ slug: string }>(`SELECT slug FROM crm_zalo_follow_campaigns WHERE slug=$1`, [requestedSlug])
     ? `${requestedSlug}-${randomUUID().replace(/-/g, "").slice(0, 6)}` : requestedSlug;
   await query(
-    `INSERT INTO crm_zalo_follow_campaigns (id,slug,name,product_key,headline,description,benefits,hero_image,gallery_images,chat_url,welcome_message,widget_mode,status,created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb,$10,$11,$12,'active',$13)`,
+    `INSERT INTO crm_zalo_follow_campaigns (id,slug,name,product_key,headline,description,benefits,hero_image,gallery_images,chat_url,welcome_message,widget_mode,offer_title,offer_description,cta_label,audience_tags,care_plan,status,created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9::jsonb,$10,$11,$12,$13,$14,$15,$16::jsonb,$17::jsonb,'active',$18)`,
     [id, slug, ...values, actor],
   );
   return { id, slug, trackingUrl: trackingUrl(slug) };
@@ -364,7 +468,7 @@ function tagId(name: string): string {
 export async function attributeZaloFollowFromWebhook(userId: string, occurredAt: string): Promise<VerifiedZaloFollowAttribution | null> {
   await initZaloFollowCampaignSchema();
   const visit = await queryOne<Record<string, unknown>>(
-    `SELECT v.id AS visit_id,v.campaign_id,c.name,c.product_key,c.welcome_message,v.query_params
+    `SELECT v.id AS visit_id,v.campaign_id,c.name,c.product_key,c.welcome_message,c.audience_tags,v.query_params
      FROM crm_zalo_follow_visits v JOIN crm_zalo_follow_campaigns c ON c.id=v.campaign_id
      WHERE v.oa_user_id=$1 AND v.created_at <= $2::timestamptz + INTERVAL '5 minutes'
        AND v.created_at >= $2::timestamptz - INTERVAL '7 days'
@@ -382,6 +486,7 @@ export async function attributeZaloFollowFromWebhook(userId: string, occurredAt:
     queryParams.utm_source ? `Nguồn: ${String(queryParams.utm_source).slice(0, 60)}` : "Nguồn: Zalo Follow Landing",
     `Chiến dịch: ${String(visit.name).slice(0, 80)}`,
     visit.product_key ? `Quan tâm: ${String(visit.product_key).replaceAll("_", " ").slice(0, 60)}` : "",
+    ...stringArray(visit.audience_tags).map(tag => `Nhóm: ${tag.slice(0, 60)}`),
   ].filter(Boolean);
   for (const name of names) {
     const id = tagId(name);

@@ -18,13 +18,25 @@ declare global {
     smartFurniZaloFollowCallback?: (data?: Record<string, unknown>) => void;
     dataLayer?: Array<Record<string, unknown>>;
     gtag?: (...args: unknown[]) => void;
+    fbq?: (...args: unknown[]) => void;
   }
 }
 
 function trackClientEvent(name: string, campaign: PublicZaloFollowCampaign) {
-  const payload = { event: name, campaign_id: campaign.id, campaign_name: campaign.name, product_key: campaign.productKey };
+  const params = new URLSearchParams(window.location.search);
+  const payload = {
+    event: name,
+    campaign_id: campaign.id,
+    campaign_name: campaign.name,
+    product_key: campaign.productKey,
+    traffic_source: params.get("utm_source") || "direct",
+    traffic_campaign: params.get("utm_campaign") || campaign.slug,
+  };
   window.dataLayer?.push(payload);
   window.gtag?.("event", name, { campaign_id: campaign.id, campaign_name: campaign.name, product_key: campaign.productKey });
+  window.fbq?.("trackCustom", name, payload);
+  if (name === "zalo_oa_open" || name === "zalo_follow_chat_open") window.fbq?.("track", "Contact", payload);
+  if (name === "zalo_follow_success") window.fbq?.("track", "Lead", payload);
 }
 
 function callbackAction(data?: Record<string, unknown>): string {
@@ -44,7 +56,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   const touchStartX = useRef<number | null>(null);
   const widgetHostRef = useRef<HTMLDivElement | null>(null);
   const interactive = Boolean(appId) && campaign.widgetMode === "interactive";
-  const widgetCanRender = mobileMode !== null;
+  const widgetCanRender = mobileMode === false;
   const images = useMemo(() => {
     const values = campaign.galleryImages?.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [];
     return Array.from(new Set(values.map(item => item.trim()).filter(Boolean)));
@@ -148,7 +160,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   useEffect(() => {
     const pendingKey = `sf_zalo_follow_pending:${campaign.id}`;
     const markLeavingForZalo = () => {
-      if (widgetState !== "ready") return;
+      if (widgetState !== "ready" && !window.sessionStorage.getItem(pendingKey)) return;
       const now = Date.now();
       hiddenAt.current = now;
       window.sessionStorage.setItem(pendingKey, String(now));
@@ -159,7 +171,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
         return;
       }
       const pendingAt = hiddenAt.current || Number(window.sessionStorage.getItem(pendingKey) || 0);
-      if (pendingAt && Date.now() - pendingAt > 500 && widgetState === "ready") {
+      if (pendingAt && Date.now() - pendingAt > 500 && widgetState !== "success") {
         setReturnedFromZalo(true);
         hiddenAt.current = 0;
         window.sessionStorage.removeItem(pendingKey);
@@ -210,6 +222,20 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
     window.location.href = campaign.chatUrl;
   };
 
+  const openOaForFollow = () => {
+    if (!campaign.chatUrl) {
+      setWidgetState("error");
+      return;
+    }
+    const pendingKey = `sf_zalo_follow_pending:${campaign.id}`;
+    const now = Date.now();
+    hiddenAt.current = now;
+    window.sessionStorage.setItem(pendingKey, String(now));
+    trackClientEvent("zalo_oa_open", campaign);
+    void patchVisit("fallback_open");
+    window.location.href = campaign.chatUrl;
+  };
+
   const retry = () => {
     window.sessionStorage.removeItem(`sf_zalo_follow_pending:${campaign.id}`);
     setReturnedFromZalo(false);
@@ -257,6 +283,13 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff2bb] px-3 py-1.5 text-xs font-bold text-[#7a5700]"><Star size={14} fill="currentColor" /> Tư vấn chính hãng</div>
           <h1 className="mt-4 break-words text-[30px] font-black leading-[1.12] tracking-[-0.035em] text-[#10213a] sm:text-[39px] lg:text-[43px]">{campaign.headline}</h1>
           <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5f728a] sm:text-base">{campaign.description}</p>
+          <div className="mt-5 rounded-2xl border border-[#edd47c] bg-[linear-gradient(135deg,#fffdf5,#fff4ca)] p-4 shadow-[0_10px_26px_rgba(169,119,18,0.09)]">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(145deg,#f5d66f,#d4a52b)] text-[#4d3700]"><Sparkles size={19} /></span>
+              <div className="min-w-0"><div className="text-sm font-black text-[#5b4100]">{campaign.offerTitle}</div><p className="mt-1 text-xs leading-5 text-[#806728]">{campaign.offerDescription}</p></div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-[#72550d]"><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">1 nội dung hữu ích / tuần</span><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Tối đa 4 tin / tháng</span><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Có thể bỏ Quan tâm bất kỳ lúc nào</span></div>
+          </div>
         </div>
       </div>
 
@@ -280,9 +313,12 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
           </div> : <div className="bg-[linear-gradient(145deg,#087cff,#0055d4)] p-4 sm:p-5">
             <div className="flex items-start gap-3 text-white">
               <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#0874ed] shadow-[0_10px_24px_rgba(0,31,84,0.22)]"><span className="absolute inset-0 animate-ping rounded-2xl bg-white/20" /><Sparkles size={22} className="relative" /></div>
-              <div className="min-w-0"><div className="text-[17px] font-black leading-6 sm:text-lg">Quan tâm Zalo để nhận tư vấn</div><p className="mt-1 text-xs leading-5 text-white/80 sm:text-sm">Chạm nút chính thức của Zalo bên dưới · Chỉ mất vài giây</p></div>
+              <div className="min-w-0"><div className="text-[17px] font-black leading-6 sm:text-lg">{campaign.offerTitle}</div><p className="mt-1 text-xs leading-5 text-white/80 sm:text-sm">{mobileMode ? "Mở trang OA chính thức và bấm Quan tâm · Chỉ mất vài giây" : "Chạm nút chính thức của Zalo bên dưới · Chỉ mất vài giây"}</p></div>
             </div>
-            <div ref={widgetHostRef} className="relative mt-4 flex min-h-[76px] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/90 bg-white px-3 py-3 shadow-[0_14px_32px_rgba(0,35,95,0.28)] sm:min-h-[88px] sm:rounded-[20px]">
+            {mobileMode ? <div className="mt-4 rounded-[18px] border border-white/90 bg-white p-3 shadow-[0_14px_32px_rgba(0,35,95,0.28)]">
+              <button type="button" onClick={openOaForFollow} className="group inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1687ff,#005bdc)] px-5 py-4 text-center text-[16px] font-black leading-5 text-white shadow-[0_12px_26px_rgba(0,104,255,0.28)] active:scale-[0.99]"><MessageCircle size={21} className="shrink-0" /> {campaign.ctaLabel}<ArrowRight size={18} className="shrink-0 transition group-hover:translate-x-1" /></button>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-[#536a84]"><span className="rounded-xl bg-[#f1f7ff] px-2 py-2">1. Mở Zalo</span><span className="rounded-xl bg-[#f1f7ff] px-2 py-2">2. Bấm Quan tâm</span><span className="rounded-xl bg-[#f1f7ff] px-2 py-2">3. Nhận tư vấn</span></div>
+            </div> : <div ref={widgetHostRef} className="relative mt-4 flex min-h-[76px] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/90 bg-white px-3 py-3 shadow-[0_14px_32px_rgba(0,35,95,0.28)] sm:min-h-[88px] sm:rounded-[20px]">
               {widgetState === "error" ? <div className="flex w-full flex-col items-center px-1 py-1 text-center">
                 <div className="text-sm font-black text-[#17385f]">Zalo chưa tải được nút Quan tâm</div>
                 <p className="mt-1 text-xs leading-5 text-[#6a7e95]">Mở Zalo OA SmartFurni để Quan tâm và nhận tư vấn.</p>
@@ -294,7 +330,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
                   {widgetCanRender ? interactive ? <div ref={node => { if (node) { node.setAttribute("user_external_id", visitId); node.setAttribute("status", "show"); } }} className="zalo-consent-widget zalo-interaction-widget" data-oaid={campaign.oaId} data-appid={appId} data-callback="smartFurniZaloFollowCallback" data-reason-msg="SmartFurni xin phép kết nối để gửi tư vấn và báo giá theo yêu cầu của Anh/Chị." /> : <div className="zalo-follow-only-button" data-oaid={campaign.oaId} data-callback="smartFurniZaloFollowCallback" /> : null}
                 </div>
               </>}
-            </div>
+            </div>}
             <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] font-semibold text-white/90"><ShieldCheck size={14} className="shrink-0 text-[#a9ffd9]" /> Không cần điền biểu mẫu · Không mất phí · Tư vấn trên Zalo</div>
           </div>}
         </div>

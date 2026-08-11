@@ -51,6 +51,19 @@ export async function POST(req: NextRequest) {
       galleryImages: Array.isArray(campaign.galleryImages) ? campaign.galleryImages.map(String) : [],
       chatUrl: String(campaign.chatUrl || ""),
       welcomeMessage: String(campaign.welcomeMessage || ""),
+      offerTitle: String(campaign.offerTitle || ""),
+      offerDescription: String(campaign.offerDescription || ""),
+      ctaLabel: String(campaign.ctaLabel || ""),
+      audienceTags: Array.isArray(campaign.audienceTags) ? campaign.audienceTags.map(String) : [],
+      carePlan: Array.isArray(campaign.carePlan) ? campaign.carePlan.map((item, index) => {
+        const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
+        return {
+          week: index + 1,
+          title: String(row.title || ""),
+          content: String(row.content || ""),
+          cta: String(row.cta || ""),
+        };
+      }) : [],
       widgetMode: String(campaign.widgetMode) === "interactive" ? "interactive" : "follow",
     }, "admin");
     return NextResponse.json({ ok: true, campaign: saved });
