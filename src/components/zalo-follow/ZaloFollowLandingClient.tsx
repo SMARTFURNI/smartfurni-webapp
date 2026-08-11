@@ -1,23 +1,18 @@
 "use client";
 
-import Script from "next/script";
 import {
   ArrowRight, BadgeCheck, Check, CheckCircle2, ChevronLeft, ChevronRight,
-  ExternalLink, Images, Loader2, MessageCircle, RefreshCw, ShieldCheck,
+  Images, Loader2, MessageCircle, ShieldCheck,
   Sparkles, Star, Tag, Phone, X, Quote, Ruler, PackageCheck, ThumbsUp,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicZaloFollowCampaign } from "@/lib/zalo-follow-campaign-store";
-import { isLikelyMobileZaloVisitor, isZaloFollowSuccessAction } from "@/lib/zalo-follow-links";
 import { normalizeZaloLeadPhone } from "@/lib/zalo-follow-lead";
 
-type WidgetState = "preparing" | "ready" | "success" | "error";
 const REASON_ICONS = [BadgeCheck, Ruler, PackageCheck, ThumbsUp];
 
 declare global {
   interface Window {
-    ZaloSocialSDK?: { reload?: () => void };
-    smartFurniZaloFollowCallback?: (data?: Record<string, unknown>) => void;
     dataLayer?: Array<Record<string, unknown>>;
     gtag?: (...args: unknown[]) => void;
     fbq?: (...args: unknown[]) => void;
@@ -41,17 +36,8 @@ function trackClientEvent(name: string, campaign: PublicZaloFollowCampaign) {
   if (name === "zalo_follow_success") window.fbq?.("track", "Lead", payload);
 }
 
-function callbackAction(data?: Record<string, unknown>): string {
-  return String(data?.action || data?.event || data?.status || "").toLowerCase();
-}
-
-export default function ZaloFollowLandingClient({ campaign, appId }: { campaign: PublicZaloFollowCampaign; appId: string }) {
+export default function ZaloFollowLandingClient({ campaign }: { campaign: PublicZaloFollowCampaign; appId: string }) {
   const [visitId, setVisitId] = useState("");
-  const [widgetState, setWidgetState] = useState<WidgetState>("preparing");
-  const [sdkKey, setSdkKey] = useState(0);
-  const [identified, setIdentified] = useState(false);
-  const [returnedFromZalo, setReturnedFromZalo] = useState(false);
-  const [mobileMode, setMobileMode] = useState<boolean | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [leadOpen, setLeadOpen] = useState(false);
   const [leadName, setLeadName] = useState("");
@@ -62,13 +48,8 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   const [leadError, setLeadError] = useState("");
   const [leadSuccess, setLeadSuccess] = useState(false);
   const started = useRef(false);
-  const hiddenAt = useRef(0);
   const touchStartX = useRef<number | null>(null);
-  const widgetHostRef = useRef<HTMLDivElement | null>(null);
-  const followSectionRef = useRef<HTMLDivElement | null>(null);
   const leadDialogRef = useRef<HTMLDivElement | null>(null);
-  const interactive = Boolean(appId) && campaign.widgetMode === "interactive";
-  const widgetCanRender = mobileMode === false;
   const images = useMemo(() => {
     const values = campaign.galleryImages?.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [];
     return Array.from(new Set(values.map(item => item.trim()).filter(Boolean)));
@@ -87,13 +68,6 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       body: JSON.stringify({ action, visitId, ...extra }), keepalive: true,
     }).catch(() => undefined);
   }, [campaign.slug, visitId]);
-
-  useEffect(() => {
-    const updateMobileMode = () => setMobileMode(isLikelyMobileZaloVisitor(navigator.userAgent, window.innerWidth));
-    updateMobileMode();
-    window.addEventListener("resize", updateMobileMode);
-    return () => window.removeEventListener("resize", updateMobileMode);
-  }, []);
 
   useEffect(() => {
     document.body.classList.add("zalo-follow-landing-active");
@@ -142,100 +116,10 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       body: JSON.stringify({ sessionId, referrer: document.referrer, queryParams }),
     }).then(async response => {
       const result = await response.json() as { visitId?: string; error?: string };
-      if (!response.ok || !result.visitId) throw new Error(result.error || "Không khởi tạo được nút Quan tâm.");
+      if (!response.ok || !result.visitId) throw new Error(result.error || "Không khởi tạo được phiên tư vấn.");
       setVisitId(result.visitId);
-    }).catch(() => setWidgetState("error"));
+    }).catch(() => undefined);
   }, [campaign]);
-
-  useEffect(() => {
-    window.smartFurniZaloFollowCallback = data => {
-      const action = callbackAction(data);
-      const userId = String(data?.user_id || data?.userId || "").trim();
-      if (action === "loaded_successfully") {
-        setWidgetState("ready");
-        void patchVisit("sdk_loaded");
-        return;
-      }
-      if (action.includes("dismiss")) {
-        void patchVisit("dismiss");
-        return;
-      }
-      if (userId) {
-        setIdentified(true);
-        void patchVisit("identify", { userId });
-      }
-      if (action === "updated_follow_widget" || action === "click_interaction_accepted") {
-        setWidgetState("ready");
-      }
-      const followed = isZaloFollowSuccessAction(action, interactive);
-      if (!followed) return;
-      setWidgetState("success");
-      setReturnedFromZalo(false);
-      window.sessionStorage.removeItem(`sf_zalo_follow_pending:${campaign.id}`);
-      trackClientEvent("zalo_follow_success", campaign);
-      void patchVisit("follow_success");
-    };
-    if (visitId && widgetCanRender) window.setTimeout(() => window.ZaloSocialSDK?.reload?.(), 50);
-    return () => { delete window.smartFurniZaloFollowCallback; };
-  }, [campaign, interactive, patchVisit, sdkKey, visitId, widgetCanRender]);
-
-  useEffect(() => {
-    if (!visitId || !widgetCanRender || widgetState === "success" || widgetState === "error") return;
-    const host = widgetHostRef.current;
-    if (!host) return;
-    const detectRenderedWidget = () => {
-      const rendered = Boolean(host.querySelector(".zalo-follow-only-button iframe, .zalo-consent-widget iframe"));
-      if (!rendered) return false;
-      setWidgetState(current => current === "success" ? current : "ready");
-      return true;
-    };
-    if (detectRenderedWidget()) return;
-    const observer = new MutationObserver(detectRenderedWidget);
-    observer.observe(host, { childList: true, subtree: true, attributes: true });
-    const timeout = window.setTimeout(() => {
-      if (!detectRenderedWidget()) {
-        setWidgetState(current => current === "success" ? current : "error");
-        void patchVisit("error", { error: "zalo_widget_not_rendered" });
-      }
-    }, 7000);
-    return () => {
-      observer.disconnect();
-      window.clearTimeout(timeout);
-    };
-  }, [patchVisit, sdkKey, visitId, widgetCanRender, widgetState]);
-
-  useEffect(() => {
-    const pendingKey = `sf_zalo_follow_pending:${campaign.id}`;
-    const markLeavingForZalo = () => {
-      if (widgetState !== "ready" && !window.sessionStorage.getItem(pendingKey)) return;
-      const now = Date.now();
-      hiddenAt.current = now;
-      window.sessionStorage.setItem(pendingKey, String(now));
-    };
-    const detectReturnFromZalo = () => {
-      if (document.hidden) {
-        markLeavingForZalo();
-        return;
-      }
-      const pendingAt = hiddenAt.current || Number(window.sessionStorage.getItem(pendingKey) || 0);
-      if (pendingAt && Date.now() - pendingAt > 500 && widgetState !== "success") {
-        setReturnedFromZalo(true);
-        hiddenAt.current = 0;
-        window.sessionStorage.removeItem(pendingKey);
-      }
-    };
-    document.addEventListener("visibilitychange", detectReturnFromZalo);
-    window.addEventListener("pagehide", markLeavingForZalo);
-    window.addEventListener("pageshow", detectReturnFromZalo);
-    window.addEventListener("focus", detectReturnFromZalo);
-    detectReturnFromZalo();
-    return () => {
-      document.removeEventListener("visibilitychange", detectReturnFromZalo);
-      window.removeEventListener("pagehide", markLeavingForZalo);
-      window.removeEventListener("pageshow", detectReturnFromZalo);
-      window.removeEventListener("focus", detectReturnFromZalo);
-    };
-  }, [campaign.id, widgetState]);
 
   useEffect(() => {
     if (images.length < 2) return;
@@ -247,7 +131,6 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
     "Catalogue sản phẩm mới", "Báo giá theo nhu cầu", "Tư vấn trực tiếp trên Zalo",
   ], [campaign.benefits]);
 
-  const showChat = widgetState === "success" || returnedFromZalo;
   const moveImage = (direction: number) => {
     if (!images.length) return;
     setActiveImage(value => (value + direction + images.length) % images.length);
@@ -262,42 +145,13 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   const openChat = () => {
     trackClientEvent("zalo_follow_chat_open", campaign);
     void patchVisit("chat_open");
-    if (!campaign.chatUrl) {
-      setWidgetState("error");
-      return;
-    }
+    if (!campaign.chatUrl) return;
     window.location.href = campaign.chatUrl;
-  };
-
-  const openOaForFollow = () => {
-    if (!campaign.chatUrl) {
-      setWidgetState("error");
-      return;
-    }
-    const pendingKey = `sf_zalo_follow_pending:${campaign.id}`;
-    const now = Date.now();
-    hiddenAt.current = now;
-    window.sessionStorage.setItem(pendingKey, String(now));
-    trackClientEvent("zalo_oa_open", campaign);
-    void patchVisit("fallback_open");
-    window.location.href = campaign.chatUrl;
-  };
-
-  const retry = () => {
-    window.sessionStorage.removeItem(`sf_zalo_follow_pending:${campaign.id}`);
-    setReturnedFromZalo(false);
-    setWidgetState("preparing");
-    setSdkKey(value => value + 1);
-    window.setTimeout(() => window.ZaloSocialSDK?.reload?.(), 50);
   };
 
   const continueToFollow = () => {
     setLeadOpen(false);
-    if (mobileMode) {
-      openOaForFollow();
-      return;
-    }
-    window.setTimeout(() => followSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+    openChat();
   };
 
   const submitLead = async (event: React.FormEvent) => {
@@ -342,6 +196,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
           note: [
             `Landing Quan tâm Zalo OA: ${campaign.name}`,
             `Nhu cầu: ${selectedChoice?.label || leadChoice}`,
+            selectedChoice?.price ? `Khoảng giá quan tâm: ${selectedChoice.price}` : "",
             `${leadQualifierConfig.label}: ${leadQualifier}`,
             attributionNote,
           ].filter(Boolean).join(" | "),
@@ -368,10 +223,35 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       body.zalo-follow-landing-active > .no-print.fixed {
         display: none !important;
       }
+      @keyframes sf-zalo-price-glow {
+        0%, 100% { box-shadow: 0 5px 14px rgba(16, 145, 79, 0.10); }
+        50% { box-shadow: 0 8px 22px rgba(16, 145, 79, 0.24); }
+      }
+      @keyframes sf-zalo-price-shine {
+        0% { transform: translateX(-150%) skewX(-18deg); }
+        46%, 100% { transform: translateX(260%) skewX(-18deg); }
+      }
+      .sf-zalo-price-range {
+        animation: sf-zalo-price-glow 2.8s ease-in-out infinite;
+      }
+      .sf-zalo-price-range::after {
+        animation: sf-zalo-price-shine 3.4s ease-in-out infinite;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.78), transparent);
+        content: "";
+        height: 180%;
+        left: 0;
+        pointer-events: none;
+        position: absolute;
+        top: -40%;
+        width: 24%;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sf-zalo-price-range,
+        .sf-zalo-price-range::after {
+          animation: none !important;
+        }
+      }
     `}</style>
-    <Script key={sdkKey} src="https://sp.zalo.me/plugins/sdk.js" strategy="afterInteractive" onLoad={() => {
-      void patchVisit("sdk_loaded"); window.ZaloSocialSDK?.reload?.();
-    }} onError={() => { setWidgetState("error"); void patchVisit("error", { error: "zalo_sdk_load_failed" }); }} />
     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_4%,rgba(0,104,255,0.18),transparent_30rem),radial-gradient(circle_at_92%_94%,rgba(227,182,64,0.18),transparent_29rem)]" />
     <div className="pointer-events-none absolute left-[-7rem] top-[18%] h-72 w-72 rounded-full border-[60px] border-white/40" />
     <div className="pointer-events-none absolute right-[-5rem] top-[-5rem] h-64 w-64 rounded-full border-[52px] border-[#0068ff]/5" />
@@ -384,7 +264,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
           {images.length ? images.map((image, index) => <img key={`${image}-${index}`} src={image} alt={`${campaign.headline} - ảnh ${index + 1}`} className={`absolute inset-0 h-full w-full object-cover transition duration-700 ${index === activeImage ? "scale-100 opacity-100" : "scale-[1.03] opacity-0"}`} />) : null}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#062a62]/55 to-transparent" />
           <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-4 sm:p-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-[#073b86]/65 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md sm:text-[11px]"><MessageCircle size={15} /> SmartFurni · Zalo OA</div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#ffe7a1]/40 bg-[#4b3513]/80 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md sm:text-[11px]"><MessageCircle size={15} className="text-[#ffe071]" /> SmartFurni · Zalo OA</div>
             <div className="rounded-full border border-white/30 bg-white/20 px-3 py-2 text-[11px] font-semibold text-white backdrop-blur-md">Official Account</div>
           </div>
           {images.length > 1 && <>
@@ -407,55 +287,33 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(145deg,#f5d66f,#d4a52b)] text-[#4d3700]"><Sparkles size={19} /></span>
               <div className="min-w-0"><div className="text-sm font-black text-[#5b4100]">{campaign.offerTitle}</div><p className="mt-1 text-xs leading-5 text-[#806728]">{campaign.offerDescription}</p></div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-[#72550d]"><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">1 nội dung hữu ích / tuần</span><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Tối đa 4 tin / tháng</span><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Có thể bỏ Quan tâm bất kỳ lúc nào</span></div>
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-[#72550d]"><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Tư vấn đúng nhu cầu</span><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Báo giá theo kích thước</span><span className="rounded-full border border-[#ead486] bg-white/70 px-2.5 py-1">Trao đổi trực tiếp qua Zalo</span></div>
           </div>
         </div>
       </div>
 
-      <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:justify-center lg:p-10">
-        <div className="hidden min-w-0 items-center gap-3 lg:order-none lg:mx-0 lg:mt-0 lg:flex">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(145deg,#1684ff,#0059dc)] p-3 text-white shadow-[0_10px_24px_rgba(0,104,255,0.28)]"><MessageCircle size={27} /></div>
-          <div><div className="text-xl font-black tracking-[-0.02em]">SmartFurni</div><div className="flex items-center gap-1 text-xs font-medium text-[#63758c]"><BadgeCheck size={14} className="text-[#087cff]" /> Zalo Official Account</div></div>
+      <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:justify-start lg:bg-[#fffdf7]">
+        <div className="hidden min-w-0 items-center gap-4 bg-[linear-gradient(135deg,#3f3018_0%,#75551c_58%,#ad8331_100%)] p-7 text-white lg:flex">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl border border-white/35 bg-white text-[#0877f9] shadow-[0_10px_24px_rgba(42,28,4,0.25)]"><MessageCircle size={27} /></div>
+          <div><div className="text-xl font-black tracking-[-0.02em]">SmartFurni</div><div className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-[#ffe8a5]"><BadgeCheck size={14} /> Tư vấn chính thức qua Zalo OA</div></div>
         </div>
 
-        <div className="order-4 mx-4 mt-4 rounded-2xl border border-[#d9e7f7] bg-[#f6faff] p-4 sm:mx-8 lg:order-none lg:mx-0 lg:mt-6">
+        <div className="order-4 mx-4 mt-4 rounded-2xl border border-[#eadfbe] bg-[linear-gradient(145deg,#fffefb,#fff8e8)] p-4 sm:mx-8 lg:order-none lg:mx-7 lg:mt-7">
           <div className="text-sm font-bold text-[#21344f]">Anh/Chị sẽ nhận được</div>
           <ul className="mt-3 space-y-2.5">{benefits.map(item => <li key={item} className="flex items-start gap-2.5 text-sm leading-5 text-[#52667e]"><span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#dcf8ea] text-[#078455]"><Check size={13} strokeWidth={3} /></span>{item}</li>)}</ul>
         </div>
 
-        <div ref={followSectionRef} className="order-5 mx-3 mt-4 min-w-0 overflow-hidden rounded-[22px] border-2 border-[#cfe4ff] bg-white shadow-[0_16px_38px_rgba(0,104,255,0.14)] sm:mx-8 lg:order-none lg:mx-0 lg:mt-6 lg:rounded-[26px] lg:shadow-[0_20px_48px_rgba(0,104,255,0.16)]">
-          {showChat ? <div className="p-5 text-center">
-            <CheckCircle2 size={46} className="mx-auto text-[#08a36c]" />
-            <h2 className="mt-3 text-lg font-black">{widgetState === "success" ? "Đã ghi nhận Quan tâm" : "Tiếp tục trên Zalo"}</h2>
-            <p className="mt-1 text-sm leading-6 text-[#66798f]">{widgetState === "success" ? "SmartFurni đã sẵn sàng tư vấn và gửi báo giá qua Zalo OA." : "Nếu Anh/Chị vừa Quan tâm trong ứng dụng Zalo, hãy bấm nút dưới đây để mở hội thoại."}</p>
-            <button type="button" onClick={openChat} className="group mt-4 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1181ff,#005ae0)] px-5 text-base font-black text-white shadow-[0_12px_28px_rgba(0,104,255,0.30)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(0,104,255,0.36)]"><MessageCircle size={20} /> Nhắn tin cho SmartFurni <ArrowRight size={18} className="transition group-hover:translate-x-1" /></button>
-          </div> : <div className="bg-[linear-gradient(145deg,#087cff,#0055d4)] p-4 sm:p-5">
-            <div className="flex items-start gap-3 text-white">
-              <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-[#0874ed] shadow-[0_10px_24px_rgba(0,31,84,0.22)]"><span className="absolute inset-0 animate-ping rounded-2xl bg-white/20" /><Sparkles size={22} className="relative" /></div>
-              <div className="min-w-0"><div className="text-[17px] font-black leading-6 sm:text-lg">{campaign.offerTitle}</div><p className="mt-1 text-xs leading-5 text-white/80 sm:text-sm">{mobileMode ? "Mở trang OA chính thức và bấm Quan tâm · Chỉ mất vài giây" : "Chạm nút chính thức của Zalo bên dưới · Chỉ mất vài giây"}</p></div>
-            </div>
-            {mobileMode ? <div className="mt-4 rounded-[18px] border border-white/90 bg-white p-3 shadow-[0_14px_32px_rgba(0,35,95,0.28)]">
-              <button type="button" onClick={openOaForFollow} className="group inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1687ff,#005bdc)] px-5 py-4 text-center text-[16px] font-black leading-5 text-white shadow-[0_12px_26px_rgba(0,104,255,0.28)] active:scale-[0.99]"><MessageCircle size={21} className="shrink-0" /> {campaign.ctaLabel}<ArrowRight size={18} className="shrink-0 transition group-hover:translate-x-1" /></button>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-[#536a84]"><span className="rounded-xl bg-[#f1f7ff] px-2 py-2">1. Mở Zalo</span><span className="rounded-xl bg-[#f1f7ff] px-2 py-2">2. Bấm Quan tâm</span><span className="rounded-xl bg-[#f1f7ff] px-2 py-2">3. Nhận tư vấn</span></div>
-            </div> : <div ref={widgetHostRef} className="relative mt-4 flex min-h-[76px] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-[18px] border border-white/90 bg-white px-3 py-3 shadow-[0_14px_32px_rgba(0,35,95,0.28)] sm:min-h-[88px] sm:rounded-[20px]">
-              {widgetState === "error" ? <div className="flex w-full flex-col items-center px-1 py-1 text-center">
-                <div className="text-sm font-black text-[#17385f]">Zalo chưa tải được nút Quan tâm</div>
-                <p className="mt-1 text-xs leading-5 text-[#6a7e95]">Mở Zalo OA SmartFurni để Quan tâm và nhận tư vấn.</p>
-                <button type="button" onClick={() => { void patchVisit("fallback_open"); openChat(); }} className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#1181ff,#005ae0)] px-4 text-sm font-black text-white shadow-[0_10px_24px_rgba(0,104,255,0.25)]"><ExternalLink size={17} /> Mở Zalo để Quan tâm</button>
-                <button type="button" onClick={retry} className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-[#1766bd]"><RefreshCw size={13} /> Tải lại nút</button>
-              </div> : <>
-                {widgetState === "preparing" && <div className="absolute inset-0 z-30 flex items-center justify-center bg-white text-sm font-bold text-[#1766bd]"><Loader2 size={19} className="mr-2 animate-spin" /> Đang tải nút Quan tâm...</div>}
-                <div className={`relative z-20 flex w-full min-w-0 origin-center justify-center [&_iframe]:max-w-full ${interactive ? "scale-100 lg:scale-[1.12]" : "scale-100 sm:scale-[1.18] lg:scale-[1.42]"}`}>
-                  {widgetCanRender ? interactive ? <div ref={node => { if (node) { node.setAttribute("user_external_id", visitId); node.setAttribute("status", "show"); } }} className="zalo-consent-widget zalo-interaction-widget" data-oaid={campaign.oaId} data-appid={appId} data-callback="smartFurniZaloFollowCallback" data-reason-msg="SmartFurni xin phép kết nối để gửi tư vấn và báo giá theo yêu cầu của Anh/Chị." /> : <div className="zalo-follow-only-button" data-oaid={campaign.oaId} data-callback="smartFurniZaloFollowCallback" /> : null}
-                </div>
-              </>}
-            </div>}
-            <div className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] font-semibold text-white/90"><ShieldCheck size={14} className="shrink-0 text-[#a9ffd9]" /> Không cần điền biểu mẫu · Không mất phí · Tư vấn trên Zalo</div>
-          </div>}
+        <div className="order-5 mx-3 mt-4 min-w-0 overflow-hidden rounded-[22px] border border-[#d9c98f] bg-[linear-gradient(145deg,#fffdf6,#fff4d3)] p-4 shadow-[0_16px_38px_rgba(103,73,13,0.13)] sm:mx-8 sm:p-5 lg:order-none lg:mx-7 lg:mt-5 lg:rounded-[24px]">
+          <div className="flex items-start gap-3">
+            <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#fff0b6] text-[#8b650b]"><Sparkles size={22} /></div>
+            <div className="min-w-0"><h2 className="text-[17px] font-black leading-6 text-[#3d2d0e] sm:text-lg">Nhắn tin để nhận tư vấn và báo giá</h2><p className="mt-1 text-xs leading-5 text-[#7e6733] sm:text-sm">Mở hội thoại Zalo OA chính thức của SmartFurni, gửi nhu cầu và nhận tư vấn trực tiếp.</p></div>
+          </div>
+          <button type="button" onClick={openChat} className="group mt-4 inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1687ff,#005bdc)] px-5 py-4 text-center text-[16px] font-black leading-5 text-white shadow-[0_14px_30px_rgba(0,104,255,0.30)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(0,104,255,0.38)] active:scale-[0.99]"><MessageCircle size={22} className="shrink-0" /> Nhắn tin tư vấn qua Zalo OA <ArrowRight size={18} className="shrink-0 transition group-hover:translate-x-1" /></button>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[10px] font-bold text-[#6f5b2e]"><span className="rounded-xl border border-[#eadcae] bg-white/75 px-2 py-2">1. Mở Zalo</span><span className="rounded-xl border border-[#eadcae] bg-white/75 px-2 py-2">2. Gửi nhu cầu</span><span className="rounded-xl border border-[#eadcae] bg-white/75 px-2 py-2">3. Nhận báo giá</span></div>
         </div>
 
-        <div className="order-6 mx-5 mt-5 flex min-w-0 items-start gap-2.5 text-xs leading-5 text-[#77899e] sm:mx-8 lg:order-none lg:mx-0"><ShieldCheck size={17} className="mt-0.5 shrink-0 text-[#15976c]" /><span>Nút Quan tâm được tải từ SDK chính thức của Zalo. SmartFurni chỉ dùng dữ liệu để tư vấn, đo hiệu quả chiến dịch và chăm sóc khách hàng.</span></div>
-        <div className="order-7 mx-5 mb-5 mt-4 flex min-w-0 flex-wrap items-center justify-center gap-4 border-t border-[#edf1f5] pt-4 text-[11px] font-medium text-[#91a0b2] sm:mx-8 sm:mb-8 lg:order-none lg:mx-0 lg:mb-0"><span className="inline-flex items-center gap-1"><Tag size={13} /> {campaign.name}</span><span className="inline-flex items-center gap-1"><Images size={13} /> {images.length || 0} ảnh</span>{identified && <span className="inline-flex items-center gap-1 text-[#08865e]"><CheckCircle2 size={13} /> Đã xác minh nguồn</span>}</div>
+        <div className="order-6 mx-5 mt-5 flex min-w-0 items-start gap-2.5 text-xs leading-5 text-[#77899e] sm:mx-8 lg:order-none lg:mx-7"><ShieldCheck size={17} className="mt-0.5 shrink-0 text-[#15976c]" /><span>Hội thoại được mở trên Zalo OA chính thức. SmartFurni chỉ dùng thông tin để tư vấn, báo giá và chăm sóc khách hàng.</span></div>
+        <div className="order-7 mx-5 mb-5 mt-4 flex min-w-0 flex-wrap items-center justify-center gap-4 border-t border-[#eee7d7] pt-4 text-[11px] font-medium text-[#91a0b2] sm:mx-8 sm:mb-8 lg:order-none lg:mx-7 lg:mb-7"><span className="inline-flex items-center gap-1"><Tag size={13} /> {campaign.name}</span><span className="inline-flex items-center gap-1"><Images size={13} /> {images.length || 0} ảnh</span></div>
       </div>
     </section>
 
@@ -486,33 +344,33 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       </div>
     </section>
 
-    {!leadOpen && <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[990] flex justify-center px-2 pb-[calc(8px+env(safe-area-inset-bottom))] sm:px-5 sm:pb-[calc(14px+env(safe-area-inset-bottom))]"><div className="pointer-events-auto grid w-full max-w-[620px] grid-cols-2 gap-2 rounded-[20px] border border-white/80 bg-white/95 p-2 shadow-[0_18px_55px_rgba(6,34,76,0.26)] backdrop-blur-xl"><button type="button" onClick={openOaForFollow} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-2 border-[#0877ff] bg-white px-3 text-sm font-black text-[#0870e8]"><MessageCircle size={18} /> Mở Zalo ngay</button><button type="button" onClick={() => { setLeadSuccess(false); setLeadOpen(true); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#ffe16f,#e5ad1c)] px-3 text-sm font-black text-[#362700] shadow-[0_8px_20px_rgba(202,148,10,0.23)]"><Sparkles size={17} /> {landingConfig.finalCtaLabel}</button></div></div>}
+    {!leadOpen && <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[990] flex justify-center px-2 pb-[calc(8px+env(safe-area-inset-bottom))] sm:px-5 sm:pb-[calc(14px+env(safe-area-inset-bottom))]"><div className="pointer-events-auto grid w-full max-w-[620px] grid-cols-2 gap-2 rounded-[20px] border border-white/80 bg-white/95 p-2 shadow-[0_18px_55px_rgba(6,34,76,0.26)] backdrop-blur-xl"><button type="button" onClick={openChat} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#1687ff,#005bdc)] px-3 text-sm font-black text-white shadow-[0_8px_20px_rgba(0,104,255,0.25)]"><MessageCircle size={18} /> Nhắn Zalo tư vấn</button><button type="button" onClick={() => { setLeadSuccess(false); setLeadOpen(true); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#ffe16f,#e5ad1c)] px-3 text-sm font-black text-[#362700] shadow-[0_8px_20px_rgba(202,148,10,0.23)]"><Sparkles size={17} /> {landingConfig.finalCtaLabel}</button></div></div>}
 
     {leadOpen && <div className="fixed inset-0 z-[1300] flex items-end justify-center bg-[#071326]/75 p-0 backdrop-blur-[5px] sm:items-center sm:p-5" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setLeadOpen(false); }}>
       <div ref={leadDialogRef} role="dialog" aria-modal="true" aria-labelledby="zalo-lead-title" tabIndex={-1} className="relative max-h-[96dvh] w-full overflow-y-auto rounded-t-[28px] bg-white text-[#10213a] shadow-[0_32px_100px_rgba(0,0,0,0.42)] outline-none sm:max-w-[760px] sm:rounded-[28px]">
         <button type="button" onClick={() => setLeadOpen(false)} aria-label="Đóng form" className="absolute right-3 top-3 z-30 grid h-10 w-10 place-items-center rounded-full border border-white/45 bg-[#07326d]/55 text-white backdrop-blur-md transition hover:bg-[#05234d]"><X size={20} /></button>
 
-        <header className="relative overflow-hidden bg-[linear-gradient(135deg,#005be8_0%,#0788ff_58%,#43adff_100%)] px-5 pb-5 pt-6 text-white sm:px-7 sm:pb-6">
-          <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[28px] border-white/10" />
+        <header className="relative overflow-hidden bg-[linear-gradient(135deg,#382b18_0%,#72531c_58%,#ad8331_100%)] px-5 pb-5 pt-6 text-white sm:px-7 sm:pb-6">
+          <div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[28px] border-[#ffe699]/12" />
           <div className="relative flex items-start gap-3 sm:gap-4">
             <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/50 bg-white/95 text-[#0877f9] shadow-[0_10px_25px_rgba(0,43,112,0.22)]"><MessageCircle size={29} /></div>
             <div className="min-w-0 pr-8">
-              <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-100 sm:text-xs"><BadgeCheck size={15} /> SmartFurni · Zalo Official Account</div>
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#ffe8a5] sm:text-xs"><BadgeCheck size={15} /> SmartFurni · Zalo Official Account</div>
               <h2 id="zalo-lead-title" className="mt-2 text-[22px] font-black leading-[1.18] tracking-[-0.025em] sm:text-[30px]">{landingConfig.popupTitle}</h2>
-              <p className="mt-2 text-sm leading-5 text-blue-50/90 sm:text-[15px] sm:leading-6">{landingConfig.popupDescription}</p>
+              <p className="mt-2 text-sm leading-5 text-[#fff7df]/90 sm:text-[15px] sm:leading-6">{landingConfig.popupDescription}</p>
             </div>
           </div>
-          <button type="button" onClick={openOaForFollow} className="relative mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-white/45 bg-white/16 px-3.5 py-3 text-left text-white shadow-inner backdrop-blur-sm transition hover:bg-white/22">
-            <span className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[#0877f9]"><MessageCircle size={22} /></span><span className="min-w-0"><strong className="block text-sm">Đã dùng Zalo? Quan tâm OA ngay</strong><span className="block truncate text-xs text-blue-100">Mở Zalo chính thức của SmartFurni</span></span></span><ArrowRight size={20} />
+          <button type="button" onClick={openChat} className="relative mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-[#72b5ff] bg-[linear-gradient(135deg,#1687ff,#005bdc)] px-3.5 py-3 text-left text-white shadow-[0_12px_28px_rgba(0,45,120,0.30)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(0,45,120,0.38)]">
+            <span className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[#0877f9]"><MessageCircle size={22} /></span><span className="min-w-0"><strong className="block text-sm">Nhắn tin tư vấn qua Zalo OA</strong><span className="block truncate text-xs text-blue-100">Mở hội thoại chính thức của SmartFurni</span></span></span><ArrowRight size={20} />
           </button>
         </header>
 
         {leadSuccess ? <div className="flex min-h-[420px] flex-col items-center justify-center px-6 py-10 text-center">
           <div className="grid h-20 w-20 place-items-center rounded-full bg-emerald-50 text-emerald-600"><CheckCircle2 size={45} /></div>
           <h3 className="mt-5 text-2xl font-black">SmartFurni đã nhận yêu cầu</h3>
-          <p className="mt-3 max-w-md text-sm leading-6 text-[#66798f]">Chuyên viên sẽ liên hệ để gửi thông tin phù hợp. Bước tiếp theo, Anh/Chị hãy Quan tâm Zalo OA để nhận tư vấn và các nội dung chăm sóc hữu ích.</p>
-          <button type="button" onClick={continueToFollow} className="mt-6 inline-flex min-h-14 w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1181ff,#005ae0)] px-5 text-base font-black text-white shadow-[0_12px_28px_rgba(0,104,255,0.30)]"><MessageCircle size={20} /> {mobileMode ? "Mở Zalo và bấm Quan tâm" : "Tiếp tục Quan tâm Zalo OA"} <ArrowRight size={18} /></button>
-          <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#6d7f94]"><ShieldCheck size={15} className="text-emerald-600" /> Không mất phí · Có thể bỏ Quan tâm bất kỳ lúc nào</div>
+          <p className="mt-3 max-w-md text-sm leading-6 text-[#66798f]">Chuyên viên sẽ liên hệ để gửi thông tin phù hợp. Anh/Chị cũng có thể mở Zalo và nhắn trực tiếp để được tư vấn ngay.</p>
+          <button type="button" onClick={continueToFollow} className="mt-6 inline-flex min-h-14 w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1181ff,#005ae0)] px-5 text-base font-black text-white shadow-[0_12px_28px_rgba(0,104,255,0.30)]"><MessageCircle size={20} /> Nhắn tin tư vấn qua Zalo OA <ArrowRight size={18} /></button>
+          <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#6d7f94]"><ShieldCheck size={15} className="text-emerald-600" /> Không mất phí · Trao đổi trực tiếp với SmartFurni</div>
         </div> : <form onSubmit={submitLead} className="px-4 py-5 sm:px-7 sm:py-6">
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-900"><Sparkles size={16} className="shrink-0 text-amber-600" /> Chỉ mất khoảng 30 giây · Không cần thanh toán · Không spam</div>
 
@@ -527,10 +385,10 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
               {leadOptions.map((option, index) => {
                 const selected = option.id === leadChoice;
                 const image = option.image || images[index % Math.max(images.length, 1)] || campaign.heroImage;
-                return <button key={option.id} type="button" onClick={() => setLeadChoice(option.id)} className={`relative flex min-h-[88px] items-center gap-3 rounded-2xl border p-3 text-left transition sm:block ${selected ? "border-[#0877f9] bg-blue-50 shadow-[0_0_0_2px_rgba(8,119,249,0.10)]" : "border-[#dce4ee] bg-white hover:border-[#95bff2]"}`}>
+                return <button key={option.id} type="button" aria-pressed={selected} onClick={() => setLeadChoice(option.id)} className={`group relative flex min-h-[96px] items-center gap-3 overflow-hidden rounded-2xl border-2 p-3 text-left transition duration-300 sm:block ${selected ? "-translate-y-0.5 border-[#13a663] bg-[linear-gradient(145deg,#f4fff9,#eafff3)] shadow-[0_12px_28px_rgba(13,150,86,0.16)]" : "border-[#dce4ee] bg-white hover:-translate-y-0.5 hover:border-[#87cfa9] hover:shadow-[0_10px_24px_rgba(33,92,66,0.10)]"}`}>
                   {image ? <img src={image} alt="" className="h-14 w-16 shrink-0 rounded-xl object-cover sm:h-16 sm:w-full" /> : <span className="grid h-14 w-16 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0877f9] sm:h-16 sm:w-full"><Sparkles size={23} /></span>}
-                  <span className="min-w-0 sm:mt-2 sm:block">{option.badge && <span className="mb-1 inline-flex rounded-full bg-[#fff0b8] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-[#765300]">{option.badge}</span>}<strong className="block text-[13px] leading-4 text-[#172b46]">{option.label}</strong><span className="mt-1 block text-[11px] leading-4 text-[#6f7f92]">{option.description}</span>{option.price && <span className="mt-1.5 inline-flex rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700">{option.price}</span>}</span>
-                  <span className={`absolute right-2.5 top-2.5 grid h-5 w-5 place-items-center rounded-full border ${selected ? "border-[#0877f9] bg-[#0877f9] text-white" : "border-[#c7d2df] bg-white text-transparent"}`}><Check size={13} /></span>
+                  <span className="min-w-0 sm:mt-2 sm:block">{option.badge && <span className="mb-1 inline-flex rounded-full bg-[linear-gradient(135deg,#ffe477,#f3bd2f)] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#624300] shadow-[0_4px_10px_rgba(202,151,18,0.18)]">{option.badge}</span>}<strong className="block pr-6 text-[13px] leading-4 text-[#172b46]">{option.label}</strong><span className="mt-1 block text-[11px] leading-4 text-[#6f7f92]">{option.description}</span>{option.price && <span className={`sf-zalo-price-range relative mt-2 inline-flex max-w-full items-center gap-1.5 overflow-hidden rounded-lg border px-2.5 py-1.5 text-[10px] font-black sm:text-[11px] ${selected ? "border-emerald-300 bg-[linear-gradient(135deg,#d9ffe9,#aef3cb)] text-[#087342]" : "border-emerald-200 bg-[linear-gradient(135deg,#effff6,#d9f9e7)] text-emerald-700"}`}><span className="text-[9px] font-bold uppercase tracking-[0.06em] opacity-70">Khoảng giá</span><span className="truncate">{option.price}</span></span>}</span>
+                  <span className={`absolute right-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full border-2 transition ${selected ? "scale-100 border-[#13a663] bg-[#13a663] text-white shadow-[0_4px_12px_rgba(13,150,86,0.30)]" : "scale-90 border-[#c7d2df] bg-white text-transparent group-hover:scale-100 group-hover:border-[#74c99d]"}`}><Check size={14} strokeWidth={3} /></span>
                 </button>;
               })}
             </div>
