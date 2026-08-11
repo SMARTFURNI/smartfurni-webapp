@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicZaloFollowCampaign } from "@/lib/zalo-follow-campaign-store";
+import { isLikelyMobileZaloVisitor, isZaloFollowSuccessAction } from "@/lib/zalo-follow-links";
 
 type WidgetState = "preparing" | "ready" | "success" | "error";
 
@@ -36,11 +37,13 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   const [sdkKey, setSdkKey] = useState(0);
   const [identified, setIdentified] = useState(false);
   const [returnedFromZalo, setReturnedFromZalo] = useState(false);
+  const [mobileMode, setMobileMode] = useState<boolean | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const started = useRef(false);
   const hiddenAt = useRef(0);
   const touchStartX = useRef<number | null>(null);
-  const interactive = campaign.widgetMode === "interactive" && Boolean(appId);
+  const interactive = Boolean(appId) && (campaign.widgetMode === "interactive" || mobileMode === true);
+  const widgetCanRender = mobileMode !== null;
   const images = useMemo(() => {
     const values = campaign.galleryImages?.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [];
     return Array.from(new Set(values.map(item => item.trim()).filter(Boolean)));
@@ -53,6 +56,13 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       body: JSON.stringify({ action, visitId, ...extra }), keepalive: true,
     }).catch(() => undefined);
   }, [campaign.slug, visitId]);
+
+  useEffect(() => {
+    const updateMobileMode = () => setMobileMode(isLikelyMobileZaloVisitor(navigator.userAgent, window.innerWidth));
+    updateMobileMode();
+    window.addEventListener("resize", updateMobileMode);
+    return () => window.removeEventListener("resize", updateMobileMode);
+  }, []);
 
   useEffect(() => {
     if (started.current) return;
@@ -89,36 +99,53 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
         setIdentified(true);
         void patchVisit("identify", { userId });
       }
-      const followed = interactive
-        ? ["click_followed", "followed", "follow_success", "click_interaction_accepted"].includes(action)
-        : true;
+      if (action === "updated_follow_widget" || action === "click_interaction_accepted") {
+        setWidgetState("ready");
+      }
+      const followed = isZaloFollowSuccessAction(action, interactive);
       if (!followed) return;
       setWidgetState("success");
+      setReturnedFromZalo(false);
+      window.sessionStorage.removeItem(`sf_zalo_follow_pending:${campaign.id}`);
       trackClientEvent("zalo_follow_success", campaign);
       void patchVisit("follow_success");
     };
-    if (visitId) window.setTimeout(() => window.ZaloSocialSDK?.reload?.(), 50);
+    if (visitId && widgetCanRender) window.setTimeout(() => window.ZaloSocialSDK?.reload?.(), 50);
     return () => { delete window.smartFurniZaloFollowCallback; };
-  }, [campaign, interactive, patchVisit, sdkKey, visitId]);
+  }, [campaign, interactive, patchVisit, sdkKey, visitId, widgetCanRender]);
 
   useEffect(() => {
+    const pendingKey = `sf_zalo_follow_pending:${campaign.id}`;
+    const markLeavingForZalo = () => {
+      if (widgetState !== "ready") return;
+      const now = Date.now();
+      hiddenAt.current = now;
+      window.sessionStorage.setItem(pendingKey, String(now));
+    };
     const detectReturnFromZalo = () => {
       if (document.hidden) {
-        if (widgetState === "ready") hiddenAt.current = Date.now();
+        markLeavingForZalo();
         return;
       }
-      if (hiddenAt.current && Date.now() - hiddenAt.current > 600 && widgetState === "ready") {
+      const pendingAt = hiddenAt.current || Number(window.sessionStorage.getItem(pendingKey) || 0);
+      if (pendingAt && Date.now() - pendingAt > 500 && widgetState === "ready") {
         setReturnedFromZalo(true);
         hiddenAt.current = 0;
+        window.sessionStorage.removeItem(pendingKey);
       }
     };
     document.addEventListener("visibilitychange", detectReturnFromZalo);
+    window.addEventListener("pagehide", markLeavingForZalo);
     window.addEventListener("pageshow", detectReturnFromZalo);
+    window.addEventListener("focus", detectReturnFromZalo);
+    detectReturnFromZalo();
     return () => {
       document.removeEventListener("visibilitychange", detectReturnFromZalo);
+      window.removeEventListener("pagehide", markLeavingForZalo);
       window.removeEventListener("pageshow", detectReturnFromZalo);
+      window.removeEventListener("focus", detectReturnFromZalo);
     };
-  }, [widgetState]);
+  }, [campaign.id, widgetState]);
 
   useEffect(() => {
     if (widgetState !== "preparing") return;
@@ -159,6 +186,8 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
   };
 
   const retry = () => {
+    window.sessionStorage.removeItem(`sf_zalo_follow_pending:${campaign.id}`);
+    setReturnedFromZalo(false);
     setWidgetState("preparing");
     setSdkKey(value => value + 1);
     window.setTimeout(() => window.ZaloSocialSDK?.reload?.(), 50);
@@ -226,8 +255,8 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
             <div className="relative mt-4 flex min-h-[70px] items-center justify-center rounded-2xl border border-[#80baff] bg-[linear-gradient(135deg,#0878ff,#0058d5)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_12px_24px_rgba(0,104,255,0.22)]">
               <div className="pointer-events-none absolute left-4 hidden items-center gap-1.5 text-xs font-bold text-white/90 sm:flex"><ArrowRight size={17} /> NHẤN NÚT</div>
               {widgetState === "preparing" && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-[#0873ed] text-sm font-bold text-white"><Loader2 size={19} className="mr-2 animate-spin" /> Đang tải nút Quan tâm...</div>}
-              <div className="relative z-20 origin-center scale-[1.28] rounded-lg bg-white/10 p-1">
-                {interactive ? <div ref={node => { if (node) { node.setAttribute("user_external_id", visitId); node.setAttribute("status", "show"); } }} className="zalo-interaction-widget" data-oaid={campaign.oaId} data-appid={appId} data-callback="smartFurniZaloFollowCallback" data-reason-msg="SmartFurni xin phép kết nối để gửi tư vấn và báo giá theo yêu cầu của Anh/Chị." /> : <div className="zalo-follow-only-button" data-oaid={campaign.oaId} data-callback="smartFurniZaloFollowCallback" />}
+              <div className={`relative z-20 origin-center rounded-lg bg-white/10 p-1 ${interactive ? "scale-100" : "scale-[1.28]"}`}>
+                {widgetCanRender ? interactive ? <div ref={node => { if (node) { node.setAttribute("user_external_id", visitId); node.setAttribute("status", "show"); } }} className="zalo-interaction-widget" data-oaid={campaign.oaId} data-appid={appId} data-callback="smartFurniZaloFollowCallback" data-reason-msg="SmartFurni xin phép kết nối để gửi tư vấn và báo giá theo yêu cầu của Anh/Chị." /> : <div className="zalo-follow-only-button" data-oaid={campaign.oaId} data-callback="smartFurniZaloFollowCallback" /> : null}
               </div>
             </div>
             <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#3b668f]"><ShieldCheck size={14} className="text-[#12936a]" /> Không cần điền biểu mẫu, không mất phí</div>
