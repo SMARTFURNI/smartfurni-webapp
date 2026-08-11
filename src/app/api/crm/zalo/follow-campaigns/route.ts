@@ -6,6 +6,7 @@ import {
   setZaloFollowCampaignStatus,
   type ZaloFollowCampaignStatus,
 } from "@/lib/zalo-follow-campaign-store";
+import type { ZaloFollowLandingConfig } from "@/lib/zalo-follow-content";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,9 @@ export async function POST(req: NextRequest) {
           cta: String(row.cta || ""),
         };
       }) : [],
+      landingConfig: campaign.landingConfig && typeof campaign.landingConfig === "object"
+        ? campaign.landingConfig as Partial<ZaloFollowLandingConfig>
+        : undefined,
       widgetMode: String(campaign.widgetMode) === "interactive" ? "interactive" : "follow",
     }, "admin");
     return NextResponse.json({ ok: true, campaign: saved });

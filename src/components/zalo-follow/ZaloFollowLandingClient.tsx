@@ -4,14 +4,15 @@ import Script from "next/script";
 import {
   ArrowRight, BadgeCheck, Check, CheckCircle2, ChevronLeft, ChevronRight,
   ExternalLink, Images, Loader2, MessageCircle, RefreshCw, ShieldCheck,
-  Sparkles, Star, Tag, Phone, X,
+  Sparkles, Star, Tag, Phone, X, Quote, Ruler, PackageCheck, ThumbsUp,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PublicZaloFollowCampaign } from "@/lib/zalo-follow-campaign-store";
 import { isLikelyMobileZaloVisitor, isZaloFollowSuccessAction } from "@/lib/zalo-follow-links";
-import { getZaloFollowLeadOptions, getZaloFollowQualifiers, normalizeZaloLeadPhone } from "@/lib/zalo-follow-lead";
+import { normalizeZaloLeadPhone } from "@/lib/zalo-follow-lead";
 
 type WidgetState = "preparing" | "ready" | "success" | "error";
+const REASON_ICONS = [BadgeCheck, Ruler, PackageCheck, ThumbsUp];
 
 declare global {
   interface Window {
@@ -72,8 +73,12 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
     const values = campaign.galleryImages?.length ? campaign.galleryImages : campaign.heroImage ? [campaign.heroImage] : [];
     return Array.from(new Set(values.map(item => item.trim()).filter(Boolean)));
   }, [campaign.galleryImages, campaign.heroImage]);
-  const leadOptions = useMemo(() => getZaloFollowLeadOptions(campaign.productKey), [campaign.productKey]);
-  const leadQualifierConfig = useMemo(() => getZaloFollowQualifiers(campaign.productKey), [campaign.productKey]);
+  const landingConfig = campaign.landingConfig;
+  const leadOptions = landingConfig.leadOptions;
+  const leadQualifierConfig = useMemo(() => ({
+    label: landingConfig.qualifierLabel,
+    values: landingConfig.qualifierValues,
+  }), [landingConfig.qualifierLabel, landingConfig.qualifierValues]);
 
   const patchVisit = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
     if (!visitId) return;
@@ -358,7 +363,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
     }
   };
 
-  return <main className="relative min-h-[100svh] overflow-hidden bg-[#edf5ff] px-2 py-2 text-[#10213a] sm:px-6 sm:py-9">
+  return <main className="relative min-h-[100svh] overflow-hidden bg-[#edf5ff] px-2 pb-28 pt-2 text-[#10213a] sm:px-6 sm:pb-32 sm:pt-9">
     <style jsx global>{`
       body.zalo-follow-landing-active > .no-print.fixed {
         display: none !important;
@@ -394,7 +399,7 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
         </div>}
 
         <div className="order-3 min-w-0 border-b border-[#e6edf5] bg-white p-5 sm:p-7 lg:order-none lg:bg-[#f8fbff] lg:p-9">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff2bb] px-3 py-1.5 text-xs font-bold text-[#7a5700]"><Star size={14} fill="currentColor" /> Tư vấn chính hãng</div>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fff2bb] px-3 py-1.5 text-xs font-bold text-[#7a5700]"><Star size={14} fill="currentColor" /> {landingConfig.authorityLabel}</div>
           <h1 className="mt-4 break-words text-[30px] font-black leading-[1.12] tracking-[-0.035em] text-[#10213a] sm:text-[39px] lg:text-[43px]">{campaign.headline}</h1>
           <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5f728a] sm:text-base">{campaign.description}</p>
           <div className="mt-5 rounded-2xl border border-[#edd47c] bg-[linear-gradient(135deg,#fffdf5,#fff4ca)] p-4 shadow-[0_10px_26px_rgba(169,119,18,0.09)]">
@@ -454,7 +459,34 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
       </div>
     </section>
 
-    {!leadOpen && !leadSuccess && <button type="button" onClick={() => setLeadOpen(true)} className="fixed bottom-[calc(14px+env(safe-area-inset-bottom))] right-3 z-[990] inline-flex h-[52px] items-center gap-2 rounded-full border border-white/70 bg-[linear-gradient(135deg,#0b82ff,#0056d8)] px-4 text-sm font-black text-white shadow-[0_16px_38px_rgba(0,91,220,0.38)] transition hover:-translate-y-0.5 sm:bottom-6 sm:right-6 sm:h-14 sm:px-5"><Sparkles size={18} /> Nhận báo giá nhanh</button>}
+    <section className="relative mx-auto mt-4 w-full max-w-[1180px] overflow-hidden rounded-[24px] border border-white/90 bg-white shadow-[0_18px_48px_rgba(20,55,95,0.10)]">
+      <div className="grid grid-cols-2 divide-x divide-y divide-[#e3edf6] sm:grid-cols-4 sm:divide-y-0">
+        {landingConfig.trustStats.map(item => <div key={`${item.value}-${item.label}`} className="px-3 py-4 text-center sm:px-4 sm:py-5"><strong className="block text-sm font-black text-[#0870e8] sm:text-base">{item.value}</strong><span className="mt-1 block text-[11px] font-semibold text-[#75879c] sm:text-xs">{item.label}</span></div>)}
+      </div>
+
+      <div className="border-t border-[#e6edf5] px-4 py-7 sm:px-8 sm:py-10">
+        <div className="text-center"><div className="text-[11px] font-black uppercase tracking-[0.18em] text-[#0877ff]">SmartFurni đồng hành cùng Anh/Chị</div><h2 className="mt-2 text-2xl font-black tracking-[-0.025em] text-[#10213a] sm:text-3xl">{landingConfig.reasonTitle}</h2></div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {landingConfig.reasonCards.map((item, index) => {
+            const Icon = REASON_ICONS[index % REASON_ICONS.length];
+            return <article key={`${item.title}-${index}`} className="rounded-2xl border border-[#dce7f2] bg-[linear-gradient(145deg,#ffffff,#f7fbff)] p-4 shadow-[0_8px_22px_rgba(30,65,105,0.06)]"><div className="grid h-11 w-11 place-items-center rounded-xl bg-[#eaf4ff] text-[#0877ff]"><Icon size={21} /></div><h3 className="mt-3 text-sm font-black text-[#17304f]">{item.title}</h3><p className="mt-1.5 text-xs leading-5 text-[#718399]">{item.description}</p></article>;
+          })}
+        </div>
+      </div>
+
+      {landingConfig.testimonials.length > 0 && <div className="border-t border-[#e6edf5] bg-[#f8fbff] px-4 py-7 sm:px-8 sm:py-10">
+        <h2 className="text-center text-2xl font-black tracking-[-0.025em] text-[#10213a]">{landingConfig.testimonialTitle}</h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {landingConfig.testimonials.map((item, index) => <article key={`${item.name}-${index}`} className="rounded-2xl border border-[#dae6f1] bg-white p-5 shadow-[0_8px_22px_rgba(30,65,105,0.06)]"><div className="flex items-center justify-between"><div className="flex text-[#e4a40e]">{Array.from({ length: 5 }).map((_, star) => <Star key={star} size={15} fill="currentColor" />)}</div><Quote size={22} className="text-[#b9d8fa]" /></div><p className="mt-3 text-sm leading-6 text-[#40556e]">“{item.quote}”</p><div className="mt-3 text-xs font-black text-[#203752]">{item.name}{item.location && <span className="font-semibold text-[#8291a3]"> · {item.location}</span>}</div></article>)}
+        </div>
+      </div>}
+
+      <div className="border-t border-[#e6edf5] px-4 py-6 sm:px-8 sm:py-8">
+        <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(135deg,#087fff,#0057d8)] px-5 py-7 text-center text-white shadow-[0_18px_42px_rgba(0,92,220,0.25)] sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full border-[30px] border-white/10" /><h2 className="relative text-xl font-black sm:text-2xl">{landingConfig.finalCtaTitle}</h2><p className="relative mx-auto mt-2 max-w-xl text-sm leading-6 text-blue-50/90">{landingConfig.finalCtaDescription}</p><button type="button" onClick={() => { setLeadSuccess(false); setLeadOpen(true); }} className="relative mt-5 inline-flex min-h-14 w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#ffe57f,#e7ad1b)] px-5 text-base font-black text-[#342600] shadow-[0_12px_28px_rgba(17,49,92,0.28)]"><Sparkles size={19} /> {landingConfig.finalCtaLabel}<ArrowRight size={18} /></button></div>
+      </div>
+    </section>
+
+    {!leadOpen && <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[990] flex justify-center px-2 pb-[calc(8px+env(safe-area-inset-bottom))] sm:px-5 sm:pb-[calc(14px+env(safe-area-inset-bottom))]"><div className="pointer-events-auto grid w-full max-w-[620px] grid-cols-2 gap-2 rounded-[20px] border border-white/80 bg-white/95 p-2 shadow-[0_18px_55px_rgba(6,34,76,0.26)] backdrop-blur-xl"><button type="button" onClick={openOaForFollow} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-2 border-[#0877ff] bg-white px-3 text-sm font-black text-[#0870e8]"><MessageCircle size={18} /> Mở Zalo ngay</button><button type="button" onClick={() => { setLeadSuccess(false); setLeadOpen(true); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#ffe16f,#e5ad1c)] px-3 text-sm font-black text-[#362700] shadow-[0_8px_20px_rgba(202,148,10,0.23)]"><Sparkles size={17} /> {landingConfig.finalCtaLabel}</button></div></div>}
 
     {leadOpen && <div className="fixed inset-0 z-[1300] flex items-end justify-center bg-[#071326]/75 p-0 backdrop-blur-[5px] sm:items-center sm:p-5" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setLeadOpen(false); }}>
       <div ref={leadDialogRef} role="dialog" aria-modal="true" aria-labelledby="zalo-lead-title" tabIndex={-1} className="relative max-h-[96dvh] w-full overflow-y-auto rounded-t-[28px] bg-white text-[#10213a] shadow-[0_32px_100px_rgba(0,0,0,0.42)] outline-none sm:max-w-[760px] sm:rounded-[28px]">
@@ -466,8 +498,8 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
             <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/50 bg-white/95 text-[#0877f9] shadow-[0_10px_25px_rgba(0,43,112,0.22)]"><MessageCircle size={29} /></div>
             <div className="min-w-0 pr-8">
               <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-blue-100 sm:text-xs"><BadgeCheck size={15} /> SmartFurni · Zalo Official Account</div>
-              <h2 id="zalo-lead-title" className="mt-2 text-[22px] font-black leading-[1.18] tracking-[-0.025em] sm:text-[30px]">Nhận tư vấn và báo giá nhanh</h2>
-              <p className="mt-2 text-sm leading-5 text-blue-50/90 sm:text-[15px] sm:leading-6">Chọn nhu cầu trong 30 giây. SmartFurni sẽ gửi mẫu, kích thước và báo giá phù hợp với Anh/Chị.</p>
+              <h2 id="zalo-lead-title" className="mt-2 text-[22px] font-black leading-[1.18] tracking-[-0.025em] sm:text-[30px]">{landingConfig.popupTitle}</h2>
+              <p className="mt-2 text-sm leading-5 text-blue-50/90 sm:text-[15px] sm:leading-6">{landingConfig.popupDescription}</p>
             </div>
           </div>
           <button type="button" onClick={openOaForFollow} className="relative mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-white/45 bg-white/16 px-3.5 py-3 text-left text-white shadow-inner backdrop-blur-sm transition hover:bg-white/22">
@@ -494,10 +526,10 @@ export default function ZaloFollowLandingClient({ campaign, appId }: { campaign:
             <div className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
               {leadOptions.map((option, index) => {
                 const selected = option.id === leadChoice;
-                const image = images[index % Math.max(images.length, 1)] || campaign.heroImage;
+                const image = option.image || images[index % Math.max(images.length, 1)] || campaign.heroImage;
                 return <button key={option.id} type="button" onClick={() => setLeadChoice(option.id)} className={`relative flex min-h-[88px] items-center gap-3 rounded-2xl border p-3 text-left transition sm:block ${selected ? "border-[#0877f9] bg-blue-50 shadow-[0_0_0_2px_rgba(8,119,249,0.10)]" : "border-[#dce4ee] bg-white hover:border-[#95bff2]"}`}>
                   {image ? <img src={image} alt="" className="h-14 w-16 shrink-0 rounded-xl object-cover sm:h-16 sm:w-full" /> : <span className="grid h-14 w-16 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0877f9] sm:h-16 sm:w-full"><Sparkles size={23} /></span>}
-                  <span className="min-w-0 sm:mt-2 sm:block"><strong className="block text-[13px] leading-4 text-[#172b46]">{option.label}</strong><span className="mt-1 block text-[11px] leading-4 text-[#6f7f92]">{option.description}</span></span>
+                  <span className="min-w-0 sm:mt-2 sm:block">{option.badge && <span className="mb-1 inline-flex rounded-full bg-[#fff0b8] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-[#765300]">{option.badge}</span>}<strong className="block text-[13px] leading-4 text-[#172b46]">{option.label}</strong><span className="mt-1 block text-[11px] leading-4 text-[#6f7f92]">{option.description}</span>{option.price && <span className="mt-1.5 inline-flex rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700">{option.price}</span>}</span>
                   <span className={`absolute right-2.5 top-2.5 grid h-5 w-5 place-items-center rounded-full border ${selected ? "border-[#0877f9] bg-[#0877f9] text-white" : "border-[#c7d2df] bg-white text-transparent"}`}><Check size={13} /></span>
                 </button>;
               })}
