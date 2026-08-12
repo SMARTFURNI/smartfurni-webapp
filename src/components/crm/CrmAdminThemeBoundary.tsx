@@ -14,7 +14,6 @@ const REFRESHED_ROUTE_PREFIXES = [
   "/crm/email-automation-settings",
   "/crm/email-scenarios",
   "/crm/workflow-builder",
-  "/crm/data-pool",
   "/crm/kanban",
   "/crm/calendar",
   "/crm/reports",

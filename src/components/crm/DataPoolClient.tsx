@@ -792,7 +792,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           <button
             onClick={() => fetchData(false)}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            className={`${styles.secondaryButton} flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl`}
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             <span className="hidden sm:inline">Làm mới</span>
@@ -800,8 +800,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
           {isAdmin && (
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl text-white transition-all"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #9A7A2E)" }}
+              className={`${styles.primaryButton} flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl`}
             >
               <Plus size={14} />
               Thêm data
@@ -898,7 +897,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
         )}
 
         {/* Search & Filter */}
-        <div className={`${styles.surface} bg-white rounded-2xl p-4`}>
+        <div className={`${styles.surface} ${styles.filterBar} bg-white rounded-2xl p-4`}>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
