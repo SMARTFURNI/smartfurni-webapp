@@ -8,11 +8,12 @@ import {
   ChevronDown, CheckCheck, MoreVertical, Hash, Info,
   File as FileIcon, Users, UserPlus, Bot, ShoppingBag as CatalogIcon,
 } from "lucide-react";
-import ZaloFriendPanel from "./ZaloFriendPanel";
 import ZaloFriendsPanel from "./ZaloFriendsPanel";
 import ZaloGroupsPanel from "./ZaloGroupsPanel";
 import ZaloAutoReplyPanel from "./ZaloAutoReplyPanel";
 import ZaloCatalogPanel from "./ZaloCatalogPanel";
+import ZaloLeadLinkModal from "./ZaloLeadLinkModal";
+import styles from "./ZaloInboxClient.module.css";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -81,7 +82,8 @@ interface LeadInfo {
 }
 interface ZaloConversation {
   id: string;
-  phone: string;
+  zaloUserId?: string;
+  phone: string | null;
   displayName: string;
   avatarUrl: string | null;
   lastMessage: string | null;
@@ -378,7 +380,7 @@ function ConversationItem({ conv, isSelected, onClick }: {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
           <span style={{
             fontWeight: hasUnread ? 700 : 500, fontSize: 14,
-            color: isSelected ? "#fff" : T.textPrimary,
+            color: T.textPrimary,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160,
           }}>{conv.displayName}</span>
           <span style={{ fontSize: 11, color: hasUnread ? T.accent : T.textMuted, flexShrink: 0, fontWeight: hasUnread ? 600 : 400 }}>
@@ -661,7 +663,7 @@ function LeadInfoPanel({ lead }: { lead: LeadInfo }) {
 
       {/* CTA */}
       <div style={{ padding: "0 16px 16px", marginTop: "auto" }}>
-        <a href={`/crm/leads?id=${lead.id}`}
+        <a href={`/crm/leads/${lead.id}`}
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             padding: "9px 14px", background: T.accent, color: "#fff",
@@ -680,6 +682,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
   const [qrData, setQrData] = useState<{ qr: string; status: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ connected: boolean; phone: string | null; displayName: string | null } | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/crm/zalo-inbox/status", { credentials: "include" })
@@ -700,12 +703,25 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
   const getQR = async () => {
     setLoading(true);
     setQrData(null);
+    setSettingsError(null);
     stopPolling();
 
     try {
       // Trigger QR login non-blocking
-      await fetch("/api/crm/zalo-inbox/qr-image", { method: "POST", credentials: "include" });
-    } catch { /* ignore */ }
+      const response = await fetch("/api/crm/zalo-inbox/qr-image", { method: "POST", credentials: "include" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setSettingsError(data.error || (response.status === 403
+          ? "Chỉ quản trị viên được phép tạo phiên đăng nhập Zalo."
+          : "Không thể khởi tạo mã QR."));
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setSettingsError("Không thể kết nối máy chủ Zalo Inbox.");
+      setLoading(false);
+      return;
+    }
 
     // Poll mỗi 1.5s để lấy QR image
     let attempts = 0;
@@ -715,6 +731,12 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
       try {
         const res = await fetch("/api/crm/zalo-inbox/qr-image", { credentials: "include" });
         const d = await res.json();
+        if (!res.ok) {
+          setSettingsError(d.error || "Không thể đọc trạng thái đăng nhập Zalo.");
+          setLoading(false);
+          stopPolling();
+          return;
+        }
         if (d.connected) {
           setStatus({ connected: true, phone: d.phone || null, displayName: d.displayName || null });
           setQrData(null);
@@ -724,21 +746,31 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
           setQrData({ qr: d.qrImage, status: "pending" });
           setLoading(false);
         }
-      } catch { /* ignore */ }
+      } catch {
+        setSettingsError("Mất kết nối khi chờ xác nhận QR.");
+        setLoading(false);
+        stopPolling();
+      }
     }, 1500);
   };
 
   useEffect(() => () => stopPolling(), []);
 
   const disconnect = async () => {
-    await fetch("/api/crm/zalo-inbox/disconnect", { method: "POST", credentials: "include" });
+    setSettingsError(null);
+    const response = await fetch("/api/crm/zalo-inbox/disconnect", { method: "POST", credentials: "include" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setSettingsError(data.error || "Không thể đăng xuất tài khoản Zalo.");
+      return;
+    }
     onDisconnect();
     onClose();
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
-      <div style={{ background: "#FFFFFF", borderRadius: 16, padding: 28, width: 380, border: `1px solid ${T.sidebarBorder}`, boxShadow: "0 25px 60px rgba(15,23,42,0.18)" }}>
+    <div style={{ position: "fixed", inset: 0, padding: 16, background: "rgba(15,23,42,0.68)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+      <div style={{ boxSizing: "border-box", background: "#FFFFFF", borderRadius: 16, padding: 24, width: "min(380px, 100%)", maxHeight: "90dvh", overflowY: "auto", border: `1px solid ${T.sidebarBorder}`, boxShadow: "0 25px 60px rgba(15,23,42,0.18)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary }}>Cài đặt Zalo</div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 4 }}><X size={18} /></button>
@@ -752,6 +784,16 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
                 ? `Đã kết nối: ${status.displayName || status.phone || "Zalo"}`
                 : "Chưa đăng nhập"}
             </span>
+          </div>
+        )}
+
+        <div style={{ marginBottom: 16, padding: "10px 12px", borderRadius: 10, color: "#7a5b12", background: "#fff9e8", border: "1px solid #f1d889", fontSize: 11, lineHeight: 1.55 }}>
+          Kết nối này dùng tài khoản Zalo cá nhân qua thư viện tích hợp, không phải API OA chính thức. Không mở đồng thời Zalo Web trong lúc kết nối để hạn chế mất phiên đăng nhập.
+        </div>
+
+        {settingsError && (
+          <div role="alert" style={{ marginBottom: 16, padding: "10px 12px", borderRadius: 10, color: T.error, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.24)", fontSize: 12, lineHeight: 1.5 }}>
+            {settingsError}
           </div>
         )}
 
@@ -795,7 +837,8 @@ export default function ZaloInboxClient() {
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showInfoPanel, setShowInfoPanel] = useState(true);
-  const [convFilter, setConvFilter] = useState<"all" | "unread">("all");
+  const [showLeadLink, setShowLeadLink] = useState(false);
+  const [convFilter, setConvFilter] = useState<"all" | "unread" | "crm" | "unlinked">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
@@ -831,7 +874,11 @@ export default function ZaloInboxClient() {
       if (res.status === 403) { setGatewayStatus({ connected: false, phone: null, message: "Bạn chưa được cấp quyền truy cập" }); return; }
       if (!res.ok) return;
       const data = await res.json();
-      setConversations(data.conversations || []);
+      const nextConversations: ZaloConversation[] = data.conversations || [];
+      setConversations(nextConversations);
+      setSelectedConv(previous => previous
+        ? nextConversations.find(conversation => conversation.id === previous.id) || previous
+        : previous);
       setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status, message: data.error });
     } catch { }
     finally { setLoading(false); }
@@ -1063,6 +1110,7 @@ export default function ZaloInboxClient() {
   // ─── Handlers ────────────────────────────────────────────────────────────
   const handleSelectConv = (conv: ZaloConversation) => {
     setSelectedConv(conv);
+    setShowInfoPanel(typeof window !== "undefined" && window.innerWidth > 860);
     setMessages([]);
     setReplyContext(null);
     setMsgSearchQuery("");
@@ -1138,7 +1186,7 @@ export default function ZaloInboxClient() {
   };
 
   const markUnread = useCallback(async (convId: string) => {
-    setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: (c.unreadCount || 0) + 1 } : c));
+    setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: Math.max(c.unreadCount || 0, 1) } : c));
     try { await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread`, { method: "POST", credentials: "include" }); } catch { }
   }, []);
 
@@ -1155,13 +1203,56 @@ export default function ZaloInboxClient() {
 
   const filteredConvs = conversations.filter(c => {
     const matchSearch = c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.phone.includes(searchQuery) ||
+      (c.phone || "").includes(searchQuery) ||
       c.lead?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchFilter = convFilter === "all" || (convFilter === "unread" && c.unreadCount > 0);
+    const matchFilter = convFilter === "all"
+      || (convFilter === "unread" && c.unreadCount > 0)
+      || (convFilter === "crm" && !!c.lead)
+      || (convFilter === "unlinked" && !c.lead);
     return matchSearch && matchFilter;
   });
 
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+
+  const workspaceTabs = [
+    { id: "messages" as const, label: "Hội thoại", icon: MessageCircle, badge: totalUnread },
+    { id: "friends" as const, label: "Danh bạ", icon: UserPlus, badge: pendingFriendCount },
+    { id: "groups" as const, label: "Nhóm", icon: Users },
+    { id: "auto-reply" as const, label: "Tự động", icon: Bot },
+    { id: "catalog" as const, label: "Catalogue", icon: CatalogIcon },
+  ];
+
+  const workspaceHeader = (
+    <div className={styles.workspaceHeader}>
+      <div className={styles.hero}>
+        <div className={styles.heroIcon}><MessageCircle size={27} /></div>
+        <div>
+          <div className={styles.eyebrow}>Zalo Personal Workspace</div>
+          <h1 className={styles.heroTitle}>Trung tâm hội thoại Zalo</h1>
+          <p className={styles.heroDescription}>Hội thoại, hồ sơ CRM, danh bạ, nhóm và tự động hóa được quản lý trên cùng một không gian làm việc.</p>
+        </div>
+        <div className={styles.heroActions}>
+          <div className={styles.statusPill} data-connected={String(gatewayStatus.connected)}>
+            {gatewayStatus.connected ? <Wifi size={15} /> : <WifiOff size={15} />}
+            <span>{gatewayStatus.connected ? "Đã kết nối" : "Chưa kết nối"}</span>
+          </div>
+          <button className={styles.secondaryAction} onClick={loadConversations}><RefreshCw size={16} /><span>Làm mới</span></button>
+          <button className={styles.primaryAction} onClick={() => setShowSettings(true)}><Settings size={16} /><span>Cài đặt</span></button>
+        </div>
+      </div>
+      <nav className={styles.workspaceNav} aria-label="Chức năng Zalo Inbox">
+        {workspaceTabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button key={tab.id} className={styles.navButton} data-active={String(mainView === tab.id)} onClick={() => setMainView(tab.id)}>
+              <Icon size={16} /><span>{tab.label}</span>
+              {!!tab.badge && <span className={styles.navBadge}>{tab.badge > 99 ? "99+" : tab.badge}</span>}
+            </button>
+          );
+        })}
+      </nav>
+    </div>
+  );
 
   // ─── Render ──────────────────────────────────────────────────────────────────────
   const subViewTitles: Record<string, string> = {
@@ -1173,22 +1264,9 @@ export default function ZaloInboxClient() {
 
   if (mainView !== "messages") {
     return (
-      <div style={{ position: "relative", height: "100vh", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", background: T.sidebarBg }}>
-        {/* Navigation bar */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, zIndex: 100,
-          background: T.sidebarBg, borderBottom: `1px solid ${T.sidebarBorder}`,
-          display: "flex", alignItems: "center", height: 48, paddingLeft: 8,
-        }}>
-          <button
-            onClick={() => setMainView("messages")}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: T.textMuted, fontSize: 13 }}
-          >
-            <ChevronLeft size={16} /> Tin nhắn
-          </button>
-          <div style={{ flex: 1, textAlign: "center", fontWeight: 700, fontSize: 15, color: T.textPrimary, marginRight: 80 }}>{subViewTitles[mainView]}</div>
-        </div>
-        <div style={{ paddingTop: 48, height: "100vh", overflow: "hidden" }}>
+      <div className={styles.page}>
+        {workspaceHeader}
+        <div className={styles.subView} aria-label={subViewTitles[mainView]}>
           {mainView === "friends" && <ZaloFriendsPanel
             onClose={() => setMainView("messages")}
             onOpenChat={async (userId: string, displayName: string) => {
@@ -1202,7 +1280,8 @@ export default function ZaloInboxClient() {
                 // Tạo conversation stub để mở chat ngay lập tức
                 const stub: ZaloConversation = {
                   id: userId,
-                  phone: userId,
+                  zaloUserId: userId,
+                  phone: null,
                   displayName,
                   avatarUrl: null,
                   lastMessage: null,
@@ -1230,7 +1309,9 @@ export default function ZaloInboxClient() {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: T.chatBg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", overflow: "hidden" }}>
+    <div className={styles.page}>
+      {workspaceHeader}
+      <div className={styles.inboxFrame} data-has-selection={String(!!selectedConv)}>
       {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
 
       {/* Context menu */}
@@ -1247,13 +1328,13 @@ export default function ZaloInboxClient() {
       )}
 
       {/* ─── Sidebar ─────────────────────────────────────────────────────── */}
-      <div style={{ width: 320, background: T.sidebarBg, borderRight: `1px solid ${T.sidebarBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      <div className={styles.conversationSidebar} style={{ width: 320, background: T.sidebarBg, borderRight: `1px solid ${T.sidebarBorder}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
         {/* Sidebar header - giống Zalo Web */}
         <div style={{ padding: "12px 14px 0", borderBottom: `1px solid ${T.sidebarBorder}` }}>
           {/* Top row: title + icons */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 18, color: T.textPrimary }}>Tin nhắn</span>
+              <span className={styles.conversationTitle} style={{ fontWeight: 700, fontSize: 18, color: T.textPrimary }}>Hội thoại</span>
               {totalUnread > 0 && (
                 <span style={{ fontSize: 11, fontWeight: 700, background: T.badge, color: "#fff", borderRadius: 10, padding: "1px 7px", minWidth: 20, textAlign: "center" }}>{totalUnread}</span>
               )}
@@ -1270,27 +1351,6 @@ export default function ZaloInboxClient() {
               <button onClick={loadConversations} title="Làm mới"
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <RefreshCw size={15} />
-              </button>
-              <button onClick={() => { setMainView("friends"); setPendingFriendCount(0); }} title="Quản lý bạn bè"
-                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "friends" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: pendingFriendCount > 0 ? T.accent : T.textMuted, position: "relative" }}>
-                <UserPlus size={15} />
-                {pendingFriendCount > 0 && (
-                  <span style={{ position: "absolute", top: 2, right: 2, width: 14, height: 14, borderRadius: "50%", background: T.badge, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
-                    {pendingFriendCount > 9 ? "9+" : pendingFriendCount}
-                  </span>
-                )}
-              </button>
-              <button onClick={() => setMainView("groups")} title="Quản lý nhóm"
-                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "groups" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
-                <Users size={15} />
-              </button>
-              <button onClick={() => setMainView("auto-reply")} title="Trả lời tự động"
-                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "auto-reply" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
-                <Bot size={15} />
-              </button>
-              <button onClick={() => setMainView("catalog")} title="Catalog sản phẩm"
-                style={{ width: 32, height: 32, borderRadius: 8, background: (mainView as string) === "catalog" ? T.sidebarActiveBg : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
-                <CatalogIcon size={15} />
               </button>
               <button onClick={() => setShowSettings(true)} title="Cài đặt Zalo"
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
@@ -1323,7 +1383,7 @@ export default function ZaloInboxClient() {
 
           {/* Filter tabs: Tất cả / Chưa đọc / Phân loại - giống Zalo Web */}
           <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.sidebarBorder}`, marginLeft: -14, marginRight: -14, paddingLeft: 14 }}>
-            {(["all", "unread"] as const).map(tab => (
+            {(["all", "unread", "crm", "unlinked"] as const).map(tab => (
               <button key={tab} onClick={() => setConvFilter(tab)}
                 style={{
                   padding: "8px 14px", background: "none", border: "none", cursor: "pointer",
@@ -1332,7 +1392,7 @@ export default function ZaloInboxClient() {
                   borderBottom: convFilter === tab ? `2px solid ${T.accent}` : "2px solid transparent",
                   marginBottom: -1, transition: "all 0.15s",
                 }}>
-                {tab === "all" ? "Tất cả" : "Chưa đọc"}
+                {tab === "all" ? "Tất cả" : tab === "unread" ? "Chưa đọc" : tab === "crm" ? "Có CRM" : "Chưa gắn"}
                 {tab === "unread" && totalUnread > 0 && (
                   <span style={{ marginLeft: 5, fontSize: 10, background: T.badge, color: "#fff", borderRadius: 8, padding: "1px 5px" }}>{totalUnread}</span>
                 )}
@@ -1342,7 +1402,7 @@ export default function ZaloInboxClient() {
         </div>
 
         {/* Conversation list */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
+        <div className={styles.conversationList} style={{ flex: 1, overflowY: "auto" }}>
           {loading ? (
             <div style={{ padding: 32, textAlign: "center" }}>
               <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${T.sidebarBorder}`, borderTopColor: T.accent, margin: "0 auto 12px", animation: "spin 0.8s linear infinite" }} />
@@ -1367,17 +1427,21 @@ export default function ZaloInboxClient() {
 
       {/* ─── Chat area ───────────────────────────────────────────────────── */}
       {selectedConv ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: T.chatBg, backgroundImage: T.chatBgPattern }}>
+        <div className={styles.chatArea} style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: T.chatBg, backgroundImage: T.chatBgPattern }}>
           {/* Chat header */}
           <div style={{
             padding: "12px 20px", background: T.headerBg, borderBottom: `1px solid ${T.headerBorder}`,
             display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
             backdropFilter: "blur(12px)",
           }}>
+            <button className={styles.mobileBack} onClick={() => setSelectedConv(null)} aria-label="Quay lại danh sách hội thoại"
+              style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center", border: `1px solid ${T.headerBorder}`, borderRadius: 9, background: "#fff", color: T.textSecondary }}>
+              <ChevronLeft size={18} />
+            </button>
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={40} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary }}>{selectedConv.displayName}</div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>{selectedConv.phone}</div>
+              <div className={!selectedConv.phone ? styles.phoneUnknown : undefined} style={{ fontSize: 12, color: selectedConv.phone ? T.textMuted : undefined }}>{selectedConv.phone || "Chưa đối soát số điện thoại"}</div>
             </div>
             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
               <button onClick={() => { setShowMsgSearch(s => !s); setMsgSearchQuery(""); }}
@@ -1386,10 +1450,16 @@ export default function ZaloInboxClient() {
                 <Search size={17} />
               </button>
               {selectedConv.lead && (
-                <a href={`/crm/leads?id=${selectedConv.lead.id}`}
+                <a href={`/crm/leads/${selectedConv.lead.id}`}
                   style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(59,130,246,0.1)", borderRadius: 8, textDecoration: "none", color: T.accent, fontSize: 12, fontWeight: 600, border: `1px solid rgba(59,130,246,0.2)` }}>
                   <User size={12} /> Hồ sơ KH
                 </a>
+              )}
+              {!selectedConv.lead && (
+                <button onClick={() => setShowLeadLink(true)}
+                  style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", cursor: "pointer", background: "#fff8df", borderRadius: 8, color: "#86630f", fontSize: 12, fontWeight: 700, border: "1px solid #ead076" }}>
+                  <UserPlus size={12} /> Gắn CRM
+                </button>
               )}
               {/* Toggle info panel - giống Zalo Web */}
               <button onClick={() => setShowInfoPanel(s => !s)}
@@ -1558,7 +1628,7 @@ export default function ZaloInboxClient() {
 
       {/* Info panel - giống Zalo Web, hiển thị khi showInfoPanel và đã chọn conv */}
       {selectedConv && showInfoPanel && (
-        <div style={{
+        <div className={styles.infoPanel} style={{
           width: 300, background: T.sidebarBg, borderLeft: `1px solid ${T.sidebarBorder}`,
           display: "flex", flexDirection: "column", overflowY: "auto", flexShrink: 0,
         }}>
@@ -1567,7 +1637,7 @@ export default function ZaloInboxClient() {
             <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, marginBottom: 16 }}>Thông tin hội thoại</div>
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={64} />
             <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary, marginTop: 10 }}>{selectedConv.displayName}</div>
-            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 3 }}>{selectedConv.phone}</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 3 }}>{selectedConv.phone || "Chưa đối soát SĐT"}</div>
             {/* Action icons */}
             <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14 }}>
               {[
@@ -1576,7 +1646,7 @@ export default function ZaloInboxClient() {
                 { icon: <ShoppingBag size={16} />, label: "Hồ sơ" },
               ].map(item => (
                 <div key={item.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={item.label === "Hồ sơ" && selectedConv.lead ? () => window.open(`/crm/leads?id=${selectedConv.lead!.id}`, "_blank") : undefined}>
+                  onClick={item.label === "Hồ sơ" && selectedConv.lead ? () => window.open(`/crm/leads/${selectedConv.lead!.id}`, "_blank") : undefined}>
                   <div style={{ width: 40, height: 40, borderRadius: "50%", background: T.sidebarHover, display: "flex", alignItems: "center", justifyContent: "center", color: T.textSecondary }}>
                     {item.icon}
                   </div>
@@ -1617,10 +1687,19 @@ export default function ZaloInboxClient() {
                   ))}
                 </div>
               )}
-              <a href={`/crm/leads?id=${selectedConv.lead.id}`}
+              <a href={`/crm/leads/${selectedConv.lead.id}`}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, padding: "8px", background: T.accent, color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}>
                 <ShoppingBag size={13} /> Xem hồ sơ đầy đủ
               </a>
+            </div>
+          )}
+          {!selectedConv.lead && (
+            <div style={{ padding: "14px 16px", borderBottom: `1px solid ${T.sidebarBorder}` }}>
+              <div style={{ padding: 12, border: "1px solid #eadba9", borderRadius: 12, background: "#fffbec" }}>
+                <div style={{ color: T.textPrimary, fontSize: 13, fontWeight: 750 }}>Chưa liên kết khách hàng CRM</div>
+                <div style={{ marginTop: 4, color: T.textMuted, fontSize: 12, lineHeight: 1.5 }}>Zalo cá nhân không luôn cung cấp số điện thoại. Hãy đối soát và gắn đúng hồ sơ.</div>
+                <button onClick={() => setShowLeadLink(true)} style={{ width: "100%", marginTop: 10, padding: "8px 10px", cursor: "pointer", border: "1px solid #d2a62b", borderRadius: 9, color: "#3d2c08", background: "linear-gradient(135deg,#ffe78c,#d9aa2b)", fontSize: 12, fontWeight: 800 }}>Liên kết hồ sơ CRM</button>
+              </div>
             </div>
           )}
 
@@ -1701,6 +1780,14 @@ export default function ZaloInboxClient() {
           setConversations([]);
         }} />
       )}
+      {showLeadLink && selectedConv && (
+        <ZaloLeadLinkModal
+          conversationId={selectedConv.id}
+          currentLeadId={selectedConv.lead?.id || selectedConv.leadId}
+          onClose={() => setShowLeadLink(false)}
+          onLinked={() => loadConversations()}
+        />
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -1709,6 +1796,7 @@ export default function ZaloInboxClient() {
         ::-webkit-scrollbar-thumb { background: #c8d3e0; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
+      </div>
     </div>
   );
 }

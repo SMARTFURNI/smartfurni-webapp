@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { query } from "@/lib/db";
 
 export async function GET(
@@ -17,8 +18,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getCrmSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await canAccessZaloInbox(session)) {
+    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
 
   // ✅ Fix Bug 1: await params trước khi dùng (Next.js 15)
@@ -31,12 +32,16 @@ export async function GET(
   try {
     // Lấy display_name của conversation để dùng làm fallback tên người gửi
     let conversationDisplayName = "";
+    let conversationPhone = "";
+    let linkedLeadId = "";
     try {
-      const convRows = await query<{ display_name: string }>(
-        `SELECT display_name FROM zalo_conversations WHERE id = $1 LIMIT 1`,
+      const convRows = await query<{ display_name: string; phone: string | null; lead_id: string | null }>(
+        `SELECT display_name, phone, lead_id FROM zalo_conversations WHERE id = $1 LIMIT 1`,
         [conversationId]
       );
       conversationDisplayName = convRows[0]?.display_name || "";
+      conversationPhone = convRows[0]?.phone || "";
+      linkedLeadId = convRows[0]?.lead_id || "";
     } catch { /* ignore nếu bảng chưa có */ }
 
     // Kiểm tra tên có phải ID số không
@@ -45,15 +50,16 @@ export async function GET(
 
     // Lấy tên từ CRM lead nếu display_name là ID số
     let leadName = "";
-    if (isNumericId || !conversationDisplayName) {
+    if ((isNumericId || !conversationDisplayName) && (linkedLeadId || conversationPhone)) {
       try {
-        const cleanPhone = conversationId.replace(/\D/g, "").replace(/^84/, "0");
+        const cleanPhone = conversationPhone.replace(/\D/g, "").replace(/^84/, "0");
         const leadRows = await query<{ name: string }>(
-          `SELECT name FROM crm_leads 
-           WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1
-              OR REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $2
+          `SELECT data->>'name' AS name FROM crm_leads
+           WHERE id = $1
+              OR ($2 <> '' AND REGEXP_REPLACE(COALESCE(data->>'phone', ''), '[^0-9]', '', 'g') = $2)
+              OR ($3 <> '' AND REGEXP_REPLACE(COALESCE(data->>'phone', ''), '[^0-9]', '', 'g') = $3)
            LIMIT 1`,
-          [cleanPhone, conversationId.replace(/\D/g, "")]
+          [linkedLeadId, cleanPhone, conversationPhone.replace(/\D/g, "")]
         );
         leadName = leadRows[0]?.name || "";
       } catch { /* ignore */ }

@@ -5,12 +5,14 @@ import {
   rejectZaloFriendRequest,
   getZaloFriendRequestStatus,
 } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 /**
  * POST /api/crm/zalo-inbox/friend-action
  * Body: { action: "send" | "accept" | "reject" | "status", userId: string, message?: string }
  */
 export async function POST(req: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await req.json() as {
       action: "send" | "accept" | "reject" | "status";

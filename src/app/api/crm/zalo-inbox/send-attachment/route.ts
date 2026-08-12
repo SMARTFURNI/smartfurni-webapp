@@ -8,6 +8,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { sendZaloAttachment } from "@/lib/zalo-gateway";
 import { upsertConversation } from "@/lib/zalo-inbox-store";
 
@@ -15,9 +16,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const session = await getCrmSession() as any;
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await getCrmSession();
+  if (!await canAccessZaloInbox(session)) {
+    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
 
   try {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     try {
       await upsertConversation({
         id: conversationId,
-        phone: conversationId,
+        zaloUserId: conversationId,
         displayName: conversationId,
         lastMessage: fileLabel,
       });

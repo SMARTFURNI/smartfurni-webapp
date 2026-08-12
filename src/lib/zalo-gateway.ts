@@ -415,7 +415,7 @@ function setupListeners(api: unknown) {
       const displayNameToSave = (!isNumericId && senderName) ? senderName : threadId;
       await upsertConversation({
         id: threadId,
-        phone: threadId,
+        zaloUserId: threadId,
         displayName: displayNameToSave,
         avatarUrl: senderAvatar,
         lastMessage: processed.content || "[Hình ảnh]",
@@ -784,7 +784,7 @@ export async function sendZaloMessage(params: {
       } catch { /* ignore */ }
       await upsertConversation({
         id: params.conversationId,
-        phone: params.conversationId,
+        zaloUserId: params.conversationId,
         displayName: customerName,
         avatarUrl: customerAvatar || undefined,
         lastMessage: params.content,
@@ -942,7 +942,7 @@ export async function sendZaloAttachment(params: {
     try {
       await upsertConversation({
         id: params.conversationId,
-        phone: params.conversationId,
+        zaloUserId: params.conversationId,
         displayName: params.conversationId,
         lastMessage: lastMsgLabel,
       });

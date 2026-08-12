@@ -20,13 +20,17 @@ export async function GET() {
   const enriched = await Promise.all(
     accessList.map(async (access) => {
       try {
-        const res = await query(
-          `SELECT id, full_name, email, role FROM crm_staff WHERE id = $1`,
+        const rows = await query(
+          `SELECT id,
+                  data->>'fullName' AS full_name,
+                  data->>'email' AS email,
+                  role
+           FROM crm_staff WHERE id = $1`,
           [access.staffId]
         );
         return {
           ...access,
-          staff: res.rows[0] || null,
+          staff: rows[0] || null,
         };
       } catch {
         return { ...access, staff: null };
@@ -51,8 +55,11 @@ export async function POST(req: NextRequest) {
   }
 
   // Kiểm tra nhân viên tồn tại
-  const staffRes = await query(`SELECT id, full_name FROM crm_staff WHERE id = $1`, [staffId]);
-  if (staffRes.rows.length === 0) {
+  const staffRows = await query<{ id: string; full_name: string }>(
+    `SELECT id, data->>'fullName' AS full_name FROM crm_staff WHERE id = $1`,
+    [staffId]
+  );
+  if (staffRows.length === 0) {
     return NextResponse.json({ error: "Nhân viên không tồn tại" }, { status: 404 });
   }
 
@@ -60,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: `Đã cấp quyền cho ${staffRes.rows[0].full_name}`,
+    message: `Đã cấp quyền cho ${staffRows[0].full_name}`,
   });
 }
 

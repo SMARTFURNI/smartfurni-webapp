@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getZaloSettings, updateZaloSetting, getZaloMyProfile } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action") || "settings";
 
@@ -21,6 +23,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getAuthorizedZaloInboxSession();
+  if (!session?.isAdmin) return NextResponse.json({ error: "Chỉ quản trị viên được thay đổi cài đặt Zalo" }, { status: 403 });
   try {
     const body = await request.json();
     const { settingKey, settingValue } = body;

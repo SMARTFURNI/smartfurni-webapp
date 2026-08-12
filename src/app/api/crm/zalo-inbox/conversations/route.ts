@@ -4,36 +4,14 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { getConversations, upsertConversation } from "@/lib/zalo-inbox-store";
+import { getConversationCount, getConversations, linkConversationToLead, upsertConversation } from "@/lib/zalo-inbox-store";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { getGatewayStatus, ensureZaloConnected, getZaloUserInfo } from "@/lib/zalo-gateway";
 import { getDb } from "@/lib/db";
 
-async function checkAccess(session: any): Promise<boolean> {
-  if (!session) return false;
-  if (session.isAdmin) return true;
-  if (session.staffRole === 'manager' || session.staffRole === 'admin') return true;
-  const db = getDb();
-  try {
-    const tableCheck = await db.query(
-      `SELECT 1 FROM information_schema.tables WHERE table_name = 'zalo_inbox_access' LIMIT 1`
-    );
-    if (tableCheck.rows.length === 0) return true;
-    const countRes = await db.query(`SELECT COUNT(*) as cnt FROM zalo_inbox_access`);
-    const count = parseInt(countRes.rows[0]?.cnt || '0');
-    if (count === 0) return true;
-    const result = await db.query(
-      `SELECT 1 FROM zalo_inbox_access WHERE staff_id = $1 LIMIT 1`,
-      [session.staffId || session.id]
-    );
-    return result.rows.length > 0;
-  } catch {
-    return true;
-  }
-}
-
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
-  if (!await checkAccess(session)) {
+  if (!await canAccessZaloInbox(session)) {
     return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   }
 
@@ -45,50 +23,96 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    const conversations = await getConversations(limit, offset);
+    const [conversations, total] = await Promise.all([
+      getConversations(limit, offset),
+      getConversationCount(),
+    ]);
     const gatewayStatus = getGatewayStatus();
 
-    // Enrich với CRM lead info
+    // Đối soát CRM theo một truy vấn thay vì N+1 truy vấn cho từng hội thoại.
     const db = getDb();
-    const enriched = await Promise.all(
-      conversations.map(async (conv) => {
-        let lead = null;
-        if (conv.phone) {
-          try {
-            const cleanPhone = conv.phone.replace(/\D/g, "").replace(/^84/, "0");
-            const res = await db.query(
-              `SELECT id, name, phone, stage, type, assigned_to,
-                      (SELECT json_agg(json_build_object(
-                        'id', id, 'name', name, 'status', status, 'total_amount', total_amount
-                      ) ORDER BY created_at DESC)
-                       FROM crm_quotes WHERE lead_id = crm_leads.id LIMIT 3) as recent_quotes
-               FROM crm_leads 
-               WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1
-                  OR REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $2
-               LIMIT 1`,
-              [cleanPhone, conv.phone.replace(/\D/g, "")]
-            );
-            lead = res.rows[0] || null;
-          } catch { /* ignore */ }
+    const normalizedPhones = Array.from(new Set(conversations.flatMap((conv) => {
+      if (!conv.phone) return [];
+      const raw = conv.phone.replace(/\D/g, "");
+      return [raw, raw.replace(/^84/, "0")].filter(Boolean);
+    })));
+    const linkedLeadIds = Array.from(new Set(conversations.flatMap((conv) => conv.leadId ? [conv.leadId] : [])));
+    const leadsByPhone = new Map<string, any>();
+    const leadsById = new Map<string, any>();
+    if (normalizedPhones.length > 0 || linkedLeadIds.length > 0) {
+      try {
+        const leadResult = await db.query(
+          `SELECT l.id,
+                  l.data->>'name' AS name,
+                  l.data->>'phone' AS phone,
+                  l.data->>'stage' AS stage,
+                  l.data->>'type' AS type,
+                  l.data->>'assignedTo' AS assigned_to,
+                  COALESCE((
+                    SELECT json_agg(q ORDER BY q.created_at DESC)
+                    FROM (
+                      SELECT id,
+                             data->>'quoteNumber' AS name,
+                             data->>'status' AS status,
+                             COALESCE(NULLIF(data->>'total', '')::numeric, 0) AS total_amount,
+                             data->>'createdAt' AS created_at
+                      FROM crm_quotes
+                      WHERE lead_id = l.id
+                      ORDER BY updated_at DESC
+                      LIMIT 3
+                    ) q
+                  ), '[]'::json) AS recent_quotes
+           FROM crm_leads l
+           WHERE l.id = ANY($1::text[])
+              OR REGEXP_REPLACE(COALESCE(l.data->>'phone', ''), '[^0-9]', '', 'g') = ANY($2::text[])`,
+          [linkedLeadIds, normalizedPhones]
+        );
+        for (const lead of leadResult.rows) {
+          leadsById.set(lead.id, lead);
+          const raw = String(lead.phone || "").replace(/\D/g, "");
+          if (raw) {
+            leadsByPhone.set(raw, lead);
+            leadsByPhone.set(raw.replace(/^84/, "0"), lead);
+          }
         }
+      } catch (error) {
+        console.error("[zalo-inbox/conversations] CRM enrichment failed", error);
+      }
+    }
+
+    const enriched = conversations.map((conv) => {
+        const rawPhone = String(conv.phone || "").replace(/\D/g, "");
+        const lead = (conv.leadId ? leadsById.get(conv.leadId) : null)
+          || (rawPhone ? leadsByPhone.get(rawPhone) || leadsByPhone.get(rawPhone.replace(/^84/, "0")) : null)
+          || null;
 
         // Nếu displayName trông giống ID số Zalo (chỉ chứa số, dài > 8), ưu tiên dùng tên từ CRM lead
         const isNumericId = /^\d{8,}$/.test(conv.displayName?.trim() ?? "");
         const resolvedName = (isNumericId && lead?.name)
           ? lead.name
-          : (conv.displayName && !isNumericId ? conv.displayName : (lead?.name || conv.phone));
+          : (conv.displayName && !isNumericId ? conv.displayName : (lead?.name || conv.phone || conv.zaloUserId || "Khách Zalo"));
+        const normalizedLead = lead ? {
+          id: lead.id,
+          name: lead.name,
+          phone: lead.phone,
+          stage: lead.stage,
+          type: lead.type,
+          assignedTo: lead.assigned_to,
+          recent_quotes: lead.recent_quotes || [],
+        } : null;
         return {
           id: conv.id,
+          leadId: lead?.id || conv.leadId,
+          zaloUserId: conv.zaloUserId,
           displayName: resolvedName,
           phone: conv.phone,
           avatarUrl: conv.avatarUrl,
           lastMessage: conv.lastMessage,
           lastMessageAt: conv.lastMessageAt,
           unreadCount: conv.unreadCount,
-          lead,
+          lead: normalizedLead,
         };
-      })
-    );
+      });
 
     // Fire-and-forget: enrich avatar cho conversations chưa có avatar
     const missingAvatarConvs = enriched.filter(c => !c.avatarUrl && c.id);
@@ -104,7 +128,7 @@ export async function GET(req: NextRequest) {
               if (avatar || name) {
                 await upsertConversation({
                   id: conv.id,
-                  phone: conv.id,
+                  zaloUserId: conv.id,
                   displayName: name || conv.displayName,
                   avatarUrl: avatar,
                   lastMessage: conv.lastMessage,
@@ -121,7 +145,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       conversations: enriched,
-      total: enriched.length,
+      total,
       connected: gatewayStatus.isConnected,
       status: gatewayStatus.status,
       // phone: hiển thị tên thật nếu có, fallback về userId
@@ -136,5 +160,31 @@ export async function GET(req: NextRequest) {
       connected: false,
       error: error.message || "Lỗi server",
     }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getCrmSession();
+  if (!await canAccessZaloInbox(session)) {
+    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  }
+  try {
+    const { conversationId, leadId } = await req.json();
+    if (!conversationId) return NextResponse.json({ error: "Thiếu conversationId" }, { status: 400 });
+    if (!leadId) {
+      await linkConversationToLead(conversationId, null);
+      return NextResponse.json({ success: true });
+    }
+    const db = getDb();
+    const leadResult = await db.query(
+      `SELECT id, data->>'phone' AS phone FROM crm_leads WHERE id = $1 LIMIT 1`,
+      [leadId]
+    );
+    if (!leadResult.rows[0]) return NextResponse.json({ error: "Không tìm thấy khách hàng" }, { status: 404 });
+    await linkConversationToLead(conversationId, leadId, leadResult.rows[0].phone || null);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[zalo-inbox/conversations] Link lead failed", error);
+    return NextResponse.json({ error: "Không thể liên kết hồ sơ khách hàng" }, { status: 500 });
   }
 }

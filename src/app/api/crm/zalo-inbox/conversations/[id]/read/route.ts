@@ -12,6 +12,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import {
   markMessagesAsRead,
   markConversationAsRead,
@@ -22,8 +23,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getCrmSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await canAccessZaloInbox(session)) {
+    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
 
   // ✅ Fix Bug 1: await params trước khi dùng (Next.js 15)

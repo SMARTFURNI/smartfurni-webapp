@@ -6,6 +6,7 @@ import {
   UserMinus, Crown, Shield, LogOut, Trash2, ChevronRight,
   Copy, ExternalLink, AlertCircle, Hash
 } from "lucide-react";
+import sub from "./ZaloInboxSubpanel.module.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -154,10 +155,10 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-white">
+    <div className={`${sub.root} flex flex-col h-full bg-white dark:bg-white`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-200">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-900 text-sm">Quản lý nhóm</h2>
+      <div className={`${sub.header} flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-200`}>
+        <h2 className={`${sub.title} font-semibold text-gray-900 dark:text-gray-900 text-sm`}>Nhóm Zalo</h2>
         <div className="flex items-center gap-2">
           <button onClick={() => tab === "list" ? loadGroups() : loadInvites()} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -167,9 +168,9 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-200 overflow-x-auto">
+      <div className={`${sub.tabs} flex border-b border-gray-200 dark:border-gray-200 overflow-x-auto`}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`flex items-center gap-1 px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-blue-500 text-blue-600 dark:text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}>
+          <button key={t.key} onClick={() => setTab(t.key)} className={`${sub.tab} ${tab === t.key ? sub.tabActive : ""} flex items-center gap-1 px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${tab === t.key ? "text-blue-600" : "text-gray-500 hover:text-gray-700"}`}>
             {t.icon} {t.label}
             {t.badge ? <span className="bg-red-500 text-white text-[10px] rounded-full px-1 min-w-[16px] text-center">{t.badge}</span> : null}
           </button>

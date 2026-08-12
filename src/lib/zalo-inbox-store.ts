@@ -8,7 +8,8 @@ import { getDb } from "./db";
 
 export interface ZaloConversation {
   id: string;                    // thread_id từ Zalo API
-  phone: string;                 // số điện thoại người nhắn
+  zaloUserId: string;            // UID Zalo, không được dùng thay số điện thoại CRM
+  phone: string | null;          // số điện thoại thật nếu đã đối soát được
   displayName: string;           // tên hiển thị
   avatarUrl: string | null;      // ảnh đại diện
   lastMessage: string | null;    // tin nhắn cuối
@@ -74,7 +75,8 @@ export async function ensureZaloInboxTables(): Promise<void> {
   await db.query(`
     CREATE TABLE IF NOT EXISTS zalo_conversations (
       id TEXT PRIMARY KEY,
-      phone TEXT NOT NULL,
+      zalo_user_id TEXT,
+      phone TEXT,
       display_name TEXT NOT NULL,
       avatar_url TEXT,
       last_message TEXT,
@@ -86,10 +88,25 @@ export async function ensureZaloInboxTables(): Promise<void> {
     )
   `);
 
+  // Migration an toàn cho schema cũ: trước đây UID Zalo bị ghi nhầm vào cột phone.
+  await db.query(`ALTER TABLE zalo_conversations ADD COLUMN IF NOT EXISTS zalo_user_id TEXT`);
+  await db.query(`ALTER TABLE zalo_conversations ALTER COLUMN phone DROP NOT NULL`);
+  await db.query(`
+    UPDATE zalo_conversations
+    SET zalo_user_id = COALESCE(zalo_user_id, id),
+        phone = CASE WHEN phone = id THEN NULL ELSE phone END
+    WHERE zalo_user_id IS NULL OR phone = id
+  `);
+
   // Index để tìm conversation theo số điện thoại
   await db.query(`
     CREATE INDEX IF NOT EXISTS idx_zalo_conversations_phone 
     ON zalo_conversations(phone)
+  `);
+
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_zalo_conversations_zalo_user_id
+    ON zalo_conversations(zalo_user_id)
   `);
 
   // Index để join với leads
@@ -172,7 +189,8 @@ export async function updateZaloLastConnected(phone: string): Promise<void> {
 
 export async function upsertConversation(conv: {
   id: string;
-  phone: string;
+  zaloUserId?: string | null;
+  phone?: string | null;
   displayName: string;
   avatarUrl?: string | null;
   lastMessage?: string | null;
@@ -181,16 +199,39 @@ export async function upsertConversation(conv: {
   const db = getDb();
   await ensureZaloInboxTables();
   await db.query(
-    `INSERT INTO zalo_conversations 
-     (id, phone, display_name, avatar_url, last_message, last_message_at, lead_id, updated_at)
-     VALUES ($1, $2, $3, $4, $5, NOW(), $6, NOW())
+    `INSERT INTO zalo_conversations
+     (id, zalo_user_id, phone, display_name, avatar_url, last_message, last_message_at, lead_id, updated_at)
+     VALUES ($1, COALESCE(NULLIF($2, ''), $1), NULLIF($3, ''), $4, $5, $6, NOW(), $7, NOW())
      ON CONFLICT (id) DO UPDATE SET
-       display_name = $3,
-       avatar_url = COALESCE($4, zalo_conversations.avatar_url),
-       last_message = $5, 
-       last_message_at = NOW(), lead_id = $6, updated_at = NOW()`,
-    [conv.id, conv.phone, conv.displayName, conv.avatarUrl || null, conv.lastMessage || null, conv.leadId || null]
+       zalo_user_id = COALESCE(NULLIF($2, ''), zalo_conversations.zalo_user_id, $1),
+       phone = COALESCE(NULLIF($3, ''), zalo_conversations.phone),
+       display_name = CASE
+         WHEN $4 ~ '^[0-9]{8,}$' AND zalo_conversations.display_name !~ '^[0-9]{8,}$'
+           THEN zalo_conversations.display_name
+         ELSE $4
+       END,
+       avatar_url = COALESCE($5, zalo_conversations.avatar_url),
+       last_message = COALESCE($6, zalo_conversations.last_message),
+       last_message_at = NOW(),
+       lead_id = COALESCE($7, zalo_conversations.lead_id),
+       updated_at = NOW()`,
+    [
+      conv.id,
+      conv.zaloUserId || conv.id,
+      conv.phone || null,
+      conv.displayName,
+      conv.avatarUrl || null,
+      conv.lastMessage ?? null,
+      conv.leadId || null,
+    ]
   );
+}
+
+export async function getConversationCount(): Promise<number> {
+  const db = getDb();
+  await ensureZaloInboxTables();
+  const res = await db.query(`SELECT COUNT(*)::int AS count FROM zalo_conversations`);
+  return Number(res.rows[0]?.count || 0);
 }
 
 export async function getConversations(limit = 50, offset = 0): Promise<ZaloConversation[]> {
@@ -218,11 +259,39 @@ export async function markConversationAsRead(id: string): Promise<void> {
   await db.query(`UPDATE zalo_conversations SET unread_count = 0 WHERE id = $1`, [id]);
 }
 
+export async function markConversationAsUnread(id: string): Promise<void> {
+  const db = getDb();
+  await ensureZaloInboxTables();
+  await db.query(
+    `UPDATE zalo_conversations
+     SET unread_count = GREATEST(unread_count, 1), updated_at = NOW()
+     WHERE id = $1`,
+    [id]
+  );
+}
+
 export async function incrementUnreadCount(conversationId: string): Promise<void> {
   const db = getDb();
   await db.query(
     `UPDATE zalo_conversations SET unread_count = unread_count + 1 WHERE id = $1`,
     [conversationId]
+  );
+}
+
+export async function linkConversationToLead(
+  conversationId: string,
+  leadId: string | null,
+  phone?: string | null
+): Promise<void> {
+  const db = getDb();
+  await ensureZaloInboxTables();
+  await db.query(
+    `UPDATE zalo_conversations
+     SET lead_id = $2,
+         phone = CASE WHEN $2::text IS NULL THEN phone ELSE COALESCE($3, phone) END,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [conversationId, leadId, phone || null]
   );
 }
 
@@ -335,6 +404,7 @@ function mapZaloCredentials(row: any): ZaloCredentials {
 function mapZaloConversation(row: any): ZaloConversation {
   return {
     id: row.id,
+    zaloUserId: row.zalo_user_id || row.id,
     phone: row.phone,
     displayName: row.display_name,
     avatarUrl: row.avatar_url,

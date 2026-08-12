@@ -6,14 +6,15 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
+  if (!await canAccessZaloInbox(session)) {
+    return new NextResponse("Forbidden", { status: session ? 403 : 401 });
   }
 
   const { searchParams } = new URL(req.url);

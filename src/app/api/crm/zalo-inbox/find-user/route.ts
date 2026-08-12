@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findZaloUserByPhone } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 /**
  * GET /api/crm/zalo-inbox/find-user?phone=0912345678
  * Tìm user Zalo qua số điện thoại
  */
 export async function GET(req: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const { searchParams } = new URL(req.url);
     const phone = searchParams.get("phone");

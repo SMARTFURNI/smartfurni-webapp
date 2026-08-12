@@ -1,0 +1,61 @@
+.root {
+  height: 100%;
+  color: #172033;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(225, 181, 63, .1), transparent 25%),
+    linear-gradient(180deg, #fff 0%, #f8fafc 100%) !important;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.header {
+  min-height: 64px;
+  padding: 12px 18px !important;
+  border-bottom: 1px solid #e8dfc8 !important;
+  background: linear-gradient(110deg, #fff 0%, #fffdf7 64%, #fff6dc 100%);
+}
+
+.title {
+  color: #172033 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: -.015em;
+}
+
+.tabs {
+  gap: 6px;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid #dbe3ee !important;
+  background: rgba(248, 250, 252, .92);
+}
+
+.tab {
+  min-height: 34px;
+  padding: 0 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px;
+}
+
+.tabActive {
+  border-color: #e1bf59 !important;
+  color: #76560d !important;
+  background: linear-gradient(135deg, #fff9e8, #ffedb0);
+  box-shadow: 0 5px 12px rgba(154, 116, 24, .1);
+}
+
+.primaryButton {
+  border: 1px solid #bd8f1a !important;
+  color: #382807 !important;
+  background: linear-gradient(135deg, #ffe381 0%, #d9a925 100%) !important;
+  box-shadow: 0 6px 14px rgba(180, 132, 18, .16);
+}
+
+.formPanel {
+  border-bottom: 1px solid #eadcae !important;
+  background: linear-gradient(135deg, #fffdf6, #fff8e3) !important;
+}
+
+@media (max-width: 640px) {
+  .header { min-height: 56px; padding: 10px 12px !important; }
+  .tabs { overflow-x: auto; }
+  .tab { flex: 0 0 auto; }
+}

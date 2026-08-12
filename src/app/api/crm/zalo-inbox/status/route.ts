@@ -4,6 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { isZaloConnected, getZaloUserId, getZaloUserDisplayName, initZaloGateway } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +14,8 @@ let initialized = false;
 
 export async function GET() {
   const session = await getCrmSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await canAccessZaloInbox(session)) {
+    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
 
   // Khởi tạo gateway khi cần (auto-reconnect từ DB)

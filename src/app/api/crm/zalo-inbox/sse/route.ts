@@ -7,44 +7,19 @@
  */
 import { NextRequest } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { getDb } from "@/lib/db";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { addSSEClient, removeSSEClient, SSEClient, ensureZaloConnected } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-async function checkAccess(session: { isAdmin?: boolean; staffId?: string } | null): Promise<boolean> {
-  if (!session) return false;
-  if (session.isAdmin) return true;
-  if (session.staffId) {
-    const db = getDb();
-    try {
-      const tableCheck = await db.query(
-        `SELECT 1 FROM information_schema.tables WHERE table_name = 'zalo_inbox_access' LIMIT 1`
-      );
-      if (tableCheck.rows.length === 0) return true;
-      const countRes = await db.query(`SELECT COUNT(*) as cnt FROM zalo_inbox_access`);
-      const count = parseInt(countRes.rows[0]?.cnt || "0");
-      if (count === 0) return true;
-      const result = await db.query(
-        `SELECT 1 FROM zalo_inbox_access WHERE staff_id = $1 LIMIT 1`,
-        [session.staffId]
-      );
-      return result.rows.length > 0;
-    } catch {
-      return true;
-    }
-  }
-  return false;
-}
-
 export async function GET(req: NextRequest) {
-  const session = await getCrmSession() as { isAdmin?: boolean; staffId?: string } | null;
+  const session = await getCrmSession();
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const hasAccess = await checkAccess(session);
+  const hasAccess = await canAccessZaloInbox(session);
   if (!hasAccess) {
     return new Response("Forbidden", { status: 403 });
   }

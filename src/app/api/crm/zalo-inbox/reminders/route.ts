@@ -4,10 +4,12 @@ import {
   createZaloReminder,
   removeZaloReminder,
 } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   const { searchParams } = new URL(request.url);
   const threadId = searchParams.get("threadId");
   const isGroup = searchParams.get("isGroup") === "true";
@@ -22,6 +24,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await request.json();
     const { action, threadId, title, emoji, startTime, repeat, isGroup, reminderId } = body;

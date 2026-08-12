@@ -5,6 +5,7 @@ import {
   isZaloConnected,
   initZaloGateway,
 } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +24,7 @@ let initialized = false;
  * 4. Gửi lời mời kết bạn
  */
 export async function POST(req: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await req.json() as { phone: string; message?: string; leadName?: string };
     const { phone, leadName } = body;

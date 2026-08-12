@@ -4,13 +4,14 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { disconnectZalo, getGatewayStatus } from "@/lib/zalo-gateway";
 import { query } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!await canAccessZaloInbox(session)) {
+    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
 
   try {
@@ -25,9 +26,9 @@ export async function GET(req: NextRequest) {
     }
     // Fallback: kiểm tra DB
     try {
-      const res = await query(`SELECT user_id, display_name FROM zalo_inbox_credentials LIMIT 1`);
-      if (res.rows && res.rows.length > 0) {
-        const row = res.rows[0];
+      const rows = await query(`SELECT user_id, display_name FROM zalo_inbox_credentials LIMIT 1`);
+      if (rows.length > 0) {
+        const row = rows[0];
         return NextResponse.json({
           phone: row.display_name || row.user_id || null,
           isActive: false,

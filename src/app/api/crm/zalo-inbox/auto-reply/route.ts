@@ -4,10 +4,12 @@ import {
   createZaloAutoReply,
   deleteZaloAutoReply,
 } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     return NextResponse.json(await getZaloAutoReplies());
   } catch (err: any) {
@@ -16,6 +18,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await request.json();
     const { action, message, startTime, endTime, replyId } = body;

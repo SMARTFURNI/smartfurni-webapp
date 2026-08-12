@@ -345,7 +345,7 @@ export default function ZaloFriendPanel() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", height: "100vh", background: T.chatBg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100%", minHeight: 0, background: T.chatBg, fontFamily: "'Inter', system-ui, -apple-system, sans-serif", overflow: "hidden" }}>
       {/* Toast notification */}
       {toastRequest && (
         <FriendNotifToast

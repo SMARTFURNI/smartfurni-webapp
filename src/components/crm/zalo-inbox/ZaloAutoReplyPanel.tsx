@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Bot, Plus, Trash2, RefreshCw, X, Clock, CheckCircle, AlertCircle, ToggleLeft, ToggleRight } from "lucide-react";
+import sub from "./ZaloInboxSubpanel.module.css";
 
 interface AutoReply {
   id: number;
@@ -85,15 +86,15 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-white">
+    <div className={`${sub.root} flex flex-col h-full bg-white dark:bg-white`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-200">
+      <div className={`${sub.header} flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-200`}>
         <div className="flex items-center gap-2">
           <Bot size={16} className="text-blue-500" />
-          <h2 className="font-semibold text-gray-900 dark:text-gray-900 text-sm">Trả lời tự động</h2>
+          <h2 className={`${sub.title} font-semibold text-gray-900 dark:text-gray-900 text-sm`}>Trả lời tự động</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowCreate(!showCreate)} className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg">
+          <button onClick={() => setShowCreate(!showCreate)} className={`${sub.primaryButton} flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg`}>
             <Plus size={12} /> Thêm
           </button>
           <button onClick={loadReplies} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-100 text-gray-500">
@@ -105,7 +106,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
 
       {/* Create Form */}
       {showCreate && (
-        <div className="border-b border-gray-200 dark:border-gray-200 p-4 bg-blue-50 dark:bg-blue-50 space-y-3">
+        <div className={`${sub.formPanel} border-b border-gray-200 p-4 space-y-3`}>
           <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-300">Tạo auto-reply mới</h3>
           <div>
             <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Nội dung tin nhắn tự động</label>

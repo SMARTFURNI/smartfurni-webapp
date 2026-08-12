@@ -24,8 +24,10 @@ import {
   voteZaloPoll,
   lockZaloPoll,
 } from "@/lib/zalo-gateway";
+import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
 export async function GET(request: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action") || "list";
   const groupId = searchParams.get("groupId") || "";
@@ -58,6 +60,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await request.json();
     const { action, groupId, userId, name, link, memberIds, nickname, title, options, pollId, optionId, pinAct } = body;
