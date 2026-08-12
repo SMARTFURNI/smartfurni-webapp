@@ -15,6 +15,11 @@ export async function PATCH(req: NextRequest) {
   if (!key || value === undefined) {
     return NextResponse.json({ error: "key and value required" }, { status: 400 });
   }
+  if (key === "pipeline" || key === "leadTypes") {
+    return NextResponse.json({
+      error: "Danh mục lõi được chuẩn hóa dùng chung toàn CRM và không chỉnh sửa tại endpoint này.",
+    }, { status: 409 });
+  }
   await updateCrmSetting(key, value as never);
   return NextResponse.json({ ok: true });
 }
@@ -22,6 +27,11 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { key } = await req.json() as { key: keyof CrmSettings };
+  if (key === "pipeline" || key === "leadTypes") {
+    return NextResponse.json({
+      error: "Danh mục lõi được chuẩn hóa dùng chung toàn CRM và không thể đặt lại tại endpoint này.",
+    }, { status: 409 });
+  }
   await resetCrmSetting(key);
   return NextResponse.json({ ok: true });
 }

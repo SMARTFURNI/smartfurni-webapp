@@ -4,6 +4,7 @@
  */
 
 import { query } from "./db";
+import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from "./crm-taxonomy";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -320,15 +321,11 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     representativeName: "Nguyễn Văn A",
     representativeTitle: "Giám đốc Kinh doanh",
   },
-  pipeline: [
-    { id: "new",           label: "Khách hàng mới",   color: "#60a5fa", order: 0, isWon: false, isLost: false },
-    { id: "profile_sent",  label: "Đã gửi Profile",   color: "#a78bfa", order: 1, isWon: false, isLost: false },
-    { id: "surveyed",      label: "Đã khảo sát",      color: "#C9A84C", order: 2, isWon: false, isLost: false },
-    { id: "quoted",        label: "Đã báo giá",        color: "#f97316", order: 3, isWon: false, isLost: false },
-    { id: "negotiating",   label: "Thương thảo",       color: "#ec4899", order: 4, isWon: false, isLost: false },
-    { id: "won",           label: "Đã chốt (Won)",     color: "#22c55e", order: 5, isWon: true,  isLost: false },
-    { id: "lost",          label: "Thất bại (Lost)",   color: "#f87171", order: 6, isWon: false, isLost: true  },
-  ],
+  pipeline: CRM_LEAD_STAGE_OPTIONS.map(item => ({
+    ...item,
+    isWon: item.id === "won",
+    isLost: item.id === "lost",
+  })),
   sources: [
     { id: "facebook_ads",   label: "Facebook Ads",              color: "#60a5fa", order: 0 },
     { id: "google_ads",     label: "Google Ads",                color: "#f87171", order: 1 },
@@ -340,13 +337,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     { id: "telesale",       label: "Telesale",                  color: "#94a3b8", order: 7 },
     { id: "other",          label: "Khác",                      color: "#64748b", order: 8 },
   ],
-  leadTypes: [
-    { id: "retail",    label: "Khách mua lẻ",           color: "#0ea5e9", order: 0 },
-    { id: "architect", label: "Kiến trúc sư",          color: "#a78bfa", order: 1 },
-    { id: "investor",  label: "Đối tác dự án",          color: "#60a5fa", order: 2 },
-    { id: "dealer",    label: "Đại lý / nhà phân phối", color: "#C9A84C", order: 3 },
-    { id: "b2b",       label: "Doanh nghiệp / B2B",     color: "#14b8a6", order: 4 },
-  ],
+  leadTypes: CRM_LEAD_TYPE_OPTIONS.map(item => ({ ...item })),
   discountTiers: [
     { minQty: 5,  discountPct: 10, label: "Từ 5 bộ" },
     { minQty: 10, discountPct: 15, label: "Từ 10 bộ" },
@@ -535,9 +526,13 @@ export async function getCrmSettings(): Promise<CrmSettings> {
   const savedTheme = stored.dashboardTheme as Partial<DashboardTheme> | undefined;
   return {
     company:       (stored.company       as CompanyInfo)       ?? DEFAULT_SETTINGS.company,
-    pipeline:      (stored.pipeline      as PipelineStage[])   ?? DEFAULT_SETTINGS.pipeline,
+    pipeline:      CRM_LEAD_STAGE_OPTIONS.map(item => ({
+      ...item,
+      isWon: item.id === "won",
+      isLost: item.id === "lost",
+    })),
     sources:       (stored.sources       as LeadSource[])      ?? DEFAULT_SETTINGS.sources,
-    leadTypes:     (stored.leadTypes     as LeadTypeConfig[])  ?? DEFAULT_SETTINGS.leadTypes,
+    leadTypes:     CRM_LEAD_TYPE_OPTIONS.map(item => ({ ...item })),
     discountTiers: (stored.discountTiers as DiscountTierConfig[]) ?? DEFAULT_SETTINGS.discountTiers,
     webhook:       (stored.webhook       as WebhookConfig)     ?? DEFAULT_SETTINGS.webhook,
     googleSheet: stored.googleSheet

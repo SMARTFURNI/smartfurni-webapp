@@ -21,6 +21,8 @@ export type InterestedProduct = "sofa_bed" | "ergonomic_bed" | "other";
 export type LeadTemperature = "hot" | "warm" | "cold";
 export type LeadDataQuality = "complete" | "needs_verification" | "incomplete";
 
+import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from "./crm-taxonomy";
+
 export type ActivityType = "call" | "meeting" | "email" | "note" | "quote_sent" | "contract";
 
 export interface Lead {
@@ -191,41 +193,21 @@ export interface CrmStats {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const STAGE_LABELS: Record<LeadStage, string> = {
-  new: "Khách hàng mới",
-  profile_sent: "Đã gửi Profile",
-  surveyed: "Đã khảo sát",
-  quoted: "Đã báo giá",
-  negotiating: "Thương thảo",
-  won: "Đã chốt ✓",
-  lost: "Thất bại",
-};
+export const STAGE_LABELS = Object.fromEntries(
+  CRM_LEAD_STAGE_OPTIONS.map(item => [item.id, item.label]),
+) as Record<LeadStage, string>;
 
-export const STAGE_COLORS: Record<LeadStage, string> = {
-  new: "#6366f1",
-  profile_sent: "#3b82f6",
-  surveyed: "#8b5cf6",
-  quoted: "#f59e0b",
-  negotiating: "#f97316",
-  won: "#22c55e",
-  lost: "#6b7280",
-};
+export const STAGE_COLORS = Object.fromEntries(
+  CRM_LEAD_STAGE_OPTIONS.map(item => [item.id, item.color]),
+) as Record<LeadStage, string>;
 
-export const TYPE_LABELS: Record<LeadType, string> = {
-  retail: "Khách mua lẻ",
-  architect: "Kiến trúc sư",
-  investor: "Chủ đầu tư CHDV",
-  dealer: "Đại lý",
-  b2b: "Doanh nghiệp / B2B",
-};
+export const TYPE_LABELS = Object.fromEntries(
+  CRM_LEAD_TYPE_OPTIONS.map(item => [item.id, item.label]),
+) as Record<LeadType, string>;
 
-export const TYPE_COLORS: Record<LeadType, string> = {
-  retail: "#0ea5e9",
-  architect: "#8b5cf6",
-  investor: "#3b82f6",
-  dealer: "#f59e0b",
-  b2b: "#14b8a6",
-};
+export const TYPE_COLORS = Object.fromEntries(
+  CRM_LEAD_TYPE_OPTIONS.map(item => [item.id, item.color]),
+) as Record<LeadType, string>;
 
 export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   call: "Gọi điện",

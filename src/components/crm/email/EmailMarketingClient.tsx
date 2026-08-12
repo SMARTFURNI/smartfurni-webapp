@@ -11,6 +11,7 @@ import type {
   EmailCampaign, EmailTemplate, EmailSegment, EmailTemplateCategory,
 } from "@/lib/crm-email-store";
 import { SEGMENT_LABELS, TEMPLATE_CATEGORY_LABELS } from "@/lib/crm-email-store";
+import { CRM_LEAD_STAGE_OPTIONS } from "@/lib/crm-taxonomy";
 import styles from "./EmailMarketingClient.module.css";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -1591,13 +1592,7 @@ function TemplateModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 // ─── Workflow Modal ────────────────────────────────────────────────────────────
 const STAGE_OPTIONS = [
   { value: "", label: "Tất cả giai đoạn" },
-  { value: "new", label: "Lead mới" },
-  { value: "contacted", label: "Đã liên hệ" },
-  { value: "surveyed", label: "Đã khảo sát" },
-  { value: "quoted", label: "Đã báo giá" },
-  { value: "negotiating", label: "Thương thảo" },
-  { value: "won", label: "Chốt đơn" },
-  { value: "lost", label: "Thất bại" },
+  ...CRM_LEAD_STAGE_OPTIONS.map(({ id, label }) => ({ value: id, label })),
 ];
 
 const VALUE_RANGE_OPTIONS = [

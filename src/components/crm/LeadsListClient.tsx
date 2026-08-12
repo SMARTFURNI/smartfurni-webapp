@@ -18,6 +18,7 @@ import { ItyCallButton } from "./ItySoftphone";
 import CrmFoundationHeader from "./CrmFoundationHeader";
 import { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
 import customerStyles from "./CustomerWorkspace.module.css";
+import { CRM_LEAD_TYPE_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
 
 interface LeadTypeItem { id: string; label: string; color?: string; }
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
@@ -27,13 +28,7 @@ type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
 
-const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
-  { id: "retail", label: "Khách mua lẻ", color: "#0ea5e9" },
-  { id: "architect", label: "Kiến trúc sư",    color: "#8b5cf6" },
-  { id: "investor",  label: "Chủ đầu tư CHDV", color: "#3b82f6" },
-  { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
-  { id: "b2b", label: "Doanh nghiệp / B2B", color: "#14b8a6" },
-];
+const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = CRM_LEAD_TYPE_OPTIONS.map(item => ({ ...item }));
 
 // Light CRM tokens — đồng bộ với trung tâm Zalo OA.
 const C = {
@@ -89,10 +84,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   function getTypeInfo(typeId: string) {
     const found = leadTypes.find(lt => lt.id === typeId);
     if (found) return { label: found.label, color: found.color || DEFAULT_COLORS[leadTypes.indexOf(found) % DEFAULT_COLORS.length] };
-    if (typeId === "architect") return { label: "Kiến trúc sư", color: "#8b5cf6" };
-    if (typeId === "investor")  return { label: "Chủ đầu tư CHDV", color: "#3b82f6" };
-    if (typeId === "dealer")    return { label: "Đại lý", color: "#f59e0b" };
-    return { label: typeId || "Không rõ", color: "#6b7280" };
+    return getLeadTypeMeta(typeId);
   }
 
   // Danh sách nhân viên phụ trách duy nhất

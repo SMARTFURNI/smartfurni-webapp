@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, X, Filter, Calendar, Tag } from 'lucide-react';
+import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from '@/lib/crm-taxonomy';
 
 interface AdvancedSearchFilterProps {
   onSearch: (query: string) => void;
@@ -24,11 +25,9 @@ export default function AdvancedSearchFilter({
   const [search, setSearch] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [dynamicLeadTypes, setDynamicLeadTypes] = useState<{ value: string; label: string }[]>([
-    { value: 'architect', label: 'Kiến trúc sư' },
-    { value: 'investor', label: 'Nhà đầu tư' },
-    { value: 'dealer', label: 'Đại lý' },
-  ]);
+  const [dynamicLeadTypes, setDynamicLeadTypes] = useState<{ value: string; label: string }[]>(
+    CRM_LEAD_TYPE_OPTIONS.map(item => ({ value: item.id, label: item.label })),
+  );
   useEffect(() => {
     fetch('/api/crm/settings/lead-types')
       .then(r => r.ok ? r.json() : [])
@@ -50,14 +49,7 @@ export default function AdvancedSearchFilter({
     {
       id: 'stage',
       label: 'Giai Đoạn',
-      options: [
-        { value: 'new', label: 'Khách hàng mới' },
-        { value: 'interested', label: 'Quan tâm' },
-        { value: 'proposal', label: 'Đã gửi báo giá' },
-        { value: 'negotiation', label: 'Đang đàm phán' },
-        { value: 'won', label: 'Đã chốt' },
-        { value: 'lost', label: 'Mất khách' },
-      ],
+      options: CRM_LEAD_STAGE_OPTIONS.map(item => ({ value: item.id, label: item.label })),
     },
     {
       id: 'type',

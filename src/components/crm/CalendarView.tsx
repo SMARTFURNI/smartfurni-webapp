@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Lead } from '@/lib/crm-types';
+import { getLeadStageMeta, normalizeLeadStage } from '@/lib/crm-taxonomy';
 
 interface CalendarViewProps {
   leads: Lead[];
@@ -52,9 +53,10 @@ export default function CalendarView({ leads }: CalendarViewProps) {
 
   const stageColors: Record<string, string> = {
     'new': 'bg-blue-100 text-blue-700',
-    'interested': 'bg-purple-100 text-purple-700',
-    'proposal': 'bg-yellow-100 text-yellow-700',
-    'negotiation': 'bg-orange-100 text-orange-700',
+    'profile_sent': 'bg-purple-100 text-purple-700',
+    'surveyed': 'bg-cyan-100 text-cyan-700',
+    'quoted': 'bg-yellow-100 text-yellow-700',
+    'negotiating': 'bg-orange-100 text-orange-700',
     'won': 'bg-green-100 text-green-700',
     'lost': 'bg-red-100 text-red-700',
   };
@@ -118,7 +120,7 @@ export default function CalendarView({ leads }: CalendarViewProps) {
                   <div
                     key={i}
                     className={`text-xs px-1.5 py-0.5 rounded truncate font-medium ${
-                      stageColors[lead.stage] || 'bg-gray-100 text-gray-700'
+                      stageColors[normalizeLeadStage(lead.stage) ?? ''] || 'bg-gray-100 text-gray-700'
                     }`}
                   >
                     {lead.name.split(' ')[0]}
@@ -142,7 +144,7 @@ export default function CalendarView({ leads }: CalendarViewProps) {
           {Object.entries(stageColors).map(([stage, color]) => (
             <div key={stage} className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded ${color}`}></div>
-              <span className="text-sm text-gray-700 capitalize">{stage}</span>
+              <span className="text-sm text-gray-700">{getLeadStageMeta(stage).label}</span>
             </div>
           ))}
         </div>

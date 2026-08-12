@@ -37,42 +37,23 @@ export interface Lead {
 
 // Mẫu segments mặc định
 export const DEFAULT_SEGMENTS: LeadSegment[] = [
-  {
-    id: 'segment-investor',
-    name: 'Chủ Đầu Tư',
-    description: 'Khách hàng là chủ đầu tư dự án',
-    criteria: {
-      requiredTags: ['Chủ đầu tư'],
-    },
-    tags: ['Chủ đầu tư', 'B2B', 'High Value'],
+  ...[
+    ['segment-retail', 'Khách mua lẻ', 'Khách hàng cá nhân mua cho gia đình', 'SEG:BAN_LE'],
+    ['segment-project', 'Đối tác dự án', 'Chủ đầu tư, kiến trúc sư, nhà thầu và đơn vị thiết kế', 'SEG:DU_AN'],
+    ['segment-dealer', 'Đại lý / nhà phân phối', 'Khách hàng là đại lý, nhà phân phối', 'SEG:DAI_LY'],
+    ['segment-b2b', 'Doanh nghiệp / B2B', 'Khách mua cho văn phòng, doanh nghiệp hoặc số lượng lớn', 'SEG:B2B'],
+    ['product-sofa-bed', 'Quan tâm Sofa giường', 'Nhóm chăm sóc theo danh mục Sofa giường', 'PROD:SOFA_GIUONG'],
+    ['product-ergonomic-bed', 'Quan tâm Giường công thái học', 'Nhóm chăm sóc theo danh mục Giường công thái học', 'PROD:GIUONG_CONG_THAI_HOC'],
+  ].map(([id, name, description, tag]) => ({
+    id,
+    name,
+    description,
+    criteria: { requiredTags: [tag] },
+    tags: [tag],
     leadCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'segment-architect',
-    name: 'Kiến Trúc Sư',
-    description: 'Khách hàng là kiến trúc sư, thiết kế',
-    criteria: {
-      requiredTags: ['Kiến trúc sư'],
-    },
-    tags: ['Kiến trúc sư', 'B2B', 'Professional'],
-    leadCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'segment-dealer',
-    name: 'Đại Lý',
-    description: 'Khách hàng là đại lý, nhà phân phối',
-    criteria: {
-      requiredTags: ['Đại lý'],
-    },
-    tags: ['Đại lý', 'B2B', 'Reseller'],
-    leadCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
+  })),
   {
     id: 'segment-hot-lead',
     name: 'Hot Lead',
@@ -80,7 +61,7 @@ export const DEFAULT_SEGMENTS: LeadSegment[] = [
     criteria: {
       minScore: 80,
     },
-    tags: ['Hot', 'Priority', 'High Value'],
+    tags: ['TEMP:HOT'],
     leadCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -93,7 +74,7 @@ export const DEFAULT_SEGMENTS: LeadSegment[] = [
       minScore: 50,
       maxScore: 79,
     },
-    tags: ['Warm', 'Medium Priority'],
+    tags: ['TEMP:WARM'],
     leadCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -105,7 +86,7 @@ export const DEFAULT_SEGMENTS: LeadSegment[] = [
     criteria: {
       maxScore: 49,
     },
-    tags: ['Cold', 'Low Priority'],
+    tags: ['TEMP:COLD'],
     leadCount: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

@@ -13,6 +13,7 @@ import type { Lead, LeadType, LeadStage } from '@/lib/crm-types';
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS } from '@/lib/crm-types';
 import CrmFoundationHeader from './CrmFoundationHeader';
 import workspaceStyles from './CustomerWorkspace.module.css';
+import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from '@/lib/crm-taxonomy';
 
 const DL = {
   bg: 'linear-gradient(160deg, #f8fbff 0%, #fffdf7 100%)',
@@ -74,18 +75,18 @@ const DEFAULT_SEGMENTS: LeadSegment[] = [
     criteria: { type: ['investor', 'architect'] },
     tags: ['SEG:DU_AN'],
     leadCount: 0,
-    color: '#f59e0b',
+    color: '#60a5fa',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     id: 'segment-dealer',
-    name: 'Đại Lý',
+    name: 'Đại lý / nhà phân phối',
     description: 'Khách hàng là đại lý, nhà phân phối',
     criteria: { type: ['dealer'] },
     tags: ['SEG:DAI_LY'],
     leadCount: 0,
-    color: '#22c55e',
+    color: '#C9A84C',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -562,7 +563,7 @@ export default function LeadSegmentationDashboard() {
                   Lọc theo loại khách hàng
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['retail', 'investor', 'architect', 'dealer', 'b2b'] as LeadType[]).map(t => (
+                  {CRM_LEAD_TYPE_OPTIONS.map(({ id: t }) => (
                     <button key={t} onClick={() => toggleType(t)}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{
@@ -582,7 +583,7 @@ export default function LeadSegmentationDashboard() {
                   Lọc theo giai đoạn
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'] as LeadStage[]).map(s => (
+                  {CRM_LEAD_STAGE_OPTIONS.map(({ id: s }) => (
                     <button key={s} onClick={() => toggleStage(s)}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{

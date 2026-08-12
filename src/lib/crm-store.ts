@@ -14,6 +14,7 @@ import type {
   CrmStats, CrmSourceStat, StaffPerformance, MonthlyRevenue,
 } from "./crm-types";
 import { mergeStandardizedLead, normalizeCrmEmail, normalizeCrmPhone } from "./crm-lead-standardization";
+import { previewCanonicalLeadTaxonomy } from "./crm-taxonomy";
 
 // Re-export everything from crm-types for backward compatibility
 export * from "./crm-types";
@@ -151,7 +152,7 @@ export async function getLead(id: string): Promise<Lead | null> {
 export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updatedAt">): Promise<Lead> {
   await initCrmSchema();
   const now = new Date().toISOString();
-  const lead: Lead = {
+  const draft: Lead = {
     ...input,
     id: randomUUID(),
     createdAt: now,
@@ -159,6 +160,10 @@ export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updated
     lastContactAt: input.lastContactAt || now,
     tags: Array.isArray(input.tags) ? input.tags : [],
   };
+  const preview = previewCanonicalLeadTaxonomy(draft);
+  if (preview.invalidStage) throw new Error(`Invalid CRM lead stage: ${String(draft.stage)}`);
+  if (preview.invalidType) throw new Error(`Invalid CRM lead type: ${String(draft.type)}`);
+  const lead: Lead = { ...draft, ...preview.patch };
   await query(
     `INSERT INTO crm_leads (id, data, stage, last_contact_at, updated_at) VALUES ($1, $2, $3, $4, NOW())`,
     [lead.id, JSON.stringify(lead), lead.stage, lead.lastContactAt]
@@ -202,7 +207,11 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
   await initCrmSchema();
   const existing = await getLead(id);
   if (!existing) return null;
-  const updated: Lead = { ...existing, ...updates, id, updatedAt: new Date().toISOString() };
+  const draft: Lead = { ...existing, ...updates, id, updatedAt: new Date().toISOString() };
+  const preview = previewCanonicalLeadTaxonomy(draft);
+  if (preview.invalidStage) throw new Error(`Invalid CRM lead stage: ${String(draft.stage)}`);
+  if (preview.invalidType) throw new Error(`Invalid CRM lead type: ${String(draft.type)}`);
+  const updated: Lead = { ...draft, ...preview.patch };
   await query(
     `UPDATE crm_leads SET data = $1, stage = $2, last_contact_at = $3, updated_at = NOW() WHERE id = $4`,
     [JSON.stringify(updated), updated.stage, updated.lastContactAt, id]

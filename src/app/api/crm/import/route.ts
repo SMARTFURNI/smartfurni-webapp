@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createLead, getLeads } from "@/lib/crm-store";
 import type { Lead, LeadStage, LeadType } from "@/lib/crm-store";
+import { normalizeLeadStage } from "@/lib/crm-taxonomy";
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (format === "template") {
     const headerRow = [
       "Tên khách hàng", "Điện thoại", "Email", "Công ty",
-      "Phân loại (architect/investor/dealer)",
+      "Phân loại (retail/architect/investor/dealer/b2b)",
       "Giai đoạn (new/profile_sent/surveyed/quoted/negotiating/won/lost)",
       "Nguồn (Facebook Ads/Google Ads/KTS giới thiệu/...)",
       "Tỉnh/Thành phố", "Quận/Huyện",
@@ -69,33 +70,24 @@ function parseRow(row: Record<string, string>, lineNum: number): Omit<Lead, "id"
   const typeMap: Record<string, LeadType> = {
     "khách mua lẻ": "retail", "khách lẻ": "retail", "retail": "retail",
     "kiến trúc sư": "architect", "architect": "architect",
-    "chủ đầu tư chdv": "investor", "investor": "investor",
-    "đại lý": "dealer", "dealer": "dealer",
-    "doanh nghiệp": "b2b", "b2b": "b2b",
+    "chủ đầu tư chdv": "investor", "đối tác dự án": "investor", "investor": "investor",
+    "đại lý": "dealer", "đại lý / nhà phân phối": "dealer", "nhà phân phối": "dealer", "dealer": "dealer",
+    "doanh nghiệp": "b2b", "doanh nghiệp / b2b": "b2b", "b2b": "b2b",
   };
   const typeRaw = (
+    row["Phân loại (retail/architect/investor/dealer/b2b)"] ??
     row["Phân loại (architect/investor/dealer)"] ??
     row["Loại khách hàng"] ??
     row["type"] ?? ""
   ).trim().toLowerCase();
   const type: LeadType = typeMap[typeRaw] ?? (validTypes.includes(typeRaw as LeadType) ? typeRaw as LeadType : "retail");
 
-  const validStages: LeadStage[] = ["new", "profile_sent", "surveyed", "quoted", "negotiating", "won", "lost"];
-  const stageMap: Record<string, LeadStage> = {
-    "khách hàng mới": "new", "new": "new",
-    "đã gửi profile": "profile_sent", "profile_sent": "profile_sent",
-    "đã khảo sát": "surveyed", "surveyed": "surveyed",
-    "đã báo giá": "quoted", "quoted": "quoted",
-    "thương thảo": "negotiating", "negotiating": "negotiating",
-    "đã chốt": "won", "won": "won",
-    "thất bại": "lost", "lost": "lost",
-  };
   const stageRaw = (
     row["Giai đoạn (new/profile_sent/surveyed/quoted/negotiating/won/lost)"] ??
     row["Giai đoạn"] ??
     row["stage"] ?? ""
   ).trim().toLowerCase();
-  const stage: LeadStage = stageMap[stageRaw] ?? (validStages.includes(stageRaw as LeadStage) ? stageRaw as LeadStage : "new");
+  const stage: LeadStage = normalizeLeadStage(stageRaw) ?? "new";
 
   const evRaw = row["Giá trị dự kiến (VND)"] ?? row["Giá trị dự kiến"] ?? row["expectedValue"] ?? "";
   const ucRaw = row["Số lượng dự kiến"] ?? row["Số lượng"] ?? row["unitCount"] ?? "";

@@ -18,7 +18,7 @@ function ImportExportTab() {
 
   const CSV_TEMPLATE = `Tên khách hàng,Điện thoại,Email,Loại khách hàng,Giai đoạn,Tỉnh/Thành phố,Quận/Huyện,Địa chỉ,Nguồn,Giá trị dự kiến,Ghi chú
 Nguyễn Văn A,0901234567,a@email.com,Kiến trúc sư,Khách hàng mới,TP. Hồ Chí Minh,Quận 1,123 Nguyễn Huệ,Facebook Ads,150000000,Quan tâm sofa giường
-Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,Hà Nội,Quận Hoàn Kiếm,456 Hàng Bài,KTS giới thiệu,500000000,Dự án 20 phòng`;
+Trần Thị B,0912345678,b@email.com,Đối tác dự án,Đã gửi Profile,Hà Nội,Quận Hoàn Kiếm,456 Hàng Bài,KTS giới thiệu,500000000,Dự án 20 phòng`;
 
   const downloadTemplate = () => {
     const blob = new Blob(["\uFEFF" + CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
@@ -177,7 +177,7 @@ Trần Thị B,0912345678,b@email.com,Chủ đầu tư CHDV,Đã gửi Profile,H
         style={{ background: "rgba(96,165,250,0.04)", border: "1px solid rgba(96,165,250,0.12)" }}>
         <h4 className="text-xs font-semibold mb-2" style={{ color: "#60a5fa" }}>Hướng dẫn định dạng CSV</h4>
         <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs" style={{ color: "#6b7280" }}>
-          <div><strong style={{ color: "#4b5563" }}>Loại KH:</strong> Kiến trúc sư | Chủ đầu tư CHDV | Đại lý</div>
+          <div><strong style={{ color: "#4b5563" }}>Loại KH:</strong> Khách mua lẻ | Kiến trúc sư | Đối tác dự án | Đại lý / nhà phân phối | Doanh nghiệp / B2B</div>
           <div><strong style={{ color: "#4b5563" }}>Giai đoạn:</strong> Khách hàng mới | Đã gửi Profile | Đã khảo sát | Đã báo giá | Thương thảo | Đã chốt | Thất bại</div>
           <div><strong style={{ color: "#4b5563" }}>Nguồn:</strong> Facebook Ads | Google Ads | KTS giới thiệu | Zalo | Triển lãm</div>
           <div><strong style={{ color: "#4b5563" }}>Giá trị:</strong> Số nguyên (VND), không có dấu phẩy</div>

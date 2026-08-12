@@ -21,6 +21,7 @@ import {
   ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
 } from "@/lib/crm-types";
 import customerStyles from "./CustomerWorkspace.module.css";
+import { CRM_LEAD_TYPE_OPTIONS } from "@/lib/crm-taxonomy";
 
 // ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
@@ -1496,7 +1497,7 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                   className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }}>
                   {leadTypes.length > 0
                     ? leadTypes.map(lt => <option key={lt.id} value={lt.id}>{lt.label}</option>)
-                    : (<><option value="architect">Kiến trúc sư</option><option value="investor">Chủ đầu tư CHDV</option><option value="dealer">Đại lý</option></>)
+                    : CRM_LEAD_TYPE_OPTIONS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)
                   }
                 </select>
               </div>

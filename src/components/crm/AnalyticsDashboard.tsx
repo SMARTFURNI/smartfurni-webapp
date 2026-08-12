@@ -6,9 +6,10 @@ import { BarChart3, TrendingUp, Users, Target } from 'lucide-react';
 interface AnalyticsDashboardProps {
   salesFunnel: {
     new: number;
-    interested: number;
-    proposal: number;
-    negotiation: number;
+    profile_sent: number;
+    surveyed: number;
+    quoted: number;
+    negotiating: number;
     won: number;
   };
   conversionBySource: Array<{
@@ -27,12 +28,14 @@ export default function AnalyticsDashboard({
   averageDealSize,
   salesCycleAverage,
 }: AnalyticsDashboardProps) {
+  const base = Math.max(salesFunnel.new, 1);
   const funnelStages = [
     { label: 'Lead Mới', value: salesFunnel.new, color: 'bg-blue-500', width: 100 },
-    { label: 'Quan Tâm', value: salesFunnel.interested, color: 'bg-purple-500', width: (salesFunnel.interested / salesFunnel.new) * 100 },
-    { label: 'Báo Giá', value: salesFunnel.proposal, color: 'bg-yellow-500', width: (salesFunnel.proposal / salesFunnel.new) * 100 },
-    { label: 'Đàm Phán', value: salesFunnel.negotiation, color: 'bg-orange-500', width: (salesFunnel.negotiation / salesFunnel.new) * 100 },
-    { label: 'Đã Chốt', value: salesFunnel.won, color: 'bg-green-500', width: (salesFunnel.won / salesFunnel.new) * 100 },
+    { label: 'Đã gửi Profile', value: salesFunnel.profile_sent, color: 'bg-purple-500', width: (salesFunnel.profile_sent / base) * 100 },
+    { label: 'Đã khảo sát', value: salesFunnel.surveyed, color: 'bg-yellow-500', width: (salesFunnel.surveyed / base) * 100 },
+    { label: 'Đã báo giá', value: salesFunnel.quoted, color: 'bg-orange-500', width: (salesFunnel.quoted / base) * 100 },
+    { label: 'Thương thảo', value: salesFunnel.negotiating, color: 'bg-pink-500', width: (salesFunnel.negotiating / base) * 100 },
+    { label: 'Đã chốt', value: salesFunnel.won, color: 'bg-green-500', width: (salesFunnel.won / base) * 100 },
   ];
 
   return (
@@ -71,7 +74,7 @@ export default function AnalyticsDashboard({
           <div className="text-center">
             <p className="text-sm text-gray-600">Tỷ Lệ Chốt</p>
             <p className="text-2xl font-bold text-green-600 mt-1">
-              {((salesFunnel.won / salesFunnel.new) * 100).toFixed(1)}%
+              {((salesFunnel.won / base) * 100).toFixed(1)}%
             </p>
           </div>
           <div className="text-center">
@@ -160,7 +163,7 @@ export default function AnalyticsDashboard({
             </div>
           </div>
           <p className="text-3xl font-bold text-gray-900">
-            {((salesFunnel.won / salesFunnel.new) * 100).toFixed(1)}%
+            {((salesFunnel.won / base) * 100).toFixed(1)}%
           </p>
           <p className="text-sm text-gray-600 mt-2">tổng số leads</p>
         </div>

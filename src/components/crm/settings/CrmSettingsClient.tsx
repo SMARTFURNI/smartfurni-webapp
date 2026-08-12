@@ -8,6 +8,7 @@ import {
   Bell, FileText, Mail, Save, RotateCcw, Plus, Trash2,
   GripVertical, Eye, EyeOff, ChevronRight, CheckCircle2,
   AlertCircle, Settings, Copy, RefreshCw, Palette, Sheet,
+  Lock,
 } from "lucide-react";
 import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme, DashboardSectionId, KpiCardId, ChartType, FunnelStyle, ChartPalette, DensityMode, FontFamily, KpiSize, KpiColumns, RefreshInterval } from "@/lib/crm-settings-store";
 
@@ -187,93 +188,35 @@ function CompanyTab({ data, onChange }: { data: CrmSettings["company"]; onChange
   );
 }
 
-function PipelineTab({ data, onChange }: { data: PipelineStage[]; onChange: (d: PipelineStage[]) => void }) {
-  const addStage = () => {
-    const newStage: PipelineStage = {
-      id: `stage_${Date.now()}`,
-      label: "Giai đoạn mới",
-      color: "#60a5fa",
-      order: data.length,
-      isWon: false,
-      isLost: false,
-    };
-    onChange([...data, newStage]);
-  };
-  const update = (idx: number, field: keyof PipelineStage, value: string | number | boolean) => {
-    const updated = [...data];
-    updated[idx] = { ...updated[idx], [field]: value };
-    onChange(updated);
-  };
-  const remove = (idx: number) => onChange(data.filter((_, i) => i !== idx));
-
+function PipelineTab({ data }: { data: PipelineStage[]; onChange: (d: PipelineStage[]) => void }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#6b7280" }}>
-          Các giai đoạn hiển thị trên Kanban Board. Thứ tự từ trái sang phải.
-        </p>
-        <button
-          onClick={addStage}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
-          style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}
-        >
-          <Plus size={14} /> Thêm giai đoạn
-        </button>
+      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <Lock size={18} className="mt-0.5 shrink-0 text-amber-700" />
+        <div>
+          <p className="text-sm font-semibold text-amber-950">Danh mục giai đoạn dùng chung toàn CRM</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">
+            Kanban, hồ sơ khách hàng, báo cáo và tự động hóa cùng sử dụng thứ tự này. Danh mục được khóa để tránh lệch dữ liệu giữa các màn hình.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {data.map((stage, idx) => (
           <div
             key={stage.id}
-            className="flex items-start gap-3 p-4 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}
+            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
           >
-            <div className="flex items-center gap-2 mt-1">
-              <GripVertical size={16} style={{ color: "#9ca3af" }} />
-              <span className="text-xs font-bold w-5 text-center" style={{ color: "#9ca3af" }}>{idx + 1}</span>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
+              style={{ background: `${stage.color}18`, color: stage.color, border: `1px solid ${stage.color}40` }}>
+              {idx + 1}
             </div>
-
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs mb-1" style={{ color: "#6b7280" }}>Tên giai đoạn</label>
-                <input
-                  value={stage.label}
-                  onChange={e => update(idx, "label", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                  style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: "#6b7280" }}>Màu sắc</label>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ background: stage.color }} />
-                  <ColorPicker value={stage.color} onChange={v => update(idx, "color", v)} />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="block text-xs" style={{ color: "#6b7280" }}>Trạng thái đặc biệt</label>
-                <div className="flex gap-3">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input type="checkbox" checked={stage.isWon} onChange={e => update(idx, "isWon", e.target.checked)}
-                      className="w-3.5 h-3.5 accent-green-500" />
-                    <span className="text-xs" style={{ color: "#22c55e" }}>Won</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input type="checkbox" checked={stage.isLost} onChange={e => update(idx, "isLost", e.target.checked)}
-                      className="w-3.5 h-3.5 accent-red-400" />
-                    <span className="text-xs" style={{ color: "#f87171" }}>Lost</span>
-                  </label>
-                </div>
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-900">{stage.label}</p>
+              <p className="mt-1 text-xs text-slate-500">Mã: {stage.id}</p>
             </div>
-
-            <button
-              onClick={() => remove(idx)}
-              className="mt-1 p-1.5 rounded-lg transition-all hover:bg-red-500/20"
-              style={{ color: "#9ca3af" }}
-            >
-              <Trash2 size={14} />
-            </button>
+            {stage.isWon && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">WON</span>}
+            {stage.isLost && <span className="rounded-full bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700">LOST</span>}
           </div>
         ))}
       </div>
@@ -324,45 +267,30 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
   );
 }
 
-function LeadTypesTab({ data, onChange }: { data: LeadTypeConfig[]; onChange: (d: LeadTypeConfig[]) => void }) {
-  const add = () => onChange([...data, { id: `type_${Date.now()}`, label: "Loại mới", color: "#94a3b8", order: data.length }]);
-  const update = (idx: number, field: keyof LeadTypeConfig, value: string | number) => {
-    const updated = [...data];
-    updated[idx] = { ...updated[idx], [field]: value };
-    onChange(updated);
-  };
-  const remove = (idx: number) => onChange(data.filter((_, i) => i !== idx));
-
+function LeadTypesTab({ data }: { data: LeadTypeConfig[]; onChange: (d: LeadTypeConfig[]) => void }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: "#6b7280" }}>
-          Phân loại khách hàng B2B để lọc và báo cáo theo nhóm.
-        </p>
-        <button onClick={add} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
-          style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}>
-          <Plus size={14} /> Thêm loại
-        </button>
+      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <Lock size={18} className="mt-0.5 shrink-0 text-amber-700" />
+        <div>
+          <p className="text-sm font-semibold text-amber-950">Vai trò khách hàng dùng chung toàn CRM</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">
+            Danh sách khách hàng, Kanban, phân nhóm, Email Marketing và tự động hóa đều đọc cùng danh mục này.
+          </p>
+        </div>
       </div>
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {data.map((type, idx) => (
-          <div key={type.id} className="flex items-center gap-3 p-3 rounded-xl"
-            style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-            <div className="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
+          <div key={type.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
               style={{ background: `${type.color}20`, color: type.color, border: `1px solid ${type.color}40` }}>
-              {type.label}
+              {idx + 1}
             </div>
-            <input
-              value={type.label}
-              onChange={e => update(idx, "label", e.target.value)}
-              className="flex-1 px-3 py-1.5 rounded-lg text-sm outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#374151" }}
-            />
-            <ColorPicker value={type.color} onChange={v => update(idx, "color", v)} />
-            <button onClick={() => remove(idx)} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-all"
-              style={{ color: "#9ca3af" }}>
-              <Trash2 size={14} />
-            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-900">{type.label}</p>
+              <p className="mt-1 text-xs text-slate-500">Mã: {type.id}</p>
+            </div>
+            <span className="h-3 w-3 rounded-full" style={{ background: type.color }} />
           </div>
         ))}
       </div>
@@ -1980,6 +1908,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
     setError("");
     try {
       for (const key of Object.keys(settings) as (keyof CrmSettings)[]) {
+        if (key === "pipeline" || key === "leadTypes") continue;
         await fetch("/api/crm/settings", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -1996,6 +1925,7 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
   };
 
   const activeTabData = TABS.find(t => t.id === activeTab)!;
+  const taxonomyLocked = activeTab === "pipeline" || activeTab === "leadtypes";
 
   return (
     <div className="flex h-full" style={{ background: "#ffffff", color: "#111827" }}>
@@ -2084,18 +2014,21 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
               </div>
             )}
             <button
-              onClick={() => saveSection(
-                activeTab === "leadtypes" ? "leadTypes" :
-                activeTab === "dashboardtheme" ? "dashboardTheme" :
-                activeTab === "discount" ? "discountTiers" :
-                activeTab as keyof CrmSettings
-              )}
-              disabled={saving}
+              onClick={() => {
+                if (taxonomyLocked) return;
+                const key: keyof CrmSettings =
+                  activeTab === "dashboardtheme" ? "dashboardTheme" :
+                  activeTab === "discount" ? "discountTiers" :
+                  activeTab === "googlesheet" ? "googleSheet" :
+                  activeTab;
+                void saveSection(key);
+              }}
+              disabled={saving || taxonomyLocked}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
               style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}
             >
-              {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-              Lưu mục này
+              {taxonomyLocked ? <Lock size={14} /> : saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+              {taxonomyLocked ? "Danh mục chuẩn" : "Lưu mục này"}
             </button>
           </div>
         </div>

@@ -16,6 +16,7 @@ import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
 import { STAGE_LABELS, STAGE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
 import type { DashboardTheme, DashboardSectionId } from "@/lib/crm-settings-store";
 import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
+import { CRM_LEAD_TYPE_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
 import AddLeadModal from "./AddLeadModal";
 import { TwelveWeekReportDashboard, GoalDetailDashboard } from "./TwelveWeekReportWidgets";
 
@@ -1375,9 +1376,7 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
 
 // ── Main Component ───────────────────────────────────────────────────────────
 const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
-  { id: "architect", label: "Kiến trúc sư",    color: "#a78bfa" },
-  { id: "investor",  label: "Chủ đầu tư CHDV", color: "#60a5fa" },
-  { id: "dealer",    label: "Đại lý",           color: "#C9A84C" },
+  ...CRM_LEAD_TYPE_OPTIONS.map(({ id, label, color }) => ({ id, label, color })),
 ];
 // ─── Gradient Presets ────────────────────────────────────────────────────────
 const GRADIENT_PRESETS = [
@@ -1468,10 +1467,8 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
   function getTypeInfo(typeId: string) {
     const found = leadTypes.find(lt => lt.id === typeId);
     if (found) return found;
-    if (typeId === "architect") return { id: typeId, label: "Kiến trúc sư",    color: "#a78bfa" };
-    if (typeId === "investor")  return { id: typeId, label: "Chủ đầu tư CHDV", color: "#60a5fa" };
-    if (typeId === "dealer")    return { id: typeId, label: "Đại lý",           color: "#C9A84C" };
-    return { id: typeId, label: typeId || "Không rõ", color: "#6b7280" };
+    const canonical = getLeadTypeMeta(typeId);
+    return { id: typeId, label: canonical.label, color: canonical.color };
   }
 
   // API data states — pre-loaded from server when available

@@ -13,6 +13,15 @@ import {
 } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
 import AddLeadModal from "./AddLeadModal";
+import CrmFoundationHeader from "./CrmFoundationHeader";
+import customerStyles from "./CustomerWorkspace.module.css";
+import {
+  CRM_LEAD_TYPE_OPTIONS,
+  CUSTOMER_SEGMENT_LABELS,
+  PRODUCT_LABELS,
+  segmentForLeadType,
+  getLeadTypeMeta,
+} from "@/lib/crm-taxonomy";
 
 const STAGES: LeadStage[] = ["new", "profile_sent", "surveyed", "quoted", "negotiating", "won", "lost"];
 
@@ -23,11 +32,7 @@ interface Props {
   currentUserName?: string;
   initialLeadTypes?: LeadTypeItem[];
 }
-const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
-  { id: "architect", label: "Kiến trúc sư",    color: "#8b5cf6" },
-  { id: "investor",  label: "Chủ đầu tư CHDV", color: "#3b82f6" },
-  { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
-];
+const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = CRM_LEAD_TYPE_OPTIONS.map(item => ({ ...item }));
 export default function KanbanClient({ initialLeads, isAdmin = false, currentUserName = "", initialLeadTypes }: Props) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [search, setSearch] = useState("");
@@ -52,10 +57,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   function getTypeInfo(typeId: string) {
     const found = leadTypes.find(lt => lt.id === typeId);
     if (found) return { label: found.label, color: found.color || DEFAULT_COLORS[leadTypes.indexOf(found) % DEFAULT_COLORS.length] };
-    if (typeId === "architect") return { label: "Kiến trúc sư", color: "#8b5cf6" };
-    if (typeId === "investor")  return { label: "Chủ đầu tư CHDV", color: "#3b82f6" };
-    if (typeId === "dealer")    return { label: "Đại lý", color: "#f59e0b" };
-    return { label: typeId || "Không rõ", color: "#6b7280" };
+    return getLeadTypeMeta(typeId);
   }
   const [showAddModal, setShowAddModal] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -135,13 +137,17 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className="crm-kanban flex flex-col h-full" style={{ background: "#ffffff" }}>
+    <div className={`${customerStyles.workspace} crm-kanban flex h-full flex-col gap-3 p-3 md:p-4`}>
+      <CrmFoundationHeader
+        active="kanban"
+        title="Bảng Kanban chăm sóc"
+        description={`${filtered.length} khách hàng · ${leads.filter(isOverdue).length} quá hạn tương tác`}
+      />
       {/* Header */}
-      <div className="crm-admin-page-header m-4 mb-0 flex-shrink-0 px-6 py-4"
-        style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+      <div className="crm-admin-page-header flex-shrink-0 rounded-2xl border border-[#dbe5f0] bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Bảng Kanban</h1>
+            <h2 className="text-base font-bold text-gray-900">Pipeline khách hàng</h2>
             <p className="text-sm mt-0.5" style={{ color: "#6b7280" }}>
               {filtered.length} khách hàng · {leads.filter(isOverdue).length} quá hạn tương tác
             </p>
@@ -401,6 +407,14 @@ function LeadCard({
 
           {/* Tags row */}
           <div className="flex items-center gap-2 flex-wrap">
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+              {CUSTOMER_SEGMENT_LABELS[lead.customerSegment ?? segmentForLeadType(lead.type)]}
+            </span>
+            {lead.interestedProducts?.slice(0, 1).map(product => (
+              <span key={product} className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">
+                {PRODUCT_LABELS[product]}
+              </span>
+            ))}
             {lead.district && (
               <div className="flex items-center gap-1 text-[11px]" style={{ color: "#9ca3af" }}>
                 <MapPin size={10} />

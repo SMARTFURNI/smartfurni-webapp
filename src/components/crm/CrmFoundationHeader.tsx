@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, CheckCircle2, Database, Tags, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, Columns3, Database, Tags, Users } from "lucide-react";
 
 const STEPS = [
   { id: "pool", label: "Data Pool", href: "/crm/data-pool", icon: Database },
   { id: "customers", label: "Khách hàng", href: "/crm/leads", icon: Users },
+  { id: "kanban", label: "Kanban", href: "/crm/kanban", icon: Columns3 },
   { id: "segments", label: "Phân nhóm", href: "/crm/lead-segmentation", icon: Tags },
 ] as const;
 
 export default function CrmFoundationHeader({ active, title, description, actions }: {
-  active: "pool" | "customers" | "segments";
+  active: "pool" | "customers" | "kanban" | "segments";
   title: string;
   description: string;
   actions?: ReactNode;

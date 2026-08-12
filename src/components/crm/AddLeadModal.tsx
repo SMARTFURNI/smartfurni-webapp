@@ -6,6 +6,7 @@ import type { Lead, LeadType, LeadStage } from "@/lib/crm-types";
 import { SOURCES, STAGE_LABELS } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES, getDistricts } from "@/lib/crm-locations";
 import customerStyles from "./CustomerWorkspace.module.css";
+import { CRM_LEAD_TYPE_OPTIONS } from "@/lib/crm-taxonomy";
 
 interface Props {
   onClose: () => void;
@@ -32,14 +33,10 @@ const DL = {
   tabBorder: "#dbe3ee",
 };
 
-const DEFAULT_TYPE_CONFIG: { id: string; label: string; color: string; bg: string }[] = [
-  { id: "retail", label: "Khách mua lẻ", color: "#0ea5e9", bg: "rgba(14,165,233,0.12)" },
-  { id: "architect", label: "KTS/Thiết kế nội thất", color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
-  { id: "investor",  label: "Chủ đầu tư Homestay/CHDV/Studio", color: "#60a5fa", bg: "rgba(96,165,250,0.12)" },
-  { id: "dealer",    label: "Đại lý/nhà phân phối", color: "#C9A84C", bg: "rgba(201,168,76,0.12)" },
-  { id: "b2b", label: "Doanh nghiệp / B2B", color: "#14b8a6", bg: "rgba(20,184,166,0.12)" },
-  { id: "investor2", label: "Chủ đầu tư Nhà Trọ", color: "#fb923c", bg: "rgba(251,146,60,0.12)" },
-];
+const DEFAULT_TYPE_CONFIG = CRM_LEAD_TYPE_OPTIONS.map(item => ({
+  ...item,
+  bg: `${item.color}20`,
+}));
 
 export default function AddLeadModal({ onClose, onCreated, defaultStage = "new", currentUserName = "", isAdmin = false }: Props) {
   const [loading, setLoading] = useState(false);

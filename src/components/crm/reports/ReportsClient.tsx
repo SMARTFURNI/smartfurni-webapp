@@ -7,6 +7,7 @@ import {
   ChevronDown, Calendar, Download, Filter,
 } from "lucide-react";
 import type { Lead, Quote, CrmStats } from "@/lib/crm-types";
+import { STAGE_COLORS as CANONICAL_STAGE_COLORS, STAGE_LABELS as CANONICAL_STAGE_LABELS } from "@/lib/crm-types";
 
 interface Props {
   leads: Lead[];
@@ -18,15 +19,8 @@ type ReportTab = "overview" | "pipeline" | "sales" | "sources" | "forecast";
 
 const MONTHS_VI = ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"];
 
-const STAGE_LABELS: Record<string, string> = {
-  new: "Khách mới", profile_sent: "Đã gửi Profile", surveyed: "Đã khảo sát",
-  quoted: "Đã báo giá", negotiating: "Thương thảo", won: "Đã chốt", lost: "Thất bại",
-};
-
-const STAGE_COLORS: Record<string, string> = {
-  new: "#60a5fa", profile_sent: "#a78bfa", surveyed: "#C9A84C",
-  quoted: "#f97316", negotiating: "#ec4899", won: "#22c55e", lost: "#f87171",
-};
+const STAGE_LABELS: Record<string, string> = CANONICAL_STAGE_LABELS;
+const STAGE_COLORS: Record<string, string> = CANONICAL_STAGE_COLORS;
 
 const SOURCE_COLORS: Record<string, string> = {
   "Facebook Ads": "#60a5fa", "Google Ads": "#f87171", "KTS giới thiệu": "#a78bfa",

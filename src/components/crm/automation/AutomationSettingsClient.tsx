@@ -15,6 +15,7 @@ import type {
   TriggerType, ActionType,
 } from "@/lib/crm-automation-store";
 import { TRIGGER_LABELS, ACTION_LABELS } from "@/lib/crm-automation-store";
+import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from "@/lib/crm-taxonomy";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,15 +32,7 @@ const ACTION_COLORS: Record<ActionType, string> = {
   send_email_workflow: "#a78bfa",
 };
 
-const STAGES = [
-  { id: "new", label: "Khách hàng mới" },
-  { id: "profile_sent", label: "Đã gửi Profile" },
-  { id: "surveyed", label: "Đã khảo sát" },
-  { id: "quoted", label: "Đã báo giá" },
-  { id: "negotiating", label: "Thương thảo" },
-  { id: "won", label: "Đã chốt" },
-  { id: "lost", label: "Thất bại" },
-];
+const STAGES = CRM_LEAD_STAGE_OPTIONS;
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -149,9 +142,7 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
           <select value={trigger.leadType ?? ""} onChange={e => onChange({ ...trigger, leadType: e.target.value })}
             className="w-full px-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
-            <option value="architect">Kiến trúc sư</option>
-            <option value="investor">Chủ đầu tư CHDV</option>
-            <option value="dealer">Đại lý</option>
+            {CRM_LEAD_TYPE_OPTIONS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
           </select>
         </div>
       )}
@@ -553,9 +544,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
                   style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
                   <option value="">Tất cả</option>
-                  <option value="architect">Kiến trúc sư</option>
-                  <option value="investor">Chủ đầu tư</option>
-                  <option value="dealer">Đại lý</option>
+                  {CRM_LEAD_TYPE_OPTIONS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
                 </select>
               </div>
               <div className="flex items-end">

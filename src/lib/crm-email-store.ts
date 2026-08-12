@@ -10,7 +10,7 @@ import { randomUUID } from "crypto";
 
 export type EmailCampaignStatus = "draft" | "scheduled" | "sending" | "sent" | "failed";
 export type EmailTemplateCategory = "intro" | "quote" | "followup" | "promo" | "event" | "custom";
-export type EmailSegment = "all" | "architect" | "investor" | "dealer" | "new" | "negotiating" | "won" | "lost";
+export type EmailSegment = "all" | "retail" | "architect" | "investor" | "dealer" | "b2b" | "new" | "negotiating" | "won" | "lost";
 
 export interface EmailTemplate {
   id: string;
@@ -60,9 +60,11 @@ export interface EmailLog {
 
 export const SEGMENT_LABELS: Record<EmailSegment, string> = {
   all:         "Tất cả khách hàng",
+  retail:      "Khách mua lẻ",
   architect:   "Kiến trúc sư",
-  investor:    "Chủ đầu tư CHDV",
-  dealer:      "Đại lý",
+  investor:    "Đối tác dự án",
+  dealer:      "Đại lý / nhà phân phối",
+  b2b:         "Doanh nghiệp / B2B",
   new:         "Khách hàng mới",
   negotiating: "Đang thương thảo",
   won:         "Đã chốt",

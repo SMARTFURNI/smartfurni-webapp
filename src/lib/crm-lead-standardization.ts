@@ -7,6 +7,16 @@ import type {
   LeadTemperature,
   LeadType,
 } from "./crm-types";
+import {
+  CUSTOMER_SEGMENT_LABELS,
+  PRODUCT_LABELS,
+  PRODUCT_TAGS,
+  SEGMENT_TAGS,
+  TEMPERATURE_LABELS,
+  TEMP_TAGS,
+} from "./crm-taxonomy";
+
+export { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "./crm-taxonomy";
 
 export const CRM_FOUNDATION_PROFILE = {
   version: "1.0",
@@ -19,49 +29,11 @@ export const CRM_FOUNDATION_PROFILE = {
   ],
 } as const;
 
-export const CUSTOMER_SEGMENT_LABELS: Record<CustomerSegment, string> = {
-  retail: "Khách mua lẻ",
-  dealer: "Đại lý / nhà phân phối",
-  project: "Đối tác dự án",
-  b2b: "Doanh nghiệp / B2B",
-};
-
-export const PRODUCT_LABELS: Record<InterestedProduct, string> = {
-  sofa_bed: "Sofa giường",
-  ergonomic_bed: "Giường công thái học",
-  other: "Sản phẩm khác",
-};
-
-export const TEMPERATURE_LABELS: Record<LeadTemperature, string> = {
-  hot: "Nóng",
-  warm: "Ấm",
-  cold: "Lạnh",
-};
-
 export const SOURCE_LABELS: Record<RawLeadSource, string> = {
   facebook_lead: "Facebook Ads",
   tiktok_lead: "TikTok Ads",
   manual: "Nhập tay",
   other: "Khác",
-};
-
-const SEGMENT_TAGS: Record<CustomerSegment, string> = {
-  retail: "SEG:BAN_LE",
-  dealer: "SEG:DAI_LY",
-  project: "SEG:DU_AN",
-  b2b: "SEG:B2B",
-};
-
-const PRODUCT_TAGS: Record<InterestedProduct, string> = {
-  sofa_bed: "PROD:SOFA_GIUONG",
-  ergonomic_bed: "PROD:GIUONG_CONG_THAI_HOC",
-  other: "PROD:KHAC",
-};
-
-const TEMP_TAGS: Record<LeadTemperature, string> = {
-  hot: "TEMP:HOT",
-  warm: "TEMP:WARM",
-  cold: "TEMP:COLD",
 };
 
 function fold(value: unknown): string {
