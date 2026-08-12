@@ -214,11 +214,11 @@ export default function LeadDetailClient({
   return (
     <div className={`${customerStyles.workspace} flex flex-col h-full`} style={{ background: DL.bg, minHeight: "100vh" }}>
       {/* ── Header ── */}
-      <div className={`${customerStyles.headerSurface} flex-shrink-0 mx-3 sm:mx-5 mt-3 sm:mt-4 rounded-2xl px-4 sm:px-6 py-3.5 backdrop-blur-sm`}
+      <div className={`${customerStyles.headerSurface} flex-shrink-0 mx-3 sm:mx-5 mt-2 rounded-2xl px-3 sm:px-4 py-2.5 backdrop-blur-sm`}
         style={{ background: DL.header, borderBottom: `1px solid ${DL.border}`, overflow: "visible", position: "relative", zIndex: 100 }}>
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <Link href="/crm/leads"
-            className="flex items-center gap-1.5 text-sm transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium transition-colors"
             style={{ color: DL.textMuted }}
             onMouseEnter={e => (e.currentTarget.style.color = DL.gold)}
             onMouseLeave={e => (e.currentTarget.style.color = DL.textMuted)}>
@@ -230,8 +230,8 @@ export default function LeadDetailClient({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-lg font-bold" style={{ color: DL.text }}>{lead.name}</h1>
-              {lead.company && <span className="text-sm" style={{ color: DL.textMuted }}>{lead.company}</span>}
+              <h1 className="text-base font-bold" style={{ color: DL.text }}>{lead.name}</h1>
+              {lead.company && <span className="text-xs" style={{ color: DL.textMuted }}>{lead.company}</span>}
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: `${TYPE_COLORS[lead.type]}18`, color: TYPE_COLORS[lead.type], border: `1px solid ${TYPE_COLORS[lead.type]}30` }}>
                 {TYPE_LABELS[lead.type]}
@@ -250,7 +250,7 @@ export default function LeadDetailClient({
             <div className="relative">
               <button
                 onClick={() => setShowStageMenu(v => !v)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
+                className={`${customerStyles.primaryButton} flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all`}
                 style={{
                   background: `${STAGE_COLORS[lead.stage]}15`,
                   color: STAGE_COLORS[lead.stage],
@@ -278,15 +278,15 @@ export default function LeadDetailClient({
             </div>
 
             <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
-              className={`${customerStyles.secondaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all`}>
+              className={`${customerStyles.blueButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all`}>
               <ShoppingCart size={13} /> Tạo đơn hàng
             </Link>
             <Link href={`/crm/quotes/new?leadId=${lead.id}&leadName=${encodeURIComponent(lead.name)}`}
-              className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all`}>
+              className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all`}>
               <FileText size={13} /> Tạo báo giá
             </Link>
             <button onClick={() => setShowEditLead(true)}
-              className={`${customerStyles.secondaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all`}
+              className={`${customerStyles.secondaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all`}
               style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}
               onMouseEnter={e => { e.currentTarget.style.color = DL.text; e.currentTarget.style.background = DL.surfaceHover; }}
               onMouseLeave={e => { e.currentTarget.style.color = DL.textMuted; e.currentTarget.style.background = DL.surface; }}>
@@ -294,7 +294,7 @@ export default function LeadDetailClient({
             </button>
             {isAdmin && (
               <button onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
+                className={`${customerStyles.dangerButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all`}
                 style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#dc2626" }}
                 onMouseEnter={e => (e.currentTarget.style.background = "#ffe4e6")}
                 onMouseLeave={e => (e.currentTarget.style.background = "#fff1f2")}>
@@ -308,9 +308,9 @@ export default function LeadDetailClient({
       {/* ── Body ── */}
       <div className="flex-1 overflow-y-auto xl:overflow-hidden flex flex-col xl:flex-row gap-0">
         {/* Left: Main content */}
-        <div className="flex-1 xl:overflow-y-auto p-3 sm:p-5 min-w-0">
+        <div className="flex-1 xl:overflow-y-auto p-3 sm:p-4 min-w-0">
           {/* Quick stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3">
             <DLInfoCard icon={DollarSign} label="Giá trị dự kiến" value={formatVND(lead.expectedValue)} color={DL.gold} />
             <DLInfoCard icon={Home} label="Số căn" value={lead.unitCount > 0 ? `${lead.unitCount} căn` : "—"} color="#60a5fa" />
             <DLInfoCard icon={MapPin} label="Khu vực" value={lead.district || "—"} color="#a78bfa" />
@@ -318,16 +318,16 @@ export default function LeadDetailClient({
           </div>
 
           {/* Tabs container */}
-          <div className="rounded-2xl overflow-hidden"
+          <div className={`${customerStyles.tableShell} rounded-2xl overflow-hidden`}
             style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
             {/* Tab bar */}
             <div className="flex overflow-x-auto" style={{ borderBottom: `1px solid ${DL.border}` }}>
               {TABS.map(tab => (
                 <button key={tab} onClick={() => handleTabChange(tab)}
-                  className="min-w-28 flex-1 py-3 px-2 text-sm font-medium transition-all relative whitespace-nowrap"
+                  className="min-w-28 flex-1 py-2.5 px-2 text-sm font-semibold transition-all relative whitespace-nowrap"
                   style={{
                     color: activeTab === tab ? DL.gold : DL.textMuted,
-                    background: activeTab === tab ? "rgba(245,158,11,0.06)" : "transparent",
+                    background: activeTab === tab ? "linear-gradient(135deg, #fff9e8, #fff1bd)" : "transparent",
                   }}>
                   {TAB_LABELS[tab]}
                   {tab === "calls" && callLogs.length > 0 && (
@@ -362,7 +362,7 @@ export default function LeadDetailClient({
               ))}
             </div>
 
-            <div className="p-5">
+            <div className="p-4">
               {/* ── Timeline ── */}
               {activeTab === "timeline" && (
                 <div>
@@ -741,10 +741,10 @@ export default function LeadDetailClient({
         </div>
 
         {/* ── Right Sidebar ── */}
-        <div className="w-full xl:w-72 flex-shrink-0 p-3 sm:p-4 xl:overflow-y-auto space-y-3 border-t xl:border-t-0 xl:border-l" style={{ borderColor: DL.border }}>
+        <div className="w-full xl:w-72 flex-shrink-0 p-3 xl:overflow-y-auto space-y-2.5 border-t xl:border-t-0 xl:border-l" style={{ borderColor: DL.border }}>
 
           {/* Customer Profile Card */}
-          <div className="rounded-2xl" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)", overflow: "visible" }}>
+          <div className={`${customerStyles.featureCard} rounded-2xl`} style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)", overflow: "visible" }}>
             <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,69,0.12), #ffffff)", overflow: "visible", position: "relative" }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black flex-shrink-0"
@@ -777,7 +777,7 @@ export default function LeadDetailClient({
               {/* Quick action buttons */}
               <div className="grid grid-cols-4 gap-2">
                 <button onClick={() => setContactModal('call')}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                  className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
                   style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.20)" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(52,211,153,0.15)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "rgba(52,211,153,0.08)")}>
@@ -787,7 +787,7 @@ export default function LeadDetailClient({
                   <span className="text-[10px] font-semibold" style={{ color: "#34d399" }}>Gọi</span>
                 </button>
                 <button onClick={() => setContactModal('zalo')}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                  className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
                   style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.20)" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(96,165,250,0.15)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "rgba(96,165,250,0.08)")}>
@@ -798,7 +798,7 @@ export default function LeadDetailClient({
                 </button>
                 {lead.email ? (
                   <button onClick={() => setContactModal('email')}
-                    className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                    className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
                     style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.20)" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(167,139,250,0.15)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "rgba(167,139,250,0.08)")}>
@@ -816,7 +816,7 @@ export default function LeadDetailClient({
                   </div>
                 )}
                 <Link href={`/crm/quotes/new?leadId=${lead.id}`}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all"
+                  className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
                   style={{ background: `${DL.gold}0d`, border: `1px solid ${DL.gold}30` }}
                   onMouseEnter={e => (e.currentTarget.style.background = `${DL.gold}18`)}
                   onMouseLeave={e => (e.currentTarget.style.background = `${DL.gold}0d`)}>
@@ -830,7 +830,7 @@ export default function LeadDetailClient({
           </div>
 
           {/* Key Info Card */}
-          <div className="rounded-2xl p-4"
+          <div className={`${customerStyles.featureCard} rounded-2xl p-4`}
             style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
             <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Thông tin chính</h3>
             <div className="space-y-3">
@@ -844,7 +844,7 @@ export default function LeadDetailClient({
           </div>
 
           {/* Value Card */}
-          <div className="rounded-2xl p-4"
+          <div className={`${customerStyles.featureCard} rounded-2xl p-4`}
             style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
             <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Giá trị</h3>
             <div className="p-3 rounded-xl" style={{ background: `${DL.gold}0d`, border: `1px solid ${DL.gold}25` }}>
@@ -860,8 +860,7 @@ export default function LeadDetailClient({
 
           {/* CTA: Tạo đơn hàng */}
           <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
-            className="block w-full py-3 rounded-2xl text-center font-bold text-sm transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", boxShadow: "0 4px 20px rgba(99,102,241,0.30)" }}>
+            className={`${customerStyles.blueButton} block w-full py-3 rounded-2xl text-center font-bold text-sm transition-all`}>
             <div className="flex items-center justify-center gap-2">
               <ShoppingCart size={15} />
               <span>Tạo đơn hàng</span>
@@ -1087,12 +1086,12 @@ export default function LeadDetailClient({
 
 function DLInfoCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string; color: string }) {
   return (
-    <div className="rounded-xl p-3" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(8px)" }}>
-      <div className="flex items-center gap-2 mb-1.5">
+    <div className={`${customerStyles.statCard} rounded-xl px-3 py-2`} style={{ background: `linear-gradient(135deg, #ffffff, ${color}0b)`, border: `1px solid ${color}30`, backdropFilter: "blur(8px)" }}>
+      <div className="flex items-center gap-2 mb-1">
         <Icon size={13} style={{ color }} />
-        <span className="text-xs" style={{ color: DL.textMuted }}>{label}</span>
+        <span className="text-[11px]" style={{ color: DL.textMuted }}>{label}</span>
       </div>
-      <div className="text-sm font-bold truncate" style={{ color: DL.text }}>{value}</div>
+      <div className="text-sm font-extrabold truncate" style={{ color: value === "—" ? DL.textDim : DL.text }}>{value}</div>
     </div>
   );
 }

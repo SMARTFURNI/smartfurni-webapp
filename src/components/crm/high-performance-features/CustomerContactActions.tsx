@@ -10,31 +10,31 @@ interface CustomerContactActionsProps {
   className?: string;
 }
 
-// ── Dark Luxury Palette (đồng bộ Content Marketing AI) ──────────────────────
+// Light CRM palette, aligned with the Zalo OA workspace.
 const D = {
   // Dropdown panel
-  panelBg:     "rgba(18,14,0,0.97)",
-  panelBorder: "rgba(255,255,255,0.10)",
+  panelBg:     "rgba(255,255,255,0.98)",
+  panelBorder: "rgba(203,213,225,0.92)",
   // Header per type
-  zaloHeader:  "rgba(96,165,250,0.12)",
-  callHeader:  "rgba(74,222,128,0.12)",
-  emailHeader: "rgba(192,132,252,0.12)",
+  zaloHeader:  "linear-gradient(135deg, #eff6ff, #dbeafe)",
+  callHeader:  "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+  emailHeader: "linear-gradient(135deg, #faf5ff, #ede9fe)",
   // Item hover
-  itemHover:   "rgba(255,255,255,0.05)",
+  itemHover:   "rgba(212,175,69,0.10)",
   // Icon bg per type
-  zaloIconBg:  "rgba(96,165,250,0.15)",
-  callIconBg:  "rgba(74,222,128,0.15)",
-  emailIconBg: "rgba(192,132,252,0.15)",
-  copyIconBg:  "rgba(245,158,11,0.15)",
+  zaloIconBg:  "linear-gradient(135deg, #dbeafe, #bfdbfe)",
+  callIconBg:  "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+  emailIconBg: "linear-gradient(135deg, #ede9fe, #ddd6fe)",
+  copyIconBg:  "linear-gradient(135deg, #fef3c7, #fde68a)",
   // Colors
   zaloColor:   "#60a5fa",
   callColor:   "#4ade80",
   emailColor:  "#c084fc",
   goldColor:   "#f59e0b",
-  textPrimary: "#f5edd6",
-  textMuted:   "#9ca3af",
-  textDim:     "rgba(255,255,255,0.35)",
-  divider:     "rgba(255,255,255,0.07)",
+  textPrimary: "#172033",
+  textMuted:   "#64748b",
+  textDim:     "#94a3b8",
+  divider:     "#e2e8f0",
 };
 
 export default function CustomerContactActions({
@@ -86,28 +86,31 @@ export default function CustomerContactActions({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          background: isActive
-            ? `${color}25`
-            : disabled
-            ? "rgba(255,255,255,0.04)"
-            : "rgba(255,255,255,0.07)",
-          border: `1px solid ${isActive ? `${color}50` : "rgba(255,255,255,0.10)"}`,
-          color: disabled ? "rgba(255,255,255,0.20)" : color,
+          background: disabled
+            ? "linear-gradient(135deg, #f8fafc, #e2e8f0)"
+            : type === "zalo"
+            ? "linear-gradient(135deg, #eff6ff, #dbeafe)"
+            : type === "call"
+            ? "linear-gradient(135deg, #ecfdf5, #d1fae5)"
+            : "linear-gradient(135deg, #faf5ff, #ede9fe)",
+          border: `1px solid ${isActive ? `${color}70` : `${color}32`}`,
+          color: disabled ? "#cbd5e1" : color,
           cursor: disabled ? "not-allowed" : "pointer",
           transition: "all 0.15s ease",
           flexShrink: 0,
+          boxShadow: isActive ? `0 6px 14px ${color}26` : "0 3px 8px rgba(15,23,42,0.06)",
         }}
         onMouseEnter={e => {
           if (!disabled && !isActive) {
-            (e.currentTarget as HTMLElement).style.background = `${color}20`;
+            (e.currentTarget as HTMLElement).style.filter = "saturate(1.12)";
             (e.currentTarget as HTMLElement).style.borderColor = `${color}40`;
-            (e.currentTarget as HTMLElement).style.transform = "scale(1.08)";
+            (e.currentTarget as HTMLElement).style.transform = "translateY(-1px) scale(1.06)";
           }
         }}
         onMouseLeave={e => {
           if (!disabled && !isActive) {
-            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)";
-            (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.10)";
+            (e.currentTarget as HTMLElement).style.filter = "none";
+            (e.currentTarget as HTMLElement).style.borderColor = `${color}32`;
             (e.currentTarget as HTMLElement).style.transform = "scale(1)";
           }
         }}
@@ -173,7 +176,7 @@ export default function CustomerContactActions({
     background: D.panelBg,
     border: `1px solid ${D.panelBorder}`,
     borderRadius: 14,
-    boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)",
+    boxShadow: "0 22px 60px rgba(15,23,42,0.18), 0 4px 16px rgba(15,23,42,0.08)",
     zIndex: 9999,
     overflow: "hidden",
     backdropFilter: "blur(20px)",

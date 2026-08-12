@@ -41,16 +41,42 @@
   box-shadow: 0 12px 34px rgba(15, 23, 42, 0.07);
 }
 
+.toolbarSurface {
+  background:
+    radial-gradient(circle at 96% -20%, rgba(212, 175, 69, 0.16), transparent 12rem),
+    linear-gradient(135deg, #ffffff 0%, #fffdf7 100%) !important;
+  border: 1px solid #e7d899 !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+}
+
+.featureCard {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212, 175, 69, 0.09), transparent 10rem),
+    linear-gradient(145deg, #ffffff 0%, #fbfcfe 100%) !important;
+  border: 1px solid #dbe3ee !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.055);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-1px);
+  border-color: #e7d899 !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
 .primaryButton {
+  position: relative;
+  overflow: hidden;
   color: #2b2108 !important;
   border: 1px solid rgba(185, 135, 32, 0.45) !important;
-  background: linear-gradient(135deg, #f4df91 0%, #d4af45 48%, #b98720 100%) !important;
-  box-shadow: 0 8px 18px rgba(185, 135, 32, 0.2) !important;
+  background: linear-gradient(125deg, #ffe997 0%, #e8c456 38%, #d3a92f 70%, #b98114 100%) !important;
+  box-shadow: 0 8px 20px rgba(185, 135, 32, 0.25), inset 0 1px 0 rgba(255,255,255,0.6) !important;
 }
 
 .primaryButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 11px 24px rgba(185, 135, 32, 0.28) !important;
+  transform: translateY(-2px);
+  filter: saturate(1.08);
+  box-shadow: 0 13px 28px rgba(185, 135, 32, 0.34), inset 0 1px 0 rgba(255,255,255,0.7) !important;
 }
 
 .secondaryButton {
@@ -60,6 +86,30 @@
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
+.blueButton {
+  color: #ffffff !important;
+  border: 1px solid rgba(37, 99, 235, 0.35) !important;
+  background: linear-gradient(135deg, #63a6ff 0%, #2f7bf1 48%, #2458ca 100%) !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.22), inset 0 1px 0 rgba(255,255,255,0.28) !important;
+}
+
+.blueButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 13px 28px rgba(37, 99, 235, 0.3) !important;
+}
+
+.dangerButton {
+  color: #ffffff !important;
+  border: 1px solid rgba(225, 29, 72, 0.35) !important;
+  background: linear-gradient(135deg, #fb7185 0%, #ef4444 48%, #be123c 100%) !important;
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.2), inset 0 1px 0 rgba(255,255,255,0.28) !important;
+}
+
+.dangerButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 13px 28px rgba(225, 29, 72, 0.28) !important;
+}
+
 .secondaryButton:hover {
   color: #172033 !important;
   border-color: #c7d2df !important;
@@ -67,9 +117,48 @@
 }
 
 .statCard {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
   border: 1px solid #dbe3ee !important;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.055);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.statCard::after {
+  content: "";
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  right: -34px;
+  top: -42px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.48);
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
+}
+
+.statBlue {
+  background: linear-gradient(135deg, #ffffff 0%, #edf6ff 64%, #dbeafe 100%) !important;
+  border-color: #bfdbfe !important;
+}
+
+.statGold {
+  background: linear-gradient(135deg, #ffffff 0%, #fff9e9 64%, #fef3c7 100%) !important;
+  border-color: #f5d888 !important;
+}
+
+.statGreen {
+  background: linear-gradient(135deg, #ffffff 0%, #effdf7 64%, #d1fae5 100%) !important;
+  border-color: #a7f3d0 !important;
+}
+
+.statRose {
+  background: linear-gradient(135deg, #ffffff 0%, #fff5f6 64%, #ffe4e6 100%) !important;
+  border-color: #fecdd3 !important;
 }
 
 .modalBackdrop {
@@ -99,6 +188,22 @@
   background: #ffffff !important;
   border: 1px solid #dbe3ee !important;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+}
+
+.tableShell :global(tbody tr:hover) {
+  box-shadow: inset 3px 0 0 #d4af45;
+}
+
+.iconAction {
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+}
+
+.iconAction:hover {
+  border-color: rgba(212,175,69,0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
 }
 
 @media (max-width: 767px) {

@@ -137,6 +137,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   const wonCount = leads.filter(l => l.stage === "won").length;
   const totalValue = leads.reduce((s, l) => s + (l.expectedValue || 0), 0);
   const winRate = leads.length > 0 ? Math.round((wonCount / leads.length) * 100) : 0;
+  const statThemes = [customerStyles.statBlue, customerStyles.statGold, customerStyles.statGreen, customerStyles.statRose];
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -176,11 +177,11 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
     <div className={`${customerStyles.workspace} flex flex-col h-full`} style={{ background: C.bg }}>
       <CrmFoundationHeader active="customers" title="Hồ sơ khách hàng chuẩn hóa"
         description="Một khách hàng duy nhất theo SĐT/email, có đủ nhóm đối tượng, sản phẩm quan tâm, nguồn và mức độ ưu tiên chăm sóc." />
-      <div className={`${customerStyles.surface} flex-shrink-0 mx-3 sm:mx-5 mt-3 sm:mt-4 rounded-2xl px-4 sm:px-6 py-4`} style={{ background: C.surface, border: `1px solid ${C.border}` }}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className={`${customerStyles.toolbarSurface} flex-shrink-0 mx-3 sm:mx-5 mt-2 rounded-2xl px-3 sm:px-4 py-2.5`} style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: C.text }}>Quản lý khách hàng</h1>
-            <p className="text-sm mt-0.5" style={{ color: C.textMuted }}>
+            <h1 className="text-base font-bold" style={{ color: C.text }}>Danh sách khách hàng</h1>
+            <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
               {filtered.length} / {leads.length} khách hàng
               {overdueCount > 0 && (
                 <span className="ml-2 font-semibold" style={{ color: C.red }}>· {overdueCount} quá hạn</span>
@@ -202,13 +203,13 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   color: C.text,
                   caretColor: C.gold,
                 }}
-                className="pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none w-52 placeholder:text-slate-500"
+                className="pl-9 pr-3 py-1.5 text-sm rounded-xl focus:outline-none w-52 placeholder:text-slate-500"
               />
             </div>
             {/* Filter */}
             <button
               onClick={() => setShowFilters(v => !v)}
-              className={`${activeFilters === 0 ? customerStyles.secondaryButton : ""} flex items-center gap-2 px-3 py-2 text-sm rounded-xl transition-all`}
+              className={`${activeFilters === 0 ? customerStyles.secondaryButton : customerStyles.primaryButton} flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl transition-all`}
               style={{
                 background: activeFilters > 0 ? C.goldBg : C.surface2,
                 border: `1px solid ${activeFilters > 0 ? C.gold : C.border}`,
@@ -220,7 +221,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             {/* Add */}
             <button
               onClick={() => setShowAddModal(true)}
-              className={`${customerStyles.primaryButton} flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all`}>
+              className={`${customerStyles.primaryButton} flex items-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-xl transition-all`}>
               <Plus size={14} /> Thêm khách hàng
             </button>
           </div>
@@ -275,29 +276,29 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
       </div>
 
       {/* ── Summary Stats ── */}
-      <div className="flex-shrink-0 px-3 sm:px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="flex-shrink-0 px-3 sm:px-5 py-2 grid grid-cols-2 md:grid-cols-4 gap-2.5">
         {[
           { icon: Users,       label: "Tổng khách hàng", value: String(leads.length),    color: C.blue,   bg: C.blueBg,   sub: `${leads.filter(l => !["won","lost"].includes(l.stage)).length} đang theo dõi` },
           { icon: DollarSign,  label: "Tổng giá trị",    value: formatVND(totalValue),   color: C.gold,   bg: C.goldBg,   sub: "Pipeline" },
           { icon: Award,       label: "Tỷ lệ chốt",      value: `${winRate}%`,           color: C.green,  bg: C.greenBg,  sub: `${wonCount} đơn thành công` },
           { icon: AlertCircle, label: "Cần liên hệ",     value: String(overdueCount),    color: C.red,    bg: C.redBg,    sub: "Quá 3 ngày" },
-        ].map(({ icon: Icon, label, value, color, bg, sub }) => (
-          <div key={label} className={`${customerStyles.statCard} rounded-2xl px-4 py-3 flex items-center gap-3`}
+        ].map(({ icon: Icon, label, value, color, bg, sub }, index) => (
+          <div key={label} className={`${customerStyles.statCard} ${statThemes[index]} rounded-xl px-3 py-2 flex items-center gap-2.5`}
             style={{ background: C.surface, border: `1px solid ${C.border}` }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
-              <Icon size={17} style={{ color }} />
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
+              <Icon size={15} style={{ color }} />
             </div>
             <div className="min-w-0">
-              <div className="text-[11px] truncate" style={{ color: C.textMuted }}>{label}</div>
-              <div className="text-sm font-bold truncate" style={{ color: C.text }}>{value}</div>
-              <div className="text-[10px] truncate" style={{ color: C.textMuted }}>{sub}</div>
+              <div className="text-[10px] truncate" style={{ color: C.textMuted }}>{label}</div>
+              <div className="text-[15px] leading-4 font-extrabold truncate" style={{ color }}>{value}</div>
+              <div className="text-[9px] truncate" style={{ color: C.textMuted }}>{sub}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* ── Table ── */}
-      <div className="flex-1 overflow-auto px-3 sm:px-6 pb-6">
+      <div className="flex-1 overflow-auto px-3 sm:px-5 pb-4">
         <div className={`${customerStyles.tableShell} rounded-2xl overflow-hidden`} style={{ border: `1px solid ${C.border}`, background: C.surface }}>
           <table className="w-full text-sm">
             <thead>
@@ -380,7 +381,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "#fbfdff")}
                   >
                     {/* Customer */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <Link href={`/crm/leads/${lead.id}`} className="block group">
                         <div className="flex items-center gap-2.5">
                           <div
@@ -414,7 +415,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Standardized segment */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <div className="flex max-w-[190px] flex-wrap gap-1">
                         <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
                           style={{ background: `${typeInfo.color}20`, color: typeInfo.color, border: `1px solid ${typeInfo.color}30` }}>
@@ -434,7 +435,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Stage */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
                         style={{
                           background: `${STAGE_COLORS[lead.stage]}20`,
@@ -446,7 +447,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Assigned To */}
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-2.5 hidden md:table-cell">
                       {lead.assignedTo ? (
                         <div className="flex items-center gap-1.5">
                           <div
@@ -468,7 +469,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* District */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="px-4 py-2.5 hidden lg:table-cell">
                       <div className="flex items-center gap-1 text-xs" style={{ color: C.textDim }}>
                         <MapPin size={10} style={{ flexShrink: 0 }} />
                         <span className="truncate max-w-[90px]">{lead.district || "—"}</span>
@@ -476,7 +477,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Value */}
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-2.5 text-right">
                       <span className="font-bold text-sm whitespace-nowrap"
                         style={{ color: lead.expectedValue > 0 ? C.gold : C.textMuted }}>
                         {lead.expectedValue > 0 ? formatVND(lead.expectedValue) : "—"}
@@ -484,7 +485,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Last contact */}
-                    <td className="px-4 py-3 hidden xl:table-cell">
+                    <td className="px-4 py-2.5 hidden xl:table-cell">
                       <span className={`text-xs whitespace-nowrap font-medium`}
                         style={{ color: overdue ? C.red : daysAgo <= 1 ? C.green : C.textDim }}>
                         {daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}
@@ -492,11 +493,11 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center justify-end gap-1.5">
                         <CustomerContactActions lead={lead} />
                         <Link href={`/crm/leads/${lead.id}`}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                          className={`${customerStyles.iconAction} w-7 h-7 rounded-lg flex items-center justify-center transition-all`}
                           style={{ color: C.textMuted, background: "transparent" }}
                           onMouseEnter={e => {
                             (e.currentTarget as HTMLElement).style.color = C.blue;
@@ -510,7 +511,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                           <Eye size={14} />
                         </Link>
                         <Link href={`/crm/leads/${lead.id}`}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                          className={`${customerStyles.iconAction} w-7 h-7 rounded-lg flex items-center justify-center transition-all`}
                           style={{ color: C.textMuted, background: "transparent" }}
                           onMouseEnter={e => {
                             (e.currentTarget as HTMLElement).style.color = C.gold;
@@ -526,7 +527,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                         {isAdmin && (
                           <button
                             onClick={() => setConfirmDeleteId(lead.id)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                            className={`${customerStyles.iconAction} w-7 h-7 rounded-lg flex items-center justify-center transition-all`}
                             style={{ color: C.textMuted, background: "transparent" }}
                             onMouseEnter={e => {
                               (e.currentTarget as HTMLElement).style.color = C.red;
