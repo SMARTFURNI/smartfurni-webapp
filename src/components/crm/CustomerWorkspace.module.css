@@ -206,6 +206,36 @@
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
 }
 
+.segmentAction {
+  color: var(--segment-color, #9a6c08) !important;
+  border: 1px solid color-mix(in srgb, var(--segment-color, #d4af45) 28%, white) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--segment-color, #d4af45) 8%, white), color-mix(in srgb, var(--segment-color, #d4af45) 18%, white)) !important;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--segment-color, #d4af45) 13%, transparent);
+}
+
+.segmentAction:hover {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--segment-color, #d4af45) 72%, white), var(--segment-color, #d4af45)) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--segment-color, #d4af45) 28%, transparent);
+}
+
+.addCard {
+  color: #765400;
+  border: 1.5px dashed #dfc66d !important;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 228, 125, 0.26), transparent 9rem),
+    linear-gradient(145deg, #ffffff 0%, #fffaf0 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.75), 0 8px 22px rgba(15,23,42,0.04);
+}
+
+.addCard:hover {
+  border-color: #bd8d1a !important;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(185, 135, 32, 0.15);
+}
+
 @media (max-width: 767px) {
   .workspace {
     min-width: 0;

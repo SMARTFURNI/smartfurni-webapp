@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import Link from 'next/link';
 import {
   Users, Plus, Search, Filter, Edit3, Trash2, Eye,
@@ -12,6 +12,7 @@ import {
 import type { Lead, LeadType, LeadStage } from '@/lib/crm-types';
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS } from '@/lib/crm-types';
 import CrmFoundationHeader from './CrmFoundationHeader';
+import workspaceStyles from './CustomerWorkspace.module.css';
 
 const DL = {
   bg: 'linear-gradient(160deg, #f8fbff 0%, #fffdf7 100%)',
@@ -298,30 +299,27 @@ export default function LeadSegmentationDashboard() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ background: DL.bg, minHeight: '100vh' }}>
+    <div className={workspaceStyles.workspace}>
       <CrmFoundationHeader active="segments" title="Phân nhóm & kích hoạt chăm sóc"
         description="Nhóm khách hàng theo đối tượng, sản phẩm quan tâm và độ ưu tiên để dùng thống nhất cho Zalo OA, Email Marketing và công việc gọi lại."
         actions={<>
             <button onClick={loadData}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
-              style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
+              className={`${workspaceStyles.secondaryButton} flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all`}>
               <RefreshCw size={13} />
               <span>Làm mới</span>
             </button>
             <button onClick={openCreate}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-              style={{ background: DL.gold, color: '#000' }}>
+              className={`${workspaceStyles.primaryButton} flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-all`}>
               <Plus size={14} />
               <span>Tạo phân loại</span>
             </button>
         </>} />
 
-      <div className="px-6 py-6 max-w-7xl mx-auto space-y-6">
+      <div className="mx-auto max-w-7xl space-y-4 px-4 py-4 md:px-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map(stat => (
-            <div key={stat.label} className="rounded-xl p-4"
-              style={{ background: DL.card, border: `1px solid ${DL.cardBorder}` }}>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {stats.map((stat, index) => (
+            <div key={stat.label} className={`${workspaceStyles.statCard} ${[workspaceStyles.statGold, workspaceStyles.statBlue, workspaceStyles.statGreen, workspaceStyles.statRose][index]} rounded-2xl px-4 py-3.5`}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: `${stat.color}18`, border: `1px solid ${stat.color}30` }}>
@@ -339,14 +337,14 @@ export default function LeadSegmentationDashboard() {
         </div>
 
         {/* Search */}
-        <div className="relative">
+        <div className={`${workspaceStyles.toolbarSurface} relative rounded-2xl p-2`}>
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: DL.textMuted }} />
           <input
             type="text"
             placeholder="Tìm kiếm phân loại..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
+            className="w-full rounded-xl py-2.5 pl-9 pr-4 text-sm outline-none"
             style={{ background: DL.inputBg, border: `1px solid ${DL.inputBorder}`, color: DL.text }}
           />
         </div>
@@ -367,15 +365,12 @@ export default function LeadSegmentationDashboard() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredSegments.map(seg => {
               const color = seg.color ?? DL.gold;
               const percent = totalLeads > 0 ? Math.round((seg.leadCount / totalLeads) * 100) : 0;
               return (
-                <div key={seg.id} className="rounded-xl p-5 flex flex-col gap-4 transition-all group"
-                  style={{ background: DL.card, border: `1px solid ${DL.cardBorder}` }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = `${color}50`)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = DL.cardBorder)}>
+                <div key={seg.id} className={`${workspaceStyles.featureCard} group flex flex-col gap-3 rounded-2xl p-4`}>
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
@@ -390,14 +385,14 @@ export default function LeadSegmentationDashboard() {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button onClick={() => openEdit(seg)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                        className={`${workspaceStyles.iconAction} flex h-8 w-8 items-center justify-center rounded-lg transition-all`}
                         style={{ color: DL.textMuted }}
                         onMouseEnter={e => { e.currentTarget.style.background = DL.surface; e.currentTarget.style.color = DL.gold; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = DL.textMuted; }}>
                         <Edit3 size={12} />
                       </button>
                       <button onClick={() => setDeleteId(seg.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                        className={`${workspaceStyles.iconAction} flex h-8 w-8 items-center justify-center rounded-lg transition-all`}
                         style={{ color: DL.textMuted }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.1)'; e.currentTarget.style.color = '#f87171'; }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = DL.textMuted; }}>
@@ -471,10 +466,8 @@ export default function LeadSegmentationDashboard() {
 
                   {/* View leads button */}
                   <button onClick={() => handleViewLeads(seg)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                    style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}
-                    onMouseEnter={e => { e.currentTarget.style.background = `${color}25`; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = `${color}15`; }}>
+                    className={`${workspaceStyles.segmentAction} flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition-all`}
+                    style={{ '--segment-color': color } as CSSProperties}>
                     <Eye size={14} />
                     Xem {seg.leadCount} khách hàng
                     <ChevronRight size={14} />
@@ -485,10 +478,7 @@ export default function LeadSegmentationDashboard() {
 
             {/* Add new card */}
             <button onClick={openCreate}
-              className="rounded-xl p-5 flex flex-col items-center justify-center gap-3 transition-all border-dashed"
-              style={{ background: '#f8fafc', border: `2px dashed ${DL.border}`, minHeight: '280px' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${DL.gold}50`; e.currentTarget.style.background = 'rgba(245,158,11,0.04)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = DL.border; e.currentTarget.style.background = '#f8fafc'; }}>
+              className={`${workspaceStyles.addCard} flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-2xl p-5 transition-all`}>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ background: `${DL.gold}15`, border: `1px solid ${DL.gold}30` }}>
                 <Plus size={20} style={{ color: DL.gold }} />
@@ -501,12 +491,11 @@ export default function LeadSegmentationDashboard() {
 
       {/* ── Create/Edit Modal ─────────────────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-2xl overflow-hidden"
+        <div className={`${workspaceStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}>
+          <div className={`${workspaceStyles.modalPanel} w-full max-w-lg overflow-hidden rounded-2xl`}
             style={{ background: DL.modalBg, border: `1px solid ${DL.borderGold}`, maxHeight: '90vh', overflowY: 'auto' }}>
             {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-4"
+            <div className={`${workspaceStyles.modalHeader} flex items-center justify-between px-6 py-4`}
               style={{ borderBottom: `1px solid ${DL.border}` }}>
               <h2 className="text-base font-bold" style={{ color: DL.gold }}>
                 {editingSegment ? 'Chỉnh sửa phân loại' : 'Tạo phân loại mới'}
@@ -672,14 +661,13 @@ export default function LeadSegmentationDashboard() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex gap-3 px-6 py-4" style={{ borderTop: `1px solid ${DL.border}` }}>
+            <div className={`${workspaceStyles.modalFooter} flex gap-3 px-6 py-4`}>
               <button onClick={() => setShowForm(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
+                className={`${workspaceStyles.secondaryButton} flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all`}>
                 Hủy
               </button>
               <button onClick={handleSave} disabled={saving || !form.name.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                className={`${form.name.trim() ? workspaceStyles.primaryButton : ''} flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition-all`}
                 style={{
                   background: form.name.trim() ? DL.gold : 'rgba(245,158,11,0.3)',
                   color: form.name.trim() ? '#000' : DL.textMuted,
@@ -695,12 +683,11 @@ export default function LeadSegmentationDashboard() {
 
       {/* ── View Leads Modal ──────────────────────────────────────────────────── */}
       {viewSegment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col"
+        <div className={`${workspaceStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}>
+          <div className={`${workspaceStyles.modalPanel} flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl`}
             style={{ background: DL.modalBg, border: `1px solid ${DL.borderGold}`, maxHeight: '85vh' }}>
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 flex-shrink-0"
+            <div className={`${workspaceStyles.modalHeader} flex flex-shrink-0 items-center justify-between px-6 py-4`}
               style={{ borderBottom: `1px solid ${DL.border}` }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center"
