@@ -4,10 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  ArrowDown,
   ArrowLeft,
   ArrowRight,
-  ArrowUp,
   BookOpen,
   BrainCircuit,
   Check,
@@ -42,7 +40,9 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BusinessFlowBuilder } from "@/components/crm/business-brain/BusinessFlowBuilder";
 import type {
+  BusinessBrainFlowEdge,
   BusinessBrainFlowStep,
   KnowledgeCategory,
   KnowledgeDocument,
@@ -69,6 +69,7 @@ type DocForm = {
   documentType: string;
   changeNote: string;
   flowSteps: BusinessBrainFlowStep[];
+  flowEdges: BusinessBrainFlowEdge[];
 };
 
 const EMPTY_FORM: DocForm = {
@@ -85,6 +86,7 @@ const EMPTY_FORM: DocForm = {
   documentType: "process",
   changeNote: "",
   flowSteps: [],
+  flowEdges: [],
 };
 
 const TAB_GROUPS: Array<{
@@ -154,6 +156,7 @@ function flowValue(value: unknown): BusinessBrainFlowStep[] {
   return value.map((item, index) => {
     const record = objectValue(item);
     const tone = String(record.tone || "blue") as Tone;
+    const nodeType = String(record.nodeType || (index === 0 ? "start" : index === value.length - 1 ? "end" : "action"));
     return {
       id: String(record.id || `step-${index + 1}`),
       title: String(record.title || `Bước ${index + 1}`),
@@ -161,12 +164,40 @@ function flowValue(value: unknown): BusinessBrainFlowStep[] {
       owner: String(record.owner || ""),
       channel: String(record.channel || ""),
       tone: Object.hasOwn(TONE_STYLES, tone) ? tone : "blue",
+      nodeType: (["start", "action", "decision", "end"] as const).includes(nodeType as "start" | "action" | "decision" | "end")
+        ? nodeType as "start" | "action" | "decision" | "end"
+        : "action",
+      x: Number.isFinite(Number(record.x)) ? Number(record.x) : 505,
+      y: Number.isFinite(Number(record.y)) ? Number(record.y) : 35 + index * 160,
     };
   });
 }
 
+function flowEdgeValue(value: unknown, steps: BusinessBrainFlowStep[]): BusinessBrainFlowEdge[] {
+  if (Array.isArray(value)) {
+    const ids = new Set(steps.map(step => step.id));
+    const parsed = value.map((item, index) => {
+      const record = objectValue(item);
+      return {
+        id: String(record.id || `edge-${index + 1}`),
+        source: String(record.source || ""),
+        target: String(record.target || ""),
+        label: String(record.label || ""),
+      };
+    }).filter(edge => edge.source !== edge.target && ids.has(edge.source) && ids.has(edge.target));
+    return parsed;
+  }
+  return steps.slice(0, -1).map((step, index) => ({
+    id: `legacy-edge-${step.id}-${steps[index + 1].id}`,
+    source: step.id,
+    target: steps[index + 1].id,
+    label: "",
+  }));
+}
+
 function docToForm(doc: KnowledgeDocument): DocForm {
   const metadata = objectValue(doc.metadata);
+  const steps = flowValue(metadata.flowSteps);
   return {
     id: doc.id,
     title: doc.title,
@@ -181,7 +212,8 @@ function docToForm(doc: KnowledgeDocument): DocForm {
     reviewCycle: String(metadata.reviewCycle || "Hàng quý"),
     documentType: String(metadata.documentType || "guide"),
     changeNote: "",
-    flowSteps: flowValue(metadata.flowSteps),
+    flowSteps: steps,
+    flowEdges: flowEdgeValue(metadata.flowEdges, steps),
   };
 }
 
@@ -366,7 +398,7 @@ export function BusinessBrainClient() {
 
   const newDoc = () => {
     setSelectedId("");
-    setForm({ ...EMPTY_FORM, flowSteps: [] });
+    setForm({ ...EMPTY_FORM, flowSteps: [], flowEdges: [] });
     setActiveTab("editor");
     setError("");
   };
@@ -394,6 +426,7 @@ export function BusinessBrainClient() {
           reviewCycle: form.reviewCycle.trim(),
           documentType: form.documentType,
           flowSteps: form.flowSteps,
+          flowEdges: form.flowEdges,
         },
       };
       const data = await fetchJson<{ document: KnowledgeDocument }>("/api/crm/business-brain/knowledge", {
@@ -424,7 +457,7 @@ export function BusinessBrainClient() {
     try {
       await fetchJson(`/api/crm/business-brain/knowledge?id=${encodeURIComponent(form.id)}`, { method: "DELETE" });
       setSelectedId("");
-      setForm({ ...EMPTY_FORM, flowSteps: [] });
+      setForm({ ...EMPTY_FORM, flowSteps: [], flowEdges: [] });
       await loadDocs(null);
       setActiveTab("library");
       setSuccess("Đã xóa tài liệu.");
@@ -453,31 +486,6 @@ export function BusinessBrainClient() {
       setSaving(false);
     }
   };
-
-  const addStep = () => setForm(prev => ({
-    ...prev,
-    flowSteps: [...prev.flowSteps, {
-      id: `step-${Date.now()}`,
-      title: `Bước ${prev.flowSteps.length + 1}`,
-      description: "Mô tả việc cần thực hiện",
-      owner: "",
-      channel: "CRM",
-      tone: (["blue", "violet", "amber", "emerald", "rose"] as Tone[])[prev.flowSteps.length % 5],
-    }],
-  }));
-
-  const updateStep = (index: number, patch: Partial<BusinessBrainFlowStep>) => setForm(prev => ({
-    ...prev,
-    flowSteps: prev.flowSteps.map((step, stepIndex) => stepIndex === index ? { ...step, ...patch } : step),
-  }));
-
-  const moveStep = (index: number, direction: -1 | 1) => setForm(prev => {
-    const target = index + direction;
-    if (target < 0 || target >= prev.flowSteps.length) return prev;
-    const steps = [...prev.flowSteps];
-    [steps[index], steps[target]] = [steps[target], steps[index]];
-    return { ...prev, flowSteps: steps };
-  });
 
   const exportDocument = (kind: "markdown" | "json") => {
     const slug = (form.title || "tai-lieu-smartfurni").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -648,23 +656,24 @@ export function BusinessBrainClient() {
             )}
 
             {activeTab === "diagram" && (
-              <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(430px,0.65fr)]">
-                <Panel className="h-fit p-5 2xl:sticky 2xl:top-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><p className={cn(EYEBROW, "text-[#ab7f17]")}>Sơ đồ nghiệp vụ</p><h2 className={cn(SECTION_TITLE, "mt-1")}>{form.title || "Chọn hoặc tạo tài liệu"}</h2><p className={SECTION_DESCRIPTION}>Theo dõi tuần tự bước thực hiện, người phụ trách và kênh xử lý trong cùng một trục.</p></div><button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}><Save size={15} /> Lưu sơ đồ</button></div>
-                  <div className="mt-6"><FlowDiagram steps={form.flowSteps} /></div>
-                </Panel>
-
-                <Panel className="h-fit overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4">
-                    <div><h3 className="text-base font-semibold">Biên tập các bước</h3><p className="mt-1 text-sm leading-6 text-[#7b899d]">Sắp xếp từ trên xuống theo đúng thứ tự vận hành.</p></div>
-                    <button className={BUTTON_SECONDARY} onClick={addStep}><Plus size={15} /> Thêm bước</button>
+              <Panel className="overflow-hidden">
+                <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className={cn(EYEBROW, "text-[#ab7f17]")}>Trình dựng quy trình</p>
+                    <h2 className={cn(SECTION_TITLE, "mt-1")}>{form.title || "Chọn hoặc tạo tài liệu"}</h2>
+                    <p className={SECTION_DESCRIPTION}>Kéo thả khối, nối nhiều nhánh và đặt nhãn điều kiện trực tiếp trên sơ đồ.</p>
                   </div>
-                  <div className="max-h-[calc(100vh-260px)] space-y-3 overflow-y-auto p-4">
-                    {form.flowSteps.map((step, index) => <div key={step.id} className="rounded-2xl border border-[#dde5ee] bg-white p-4"><div className="flex items-start gap-3"><div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-sm", TONE_STYLES[step.tone].icon)}>{String(index + 1).padStart(2, "0")}</div><div className="min-w-0 flex-1 space-y-3"><div className="flex items-start gap-2"><input aria-label={`Tên bước ${index + 1}`} className={cn(FIELD, "font-semibold")} value={step.title} onChange={event => updateStep(index, { title: event.target.value })} /><button aria-label="Di chuyển lên" className="rounded-lg border border-[#dfe5ed] p-2.5 text-[#718096] hover:text-[#9a7215]" onClick={() => moveStep(index, -1)} disabled={index === 0}><ArrowUp size={14} /></button><button aria-label="Di chuyển xuống" className="rounded-lg border border-[#dfe5ed] p-2.5 text-[#718096] hover:text-[#9a7215]" onClick={() => moveStep(index, 1)} disabled={index === form.flowSteps.length - 1}><ArrowDown size={14} /></button><button aria-label="Xóa bước" className="rounded-lg border border-red-100 bg-red-50 p-2.5 text-red-500" onClick={() => setForm(prev => ({ ...prev, flowSteps: prev.flowSteps.filter((_, i) => i !== index) }))}><Trash2 size={14} /></button></div><textarea className={cn(FIELD, "min-h-24 resize-y")} value={step.description} onChange={event => updateStep(index, { description: event.target.value })} placeholder="Mô tả đầu việc và kết quả cần đạt..." /><div className="grid gap-3"><input className={FIELD} value={step.owner} onChange={event => updateStep(index, { owner: event.target.value })} placeholder="Người phụ trách" /><input className={FIELD} value={step.channel} onChange={event => updateStep(index, { channel: event.target.value })} placeholder="Kênh/Công cụ" /><select className={FIELD} value={step.tone} onChange={event => updateStep(index, { tone: event.target.value as Tone })}><option value="blue">Xanh dương</option><option value="violet">Tím</option><option value="amber">Vàng</option><option value="emerald">Xanh lá</option><option value="rose">Đỏ hồng</option></select></div></div></div></div>)}
-                    {!form.flowSteps.length && <div className="p-10 text-center"><Network className="mx-auto text-[#aab6c6]" size={36} /><h3 className="mt-3 text-base font-semibold">Bắt đầu bằng bước đầu tiên</h3><p className="mt-1 text-sm leading-6 text-[#7f8da0]">Ví dụ: Lead mới → Gọi xác nhận → Phân loại → Chăm sóc → Kết quả.</p><button className={cn(BUTTON_PRIMARY, "mt-5")} onClick={addStep}><Plus size={15} /> Thêm bước</button></div>}
-                  </div>
-                </Panel>
-              </div>
+                  <button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu quy trình</button>
+                </div>
+                <div className="p-4">
+                  <BusinessFlowBuilder
+                    nodes={form.flowSteps}
+                    edges={form.flowEdges}
+                    onNodesChange={flowSteps => setForm(prev => ({ ...prev, flowSteps }))}
+                    onEdgesChange={flowEdges => setForm(prev => ({ ...prev, flowEdges }))}
+                  />
+                </div>
+              </Panel>
             )}
 
             {activeTab === "history" && (

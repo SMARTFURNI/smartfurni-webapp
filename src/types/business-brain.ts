@@ -56,6 +56,16 @@ export interface BusinessBrainFlowStep {
   owner: string;
   channel: string;
   tone: "blue" | "violet" | "emerald" | "amber" | "rose";
+  nodeType?: "start" | "action" | "decision" | "end";
+  x?: number;
+  y?: number;
+}
+
+export interface BusinessBrainFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
 }
 
 export interface BusinessCustomer {
