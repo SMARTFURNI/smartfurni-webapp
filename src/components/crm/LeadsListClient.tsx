@@ -17,6 +17,7 @@ import CustomerContactActions from "./high-performance-features/CustomerContactA
 import { ItyCallButton } from "./ItySoftphone";
 import CrmFoundationHeader from "./CrmFoundationHeader";
 import { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
+import customerStyles from "./CustomerWorkspace.module.css";
 
 interface LeadTypeItem { id: string; label: string; color?: string; }
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
@@ -34,8 +35,7 @@ const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
   { id: "b2b", label: "Doanh nghiệp / B2B", color: "#14b8a6" },
 ];
 
-// ── Dark Luxury Color Tokens — đồng bộ với Content Marketing AI ─────────────
-// Nền: linear-gradient(160deg, #0f172a → #1e1a0e → #1a1200) — navy → warm brown
+// Light CRM tokens — đồng bộ với trung tâm Zalo OA.
 const C = {
   bg:         "#f4f7fb",
   bgGradient: "linear-gradient(160deg, #f8fbff 0%, #fffdf7 100%)",
@@ -43,24 +43,24 @@ const C = {
   surface2:   "#f8fafc",
   surfaceSolid: "#ffffff",
   border:     "#dbe5f0",
-  borderGold: "rgba(245,158,11,0.30)",       // gold border
+  borderGold: "rgba(212,175,69,0.38)",
   text:       "#14213d",
   textMuted:  "#64748b",
   textDim:    "#74849a",
-  gold:       "#f59e0b",                    // CM AI gold
-  goldDark:   "#d97706",                    // CM AI gold dark
-  goldBg:     "rgba(245,158,11,0.15)",       // gold bg tint
-  goldBorder: "rgba(245,158,11,0.25)",       // gold border
+  gold:       "#d4af45",
+  goldDark:   "#b98720",
+  goldBg:     "rgba(212,175,69,0.14)",
+  goldBorder: "rgba(212,175,69,0.30)",
   blue:       "#60a5fa",                    // soft blue
   blueBg:     "rgba(96,165,250,0.15)",       // blue bg tint
   green:      "#4ade80",                    // soft green
   greenBg:    "rgba(74,222,128,0.15)",       // green bg tint
-  red:        "#f87171",                    // soft red
+  red:        "#dc2626",
   redBg:      "rgba(248,113,113,0.15)",      // red bg tint
   purple:     "#c084fc",                    // soft purple
   purpleBg:   "rgba(192,132,252,0.15)",      // purple bg tint
   headerBg:   "#f1f5f9",
-  rowHover:   "rgba(245,158,11,0.06)",       // row hover — warm gold tint
+  rowHover:   "rgba(212,175,69,0.07)",
   rowBorder:  "#e8eef6",
 };
 
@@ -173,10 +173,10 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: C.bg }}>
+    <div className={`${customerStyles.workspace} flex flex-col h-full`} style={{ background: C.bg }}>
       <CrmFoundationHeader active="customers" title="Hồ sơ khách hàng chuẩn hóa"
         description="Một khách hàng duy nhất theo SĐT/email, có đủ nhóm đối tượng, sản phẩm quan tâm, nguồn và mức độ ưu tiên chăm sóc." />
-      <div className="flex-shrink-0 mx-5 mt-4 rounded-2xl px-6 py-4" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
+      <div className={`${customerStyles.surface} flex-shrink-0 mx-3 sm:mx-5 mt-3 sm:mt-4 rounded-2xl px-4 sm:px-6 py-4`} style={{ background: C.surface, border: `1px solid ${C.border}` }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold" style={{ color: C.text }}>Quản lý khách hàng</h1>
@@ -208,7 +208,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             {/* Filter */}
             <button
               onClick={() => setShowFilters(v => !v)}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-xl transition-all"
+              className={`${activeFilters === 0 ? customerStyles.secondaryButton : ""} flex items-center gap-2 px-3 py-2 text-sm rounded-xl transition-all`}
               style={{
                 background: activeFilters > 0 ? C.goldBg : C.surface2,
                 border: `1px solid ${activeFilters > 0 ? C.gold : C.border}`,
@@ -220,8 +220,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             {/* Add */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-opacity hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${C.gold}, ${C.goldDark})`, color: "#fff", boxShadow: "0 4px 16px rgba(245,158,11,0.35)" }}>
+              className={`${customerStyles.primaryButton} flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all`}>
               <Plus size={14} /> Thêm khách hàng
             </button>
           </div>
@@ -276,14 +275,14 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
       </div>
 
       {/* ── Summary Stats ── */}
-      <div className="flex-shrink-0 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="flex-shrink-0 px-3 sm:px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { icon: Users,       label: "Tổng khách hàng", value: String(leads.length),    color: C.blue,   bg: C.blueBg,   sub: `${leads.filter(l => !["won","lost"].includes(l.stage)).length} đang theo dõi` },
           { icon: DollarSign,  label: "Tổng giá trị",    value: formatVND(totalValue),   color: C.gold,   bg: C.goldBg,   sub: "Pipeline" },
           { icon: Award,       label: "Tỷ lệ chốt",      value: `${winRate}%`,           color: C.green,  bg: C.greenBg,  sub: `${wonCount} đơn thành công` },
           { icon: AlertCircle, label: "Cần liên hệ",     value: String(overdueCount),    color: C.red,    bg: C.redBg,    sub: "Quá 3 ngày" },
         ].map(({ icon: Icon, label, value, color, bg, sub }) => (
-          <div key={label} className="rounded-2xl px-4 py-3 flex items-center gap-3"
+          <div key={label} className={`${customerStyles.statCard} rounded-2xl px-4 py-3 flex items-center gap-3`}
             style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
               <Icon size={17} style={{ color }} />
@@ -298,8 +297,8 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
       </div>
 
       {/* ── Table ── */}
-      <div className="flex-1 overflow-auto px-6 pb-6">
-        <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.border}`, background: C.surface }}>
+      <div className="flex-1 overflow-auto px-3 sm:px-6 pb-6">
+        <div className={`${customerStyles.tableShell} rounded-2xl overflow-hidden`} style={{ border: `1px solid ${C.border}`, background: C.surface }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: C.headerBg, borderBottom: `1px solid ${C.border}` }}>
@@ -610,10 +609,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
         const lead = leads.find(l => l.id === confirmDeleteId);
         if (!lead) return null;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(0,0,0,0.75)" }}
+          <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
             onClick={e => { if (e.target === e.currentTarget) setConfirmDeleteId(null); }}>
-            <div className="rounded-2xl shadow-2xl w-full max-w-sm p-6"
+            <div className={`${customerStyles.modalPanel} rounded-2xl shadow-2xl w-full max-w-sm p-6`}
               style={{ background: C.surface, border: `1px solid ${C.border}` }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"

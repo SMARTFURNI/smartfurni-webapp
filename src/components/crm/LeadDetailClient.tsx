@@ -20,27 +20,28 @@ import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
   ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
 } from "@/lib/crm-types";
+import customerStyles from "./CustomerWorkspace.module.css";
 
-// ─── Dark Luxury Theme Tokens ─────────────────────────────────────────────────
+// ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
-  bg: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)",
-  surface: "rgba(255,255,255,0.05)",
-  surfaceHover: "rgba(255,255,255,0.08)",
-  surfaceActive: "rgba(245,158,11,0.10)",
-  border: "rgba(255,255,255,0.10)",
-  borderGold: "rgba(245,158,11,0.35)",
-  text: "#f5edd6",
-  textMuted: "#9ca3af",
-  textDim: "rgba(245,237,214,0.5)",
-  gold: "#f59e0b",
-  goldDark: "#d97706",
-  goldGlow: "rgba(245,158,11,0.35)",
-  header: "rgba(15,23,42,0.95)",
-  card: "rgba(255,255,255,0.06)",
-  cardBorder: "rgba(255,255,255,0.10)",
-  inputBg: "rgba(255,255,255,0.07)",
-  inputBorder: "rgba(255,255,255,0.15)",
-  modalBg: "rgba(20,16,0,0.97)",
+  bg: "radial-gradient(circle at 92% 2%, rgba(212,175,69,0.12), transparent 25rem), linear-gradient(160deg, #f8fbff 0%, #f4f7fb 52%, #fffdf7 100%)",
+  surface: "#ffffff",
+  surfaceHover: "#eef3f8",
+  surfaceActive: "#fff8e6",
+  border: "#dbe3ee",
+  borderGold: "rgba(212,175,69,0.44)",
+  text: "#172033",
+  textMuted: "#64748b",
+  textDim: "#94a3b8",
+  gold: "#d4af45",
+  goldDark: "#b98720",
+  goldGlow: "rgba(185,135,32,0.22)",
+  header: "linear-gradient(135deg, #ffffff 0%, #fffdf7 100%)",
+  card: "#ffffff",
+  cardBorder: "#dbe3ee",
+  inputBg: "#f8fafc",
+  inputBorder: "#cbd5e1",
+  modalBg: "#ffffff",
 };
 
 interface Props {
@@ -211,9 +212,9 @@ export default function LeadDetailClient({
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: DL.bg, minHeight: "100vh" }}>
+    <div className={`${customerStyles.workspace} flex flex-col h-full`} style={{ background: DL.bg, minHeight: "100vh" }}>
       {/* ── Header ── */}
-      <div className="flex-shrink-0 px-6 py-3.5 backdrop-blur-sm"
+      <div className={`${customerStyles.headerSurface} flex-shrink-0 mx-3 sm:mx-5 mt-3 sm:mt-4 rounded-2xl px-4 sm:px-6 py-3.5 backdrop-blur-sm`}
         style={{ background: DL.header, borderBottom: `1px solid ${DL.border}`, overflow: "visible", position: "relative", zIndex: 100 }}>
         <div className="flex items-center gap-4 flex-wrap">
           <Link href="/crm/leads"
@@ -237,7 +238,7 @@ export default function LeadDetailClient({
               </span>
               {overdue && (
                 <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)" }}>
+                  style={{ background: "#fff1f2", color: "#dc2626", border: "1px solid #fecdd3" }}>
                   <AlertCircle size={10} /> Quá hạn
                 </span>
               )}
@@ -277,17 +278,15 @@ export default function LeadDetailClient({
             </div>
 
             <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-85"
-              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff" }}>
+              className={`${customerStyles.secondaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all`}>
               <ShoppingCart size={13} /> Tạo đơn hàng
             </Link>
             <Link href={`/crm/quotes/new?leadId=${lead.id}&leadName=${encodeURIComponent(lead.name)}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-85"
-              style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+              className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all`}>
               <FileText size={13} /> Tạo báo giá
             </Link>
             <button onClick={() => setShowEditLead(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
+              className={`${customerStyles.secondaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all`}
               style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}
               onMouseEnter={e => { e.currentTarget.style.color = DL.text; e.currentTarget.style.background = DL.surfaceHover; }}
               onMouseLeave={e => { e.currentTarget.style.color = DL.textMuted; e.currentTarget.style.background = DL.surface; }}>
@@ -296,9 +295,9 @@ export default function LeadDetailClient({
             {isAdmin && (
               <button onClick={() => setShowDeleteConfirm(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
-                style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)", color: "#f87171" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.15)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "rgba(239,68,68,0.08)")}>
+                style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#dc2626" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#ffe4e6")}
+                onMouseLeave={e => (e.currentTarget.style.background = "#fff1f2")}>
                 <Trash2 size={13} /> Xóa
               </button>
             )}
@@ -307,9 +306,9 @@ export default function LeadDetailClient({
       </div>
 
       {/* ── Body ── */}
-      <div className="flex-1 overflow-hidden flex gap-0">
+      <div className="flex-1 overflow-y-auto xl:overflow-hidden flex flex-col xl:flex-row gap-0">
         {/* Left: Main content */}
-        <div className="flex-1 overflow-y-auto p-5 min-w-0">
+        <div className="flex-1 xl:overflow-y-auto p-3 sm:p-5 min-w-0">
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
             <DLInfoCard icon={DollarSign} label="Giá trị dự kiến" value={formatVND(lead.expectedValue)} color={DL.gold} />
@@ -370,8 +369,7 @@ export default function LeadDetailClient({
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="font-semibold text-sm" style={{ color: DL.text }}>Lịch sử tương tác</h3>
                     <button onClick={() => setShowAddActivity(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-opacity hover:opacity-85"
-                      style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+                      className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all`}>
                       <Plus size={13} /> Thêm hoạt động
                     </button>
                   </div>
@@ -390,7 +388,7 @@ export default function LeadDetailClient({
                           if (act.content.startsWith("Thành công")) color = "#22c55e";      // xanh lá
                           else if (act.content.startsWith("Không nghe") || act.content.startsWith("Không ngập")) color = "#f97316"; // cam
                           else if (act.content.startsWith("Bận")) color = "#f59e0b";        // vàng
-                          else if (act.content.startsWith("Thất bại")) color = "#f87171";  // đỏ
+                          else if (act.content.startsWith("Thất bại")) color = "#dc2626";  // đỏ
                         }
                         return (
                           <div key={act.id} className="flex gap-3">
@@ -423,7 +421,7 @@ export default function LeadDetailClient({
                                   }}
                                   className="transition-colors flex-shrink-0"
                                   style={{ color: DL.textDim }}
-                                  onMouseEnter={e => (e.currentTarget.style.color = "#f87171")}
+                                  onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")}
                                   onMouseLeave={e => (e.currentTarget.style.color = DL.textDim)}>
                                   <Trash2 size={12} />
                                 </button>
@@ -472,7 +470,7 @@ export default function LeadDetailClient({
                         const isSuccess = call.status === "answered";
                         const isMissed = call.status === "missed";
                         const StatusIcon = isMissed ? PhoneMissed : isSuccess ? PhoneCall : PhoneIncoming;
-                        const statusColor = isMissed ? "#f87171" : isSuccess ? "#34d399" : DL.gold;
+                        const statusColor = isMissed ? "#dc2626" : isSuccess ? "#059669" : DL.gold;
                         const statusLabel = isMissed ? "Nhỡ" : isSuccess ? "Thành công" : "Không trả lời";
                         const noteKey = call.id;
                         const currentNote = callNotes[noteKey] !== undefined ? callNotes[noteKey] : (call.note ?? "");
@@ -560,8 +558,7 @@ export default function LeadDetailClient({
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-sm" style={{ color: DL.text }}>Báo giá</h3>
                     <Link href={`/crm/quotes/new?leadId=${lead.id}&leadName=${encodeURIComponent(lead.name)}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-opacity hover:opacity-85"
-                      style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+                      className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all`}>
                       <Plus size={13} /> Tạo báo giá
                     </Link>
                   </div>
@@ -604,8 +601,7 @@ export default function LeadDetailClient({
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-sm" style={{ color: DL.text }}>Việc cần làm</h3>
                     <button onClick={() => setShowAddTask(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-opacity hover:opacity-85"
-                      style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+                      className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all`}>
                       <Plus size={13} /> Thêm việc
                     </button>
                   </div>
@@ -706,7 +702,7 @@ export default function LeadDetailClient({
                           </div>
                           {source.contentOpening && (
                             <p className="mt-3 text-xs p-3 rounded-lg"
-                              style={{ background: "rgba(255,255,255,.03)", color: DL.textMuted }}>
+                              style={{ background: "#f8fafc", color: DL.textMuted }}>
                               {source.contentOpening}
                             </p>
                           )}
@@ -734,8 +730,8 @@ export default function LeadDetailClient({
                   )}
                   {lead.lostReason && (
                     <div className="pt-1">
-                      <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#f87171" }}>Lý do thất bại</div>
-                      <p className="text-sm p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.20)", color: "#fca5a5" }}>{lead.lostReason}</p>
+                      <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#dc2626" }}>Lý do thất bại</div>
+                      <p className="text-sm p-3 rounded-xl" style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#be123c" }}>{lead.lostReason}</p>
                     </div>
                   )}
                 </div>
@@ -745,11 +741,11 @@ export default function LeadDetailClient({
         </div>
 
         {/* ── Right Sidebar ── */}
-        <div className="w-72 flex-shrink-0 p-4 overflow-y-auto hidden lg:block space-y-3">
+        <div className="w-full xl:w-72 flex-shrink-0 p-3 sm:p-4 xl:overflow-y-auto space-y-3 border-t xl:border-t-0 xl:border-l" style={{ borderColor: DL.border }}>
 
           {/* Customer Profile Card */}
           <div className="rounded-2xl" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)", overflow: "visible" }}>
-            <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(255,255,255,0.03))", overflow: "visible", position: "relative" }}>
+            <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,69,0.12), #ffffff)", overflow: "visible", position: "relative" }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black flex-shrink-0"
                   style={{ background: `linear-gradient(135deg, ${TYPE_COLORS[lead.type]}, ${TYPE_COLORS[lead.type]}99)`, color: "#fff" }}>
@@ -769,9 +765,9 @@ export default function LeadDetailClient({
               {zaloCallResult && (
                 <div className={`mb-3 p-2.5 rounded-xl text-xs font-medium flex items-start gap-2`}
                   style={{
-                    background: zaloCallResult.ok ? "rgba(52,211,153,0.10)" : "rgba(248,113,113,0.10)",
-                    border: zaloCallResult.ok ? "1px solid rgba(52,211,153,0.25)" : "1px solid rgba(248,113,113,0.25)",
-                    color: zaloCallResult.ok ? "#34d399" : "#f87171",
+                    background: zaloCallResult.ok ? "#ecfdf5" : "#fff1f2",
+                    border: zaloCallResult.ok ? "1px solid #a7f3d0" : "1px solid #fecdd3",
+                    color: zaloCallResult.ok ? "#047857" : "#be123c",
                   }}>
                   <span className="flex-shrink-0 mt-0.5">{zaloCallResult.ok ? "✅" : "❌"}</span>
                   <span>{zaloCallResult.message}</span>
@@ -900,31 +896,30 @@ export default function LeadDetailClient({
       )}
       {/* Contact Action Modal */}
       {contactModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+        <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
           onClick={() => setContactModal(null)}>
-          <div className="rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
-            style={{ background: "rgba(18,14,0,0.97)", border: "1px solid rgba(255,255,255,0.10)" }}
+          <div className={`${customerStyles.modalPanel} rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden`}
+            style={{ background: DL.modalBg, border: `1px solid ${DL.border}` }}
             onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="px-5 py-4 flex items-start justify-between"
               style={{
                 background: contactModal === 'call' ? "rgba(74,222,128,0.12)" : contactModal === 'zalo' ? "rgba(96,165,250,0.12)" : "rgba(192,132,252,0.12)",
-                borderBottom: "1px solid rgba(255,255,255,0.07)"
+                borderBottom: `1px solid ${DL.border}`
               }}>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
                   style={{ color: contactModal === 'call' ? "#4ade80" : contactModal === 'zalo' ? "#60a5fa" : "#c084fc" }}>
                   {contactModal === 'call' ? "☎️ Gọi Điện" : contactModal === 'zalo' ? "💬 Kết Bạn Zalo" : "✉️ Gửi Email"}
                 </p>
-                <p className="text-sm font-bold" style={{ color: "#f5edd6" }}>{lead.name}</p>
+                <p className="text-sm font-bold" style={{ color: DL.text }}>{lead.name}</p>
                 <p className="text-xs font-mono mt-0.5"
                   style={{ color: contactModal === 'call' ? "#4ade80" : contactModal === 'zalo' ? "#60a5fa" : "#c084fc" }}>
                   {contactModal === 'email' ? lead.email : lead.phone}
                 </p>
               </div>
               <button onClick={() => setContactModal(null)}
-                style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, padding: 6, cursor: "pointer", color: "#9ca3af", lineHeight: 0 }}>
+                style={{ background: DL.surfaceHover, border: `1px solid ${DL.border}`, borderRadius: 8, padding: 6, cursor: "pointer", color: DL.textMuted, lineHeight: 0 }}>
                 <X size={14} />
               </button>
             </div>
@@ -949,36 +944,36 @@ export default function LeadDetailClient({
                       <Phone size={15} style={{ color: "#C9A84C" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Gọi qua ITY Tổng đài</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Webphone — gọi trực tiếp trên trình duyệt</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>Gọi qua ITY Tổng đài</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Webphone — gọi trực tiếp trên trình duyệt</p>
                     </div>
-                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                    <span className="ml-auto" style={{ color: DL.textDim }}>→</span>
                   </button>
                   <button onClick={() => { window.location.href = `tel:${lead.phone}`; setContactModal(null); }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(74,222,128,0.15)" }}>
                       <Phone size={15} style={{ color: "#4ade80" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Gọi ngay</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Khởi động ứng dụng gọi</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>Gọi ngay</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Khởi động ứng dụng gọi</p>
                     </div>
-                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                    <span className="ml-auto" style={{ color: DL.textDim }}>→</span>
                   </button>
                   <button onClick={() => handleContactCopy(lead.phone)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: contactCopied ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)" }}>
                       <Copy size={15} style={{ color: contactCopied ? "#4ade80" : "#f59e0b" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép số"}</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Dán vào điện thoại</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép số"}</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Dán vào điện thoại</p>
                     </div>
                   </button>
                 </>
@@ -988,28 +983,28 @@ export default function LeadDetailClient({
                   <button onClick={() => { window.open(`https://zalo.me/${lead.phone?.replace(/^0/, '84').replace(/^\+/, '')}`, '_blank'); setContactModal(null); }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(96,165,250,0.15)" }}>
                       <ExternalLink size={15} style={{ color: "#60a5fa" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Mở Zalo</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Kết bạn trực tiếp</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>Mở Zalo</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Kết bạn trực tiếp</p>
                     </div>
-                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                    <span className="ml-auto" style={{ color: DL.textDim }}>→</span>
                   </button>
                   <button onClick={() => handleContactCopy(lead.phone?.replace(/^0/, '84').replace(/^\+/, '') || lead.phone)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: contactCopied ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)" }}>
                       <Copy size={15} style={{ color: contactCopied ? "#4ade80" : "#f59e0b" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép số"}</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Dán vào Zalo</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép số"}</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Dán vào Zalo</p>
                     </div>
                   </button>
                 </>
@@ -1019,28 +1014,28 @@ export default function LeadDetailClient({
                   <button onClick={() => { window.location.href = `mailto:${lead.email}`; setContactModal(null); }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(192,132,252,0.15)" }}>
                       <Mail size={15} style={{ color: "#c084fc" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>Soạn email</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Mở ứng dụng email</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>Soạn email</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Mở ứng dụng email</p>
                     </div>
-                    <span className="ml-auto" style={{ color: "rgba(255,255,255,0.3)" }}>→</span>
+                    <span className="ml-auto" style={{ color: DL.textDim }}>→</span>
                   </button>
                   <button onClick={() => handleContactCopy(lead.email || '')}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: contactCopied ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)" }}>
                       <Copy size={15} style={{ color: contactCopied ? "#4ade80" : "#f59e0b" }} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#f5edd6" }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép email"}</p>
-                      <p className="text-xs" style={{ color: "#9ca3af" }}>Dán vào email</p>
+                      <p className="text-sm font-semibold" style={{ color: DL.text }}>{contactCopied ? "✓ Đã sao chép" : "Sao chép email"}</p>
+                      <p className="text-xs" style={{ color: DL.textMuted }}>Dán vào email</p>
                     </div>
                   </button>
                 </>
@@ -1051,15 +1046,14 @@ export default function LeadDetailClient({
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+        <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
           onClick={e => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}>
-          <div className="rounded-2xl shadow-2xl w-full max-w-sm p-6"
+          <div className={`${customerStyles.modalPanel} rounded-2xl shadow-2xl w-full max-w-sm p-6`}
             style={{ background: DL.modalBg, border: `1px solid ${DL.border}` }}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
-                <Trash2 size={17} style={{ color: "#f87171" }} />
+                <Trash2 size={17} style={{ color: "#dc2626" }} />
               </div>
               <div>
                 <h2 className="text-base font-bold" style={{ color: DL.text }}>Xóa khách hàng?</h2>
@@ -1132,7 +1126,7 @@ function QuoteStatusBadge({ status }: { status: Quote["status"] }) {
     draft: { label: "Nháp", color: DL.textMuted },
     sent: { label: "Đã gửi", color: "#60a5fa" },
     accepted: { label: "Chấp nhận", color: "#34d399" },
-    rejected: { label: "Từ chối", color: "#f87171" },
+    rejected: { label: "Từ chối", color: "#dc2626" },
   };
   const s = map[status];
   return (
@@ -1145,13 +1139,13 @@ function QuoteStatusBadge({ status }: { status: Quote["status"] }) {
 
 function DLTaskItem({ task, onToggle, onDelete }: { task: CrmTask; onToggle: () => void; onDelete: () => void }) {
   const isOverdueTask = !task.done && new Date(task.dueDate) < new Date();
-  const priorityColor = { high: "#f87171", medium: DL.gold, low: "#34d399" }[task.priority];
+  const priorityColor = { high: "#dc2626", medium: DL.gold, low: "#16a34a" }[task.priority];
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl transition-all"
       style={{
-        background: task.done ? "rgba(255,255,255,0.03)" : DL.surface,
-        border: `1px solid ${isOverdueTask ? "rgba(248,113,113,0.30)" : DL.border}`,
+        background: task.done ? "#f8fafc" : DL.surface,
+        border: `1px solid ${isOverdueTask ? "#fecdd3" : DL.border}`,
       }}>
       <button onClick={onToggle}
         className="w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all"
@@ -1164,7 +1158,7 @@ function DLTaskItem({ task, onToggle, onDelete }: { task: CrmTask; onToggle: () 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium" style={{ color: task.done ? DL.textMuted : DL.text, textDecoration: task.done ? "line-through" : "none" }}>{task.title}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px]" style={{ color: isOverdueTask ? "#f87171" : DL.textMuted }}>
+          <span className="text-[10px]" style={{ color: isOverdueTask ? "#dc2626" : DL.textMuted }}>
             {new Date(task.dueDate).toLocaleDateString("vi-VN")}
           </span>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: priorityColor }} />
@@ -1173,7 +1167,7 @@ function DLTaskItem({ task, onToggle, onDelete }: { task: CrmTask; onToggle: () 
       </div>
       <button onClick={onDelete} className="transition-colors flex-shrink-0"
         style={{ color: DL.textDim }}
-        onMouseEnter={e => (e.currentTarget.style.color = "#f87171")}
+        onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")}
         onMouseLeave={e => (e.currentTarget.style.color = DL.textDim)}>
         <Trash2 size={12} />
       </button>
@@ -1203,30 +1197,27 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
   }
 
   const inputStyle: React.CSSProperties = {
-    background: "rgba(255,255,255,0.06)",
-    border: `1px solid rgba(255,255,255,0.12)`,
+    background: DL.inputBg,
+    border: `1px solid ${DL.inputBorder}`,
     color: DL.text,
-    colorScheme: "dark",
+    colorScheme: "light",
   };
   const inputFocusStyle: React.CSSProperties = {
     border: `1px solid ${DL.borderGold}`,
     outline: "none",
-    boxShadow: `0 0 0 2px rgba(245,158,11,0.12)`,
+    boxShadow: `0 0 0 3px rgba(212,175,69,0.16)`,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(8px)" }}
+    <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-md"
+      <div className={`${customerStyles.modalPanel} rounded-2xl shadow-2xl w-full max-w-md`}
         style={{
-          background: "linear-gradient(160deg, #1a1400 0%, #130f00 100%)",
-          border: `1px solid rgba(245,158,11,0.20)`,
-          boxShadow: "0 25px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08)",
+          background: DL.modalBg,
+          border: `1px solid ${DL.border}`,
         }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4"
-          style={{ borderBottom: `1px solid rgba(255,255,255,0.08)` }}>
+        <div className={`${customerStyles.modalHeader} flex items-center justify-between px-6 py-4`}>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center"
               style={{ background: `${ACTIVITY_COLORS[type]}18`, border: `1px solid ${ACTIVITY_COLORS[type]}40` }}>
@@ -1238,9 +1229,7 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
           </div>
           <button onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-            style={{ background: "rgba(255,255,255,0.06)", color: DL.textMuted, border: `1px solid rgba(255,255,255,0.08)` }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = DL.text; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = DL.textMuted; }}>
+            style={{ background: DL.surfaceHover, color: DL.textMuted, border: `1px solid ${DL.border}` }}>
             <X size={15} />
           </button>
         </div>
@@ -1249,15 +1238,15 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
           {/* Loại hoạt động */}
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest mb-2.5"
-              style={{ color: "rgba(245,237,214,0.40)" }}>Loại hoạt động</label>
+              style={{ color: DL.textMuted }}>Loại hoạt động</label>
             <div className="grid grid-cols-3 gap-2">
               {(["call", "meeting", "email", "note", "quote_sent", "contract"] as ActivityType[]).map(t => (
                 <button key={t} type="button" onClick={() => setType(t)}
                   className="py-2.5 text-xs font-semibold rounded-xl transition-all"
                   style={{
-                    background: type === t ? `${ACTIVITY_COLORS[t]}18` : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${type === t ? ACTIVITY_COLORS[t] + "80" : "rgba(255,255,255,0.08)"}`,
-                    color: type === t ? ACTIVITY_COLORS[t] : "rgba(245,237,214,0.50)",
+                    background: type === t ? `${ACTIVITY_COLORS[t]}18` : DL.inputBg,
+                    border: `1px solid ${type === t ? ACTIVITY_COLORS[t] + "80" : DL.border}`,
+                    color: type === t ? ACTIVITY_COLORS[t] : DL.textMuted,
                     boxShadow: type === t ? `0 0 12px ${ACTIVITY_COLORS[t]}20` : "none",
                   }}>
                   {ACTIVITY_LABELS[t]}
@@ -1269,7 +1258,7 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
           {/* Tiêu đề */}
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest mb-2"
-              style={{ color: "rgba(245,237,214,0.40)" }}>Tiêu đề</label>
+              style={{ color: DL.textMuted }}>Tiêu đề</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
               className="w-full px-3.5 py-2.5 text-sm rounded-xl transition-all"
               style={{ ...inputStyle }}
@@ -1281,7 +1270,7 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
           {/* Nội dung */}
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest mb-2"
-              style={{ color: "rgba(245,237,214,0.40)" }}>
+              style={{ color: DL.textMuted }}>
               Nội dung <span style={{ color: DL.gold }}>*</span>
             </label>
             <textarea value={content} onChange={e => setContent(e.target.value)} rows={3} required
@@ -1295,7 +1284,7 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
           {/* Người thực hiện */}
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest mb-2"
-              style={{ color: "rgba(245,237,214,0.40)" }}>Người thực hiện</label>
+              style={{ color: DL.textMuted }}>Người thực hiện</label>
             <input value={createdBy} onChange={e => setCreatedBy(e.target.value)}
               className="w-full px-3.5 py-2.5 text-sm rounded-xl transition-all"
               style={{ ...inputStyle }}
@@ -1307,21 +1296,15 @@ function DLAddActivityModal({ leadId, onClose, onCreated }: { leadId: string; on
           {/* Buttons */}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: `1px solid rgba(255,255,255,0.10)`, color: "rgba(245,237,214,0.60)" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = DL.text; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(245,237,214,0.60)"; }}>
+              className={`${customerStyles.secondaryButton} flex-1 py-2.5 text-sm font-medium rounded-xl transition-all`}>
               Hủy
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+              className={`${customerStyles.primaryButton} flex-1 py-2.5 text-sm font-bold rounded-xl flex items-center justify-center gap-2`}
               style={{
-                background: loading ? "rgba(245,158,11,0.40)" : `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`,
-                color: "#1a1200",
-                boxShadow: loading ? "none" : `0 4px 16px rgba(245,158,11,0.30)`,
+                opacity: loading ? 0.65 : 1,
               }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = `0 6px 20px rgba(245,158,11,0.45)`; }}
-              onMouseLeave={e => { if (!loading) e.currentTarget.style.boxShadow = `0 4px 16px rgba(245,158,11,0.30)`; }}>
+              >
               {loading && <Loader2 size={13} className="animate-spin" />}
               {loading ? "Đang lưu..." : "Lưu hoạt động"}
             </button>
@@ -1356,12 +1339,11 @@ function DLAddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "
   const inputStyle = { background: DL.inputBg, border: `1px solid ${DL.inputBorder}`, color: DL.text };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+    <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-md"
+      <div className={`${customerStyles.modalPanel} rounded-2xl shadow-2xl w-full max-w-md`}
         style={{ background: DL.modalBg, border: `1px solid ${DL.border}` }}>
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${DL.border}` }}>
+        <div className={`${customerStyles.modalHeader} flex items-center justify-between px-6 py-4`}>
           <h2 className="text-base font-bold" style={{ color: DL.text }}>Thêm việc cần làm</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
             style={{ background: DL.surface, color: DL.textMuted }}>
@@ -1418,13 +1400,12 @@ function DLAddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "
           ) : null}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 text-sm rounded-xl transition-all"
+              className={`${customerStyles.secondaryButton} flex-1 py-2.5 text-sm rounded-xl transition-all`}
               style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
               Hủy
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-85"
-              style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+              className={`${customerStyles.primaryButton} flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all`}>
               {loading && <Loader2 size={13} className="animate-spin" />}
               Lưu
             </button>
@@ -1479,12 +1460,11 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
   const labelStyle = { color: DL.textMuted };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+    <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+      <div className={`${customerStyles.modalPanel} rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto`}
         style={{ background: DL.modalBg, border: `1px solid ${DL.border}` }}>
-        <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-10"
+        <div className={`${customerStyles.modalHeader} flex items-center justify-between px-6 py-4 sticky top-0 z-10`}
           style={{ background: DL.modalBg, borderBottom: `1px solid ${DL.border}` }}>
           <h2 className="text-base font-bold" style={{ color: DL.text }}>Chỉnh sửa khách hàng</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
@@ -1494,7 +1474,7 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="p-3 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>
+            <div className="p-3 rounded-xl text-sm" style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#dc2626" }}>
               {error}
             </div>
           )}
@@ -1586,13 +1566,12 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 text-sm rounded-xl transition-all"
+              className={`${customerStyles.secondaryButton} flex-1 py-2.5 text-sm rounded-xl transition-all`}
               style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
               Hủy
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-85"
-              style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}>
+              className={`${customerStyles.primaryButton} flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all`}>
               {loading && <Loader2 size={13} className="animate-spin" />}
               Lưu thay đổi
             </button>

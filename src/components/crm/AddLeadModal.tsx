@@ -5,6 +5,7 @@ import { X, Loader2, User, Building2, Phone, Mail, MapPin, DollarSign, Tag, File
 import type { Lead, LeadType, LeadStage } from "@/lib/crm-types";
 import { SOURCES, STAGE_LABELS } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES, getDistricts } from "@/lib/crm-locations";
+import customerStyles from "./CustomerWorkspace.module.css";
 
 interface Props {
   onClose: () => void;
@@ -14,21 +15,21 @@ interface Props {
   isAdmin?: boolean;
 }
 
-// Dark luxury palette (same as LeadDetailClient)
+// Light Zalo OA palette (same as customer workspace)
 const DL = {
-  modalBg: "rgba(20,16,0,0.97)",
-  surface: "rgba(255,255,255,0.05)",
-  surfaceHover: "rgba(255,255,255,0.08)",
-  border: "rgba(255,255,255,0.10)",
-  borderGold: "rgba(245,158,11,0.35)",
-  text: "#f5edd6",
-  textMuted: "#9ca3af",
-  textDim: "rgba(245,237,214,0.5)",
-  gold: "#C9A84C",
-  goldDark: "#a8893d",
-  inputBg: "rgba(255,255,255,0.07)",
-  inputBorder: "rgba(255,255,255,0.15)",
-  tabBorder: "rgba(255,255,255,0.08)",
+  modalBg: "#ffffff",
+  surface: "#f8fafc",
+  surfaceHover: "#eef3f8",
+  border: "#dbe3ee",
+  borderGold: "rgba(212,175,69,0.42)",
+  text: "#172033",
+  textMuted: "#64748b",
+  textDim: "#94a3b8",
+  gold: "#d4af45",
+  goldDark: "#b98720",
+  inputBg: "#f8fafc",
+  inputBorder: "#cbd5e1",
+  tabBorder: "#dbe3ee",
 };
 
 const DEFAULT_TYPE_CONFIG: { id: string; label: string; color: string; bg: string }[] = [
@@ -136,24 +137,23 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+      className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-xl rounded-2xl overflow-hidden"
+        className={`${customerStyles.modalPanel} ${customerStyles.workspace} w-full max-w-xl rounded-2xl overflow-hidden`}
         style={{
           background: DL.modalBg,
           border: `1px solid ${DL.border}`,
-          boxShadow: "0 30px 80px rgba(0,0,0,0.8)",
+          boxShadow: "0 30px 80px rgba(15,23,42,0.24)",
         }}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-4 sticky top-0 z-10"
+          className={`${customerStyles.modalHeader} flex items-center justify-between px-6 py-4 sticky top-0 z-10`}
           style={{
             borderBottom: `1px solid ${DL.border}`,
-            background: "linear-gradient(135deg, rgba(201,168,76,0.08), rgba(255,255,255,0.02))",
+            background: "linear-gradient(135deg, #ffffff, #fffdf7)",
           }}
         >
           <div className="flex items-center gap-3">
@@ -221,7 +221,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-4 space-y-3 max-h-[50vh] overflow-y-auto">
             {error && (
-              <div className="p-3 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171" }}>{error}</div>
+              <div className="p-3 rounded-xl text-sm" style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#dc2626" }}>{error}</div>
             )}
 
             {/* Tab: Basic */}
@@ -325,13 +325,12 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
 
           {/* Footer */}
           <div
-            className="px-6 py-4 flex gap-3"
-            style={{ borderTop: `1px solid ${DL.border}`, background: "rgba(0,0,0,0.2)" }}
+            className={`${customerStyles.modalFooter} px-6 py-4 flex gap-3`}
           >
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-medium rounded-xl transition-all"
+              className={`${customerStyles.secondaryButton} flex-1 py-2.5 text-sm font-medium rounded-xl transition-all`}
               style={{ border: `1px solid ${DL.border}`, color: DL.textMuted, background: DL.surface }}
               onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
               onMouseLeave={e => (e.currentTarget.style.background = DL.surface)}
@@ -341,8 +340,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 text-sm font-bold rounded-xl transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-              style={{ background: `linear-gradient(135deg, ${DL.gold}, ${DL.goldDark})`, color: "#1a1200" }}
+              className={`${customerStyles.primaryButton} flex-1 py-2.5 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2`}
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               {loading ? "Đang lưu..." : "Thêm khách hàng"}
