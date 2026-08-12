@@ -4,6 +4,8 @@ import {
   createKnowledgeDocument,
   deleteKnowledgeDocument,
   listKnowledgeDocuments,
+  listKnowledgeDocumentVersions,
+  restoreKnowledgeDocumentVersion,
   updateKnowledgeDocument,
 } from "@/lib/business-brain-store";
 import type { KnowledgeCategory, KnowledgeStatus } from "@/types/business-brain";
@@ -20,6 +22,10 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
+  const documentId = searchParams.get("documentId");
+  if (documentId) {
+    return NextResponse.json({ versions: await listKnowledgeDocumentVersions(documentId) });
+  }
   const docs = await listKnowledgeDocuments({
     search: searchParams.get("search") || undefined,
     category: (searchParams.get("category") || "all") as KnowledgeCategory | "all",
@@ -72,10 +78,27 @@ export async function PUT(req: NextRequest) {
     source: body.source,
     metadata: body.metadata,
     updatedBy: actorFromSession(session),
+    changeNote: body.changeNote ? String(body.changeNote) : undefined,
   });
 
   if (!doc) return NextResponse.json({ error: "Không tìm thấy tài liệu." }, { status: 404 });
   return NextResponse.json({ document: doc });
+}
+
+export async function PATCH(req: NextRequest) {
+  const session = await getCrmSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = await req.json();
+  if (!body.id || !body.versionId) {
+    return NextResponse.json({ error: "Thiếu tài liệu hoặc phiên bản cần khôi phục." }, { status: 400 });
+  }
+  const document = await restoreKnowledgeDocumentVersion(
+    String(body.id),
+    String(body.versionId),
+    actorFromSession(session),
+  );
+  if (!document) return NextResponse.json({ error: "Không tìm thấy phiên bản." }, { status: 404 });
+  return NextResponse.json({ document });
 }
 
 export async function DELETE(req: NextRequest) {

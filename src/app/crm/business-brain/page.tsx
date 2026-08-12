@@ -3,15 +3,11 @@ import { BusinessBrainClient } from "@/components/crm/business-brain/BusinessBra
 
 export const metadata = {
   title: "Bộ não doanh nghiệp — SmartFurni CRM",
-  description: "Kho tri thức, hồ sơ khách hàng và AI agent vận hành theo quy trình SmartFurni",
+  description: "Thư viện tài liệu, hướng dẫn và sơ đồ vận hành có thể chỉnh sửa của SmartFurni",
 };
 
 export default async function BusinessBrainPage() {
   await requireCrmAccess();
 
-  return (
-    <div className="p-6">
-      <BusinessBrainClient />
-    </div>
-  );
+  return <BusinessBrainClient />;
 }

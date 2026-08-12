@@ -8,6 +8,7 @@ import type {
   CustomerConversation,
   KnowledgeCategory,
   KnowledgeDocument,
+  KnowledgeDocumentVersion,
   KnowledgeStatus,
   LeadScoreRecord,
   LeadTemperature,
@@ -82,6 +83,26 @@ export async function initBusinessBrainSchema() {
       updated_by TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS knowledge_document_versions (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL,
+      status TEXT NOT NULL,
+      content TEXT NOT NULL,
+      summary TEXT,
+      tags TEXT[] DEFAULT '{}',
+      source TEXT,
+      metadata JSONB DEFAULT '{}'::jsonb,
+      changed_by TEXT,
+      change_note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(document_id, version)
     )
   `);
 
@@ -214,6 +235,7 @@ export async function initBusinessBrainSchema() {
 
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_status ON knowledge_documents(status)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_category ON knowledge_documents(category)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_versions_document ON knowledge_document_versions(document_id, version DESC)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_conversations_customer ON conversations(customer_id)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_agent_actions_customer ON agent_actions(customer_id)`);
@@ -361,6 +383,129 @@ async function seedDefaults() {
       await createKnowledgeDocument(doc);
     }
   }
+
+  const playbookCount = await queryOne<{ count: string }>(
+    `SELECT COUNT(*)::text AS count FROM knowledge_documents WHERE source = 'business-playbook-v1'`
+  );
+  if (Number(playbookCount?.count ?? 0) === 0) {
+    const playbooks: Array<Pick<KnowledgeDocument, "id" | "title" | "category" | "status" | "content" | "summary" | "tags" | "source" | "metadata">> = [
+      {
+        id: "playbook-customer-care-master",
+        title: "Bản đồ tổng thể chăm sóc khách hàng SmartFurni",
+        category: "customer_care",
+        status: "active",
+        summary: "Quy trình chuẩn từ quảng cáo, Data Pool, xác minh, phân loại đến chốt sale và hậu mãi.",
+        tags: ["quy trình tổng", "Data Pool", "CRM", "Zalo OA", "Email"],
+        source: "business-playbook-v1",
+        content: `# Mục tiêu\nBiến mọi lead quảng cáo thành hồ sơ có người phụ trách, nhu cầu rõ ràng và bước chăm sóc tiếp theo.\n\n## Nguyên tắc vận hành\n- Sản phẩm quyết định nội dung tư vấn.\n- Loại khách quyết định chính sách bán hàng.\n- Trạng thái quyết định hành động tiếp theo.\n- Không tự gửi thông tin chưa được phê duyệt hoặc chưa đủ căn cứ liên hệ.\n\n## Đầu vào bắt buộc\nTên khách hàng, số điện thoại, email nếu có, nguồn quảng cáo, chiến dịch, sản phẩm quan tâm và thời gian tiếp nhận.\n\n## Kết quả đầu ra\nMỗi lead phải có phân khúc, sản phẩm, trạng thái, nhân viên phụ trách, lịch hẹn tiếp theo và lịch sử tương tác.`,
+        metadata: {
+          documentType: "process",
+          owner: "Trưởng phòng Kinh doanh",
+          audience: "Marketing, Sale, CSKH, Quản lý",
+          reviewCycle: "Hàng quý",
+          flowSteps: [
+            { id: "ads", title: "Quảng cáo", description: "Google, Facebook, TikTok", owner: "Marketing", channel: "Ads", tone: "blue" },
+            { id: "pool", title: "Data Pool", description: "Ghi nhận thông tin và nguồn", owner: "CRM", channel: "CRM", tone: "violet" },
+            { id: "verify", title: "Gọi xác nhận", description: "Xác minh nhu cầu trong 15 phút", owner: "Sale", channel: "Hotline", tone: "amber" },
+            { id: "classify", title: "Phân loại", description: "Sản phẩm, đối tượng, trạng thái", owner: "Sale", channel: "CRM Tag", tone: "emerald" },
+            { id: "care", title: "Chăm sóc đa kênh", description: "Zalo OA, email, gọi lại", owner: "Sale & CSKH", channel: "Omnichannel", tone: "blue" },
+            { id: "result", title: "Kết quả", description: "Chốt, nuôi dưỡng hoặc loại trừ", owner: "Quản lý", channel: "Pipeline", tone: "rose" }
+          ]
+        }
+      },
+      {
+        id: "playbook-tag-taxonomy",
+        title: "Chuẩn phân loại và hệ thống tag khách hàng",
+        category: "governance",
+        status: "active",
+        summary: "Quy tắc gắn tag ba lớp để dữ liệu không trùng, không sai chính tả và dùng được cho tự động hóa.",
+        tags: ["tag", "phân khúc", "sản phẩm", "trạng thái"],
+        source: "business-playbook-v1",
+        content: `# Cấu trúc tag bắt buộc\nMỗi khách hàng phải có tối thiểu ba lớp tag.\n\n## 1. Đối tượng\n- SEG:BAN_LE\n- SEG:DAI_LY\n- SEG:DU_AN\n- SEG:B2B\n\n## 2. Sản phẩm\n- PROD:SOFA_GIUONG\n- PROD:GIUONG_CONG_THAI_HOC\n\n## 3. Trạng thái\n- STAGE:MOI\n- STAGE:DA_XAC_NHAN\n- STAGE:DA_TU_VAN\n- STAGE:DA_BAO_GIA\n- STAGE:DANG_THUONG_LUONG\n- STAGE:DA_CHOT\n- STAGE:NUOI_DUONG\n- STAGE:KHONG_PHU_HOP\n\n## Quy tắc\nKhông tạo tag tự do nếu đã có tag chuẩn. Nhân viên phải cập nhật trạng thái sau mỗi lần liên hệ.`,
+        metadata: {
+          documentType: "policy",
+          owner: "CRM Admin",
+          audience: "Sale, CSKH, Marketing",
+          reviewCycle: "Hàng tháng",
+          flowSteps: [
+            { id: "segment", title: "Tag đối tượng", description: "Bán lẻ, đại lý, dự án, B2B", owner: "Sale", channel: "CRM", tone: "blue" },
+            { id: "product", title: "Tag sản phẩm", description: "Sofa giường hoặc giường công thái học", owner: "Sale", channel: "CRM", tone: "violet" },
+            { id: "stage", title: "Tag trạng thái", description: "Mới đến đã chốt hoặc nuôi dưỡng", owner: "Sale", channel: "Pipeline", tone: "emerald" }
+          ]
+        }
+      },
+      {
+        id: "playbook-retail-care",
+        title: "Hành trình chăm sóc khách mua lẻ",
+        category: "customer_care",
+        status: "active",
+        summary: "Kịch bản chăm sóc khách mua sofa giường và giường công thái học theo nhu cầu cá nhân.",
+        tags: ["bán lẻ", "sofa giường", "giường công thái học", "follow-up"],
+        source: "business-playbook-v1",
+        content: `# Mục tiêu\nGiúp khách chọn đúng mẫu, kích thước và công năng; giảm áp lực bán hàng và tăng tỷ lệ trải nghiệm sản phẩm.\n\n## Lần liên hệ đầu\nXác nhận sản phẩm, kích thước không gian, khu vực giao, ngân sách, thời gian dự kiến mua và trở ngại chính.\n\n## Nội dung gửi\n- Ảnh và video mẫu phù hợp.\n- Kích thước, vật liệu và công năng.\n- Báo giá theo nhu cầu đã xác nhận.\n- Chính sách giao lắp và bảo hành đã được duyệt.\n\n## Follow-up\nNgày 1 gửi thông tin phù hợp; ngày 3 hỏi phản hồi; ngày 7 xử lý băn khoăn; sau đó chuyển nuôi dưỡng nếu khách chưa sẵn sàng.`,
+        metadata: {
+          documentType: "journey",
+          owner: "Trưởng nhóm Bán lẻ",
+          audience: "Sale bán lẻ, CSKH",
+          reviewCycle: "Hàng tháng",
+          flowSteps: [
+            { id: "need", title: "Khám phá nhu cầu", description: "Không gian, size, ngân sách", owner: "Sale", channel: "Gọi điện", tone: "blue" },
+            { id: "recommend", title: "Tư vấn mẫu", description: "Gửi 2–3 lựa chọn phù hợp", owner: "Sale", channel: "Zalo OA", tone: "violet" },
+            { id: "quote", title: "Báo giá", description: "Giá, giao lắp, bảo hành", owner: "Sale", channel: "Zalo & Email", tone: "amber" },
+            { id: "follow", title: "Chăm sóc lại", description: "Ngày 3 và ngày 7", owner: "CRM", channel: "Task", tone: "emerald" },
+            { id: "close", title: "Chốt hoặc nuôi dưỡng", description: "Cập nhật lý do và bước tiếp", owner: "Sale", channel: "Pipeline", tone: "rose" }
+          ]
+        }
+      },
+      {
+        id: "playbook-b2b-care",
+        title: "Hành trình đại lý, dự án và khách hàng B2B",
+        category: "customer_care",
+        status: "active",
+        summary: "Quy trình khai thác cơ hội sỉ, đại lý, dự án và hợp đồng doanh nghiệp.",
+        tags: ["B2B", "đại lý", "dự án", "khách sỉ"],
+        source: "business-playbook-v1",
+        content: `# Mục tiêu\nXác định đúng vai trò người liên hệ, quy mô cơ hội, tiêu chí kỹ thuật và quy trình ra quyết định.\n\n## Thông tin cần thu thập\nLoại hình doanh nghiệp, người quyết định, khu vực, số lượng, hồ sơ kỹ thuật, ngân sách, tiến độ, yêu cầu mẫu và điều kiện thanh toán.\n\n## Bộ tài liệu gửi\nHồ sơ năng lực, catalogue, bảng giá phù hợp phân khúc, thông số kỹ thuật, mẫu vật liệu, case study và chính sách hợp tác đã duyệt.\n\n## Kiểm soát\nBáo giá đặc biệt, chiết khấu, cam kết tiến độ và điều khoản hợp đồng phải qua người có thẩm quyền phê duyệt.`,
+        metadata: {
+          documentType: "journey",
+          owner: "Giám đốc Kinh doanh B2B",
+          audience: "Sale B2B, Dự án, Kế toán, Quản lý",
+          reviewCycle: "Hàng quý",
+          flowSteps: [
+            { id: "qualify", title: "Thẩm định cơ hội", description: "Vai trò, quy mô, thời gian", owner: "Sale B2B", channel: "Gọi & Email", tone: "blue" },
+            { id: "solution", title: "Đề xuất giải pháp", description: "Mẫu, thông số, khối lượng", owner: "Kỹ thuật & Sale", channel: "Meeting", tone: "violet" },
+            { id: "commercial", title: "Báo giá thương mại", description: "Giá, chiết khấu, thanh toán", owner: "Quản lý", channel: "Email", tone: "amber" },
+            { id: "negotiate", title: "Thương lượng", description: "Điều khoản và tiến độ", owner: "Sale B2B", channel: "CRM", tone: "emerald" },
+            { id: "contract", title: "Hợp đồng & triển khai", description: "Bàn giao cho vận hành", owner: "Các phòng ban", channel: "Workflow", tone: "rose" }
+          ]
+        }
+      },
+      {
+        id: "playbook-channel-automation",
+        title: "Quy tắc chăm sóc đa kênh và tự động hóa",
+        category: "automation",
+        status: "active",
+        summary: "Phân vai Zalo OA, Email Marketing, cuộc gọi, task và remarketing trong từng giai đoạn.",
+        tags: ["Zalo OA", "Email Marketing", "automation", "remarketing"],
+        source: "business-playbook-v1",
+        content: `# Phân vai kênh\n- Cuộc gọi: xác minh nhu cầu, xử lý vấn đề phức tạp và chốt bước tiếp theo.\n- Zalo OA: hội thoại tư vấn, gửi mẫu tin được duyệt và chăm sóc sau bán đúng chính sách.\n- Email: catalogue, hồ sơ năng lực, case study, báo giá và tài liệu dài.\n- CRM Task: đảm bảo nhân viên không bỏ quên lịch hẹn.\n- Remarketing: nhắc lại đúng sản phẩm, loại trừ khách không phù hợp hoặc đã yêu cầu dừng.\n\n## Cổng an toàn trước tự động hóa\nCó căn cứ liên hệ; đúng đối tượng; đúng trạng thái; nội dung đã duyệt; đủ dữ liệu biến; không trùng lịch; có giới hạn tần suất; lưu nhật ký và cho phép dừng.\n\n## Nguyên tắc triển khai chức năng\nMỗi chức năng CRM mới phải dẫn chiếu tài liệu đang ở trạng thái Đang dùng, xác định chủ sở hữu và có tiêu chí nghiệm thu.`,
+        metadata: {
+          documentType: "policy",
+          owner: "CRM Admin & Ban điều hành",
+          audience: "Marketing, Sale, CSKH, Kỹ thuật",
+          reviewCycle: "Hàng tháng",
+          flowSteps: [
+            { id: "trigger", title: "Sự kiện CRM", description: "Lead mới hoặc đổi trạng thái", owner: "CRM", channel: "Event", tone: "blue" },
+            { id: "check", title: "Kiểm tra điều kiện", description: "Quyền, tag, dữ liệu, tần suất", owner: "Automation", channel: "Rules", tone: "violet" },
+            { id: "approve", title: "Phê duyệt", description: "Nếu hành động có rủi ro", owner: "Quản lý", channel: "Approval", tone: "amber" },
+            { id: "execute", title: "Thực hiện", description: "Zalo, email, task hoặc ads", owner: "Agent", channel: "Omnichannel", tone: "emerald" },
+            { id: "audit", title: "Đo lường & audit", description: "Kết quả, lỗi, chi phí", owner: "Quản lý", channel: "Report", tone: "rose" }
+          ]
+        }
+      }
+    ];
+    for (const doc of playbooks) await createKnowledgeDocument(doc);
+  }
 }
 
 function mapKnowledge(row: Record<string, unknown>): KnowledgeDocument {
@@ -379,6 +524,67 @@ function mapKnowledge(row: Record<string, unknown>): KnowledgeDocument {
     createdAt: new Date(String(row.created_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
   };
+}
+
+function mapKnowledgeVersion(row: Record<string, unknown>): KnowledgeDocumentVersion {
+  return {
+    id: String(row.id),
+    documentId: String(row.document_id),
+    version: Number(row.version || 1),
+    title: String(row.title || ""),
+    category: String(row.category || "faq") as KnowledgeCategory,
+    status: String(row.status || "draft") as KnowledgeStatus,
+    content: String(row.content || ""),
+    summary: row.summary ? String(row.summary) : undefined,
+    tags: Array.isArray(row.tags) ? row.tags.map(String) : [],
+    source: row.source ? String(row.source) : undefined,
+    metadata: asJson<Record<string, unknown>>(row.metadata, {}),
+    changedBy: row.changed_by ? String(row.changed_by) : undefined,
+    changeNote: row.change_note ? String(row.change_note) : undefined,
+    createdAt: new Date(String(row.created_at)).toISOString(),
+  };
+}
+
+async function snapshotKnowledgeDocument(documentId: string, changedBy?: string, changeNote?: string) {
+  await query(
+    `INSERT INTO knowledge_document_versions
+      (id,document_id,version,title,category,status,content,summary,tags,source,metadata,changed_by,change_note)
+     SELECT $2,id,COALESCE((SELECT MAX(version)+1 FROM knowledge_document_versions WHERE document_id=$1),1),
+       title,category,status,content,summary,tags,source,metadata,$3,$4
+     FROM knowledge_documents WHERE id=$1`,
+    [documentId, randomUUID(), changedBy || null, changeNote || null],
+  );
+}
+
+export async function listKnowledgeDocumentVersions(documentId: string) {
+  await initBusinessBrainSchema();
+  const rows = await query<Record<string, unknown>>(
+    `SELECT * FROM knowledge_document_versions WHERE document_id=$1 ORDER BY version DESC LIMIT 60`,
+    [documentId],
+  );
+  return rows.map(mapKnowledgeVersion);
+}
+
+export async function restoreKnowledgeDocumentVersion(documentId: string, versionId: string, actor?: string) {
+  await initBusinessBrainSchema();
+  const version = await queryOne<Record<string, unknown>>(
+    `SELECT * FROM knowledge_document_versions WHERE id=$1 AND document_id=$2`,
+    [versionId, documentId],
+  );
+  if (!version) return null;
+  const restored = await updateKnowledgeDocument(documentId, {
+    title: String(version.title || ""),
+    category: String(version.category || "faq") as KnowledgeCategory,
+    status: String(version.status || "draft") as KnowledgeStatus,
+    content: String(version.content || ""),
+    summary: version.summary ? String(version.summary) : undefined,
+    tags: Array.isArray(version.tags) ? version.tags.map(String) : [],
+    source: version.source ? String(version.source) : "manual",
+    metadata: asJson<Record<string, unknown>>(version.metadata, {}),
+    updatedBy: actor,
+  }, { skipSnapshot: true });
+  if (restored) await snapshotKnowledgeDocument(documentId, actor, `Khôi phục phiên bản ${Number(version.version || 1)}`);
+  return restored;
 }
 
 function mapCustomer(row: Record<string, unknown>): BusinessCustomer {
@@ -508,10 +714,16 @@ export async function createKnowledgeDocument(input: Partial<KnowledgeDocument> 
       input.updatedBy ?? input.createdBy ?? null,
     ]
   );
-  return mapKnowledge(rows[0]);
+  const document = mapKnowledge(rows[0]);
+  await snapshotKnowledgeDocument(document.id, input.createdBy, "Tạo tài liệu");
+  return document;
 }
 
-export async function updateKnowledgeDocument(id: string, input: Partial<KnowledgeDocument>) {
+export async function updateKnowledgeDocument(
+  id: string,
+  input: Partial<KnowledgeDocument> & { changeNote?: string },
+  options?: { skipSnapshot?: boolean },
+) {
   await initBusinessBrainSchema();
   const rows = await query<Record<string, unknown>>(
     `UPDATE knowledge_documents
@@ -540,7 +752,11 @@ export async function updateKnowledgeDocument(id: string, input: Partial<Knowled
       input.updatedBy ?? null,
     ]
   );
-  return rows[0] ? mapKnowledge(rows[0]) : null;
+  const document = rows[0] ? mapKnowledge(rows[0]) : null;
+  if (document && !options?.skipSnapshot) {
+    await snapshotKnowledgeDocument(id, input.updatedBy, input.changeNote || "Cập nhật tài liệu");
+  }
+  return document;
 }
 
 export async function deleteKnowledgeDocument(id: string) {

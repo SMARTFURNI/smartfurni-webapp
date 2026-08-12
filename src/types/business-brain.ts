@@ -3,6 +3,10 @@ export type KnowledgeCategory =
   | "pricing"
   | "policies"
   | "sales_process"
+  | "customer_care"
+  | "marketing"
+  | "automation"
+  | "governance"
   | "faq"
   | "objection_handling"
   | "follow_up_scripts";
@@ -26,6 +30,32 @@ export interface KnowledgeDocument {
   updatedBy?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface KnowledgeDocumentVersion {
+  id: string;
+  documentId: string;
+  version: number;
+  title: string;
+  category: KnowledgeCategory;
+  status: KnowledgeStatus;
+  content: string;
+  summary?: string;
+  tags: string[];
+  source?: string;
+  metadata: Record<string, unknown>;
+  changedBy?: string;
+  changeNote?: string;
+  createdAt: string;
+}
+
+export interface BusinessBrainFlowStep {
+  id: string;
+  title: string;
+  description: string;
+  owner: string;
+  channel: string;
+  tone: "blue" | "violet" | "emerald" | "amber" | "rose";
 }
 
 export interface BusinessCustomer {
@@ -160,6 +190,10 @@ export const KNOWLEDGE_CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
   pricing: "Giá, size, màu",
   policies: "Chính sách",
   sales_process: "Quy trình sale",
+  customer_care: "Chăm sóc khách hàng",
+  marketing: "Marketing",
+  automation: "Tự động hóa",
+  governance: "Quản trị & kiểm soát",
   faq: "FAQ",
   objection_handling: "Xử lý từ chối",
   follow_up_scripts: "Kịch bản chăm sóc lại",
