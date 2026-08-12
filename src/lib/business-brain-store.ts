@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { query, queryOne } from "@/lib/db";
 import { calculateKnowledgeHealth, canTransitionKnowledgeStatus } from "@/lib/business-brain-governance";
+import { CRM_AUTOMATION_SPEC_DOCUMENTS } from "@/lib/business-brain-crm-automation-documents";
 import type {
   AgentActionLog,
   AiAgentDefinition,
@@ -525,6 +526,34 @@ async function seedDefaults() {
       }
     ];
     for (const doc of playbooks) await createKnowledgeDocument(doc);
+  }
+
+  // Nạp từng tài liệu theo ID để môi trường đã có dữ liệu vẫn nhận đủ bộ đặc tả.
+  // ON CONFLICT bảo đảm nhiều instance khởi động đồng thời không tạo trùng và không ghi đè bản đã chỉnh sửa.
+  for (const specification of CRM_AUTOMATION_SPEC_DOCUMENTS) {
+    const inserted = await query<{ id: string }>(
+      `INSERT INTO knowledge_documents
+        (id, title, category, status, content, summary, tags, source, metadata, created_by, updated_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
+      [
+        specification.id,
+        specification.title,
+        specification.category,
+        specification.status,
+        specification.content,
+        specification.summary,
+        specification.tags,
+        specification.source,
+        JSON.stringify(specification.metadata),
+        specification.createdBy,
+        specification.updatedBy,
+      ]
+    );
+    if (inserted[0]) {
+      await snapshotKnowledgeDocument(specification.id, specification.createdBy, "Nhập bộ đặc tả CRM SmartFurni v1.0");
+    }
   }
 }
 

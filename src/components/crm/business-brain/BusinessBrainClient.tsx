@@ -428,8 +428,20 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
       if (status !== "all" && doc.status !== status) return false;
       if (!keyword) return true;
       return `${doc.title} ${doc.summary || ""} ${doc.tags.join(" ")} ${doc.content}`.toLocaleLowerCase("vi").includes(keyword);
+    }).sort((left, right) => {
+      const leftSequence = Number(objectValue(left.metadata).sequence || Number.MAX_SAFE_INTEGER);
+      const rightSequence = Number(objectValue(right.metadata).sequence || Number.MAX_SAFE_INTEGER);
+      const leftIsSpecification = left.source === "crm-automation-spec-v1.0";
+      const rightIsSpecification = right.source === "crm-automation-spec-v1.0";
+      if (leftIsSpecification !== rightIsSpecification) return leftIsSpecification ? -1 : 1;
+      if (leftIsSpecification && rightIsSpecification) return leftSequence - rightSequence;
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
     });
   }, [category, docs, search, status]);
+
+  const specificationDocs = useMemo(() => docs
+    .filter(doc => doc.source === "crm-automation-spec-v1.0")
+    .sort((left, right) => Number(objectValue(left.metadata).sequence || 99) - Number(objectValue(right.metadata).sequence || 99)), [docs]);
 
   const stats = useMemo(() => ({
     all: docs.length,
@@ -689,12 +701,14 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
 
                 <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
                   <Panel className="p-5">
-                    <div className="mb-4 flex items-center justify-between"><div><h2 className={SECTION_TITLE}>Tài liệu vận hành cốt lõi</h2><p className={SECTION_DESCRIPTION}>Bộ hướng dẫn nền tảng đã được chuẩn hóa.</p></div><button onClick={() => setActiveTab("library")} className="text-sm font-semibold text-[#9b7317]">Xem tất cả →</button></div>
+                    <div className="mb-4 flex items-center justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><h2 className={SECTION_TITLE}>Bộ đặc tả tự động hóa CRM</h2><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">{specificationDocs.length}/10 tài liệu</span></div><p className={SECTION_DESCRIPTION}>Phiên bản 1.0 · Bao phủ 19 chương nghiệp vụ và kỹ thuật.</p></div><button onClick={() => { setSearch("SF-AUTO-"); setActiveTab("library"); }} className="shrink-0 text-sm font-semibold text-[#9b7317]">Xem bộ tài liệu →</button></div>
                     <div className="grid gap-3 md:grid-cols-2">
-                      {docs.filter(doc => doc.source === "business-playbook-v1").slice(0, 6).map(doc => {
+                      {specificationDocs.map(doc => {
                         const Icon = CATEGORY_ICONS[doc.category] || FileText;
-                        return <button key={doc.id} onClick={() => openDoc(doc)} className="group rounded-2xl border border-[#e0e6ef] bg-[#fbfcfe] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#dfbd58] hover:bg-white hover:shadow-md"><div className="flex items-start gap-3"><div className="rounded-xl bg-[#fff4cc] p-2.5 text-[#9a7215]"><Icon size={19} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><h3 className="line-clamp-2 text-[15px] font-semibold leading-6 text-[#1b2b44]">{doc.title}</h3><ChevronRight className="shrink-0 text-[#a4b0c1] group-hover:text-[#b1841a]" size={17} /></div><p className="mt-1 line-clamp-2 text-sm leading-6 text-[#718096]">{doc.summary}</p></div></div></button>;
+                        const meta = objectValue(doc.metadata);
+                        return <button key={doc.id} onClick={() => openDoc(doc)} className="group rounded-2xl border border-[#e0e6ef] bg-[#fbfcfe] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#dfbd58] hover:bg-white hover:shadow-md"><div className="flex items-start gap-3"><div className="rounded-xl bg-[#fff4cc] p-2.5 text-[#9a7215]"><Icon size={19} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#b0841e]">{String(meta.documentCode || "SF-AUTO")}</p><h3 className="mt-1 line-clamp-2 text-[15px] font-semibold leading-6 text-[#1b2b44]">{doc.title.replace(/^SF-AUTO-\d+\s*·\s*/, "")}</h3></div><ChevronRight className="shrink-0 text-[#a4b0c1] group-hover:text-[#b1841a]" size={17} /></div><p className="mt-1 line-clamp-2 text-sm leading-6 text-[#718096]">{doc.summary}</p></div></div></button>;
                       })}
+                      {!specificationDocs.length && <div className="col-span-full rounded-2xl border border-dashed border-[#dce4ee] bg-[#fbfcfe] p-8 text-center text-sm text-[#7b899c]">Bộ đặc tả sẽ được nạp tự động khi kết nối cơ sở dữ liệu.</div>}
                     </div>
                   </Panel>
                   <Panel className="p-5">
