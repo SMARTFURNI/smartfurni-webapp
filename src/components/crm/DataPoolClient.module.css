@@ -1,0 +1,118 @@
+.workspace {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 92% 2%, rgba(214, 176, 69, 0.12), transparent 26rem),
+    linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+  color-scheme: light;
+}
+
+.workspace button,
+.workspace input,
+.workspace select,
+.workspace textarea {
+  font: inherit;
+}
+
+.workspace input,
+.workspace select,
+.workspace textarea {
+  color: #172033 !important;
+  border-color: #d7e0eb !important;
+  background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+  box-shadow: inset 0 1px 2px rgba(30, 48, 72, 0.03);
+}
+
+.workspace input::placeholder,
+.workspace textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.workspace input:focus,
+.workspace select:focus,
+.workspace textarea:focus {
+  border-color: #d4af45 !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 69, 0.12) !important;
+}
+
+.surface,
+.tableSurface {
+  border: 1px solid #dbe3ee !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 10px 30px rgba(30, 48, 72, 0.07);
+}
+
+.statsGrid .statCard {
+  border-width: 1px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 26px rgba(30, 48, 72, 0.07);
+}
+
+.statsGrid .statCard:nth-child(1) { background: linear-gradient(145deg, #fffdf7, #fff8e6); }
+.statsGrid .statCard:nth-child(2) { background: linear-gradient(145deg, #ffffff, #ecfdf5); }
+.statsGrid .statCard:nth-child(3) { background: linear-gradient(145deg, #ffffff, #f5f3ff); }
+.statsGrid .statCard:nth-child(4) { background: linear-gradient(145deg, #ffffff, #eff6ff); }
+
+.tableSurface > div:first-child {
+  color: #64748b !important;
+  border-bottom: 1px solid #dbe3ee !important;
+  background: #f1f5f9 !important;
+}
+
+.tableSurface [style*="border-bottom"] {
+  border-color: #e8edf3 !important;
+}
+
+.tableSurface [style*="grid-template-columns"]:hover {
+  background: #f8fafc !important;
+}
+
+@media (max-width: 640px) {
+  .workspace { background: #f4f7fb; }
+  .statsGrid { gap: 0.625rem; }
+  .statCard { min-height: 108px; }
+
+  .tableSurface { overflow: visible; }
+
+  .dataRow {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.75rem !important;
+    margin: 0.75rem;
+    padding: 1rem !important;
+    border: 1px solid #dbe3ee !important;
+    border-radius: 1rem;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(30, 48, 72, 0.07);
+  }
+
+  .rowIndex { display: none; }
+  .customerCell { grid-column: 1; grid-row: 1; }
+  .statusCell { grid-column: 2; grid-row: 1; align-self: start; }
+  .contactCell,
+  .campaignCell,
+  .roleCell,
+  .staffCell { grid-column: 1 / -1; }
+  .actionCell {
+    grid-column: 1 / -1;
+    justify-content: flex-start !important;
+    padding-top: 0.65rem;
+    border-top: 1px solid #edf1f5;
+  }
+
+  .contactCell::before,
+  .campaignCell::before,
+  .roleCell::before,
+  .staffCell::before {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: #94a3b8;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .contactCell::before { content: "Liên hệ"; }
+  .campaignCell::before { content: "Chiến dịch"; }
+  .roleCell::before { content: "Vai trò / nhu cầu"; }
+  .staffCell::before { content: "Nhân viên / thời gian"; }
+}

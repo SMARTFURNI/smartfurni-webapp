@@ -8,6 +8,7 @@ import {
 import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-store";
 import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-store";
 import CrmFoundationHeader from "./CrmFoundationHeader";
+import styles from "./DataPoolClient.module.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface StaffMember {
@@ -781,10 +782,13 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
   const nextFifoId = leads.find(l => l.status === "pending")?.id;
 
   return (
-    <div className="h-full flex flex-col" style={{ background: "#f8f9fb", color: "#111827" }}>
-      <CrmFoundationHeader active="pool" title="Tiếp nhận & chuẩn hóa Data Pool"
-        description="Lead quảng cáo được nhận theo FIFO, giữ nguyên nguồn chiến dịch và tự động chuẩn hóa trước khi vào hồ sơ khách hàng."
-        actions={<>
+    <div className={`${styles.workspace} h-full flex flex-col text-[#172033]`}>
+      <div className="px-4 pt-4 md:px-7 md:pt-7">
+        <CrmFoundationHeader
+          active="pool"
+          title="Data Pool"
+          description="Tiếp nhận và phân công khách hàng tiềm năng."
+          actions={<>
           <button
             onClick={() => fetchData(false)}
             disabled={refreshing}
@@ -803,12 +807,14 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
               Thêm data
             </button>
           )}
-        </>} />
+          </>}
+        />
+      </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto space-y-4 p-4 md:px-7 md:pb-7">
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className={`${styles.statsGrid} grid grid-cols-2 sm:grid-cols-4 gap-3`}>
             {[
               { label: "Chờ nhận", value: stats.pending, color: "#F59E0B", bg: "#FFFBEB", icon: Clock, filter: "pending" as RawLeadStatus },
               { label: "Đã nhận", value: stats.claimed, color: "#22C55E", bg: "#F0FDF4", icon: CheckCircle2, filter: "claimed" as RawLeadStatus },
@@ -818,7 +824,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
               <button
                 key={card.label}
                 onClick={() => { setStatusFilter(card.filter); setPage(1); }}
-                className="p-4 rounded-2xl text-left transition-all hover:shadow-md"
+                className={`${styles.statCard} p-4 rounded-2xl text-left transition-all hover:shadow-md`}
                 style={{
                   background: statusFilter === card.filter && card.filter !== "" ? card.bg : "#fff",
                   border: statusFilter === card.filter && card.filter !== "" ? `2px solid ${card.color}` : "1px solid #e5e7eb",
@@ -836,7 +842,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
 
         {/* Source breakdown */}
         {stats && stats.bySource.length > 0 && (
-          <div className="bg-white rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
+          <div className={`${styles.surface} bg-white rounded-2xl p-4`}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Data đang chờ theo kênh</p>
             <div className="flex flex-wrap gap-2">
               {stats.bySource.map(s => (
@@ -892,7 +898,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
         )}
 
         {/* Search & Filter */}
-        <div className="bg-white rounded-2xl p-4" style={{ border: "1px solid #e5e7eb" }}>
+        <div className={`${styles.surface} bg-white rounded-2xl p-4`}>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -937,10 +943,10 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
         </div>
 
           {/* Data List */}
-        <div className="bg-white rounded-2xl overflow-x-auto" style={{ border: "1px solid #e5e7eb" }}>
+        <div className={`${styles.tableSurface} bg-white rounded-2xl overflow-x-auto`}>
           {/* Table header */}
           <div className="hidden sm:grid gap-4 px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-            style={{ background: "#f9fafb", borderBottom: "1px solid #f3f4f6", gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px", minWidth: "960px" }}>
+            style={{ gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px", minWidth: "960px" }}>
             <div>#</div>
             <div>Khách hàng</div>
             <div>Liên hệ</div>
@@ -971,16 +977,15 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                 return (
                   <div
                     key={lead.id}
-                    className="grid gap-4 px-4 py-3.5 items-center transition-colors hover:bg-gray-50"
+                    className={`${styles.dataRow} grid gap-4 px-4 py-3.5 items-center transition-colors hover:bg-gray-50 sm:min-w-[960px]`}
                     style={{
                       borderBottom: "1px solid #f3f4f6",
                       background: isNextFifo ? "rgba(201,168,76,0.04)" : undefined,
-                      gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px",
-                      minWidth: "960px"
+                      gridTemplateColumns: "60px 180px 120px 150px 120px 100px 150px 80px"
                     }}
                   >
                     {/* # */}
-                    <div>
+                    <div className={styles.rowIndex}>
                       <span className="text-xs text-gray-400 font-mono">{rowNum}</span>
                       {isNextFifo && !isAdmin && (
                         <div className="mt-1">
@@ -993,26 +998,26 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     </div>
 
                     {/* Khách hàng */}
-                    <div>
+                    <div className={styles.customerCell}>
                       <p className="text-sm font-semibold text-gray-900 truncate">{lead.fullName}</p>
                       <div className="mt-0.5"><SourceBadge source={lead.source} /></div>
                     </div>
 
                     {/* Liên hệ */}
-                    <div>
+                    <div className={styles.contactCell}>
                       {lead.phone && <p className="text-sm text-gray-700 font-medium">{lead.phone}</p>}
                       {lead.email && <p className="text-xs text-gray-400 truncate">{lead.email}</p>}
                     </div>
 
                     {/* Kênh / Chiến dịch */}
-                    <div>
+                    <div className={styles.campaignCell}>
                       {lead.campaignName && <p className="text-xs text-gray-600 truncate font-medium">{lead.campaignName}</p>}
                       {lead.adName && <p className="text-xs text-gray-400 truncate">{lead.adName}</p>}
                       {!lead.campaignName && !lead.adName && <p className="text-xs text-gray-300">—</p>}
                     </div>
 
                     {/* Vai trò / Nhu cầu */}
-                    <div>
+                    <div className={styles.roleCell}>
                       {lead.customerRole ? (
                         <p className="text-xs text-gray-700 truncate font-medium">{lead.customerRole}</p>
                       ) : (
@@ -1021,12 +1026,12 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     </div>
 
                     {/* Trạng thái */}
-                    <div>
+                    <div className={styles.statusCell}>
                       <StatusBadge status={lead.status} />
                     </div>
 
                     {/* Nhân viên / Thời gian */}
-                    <div>
+                    <div className={styles.staffCell}>
                       {lead.claimedByName ? (
                         <p className="text-xs font-semibold text-gray-700">{lead.claimedByName}</p>
                       ) : (
@@ -1036,7 +1041,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     </div>
 
                     {/* Thao tác */}
-                    <div className="flex items-center justify-end gap-1">
+                    <div className={`${styles.actionCell} flex items-center justify-end gap-1`}>
                       <button
                         onClick={() => setDetailLead(lead)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
