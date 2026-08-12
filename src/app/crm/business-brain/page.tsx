@@ -1,4 +1,5 @@
-import { requireCrmAccess } from "@/lib/admin-auth";
+import { redirect } from "next/navigation";
+import { authorizeBusinessBrain } from "@/lib/business-brain-auth";
 import { BusinessBrainClient } from "@/components/crm/business-brain/BusinessBrainClient";
 
 export const metadata = {
@@ -7,7 +8,14 @@ export const metadata = {
 };
 
 export default async function BusinessBrainPage() {
-  await requireCrmAccess();
+  const access = await authorizeBusinessBrain("business_brain_view");
+  if (!access) redirect("/crm");
 
-  return <BusinessBrainClient />;
+  return <BusinessBrainClient capabilities={{
+    canEdit: access.actor.isAdmin || access.permissions?.business_brain_edit === true,
+    canReview: access.actor.isAdmin || access.permissions?.business_brain_review === true,
+    canPublish: access.actor.isAdmin || access.permissions?.business_brain_publish === true,
+    canDelete: access.actor.isAdmin || access.permissions?.business_brain_delete === true,
+    canManageAgents: access.actor.isAdmin || access.permissions?.business_brain_agent_manage === true,
+  }} />;
 }

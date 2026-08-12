@@ -11,7 +11,14 @@ export type KnowledgeCategory =
   | "objection_handling"
   | "follow_up_scripts";
 
-export type KnowledgeStatus = "draft" | "active" | "archived";
+export type KnowledgeStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "scheduled"
+  | "active"
+  | "expired"
+  | "archived";
 export type LeadTemperature = "hot" | "warm" | "cold";
 export type AgentStatus = "active" | "inactive";
 export type AiReviewStatus = "answered" | "need_human_review";
@@ -30,6 +37,7 @@ export interface KnowledgeDocument {
   updatedBy?: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface KnowledgeDocumentVersion {
@@ -56,7 +64,31 @@ export interface BusinessBrainFlowStep {
   owner: string;
   channel: string;
   tone: "blue" | "violet" | "emerald" | "amber" | "rose";
-  nodeType?: "start" | "action" | "decision" | "end";
+  nodeType?:
+    | "start"
+    | "trigger"
+    | "data"
+    | "human"
+    | "ai"
+    | "action"
+    | "decision"
+    | "delay"
+    | "approval"
+    | "channel"
+    | "crm"
+    | "webhook"
+    | "end";
+  config?: {
+    trigger?: string;
+    action?: string;
+    input?: string;
+    output?: string;
+    delayMinutes?: number;
+    approvalRole?: string;
+    retryCount?: number;
+    timeoutMinutes?: number;
+    errorHandling?: string;
+  };
   x?: number;
   y?: number;
 }
@@ -211,6 +243,10 @@ export const KNOWLEDGE_CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
 
 export const KNOWLEDGE_STATUS_LABELS: Record<KnowledgeStatus, string> = {
   draft: "Nháp",
+  in_review: "Chờ duyệt",
+  approved: "Đã duyệt",
+  scheduled: "Đã lên lịch",
   active: "Đang dùng",
+  expired: "Hết hiệu lực",
   archived: "Lưu trữ",
 };

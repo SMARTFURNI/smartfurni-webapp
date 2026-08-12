@@ -100,7 +100,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Email Marketing", href: "/crm/email", icon: Mail, adminOnly: true, permissionKey: "email_marketing_view" },
       { label: "Content Marketing AI", href: "/crm/content", icon: Clapperboard, permissionKey: "content_marketing_view" },
       { label: "AI Google Ads Agent", href: "/crm/google-ads-agent", icon: Megaphone, permissionKey: "content_marketing_view" },
-      { label: "Bộ não doanh nghiệp", href: "/crm/business-brain", icon: BrainCircuit, permissionKey: "content_marketing_view" },
+      { label: "Bộ não doanh nghiệp", href: "/crm/business-brain", icon: BrainCircuit, permissionKey: "business_brain_view" },
       { label: "Trung tâm AI Fanpage", href: "/crm/conversation-learning", icon: MessageSquare, permissionKey: "content_marketing_view" },
       { label: "Hợp đồng điện tử", href: "/crm/contracts", icon: FileText, permissionKey: "contracts_view" },
       { label: "Khảo sát NPS", href: "/crm/nps", icon: TrendingUp, adminOnly: true, permissionKey: "nps_view" },

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
+  Bot,
   ArrowLeft,
   ArrowRight,
   BookOpen,
@@ -27,12 +28,14 @@ import {
   Library,
   Loader2,
   Network,
+  PlayCircle,
   Plus,
   RefreshCw,
   RotateCcw,
   Save,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Tag,
   Trash2,
@@ -51,8 +54,33 @@ import type {
 } from "@/types/business-brain";
 import { KNOWLEDGE_CATEGORY_LABELS, KNOWLEDGE_STATUS_LABELS } from "@/types/business-brain";
 
-type TabKey = "overview" | "library" | "editor" | "diagram" | "history";
+type TabKey = "overview" | "library" | "editor" | "diagram" | "automation" | "agents" | "review" | "testing" | "analytics" | "history";
 type Tone = BusinessBrainFlowStep["tone"];
+
+type Capabilities = {
+  canEdit: boolean;
+  canReview: boolean;
+  canPublish: boolean;
+  canDelete: boolean;
+  canManageAgents: boolean;
+};
+
+type GovernanceReport = {
+  total: number;
+  statuses: Record<string, number>;
+  averageHealth: number;
+  healthy: number;
+  needsAttention: number;
+  awaitingReview: number;
+  documents: Array<{ document: KnowledgeDocument; health?: { score: number; missing: string[] } }>;
+  recentReviews: Array<{ id: string; documentId: string; action: string; actorName?: string; note?: string; createdAt: string }>;
+};
+
+type AgentsPayload = {
+  agents: Array<{ id: string; name: string; role: string; status: "active" | "inactive"; tools: string[]; allowedActions: string[] }>;
+  workflows: Array<{ id: string; name: string; triggerType: string; status: "active" | "inactive"; actions: Record<string, unknown>[] }>;
+  actions: Array<{ id: string; agentId: string; agentName?: string; actionType: string; status: string; referencedDocumentIds: string[]; durationMs: number; createdAt: string }>;
+};
 
 type DocForm = {
   id?: string;
@@ -97,19 +125,24 @@ const TAB_GROUPS: Array<{
     label: "Tra cứu",
     tabs: [
       { key: "overview", label: "Tổng quan", icon: LayoutDashboard },
-      { key: "library", label: "Thư viện", icon: Library },
+      { key: "library", label: "Kho tri thức", icon: Library },
     ],
   },
   {
     label: "Xây dựng",
     tabs: [
-      { key: "editor", label: "Biên soạn", icon: FilePenLine },
       { key: "diagram", label: "Quy trình", icon: Network },
+      { key: "automation", label: "Tự động hóa", icon: SlidersHorizontal },
+      { key: "agents", label: "AI Agents", icon: Bot },
     ],
   },
   {
     label: "Kiểm soát",
-    tabs: [{ key: "history", label: "Phiên bản", icon: History }],
+    tabs: [
+      { key: "review", label: "Kiểm duyệt", icon: FileCheck2 },
+      { key: "testing", label: "Kiểm thử", icon: PlayCircle },
+      { key: "analytics", label: "Phân tích", icon: Activity },
+    ],
   },
 ];
 
@@ -164,9 +197,10 @@ function flowValue(value: unknown): BusinessBrainFlowStep[] {
       owner: String(record.owner || ""),
       channel: String(record.channel || ""),
       tone: Object.hasOwn(TONE_STYLES, tone) ? tone : "blue",
-      nodeType: (["start", "action", "decision", "end"] as const).includes(nodeType as "start" | "action" | "decision" | "end")
-        ? nodeType as "start" | "action" | "decision" | "end"
+      nodeType: (["start", "trigger", "data", "human", "ai", "action", "decision", "delay", "approval", "channel", "crm", "webhook", "end"] as const).includes(nodeType as NonNullable<BusinessBrainFlowStep["nodeType"]>)
+        ? nodeType as NonNullable<BusinessBrainFlowStep["nodeType"]>
         : "action",
+      config: objectValue(record.config) as BusinessBrainFlowStep["config"],
       x: Number.isFinite(Number(record.x)) ? Number(record.x) : 505,
       y: Number.isFinite(Number(record.y)) ? Number(record.y) : 35 + index * 160,
     };
@@ -226,6 +260,9 @@ function formatDate(value?: string, withTime = true) {
 
 function statusClass(status: KnowledgeStatus) {
   if (status === "active") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "approved" || status === "scheduled") return "border-blue-200 bg-blue-50 text-blue-700";
+  if (status === "in_review") return "border-violet-200 bg-violet-50 text-violet-700";
+  if (status === "expired") return "border-rose-200 bg-rose-50 text-rose-700";
   if (status === "archived") return "border-slate-200 bg-slate-100 text-slate-600";
   return "border-amber-200 bg-amber-50 text-amber-700";
 }
@@ -327,7 +364,7 @@ function downloadFile(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-export function BusinessBrainClient() {
+export function BusinessBrainClient({ capabilities }: { capabilities: Capabilities }) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [docs, setDocs] = useState<KnowledgeDocument[]>([]);
   const [versions, setVersions] = useState<KnowledgeDocumentVersion[]>([]);
@@ -341,6 +378,10 @@ export function BusinessBrainClient() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [preview, setPreview] = useState(true);
+  const [governance, setGovernance] = useState<GovernanceReport | null>(null);
+  const [agentData, setAgentData] = useState<AgentsPayload | null>(null);
+  const [testQuestion, setTestQuestion] = useState("Khách hỏi giá sofa giường 1m6 và giao tại TP.HCM");
+  const [testResult, setTestResult] = useState<{ matches: KnowledgeDocument[]; answer: string } | null>(null);
 
   const selected = useMemo(() => docs.find(doc => doc.id === selectedId) || null, [docs, selectedId]);
 
@@ -361,9 +402,18 @@ export function BusinessBrainClient() {
     setVersions(data.versions);
   }, []);
 
+  const loadOperationalData = useCallback(async () => {
+    const [governanceData, agentsData] = await Promise.all([
+      fetchJson<{ governance: GovernanceReport }>("/api/crm/business-brain/governance"),
+      fetchJson<AgentsPayload>("/api/crm/business-brain/agents"),
+    ]);
+    setGovernance(governanceData.governance);
+    setAgentData(agentsData);
+  }, []);
+
   useEffect(() => {
     setLoading(true);
-    loadDocs().catch(err => setError(err instanceof Error ? err.message : "Không tải được tài liệu."))
+    Promise.all([loadDocs(), loadOperationalData()]).catch(err => setError(err instanceof Error ? err.message : "Không tải được dữ liệu."))
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -397,6 +447,7 @@ export function BusinessBrainClient() {
   };
 
   const newDoc = () => {
+    if (!capabilities.canEdit) return setError("Bạn không có quyền biên soạn tài liệu.");
     setSelectedId("");
     setForm({ ...EMPTY_FORM, flowSteps: [], flowEdges: [] });
     setActiveTab("editor");
@@ -404,6 +455,7 @@ export function BusinessBrainClient() {
   };
 
   const saveDoc = async () => {
+    if (!capabilities.canEdit) return setError("Bạn không có quyền biên soạn tài liệu.");
     if (!form.title.trim() || !form.content.trim()) return setError("Cần nhập tiêu đề và nội dung tài liệu.");
     setSaving(true);
     setError("");
@@ -413,7 +465,7 @@ export function BusinessBrainClient() {
         id: form.id,
         title: form.title.trim(),
         category: form.category,
-        status: form.status,
+        status: form.id ? form.status : "draft",
         summary: form.summary.trim(),
         tags: form.tagsText.split(",").map(item => item.trim()).filter(Boolean),
         source: form.source || "manual",
@@ -452,7 +504,8 @@ export function BusinessBrainClient() {
   };
 
   const deleteDoc = async () => {
-    if (!form.id || !window.confirm("Xóa tài liệu này khỏi thư viện?")) return;
+    if (!capabilities.canDelete) return setError("Bạn không có quyền lưu trữ tài liệu.");
+    if (!form.id || !window.confirm("Chuyển tài liệu này vào lưu trữ? Có thể phục hồi từ lịch sử quản trị.")) return;
     setSaving(true);
     try {
       await fetchJson(`/api/crm/business-brain/knowledge?id=${encodeURIComponent(form.id)}`, { method: "DELETE" });
@@ -460,12 +513,62 @@ export function BusinessBrainClient() {
       setForm({ ...EMPTY_FORM, flowSteps: [], flowEdges: [] });
       await loadDocs(null);
       setActiveTab("library");
-      setSuccess("Đã xóa tài liệu.");
+      setSuccess("Đã chuyển tài liệu vào lưu trữ.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không xóa được tài liệu.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const reviewDocument = async (document: KnowledgeDocument, toStatus: KnowledgeStatus, reviewAction: string) => {
+    if (toStatus === "in_review" ? !capabilities.canEdit : !capabilities.canReview) {
+      return setError(toStatus === "in_review" ? "Bạn không có quyền gửi kiểm duyệt." : "Bạn không có quyền kiểm duyệt.");
+    }
+    setSaving(true);
+    try {
+      const data = await fetchJson<{ document: KnowledgeDocument }>("/api/crm/business-brain/knowledge", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "review", id: document.id, toStatus, reviewAction }),
+      });
+      await Promise.all([loadDocs(data.document.id), loadOperationalData()]);
+      setSuccess(`${reviewAction}: ${document.title}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không cập nhật được kiểm duyệt.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleAgentStatus = async (agent: NonNullable<AgentsPayload>["agents"][number]) => {
+    if (!capabilities.canManageAgents) return setError("Bạn không có quyền quản lý AI Agent.");
+    setSaving(true);
+    try {
+      await fetchJson("/api/crm/business-brain/agents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: agent.id, status: agent.status === "active" ? "inactive" : "active" }),
+      });
+      await loadOperationalData();
+      setSuccess(`${agent.name} đã được ${agent.status === "active" ? "tạm dừng" : "kích hoạt"}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không cập nhật được Agent.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runKnowledgeTest = () => {
+    const tokens = testQuestion.toLocaleLowerCase("vi").split(/\s+/).filter(token => token.length > 2);
+    const matches = docs.filter(doc => doc.status === "active").map(doc => ({
+      doc,
+      score: tokens.filter(token => `${doc.title} ${doc.summary || ""} ${doc.tags.join(" ")} ${doc.content}`.toLocaleLowerCase("vi").includes(token)).length,
+    })).filter(item => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 3).map(item => item.doc);
+    setTestResult({
+      matches,
+      answer: matches.length ? `Đã tìm thấy ${matches.length} nguồn đang áp dụng. AI chỉ nên trả lời bằng nội dung trong các tài liệu bên dưới và chuyển người kiểm tra nếu thiếu giá/khu vực.` : "Không tìm thấy tài liệu đang áp dụng phù hợp. Cần tạo yêu cầu bổ sung tri thức.",
+    });
   };
 
   const restoreVersion = async (version: KnowledgeDocumentVersion) => {
@@ -512,7 +615,7 @@ export function BusinessBrainClient() {
             <div className="relative flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700"><ShieldCheck size={15} /> {stats.active} tài liệu đang dùng</span>
               <button className={BUTTON_SECONDARY} onClick={() => void loadDocs()}><RefreshCw size={15} /> Làm mới</button>
-              <button className={BUTTON_PRIMARY} onClick={newDoc}><FilePlus2 size={16} /> Tạo tài liệu</button>
+              {capabilities.canEdit && <button className={BUTTON_PRIMARY} onClick={newDoc}><FilePlus2 size={16} /> Tạo tài liệu</button>}
             </div>
           </div>
           <nav className="flex gap-3 overflow-x-auto border-t border-[#edf0f5] bg-[#fbfcfe] px-3 py-2.5 md:px-5" aria-label="Điều hướng Bộ não doanh nghiệp">
@@ -543,6 +646,18 @@ export function BusinessBrainClient() {
           <Panel className="mt-5 flex min-h-[520px] items-center justify-center"><div className="flex items-center gap-3 text-[#73839a]"><Loader2 className="animate-spin text-[#c99920]" /> Đang chuẩn bị thư viện hướng dẫn...</div></Panel>
         ) : (
           <main className="mt-5">
+            {selected && (["editor", "diagram", "history"] as TabKey[]).includes(activeTab) && (
+              <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#dfe6ef] bg-white p-3 shadow-[0_8px_24px_rgba(38,55,86,0.05)] lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 px-2"><p className={cn(EYEBROW, "text-[#a87c15]")}>Đang làm việc</p><p className="truncate text-sm font-semibold text-[#273851]">{selected.title}</p></div>
+                <div className="flex gap-1 overflow-x-auto rounded-xl bg-[#f4f7fb] p-1">
+                  {[
+                    { key: "editor" as const, label: "Nội dung", icon: FilePenLine },
+                    { key: "diagram" as const, label: "Sơ đồ", icon: Network },
+                    { key: "history" as const, label: "Phiên bản", icon: History },
+                  ].map(item => { const Icon = item.icon; return <button key={item.key} onClick={() => setActiveTab(item.key)} className={cn("flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold", activeTab === item.key ? "bg-white text-[#946b0c] shadow-sm" : "text-[#687990]")}><Icon size={15} />{item.label}</button>; })}
+                </div>
+              </div>
+            )}
             {activeTab === "overview" && (
               <div className="space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -602,7 +717,7 @@ export function BusinessBrainClient() {
                   <div className="mt-5 rounded-xl bg-[#f5f8fc] p-3 text-sm leading-6 text-[#718097]"><b>{filteredDocs.length}</b> tài liệu phù hợp. Dùng tag và danh mục để AI tìm đúng hướng dẫn.</div>
                 </Panel>
                 <Panel className="overflow-hidden">
-                  <div className="flex flex-col gap-3 border-b border-[#e5eaf1] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className={SECTION_TITLE}>Thư viện hướng dẫn</h2><p className={SECTION_DESCRIPTION}>Tài liệu nghiệp vụ có thể tìm kiếm, chỉnh sửa và tái sử dụng.</p></div><button className={BUTTON_PRIMARY} onClick={newDoc}><Plus size={16} /> Thêm tài liệu</button></div>
+                  <div className="flex flex-col gap-3 border-b border-[#e5eaf1] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className={SECTION_TITLE}>Kho tri thức doanh nghiệp</h2><p className={SECTION_DESCRIPTION}>Tài liệu nghiệp vụ có thể tìm kiếm, kiểm duyệt và tái sử dụng.</p></div>{capabilities.canEdit && <button className={BUTTON_PRIMARY} onClick={newDoc}><Plus size={16} /> Thêm tài liệu</button>}</div>
                   <div className="grid gap-4 p-5 md:grid-cols-2 2xl:grid-cols-3">
                     {filteredDocs.map(doc => {
                       const Icon = CATEGORY_ICONS[doc.category] || FileText;
@@ -618,12 +733,12 @@ export function BusinessBrainClient() {
             {activeTab === "editor" && (
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]">
                 <Panel className="overflow-hidden">
-                  <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className={cn(EYEBROW, "text-[#ad821b]")}>{form.id ? "Chỉnh sửa tài liệu" : "Tài liệu mới"}</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Nội dung hướng dẫn doanh nghiệp</h2></div><div className="flex flex-wrap gap-2">{form.id && <button className={BUTTON_SECONDARY} onClick={duplicateDoc}><Copy size={14} /> Nhân bản</button>}<button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu tài liệu</button></div></div>
+                  <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className={cn(EYEBROW, "text-[#ad821b]")}>{form.id ? "Chỉnh sửa tài liệu" : "Tài liệu mới"}</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Nội dung hướng dẫn doanh nghiệp</h2></div>{capabilities.canEdit && <div className="flex flex-wrap gap-2">{form.id && <button className={BUTTON_SECONDARY} onClick={duplicateDoc}><Copy size={14} /> Nhân bản</button>}<button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu tài liệu</button></div>}</div>
                   <div className="space-y-5 p-5">
                     <div className="grid gap-4 md:grid-cols-2">
                       <label className={cn(FORM_LABEL, "md:col-span-2")}>Tiêu đề tài liệu *<input className={cn(FIELD, "mt-1.5 text-base font-semibold")} value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} placeholder="Ví dụ: Quy trình chăm sóc khách mua lẻ" /></label>
                       <label className={FORM_LABEL}>Danh mục<select className={cn(FIELD, "mt-1.5")} value={form.category} onChange={event => setForm(prev => ({ ...prev, category: event.target.value as KnowledgeCategory }))}>{Object.entries(KNOWLEDGE_CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                      <label className={FORM_LABEL}>Trạng thái<select className={cn(FIELD, "mt-1.5")} value={form.status} onChange={event => setForm(prev => ({ ...prev, status: event.target.value as KnowledgeStatus }))}>{Object.entries(KNOWLEDGE_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                      <label className={FORM_LABEL}>Trạng thái<input readOnly className={cn(FIELD, "mt-1.5 bg-[#f6f8fb]")} value={KNOWLEDGE_STATUS_LABELS[form.status]} /></label>
                       <label className={cn(FORM_LABEL, "md:col-span-2")}>Tóm tắt<input className={cn(FIELD, "mt-1.5")} value={form.summary} onChange={event => setForm(prev => ({ ...prev, summary: event.target.value }))} placeholder="Một câu giúp nhân viên hiểu tài liệu dùng để làm gì" /></label>
                       <label className={FORM_LABEL}>Người chịu trách nhiệm<input className={cn(FIELD, "mt-1.5")} value={form.owner} onChange={event => setForm(prev => ({ ...prev, owner: event.target.value }))} placeholder="Ví dụ: Trưởng phòng Kinh doanh" /></label>
                       <label className={FORM_LABEL}>Đối tượng áp dụng<input className={cn(FIELD, "mt-1.5")} value={form.audience} onChange={event => setForm(prev => ({ ...prev, audience: event.target.value }))} placeholder="Sale, CSKH, Marketing" /></label>
@@ -649,7 +764,7 @@ export function BusinessBrainClient() {
                     ].map(([label, value]) => <div key={label} className="flex items-start justify-between gap-4 border-b border-[#edf0f4] pb-3"><dt className="text-[#8491a3]">{label}</dt><dd className="max-w-[60%] break-all text-right font-bold text-[#33455e]">{value}</dd></div>)}</dl>
                     <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800"><b>Chú ý:</b> Chuyển sang “Đang dùng” chỉ khi nội dung đã được người chịu trách nhiệm xác nhận.</div>
                     <div className="mt-4 grid grid-cols-2 gap-2"><button className={BUTTON_SECONDARY} onClick={() => exportDocument("markdown")}><Download size={14} /> Markdown</button><button className={BUTTON_SECONDARY} onClick={() => exportDocument("json")}><Download size={14} /> JSON</button></div>
-                    {form.id && <button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100" onClick={deleteDoc}><Trash2 size={15} /> Xóa tài liệu</button>}
+                    {form.id && capabilities.canDelete && <button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100" onClick={deleteDoc}><Trash2 size={15} /> Chuyển vào lưu trữ</button>}
                   </Panel>
                 </div>
               </div>
@@ -663,7 +778,7 @@ export function BusinessBrainClient() {
                     <h2 className={cn(SECTION_TITLE, "mt-1")}>{form.title || "Chọn hoặc tạo tài liệu"}</h2>
                     <p className={SECTION_DESCRIPTION}>Kéo thả khối, nối nhiều nhánh và đặt nhãn điều kiện trực tiếp trên sơ đồ.</p>
                   </div>
-                  <button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu quy trình</button>
+                  {capabilities.canEdit && <button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu quy trình</button>}
                 </div>
                 <div className="p-4">
                   <BusinessFlowBuilder
@@ -674,6 +789,41 @@ export function BusinessBrainClient() {
                   />
                 </div>
               </Panel>
+            )}
+
+            {activeTab === "automation" && (
+              <div className="space-y-5">
+                <div className="grid gap-4 sm:grid-cols-3">{[
+                  { label: "Quy trình đã cấu hình", value: agentData?.workflows.length || 0, icon: Network, tone: "border-blue-200 bg-blue-50" },
+                  { label: "Đang hoạt động", value: agentData?.workflows.filter(item => item.status === "active").length || 0, icon: CheckCircle2, tone: "border-emerald-200 bg-emerald-50" },
+                  { label: "Lượt chạy gần đây", value: agentData?.actions.length || 0, icon: Activity, tone: "border-violet-200 bg-violet-50" },
+                ].map(item => { const Icon = item.icon; return <Panel key={item.label} className={cn("border p-5", item.tone)}><div className="flex items-center justify-between"><div><p className={EYEBROW}>{item.label}</p><p className="mt-2 text-3xl font-semibold">{item.value}</p></div><Icon size={22} /></div></Panel>; })}</div>
+                <Panel className="overflow-hidden"><div className="border-b border-[#e4eaf1] px-5 py-4"><h2 className={SECTION_TITLE}>Trung tâm tự động hóa</h2><p className={SECTION_DESCRIPTION}>Quản lý trigger, các bước Agent và cổng an toàn trước khi thực thi.</p></div><div className="grid gap-4 p-5 lg:grid-cols-2">{agentData?.workflows.map(workflow => <article key={workflow.id} className="rounded-2xl border border-[#dfe6ef] bg-white p-5"><div className="flex items-start justify-between gap-3"><div><p className={cn(EYEBROW, "text-blue-600")}>{workflow.triggerType}</p><h3 className="mt-1 text-base font-semibold">{workflow.name}</h3></div><span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", workflow.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>{workflow.status === "active" ? "Đang chạy" : "Tạm dừng"}</span></div><div className="mt-4 flex flex-wrap gap-2">{workflow.actions.map((action, index) => <span key={index} className="rounded-xl bg-[#f4f7fb] px-3 py-2 text-xs font-semibold text-[#52637a]">{index + 1}. {String(action.action || action.agentId || "Hành động")}</span>)}</div><div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><b>Chế độ an toàn:</b> kiểm thử và phê duyệt trước khi cho phép gửi tin hoặc thay đổi CRM.</div></article>)}</div></Panel>
+              </div>
+            )}
+
+            {activeTab === "agents" && (
+              <Panel className="overflow-hidden"><div className="flex items-center justify-between border-b border-[#e4eaf1] px-5 py-4"><div><h2 className={SECTION_TITLE}>AI Agent Registry</h2><p className={SECTION_DESCRIPTION}>Vai trò, công cụ và quyền hành động của các Agent chuyên trách.</p></div><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">{agentData?.agents.filter(item => item.status === "active").length || 0} hoạt động</span></div><div className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">{agentData?.agents.map(agent => <article key={agent.id} className="rounded-2xl border border-[#dfe6ef] bg-gradient-to-br from-white to-[#f8faff] p-5"><div className="flex items-start justify-between"><div className="rounded-xl bg-[#fff2c4] p-2.5 text-[#947013]"><Bot size={20} /></div><span className={cn("h-2.5 w-2.5 rounded-full", agent.status === "active" ? "bg-emerald-500" : "bg-slate-300")} /></div><h3 className="mt-4 text-base font-semibold">{agent.name}</h3><p className="mt-1 min-h-12 text-sm leading-6 text-[#718097]">{agent.role}</p><div className="mt-3 flex flex-wrap gap-1.5">{agent.tools.slice(0, 3).map(tool => <span key={tool} className="rounded-full bg-blue-50 px-2 py-1 text-[11px] font-bold text-blue-700">{tool}</span>)}</div><div className="mt-4 flex items-center justify-between border-t border-[#e9edf3] pt-3"><p className="text-xs text-[#8491a3]">{agent.allowedActions.length} hành động được phép</p>{capabilities.canManageAgents && <button disabled={saving} onClick={() => void toggleAgentStatus(agent)} className="text-xs font-bold text-[#946b0c]">{agent.status === "active" ? "Tạm dừng" : "Kích hoạt"}</button>}</div></article>)}</div></Panel>
+            )}
+
+            {activeTab === "review" && (
+              <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
+                <Panel className="overflow-hidden"><div className="border-b border-[#e4eaf1] px-5 py-4"><h2 className={SECTION_TITLE}>Hàng kiểm duyệt</h2><p className={SECTION_DESCRIPTION}>Tài liệu phải đi qua phê duyệt trước khi AI và nhân viên được sử dụng.</p></div><div className="space-y-3 p-5">{docs.filter(doc => ["draft", "in_review", "approved", "scheduled"].includes(doc.status)).map(doc => { const health = governance?.documents.find(item => item.document.id === doc.id)?.health; return <article key={doc.id} className="rounded-2xl border border-[#dfe6ef] bg-white p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><StatusBadge status={doc.status} /><span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", (health?.score || 0) >= 80 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>Sức khỏe {health?.score || 0}%</span></div><h3 className="mt-2 font-semibold">{doc.title}</h3><p className="mt-1 text-xs text-[#7b899c]">{health?.missing.length ? `Còn thiếu: ${health.missing.join(", ")}` : "Đủ điều kiện quản trị cơ bản"}</p></div><div className="flex flex-wrap gap-2">{doc.status === "draft" && capabilities.canEdit && <button onClick={() => void reviewDocument(doc, "in_review", "Gửi kiểm duyệt")} className={BUTTON_SECONDARY}>Gửi duyệt</button>}{doc.status === "in_review" && capabilities.canReview && <><button onClick={() => void reviewDocument(doc, "draft", "Yêu cầu chỉnh sửa")} className={BUTTON_SECONDARY}>Yêu cầu sửa</button><button onClick={() => void reviewDocument(doc, "approved", "Phê duyệt nội dung")} className={BUTTON_PRIMARY}>Phê duyệt</button></>}{doc.status === "approved" && capabilities.canPublish && <button onClick={() => void reviewDocument(doc, "active", "Xuất bản áp dụng")} className={BUTTON_PRIMARY}>Đưa vào sử dụng</button>}<button onClick={() => openDoc(doc)} className={BUTTON_SECONDARY}>Mở</button></div></div></article>})}{!docs.some(doc => ["draft", "in_review", "approved", "scheduled"].includes(doc.status)) && <div className="py-20 text-center text-[#8290a4]"><CheckCircle2 className="mx-auto mb-3 text-emerald-500" size={36} /><p className="font-semibold">Không có tài liệu đang chờ xử lý</p></div>}</div></Panel>
+                <Panel className="h-fit p-5"><h3 className="font-semibold">Nhật ký phê duyệt</h3><div className="mt-4 space-y-4">{governance?.recentReviews.slice(0, 8).map(review => <div key={review.id} className="border-l-2 border-[#dfbd58] pl-3"><p className="text-sm font-semibold">{review.action}</p><p className="text-xs text-[#7e8b9e]">{review.actorName || "Hệ thống"} · {formatDate(review.createdAt)}</p>{review.note && <p className="mt-1 text-xs text-[#607087]">{review.note}</p>}</div>)}{!governance?.recentReviews.length && <p className="text-sm text-[#8491a3]">Chưa có hoạt động kiểm duyệt.</p>}</div></Panel>
+              </div>
+            )}
+
+            {activeTab === "testing" && (
+              <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]"><Panel className="p-5"><p className={cn(EYEBROW, "text-[#aa7e16]")}>Knowledge Lab</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Kiểm thử câu hỏi nghiệp vụ</h2><p className={SECTION_DESCRIPTION}>Mô phỏng cách AI tìm nguồn trước khi đưa tài liệu hoặc workflow vào sử dụng.</p><textarea value={testQuestion} onChange={event => setTestQuestion(event.target.value)} className={cn(FIELD, "mt-5 min-h-36")} /><button onClick={runKnowledgeTest} className={cn(BUTTON_PRIMARY, "mt-3 w-full")}><PlayCircle size={16} /> Chạy kiểm thử</button></Panel><Panel className="p-5"><h2 className={SECTION_TITLE}>Kết quả và nguồn tham chiếu</h2>{testResult ? <div className="mt-4"><div className={cn("rounded-xl border p-4 text-sm leading-6", testResult.matches.length ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800")}>{testResult.answer}</div><div className="mt-4 space-y-3">{testResult.matches.map(doc => <button key={doc.id} onClick={() => openDoc(doc)} className="flex w-full items-center justify-between rounded-xl border border-[#e0e6ef] p-4 text-left"><div><p className="font-semibold">{doc.title}</p><p className="text-xs text-[#7c8a9e]">{KNOWLEDGE_CATEGORY_LABELS[doc.category]} · {formatDate(doc.updatedAt)}</p></div><ChevronRight size={17} /></button>)}</div></div> : <div className="flex min-h-64 flex-col items-center justify-center text-center text-[#8491a3]"><PlayCircle size={36} /><p className="mt-3 font-semibold">Nhập tình huống và chạy kiểm thử</p><p className="mt-1 text-sm">Hệ thống sẽ chỉ sử dụng tài liệu đang áp dụng.</p></div>}</Panel></div>
+            )}
+
+            {activeTab === "analytics" && (
+              <div className="space-y-5"><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
+                { label: "Điểm sức khỏe", value: `${governance?.averageHealth || 0}%`, hint: "Trung bình kho tri thức", icon: ShieldCheck, tone: "border-emerald-200 bg-emerald-50" },
+                { label: "Tài liệu tốt", value: governance?.healthy || 0, hint: "Từ 80 điểm", icon: CheckCircle2, tone: "border-blue-200 bg-blue-50" },
+                { label: "Cần cải thiện", value: governance?.needsAttention || 0, hint: "Dưới 60 điểm", icon: FileClock, tone: "border-amber-200 bg-amber-50" },
+                { label: "Agent actions", value: agentData?.actions.length || 0, hint: "Nhật ký gần nhất", icon: Activity, tone: "border-violet-200 bg-violet-50" },
+              ].map(item => { const Icon = item.icon; return <Panel key={item.label} className={cn("border p-5", item.tone)}><div className="flex justify-between"><div><p className={EYEBROW}>{item.label}</p><p className="mt-2 text-3xl font-semibold">{item.value}</p><p className="mt-1 text-sm text-[#738198]">{item.hint}</p></div><Icon size={22} /></div></Panel>; })}</div><Panel className="overflow-hidden"><div className="border-b border-[#e4eaf1] px-5 py-4"><h2 className={SECTION_TITLE}>Chất lượng từng tài liệu</h2><p className={SECTION_DESCRIPTION}>Ưu tiên bổ sung tài liệu có điểm thấp trước khi giao cho AI.</p></div><div className="divide-y divide-[#edf0f4]">{governance?.documents.sort((a, b) => (a.health?.score || 0) - (b.health?.score || 0)).map(item => <button key={item.document.id} onClick={() => openDoc(item.document)} className="grid w-full gap-3 px-5 py-4 text-left md:grid-cols-[1fr_220px_100px] md:items-center"><div><p className="font-semibold">{item.document.title}</p><p className="text-xs text-[#7e8b9e]">{item.health?.missing.join(" · ") || "Đã đủ tiêu chí cơ bản"}</p></div><div className="h-2 overflow-hidden rounded-full bg-[#e7edf4]"><div className={cn("h-full rounded-full", (item.health?.score || 0) >= 80 ? "bg-emerald-500" : (item.health?.score || 0) >= 60 ? "bg-amber-500" : "bg-rose-500")} style={{ width: `${item.health?.score || 0}%` }} /></div><span className="text-right text-lg font-semibold">{item.health?.score || 0}%</span></button>)}</div></Panel></div>
             )}
 
             {activeTab === "history" && (

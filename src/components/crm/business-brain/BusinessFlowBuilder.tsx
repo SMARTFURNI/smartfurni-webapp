@@ -43,8 +43,17 @@ const NODE_TYPES: Array<{
   tone: Tone;
 }> = [
   { type: "start", label: "Bắt đầu", description: "Nguồn hoặc sự kiện kích hoạt", icon: CirclePlay, tone: "blue" },
+  { type: "trigger", label: "Kích hoạt", description: "Lead mới, tin nhắn hoặc đổi trạng thái", icon: CirclePlay, tone: "blue" },
+  { type: "data", label: "Dữ liệu", description: "Đọc hoặc chuẩn hóa dữ liệu đầu vào", icon: Square, tone: "blue" },
+  { type: "human", label: "Nhân viên", description: "Công việc cần con người thực hiện", icon: Square, tone: "amber" },
+  { type: "ai", label: "AI Agent", description: "Phân loại, soạn thảo hoặc phân tích", icon: Sparkles, tone: "violet" },
   { type: "action", label: "Công việc", description: "Đầu việc cần thực hiện", icon: Square, tone: "violet" },
   { type: "decision", label: "Điều kiện", description: "Rẽ thành nhiều nhánh", icon: GitBranch, tone: "amber" },
+  { type: "delay", label: "Chờ / SLA", description: "Chờ theo thời gian hoặc hạn xử lý", icon: CircleStop, tone: "amber" },
+  { type: "approval", label: "Phê duyệt", description: "Người có quyền xác nhận trước khi chạy", icon: CirclePlay, tone: "rose" },
+  { type: "channel", label: "Gửi kênh", description: "Zalo OA, email hoặc thông báo", icon: Link2, tone: "blue" },
+  { type: "crm", label: "Cập nhật CRM", description: "Gắn tag, tạo task hoặc đổi giai đoạn", icon: Square, tone: "emerald" },
+  { type: "webhook", label: "API / Webhook", description: "Kết nối một hệ thống bên ngoài", icon: Link2, tone: "violet" },
   { type: "end", label: "Kết thúc", description: "Kết quả của quy trình", icon: CircleStop, tone: "emerald" },
 ];
 
@@ -68,8 +77,17 @@ function defaultNode(type: FlowNodeType, x: number, y: number, index: number): B
   const definition = NODE_TYPES.find(item => item.type === type) || NODE_TYPES[1];
   const titles: Record<FlowNodeType, string> = {
     start: "Nguồn bắt đầu",
+    trigger: "Sự kiện kích hoạt",
+    data: "Đọc dữ liệu đầu vào",
+    human: "Nhân viên xử lý",
+    ai: "AI Agent thực hiện",
     action: `Công việc ${index + 1}`,
     decision: "Điều kiện phân nhánh?",
+    delay: "Chờ theo SLA",
+    approval: "Phê duyệt hành động",
+    channel: "Gửi qua kênh",
+    crm: "Cập nhật CRM",
+    webhook: "Gọi API / Webhook",
     end: "Hoàn tất quy trình",
   };
   return {
@@ -382,6 +400,12 @@ export function BusinessFlowBuilder({ nodes, edges, onNodesChange, onEdgesChange
               <label className="block text-xs font-bold text-[#596a81]">Mô tả<textarea className={cn(FIELD, "mt-1.5 min-h-20 resize-y")} value={selectedNode.description} onChange={event => updateNode(selectedNode.id, { description: event.target.value })} /></label>
               <div className="grid grid-cols-2 gap-3"><label className="block text-xs font-bold text-[#596a81]">Phụ trách<input className={cn(FIELD, "mt-1.5")} value={selectedNode.owner} onChange={event => updateNode(selectedNode.id, { owner: event.target.value })} /></label><label className="block text-xs font-bold text-[#596a81]">Kênh<input className={cn(FIELD, "mt-1.5")} value={selectedNode.channel} onChange={event => updateNode(selectedNode.id, { channel: event.target.value })} /></label></div>
               <label className="block text-xs font-bold text-[#596a81]">Màu nhận diện<select className={cn(FIELD, "mt-1.5")} value={selectedNode.tone} onChange={event => updateNode(selectedNode.id, { tone: event.target.value as Tone })}><option value="blue">Xanh dương</option><option value="violet">Tím</option><option value="amber">Vàng</option><option value="emerald">Xanh lá</option><option value="rose">Đỏ hồng</option></select></label>
+              <div className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
+                <p className="text-xs font-bold text-[#596a81]">Cấu hình thực thi</p>
+                <label className="mt-2 block text-[11px] font-semibold text-[#718097]">Hành động / công cụ<input className={cn(FIELD, "mt-1")} value={selectedNode.config?.action || ""} onChange={event => updateNode(selectedNode.id, { config: { ...selectedNode.config, action: event.target.value } })} placeholder="Ví dụ: create_task, send_zalo" /></label>
+                <div className="mt-2 grid grid-cols-2 gap-2"><label className="block text-[11px] font-semibold text-[#718097]">Timeout (phút)<input type="number" min="0" className={cn(FIELD, "mt-1")} value={selectedNode.config?.timeoutMinutes || 0} onChange={event => updateNode(selectedNode.id, { config: { ...selectedNode.config, timeoutMinutes: Number(event.target.value) } })} /></label><label className="block text-[11px] font-semibold text-[#718097]">Thử lại<input type="number" min="0" className={cn(FIELD, "mt-1")} value={selectedNode.config?.retryCount || 0} onChange={event => updateNode(selectedNode.id, { config: { ...selectedNode.config, retryCount: Number(event.target.value) } })} /></label></div>
+                <label className="mt-2 block text-[11px] font-semibold text-[#718097]">Khi có lỗi<input className={cn(FIELD, "mt-1")} value={selectedNode.config?.errorHandling || ""} onChange={event => updateNode(selectedNode.id, { config: { ...selectedNode.config, errorHandling: event.target.value } })} placeholder="Tạo task cho quản lý" /></label>
+              </div>
               <button onClick={() => setConnectFrom(selectedNode.id)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f3cf68] to-[#d7a51e] px-4 py-2.5 text-sm font-bold text-[#2e250c]"><Link2 size={15} /> Nối sang khối khác</button>
               <div className="border-t border-[#edf0f4] pt-4">
                 <p className="text-xs font-bold text-[#596a81]">Nhánh đi ra ({edges.filter(edge => edge.source === selectedNode.id).length})</p>

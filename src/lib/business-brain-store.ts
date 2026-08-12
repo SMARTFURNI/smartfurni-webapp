@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { query, queryOne } from "@/lib/db";
+import { calculateKnowledgeHealth, canTransitionKnowledgeStatus } from "@/lib/business-brain-governance";
 import type {
   AgentActionLog,
   AiAgentDefinition,
@@ -82,7 +83,24 @@ export async function initBusinessBrainSchema() {
       created_by TEXT,
       updated_by TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW(),
-      updated_at TIMESTAMPTZ DEFAULT NOW()
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      deleted_at TIMESTAMPTZ
+    )
+  `);
+
+  await query(`ALTER TABLE knowledge_documents ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS knowledge_document_reviews (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      from_status TEXT,
+      to_status TEXT NOT NULL,
+      actor_id TEXT,
+      actor_name TEXT,
+      note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
 
@@ -235,6 +253,8 @@ export async function initBusinessBrainSchema() {
 
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_status ON knowledge_documents(status)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_category ON knowledge_documents(category)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_deleted ON knowledge_documents(deleted_at)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_reviews_document ON knowledge_document_reviews(document_id, created_at DESC)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_versions_document ON knowledge_document_versions(document_id, version DESC)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_conversations_customer ON conversations(customer_id)`);
@@ -523,6 +543,7 @@ function mapKnowledge(row: Record<string, unknown>): KnowledgeDocument {
     updatedBy: row.updated_by ? String(row.updated_by) : undefined,
     createdAt: new Date(String(row.created_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
+    deletedAt: row.deleted_at ? new Date(String(row.deleted_at)).toISOString() : undefined,
   };
 }
 
@@ -575,7 +596,8 @@ export async function restoreKnowledgeDocumentVersion(documentId: string, versio
   const restored = await updateKnowledgeDocument(documentId, {
     title: String(version.title || ""),
     category: String(version.category || "faq") as KnowledgeCategory,
-    status: String(version.status || "draft") as KnowledgeStatus,
+    // A restored snapshot must be reviewed again before it can become an AI source.
+    status: "draft",
     content: String(version.content || ""),
     summary: version.summary ? String(version.summary) : undefined,
     tags: Array.isArray(version.tags) ? version.tags.map(String) : [],
@@ -652,6 +674,7 @@ export async function listKnowledgeDocuments(filters?: {
   const params: unknown[] = [];
   const where: string[] = [];
   let idx = 1;
+  where.push(`deleted_at IS NULL`);
 
   if (filters?.category && filters.category !== "all") {
     where.push(`category = $${idx++}`);
@@ -725,6 +748,16 @@ export async function updateKnowledgeDocument(
   options?: { skipSnapshot?: boolean },
 ) {
   await initBusinessBrainSchema();
+  const current = await queryOne<Record<string, unknown>>(
+    `SELECT * FROM knowledge_documents WHERE id=$1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (!current) return null;
+  const materialChange = ["title", "category", "content", "summary", "tags", "source", "metadata"]
+    .some(key => input[key as keyof typeof input] !== undefined);
+  const nextStatus = input.status ?? (
+    materialChange && ["approved", "scheduled", "active"].includes(String(current.status)) ? "draft" : null
+  );
   const rows = await query<Record<string, unknown>>(
     `UPDATE knowledge_documents
      SET title = COALESCE($2, title),
@@ -743,7 +776,7 @@ export async function updateKnowledgeDocument(
       id,
       input.title ?? null,
       input.category ?? null,
-      input.status ?? null,
+      nextStatus,
       input.content ?? null,
       input.summary ?? null,
       input.tags ?? null,
@@ -759,9 +792,116 @@ export async function updateKnowledgeDocument(
   return document;
 }
 
-export async function deleteKnowledgeDocument(id: string) {
+export async function deleteKnowledgeDocument(id: string, actorId?: string, actorName?: string) {
   await initBusinessBrainSchema();
-  await query(`DELETE FROM knowledge_documents WHERE id = $1`, [id]);
+  const current = await queryOne<Record<string, unknown>>(
+    `SELECT status FROM knowledge_documents WHERE id=$1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (!current) return false;
+  await query(
+    `UPDATE knowledge_documents
+     SET deleted_at=NOW(), status='archived', updated_by=COALESCE($2, updated_by), updated_at=NOW()
+     WHERE id=$1`,
+    [id, actorName || actorId || null],
+  );
+  await query(
+    `INSERT INTO knowledge_document_reviews
+      (id,document_id,action,from_status,to_status,actor_id,actor_name,note)
+     VALUES ($1,$2,'Chuyển vào lưu trữ',$3,'archived',$4,$5,'Xóa mềm; dữ liệu vẫn được giữ để audit')`,
+    [randomUUID(), id, current.status, actorId || null, actorName || null],
+  );
+  return true;
+}
+
+export async function reviewKnowledgeDocument(input: {
+  documentId: string;
+  toStatus: KnowledgeStatus;
+  action: string;
+  actorId?: string;
+  actorName?: string;
+  note?: string;
+  effectiveAt?: string;
+  expiresAt?: string;
+}) {
+  await initBusinessBrainSchema();
+  const current = await queryOne<Record<string, unknown>>(
+    `SELECT * FROM knowledge_documents WHERE id=$1 AND deleted_at IS NULL`,
+    [input.documentId],
+  );
+  if (!current) return null;
+  const fromStatus = String(current.status || "draft") as KnowledgeStatus;
+  if (!canTransitionKnowledgeStatus(fromStatus, input.toStatus)) {
+    throw new Error(`Không thể chuyển trạng thái từ ${fromStatus} sang ${input.toStatus}.`);
+  }
+  const metadata = asJson<Record<string, unknown>>(current.metadata, {});
+  const nextMetadata = {
+    ...metadata,
+    ...(input.effectiveAt ? { effectiveAt: input.effectiveAt } : {}),
+    ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
+    lastReview: {
+      action: input.action,
+      actorId: input.actorId,
+      actorName: input.actorName,
+      note: input.note,
+      at: nowIso(),
+    },
+  };
+  const document = await updateKnowledgeDocument(input.documentId, {
+    status: input.toStatus,
+    metadata: nextMetadata,
+    updatedBy: input.actorName || input.actorId,
+    changeNote: input.note || input.action,
+  });
+  await query(
+    `INSERT INTO knowledge_document_reviews
+      (id,document_id,action,from_status,to_status,actor_id,actor_name,note)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [randomUUID(), input.documentId, input.action, fromStatus, input.toStatus, input.actorId || null, input.actorName || null, input.note || null],
+  );
+  return document;
+}
+
+export async function listKnowledgeDocumentReviews(documentId?: string) {
+  await initBusinessBrainSchema();
+  const rows = await query<Record<string, unknown>>(
+    `SELECT * FROM knowledge_document_reviews
+     ${documentId ? "WHERE document_id=$1" : ""}
+     ORDER BY created_at DESC LIMIT 120`,
+    documentId ? [documentId] : [],
+  );
+  return rows.map(row => ({
+    id: String(row.id),
+    documentId: String(row.document_id),
+    action: String(row.action),
+    fromStatus: row.from_status ? String(row.from_status) : undefined,
+    toStatus: String(row.to_status),
+    actorId: row.actor_id ? String(row.actor_id) : undefined,
+    actorName: row.actor_name ? String(row.actor_name) : undefined,
+    note: row.note ? String(row.note) : undefined,
+    createdAt: new Date(String(row.created_at)).toISOString(),
+  }));
+}
+
+export async function getKnowledgeGovernanceReport() {
+  const documents = await listKnowledgeDocuments({ limit: 400 });
+  const reviews = await listKnowledgeDocumentReviews();
+  const health = documents.map(document => ({ documentId: document.id, ...calculateKnowledgeHealth(document) }));
+  const averageHealth = health.length ? Math.round(health.reduce((sum, item) => sum + item.score, 0) / health.length) : 0;
+  const statuses = documents.reduce<Record<string, number>>((acc, document) => {
+    acc[document.status] = (acc[document.status] || 0) + 1;
+    return acc;
+  }, {});
+  return {
+    total: documents.length,
+    statuses,
+    averageHealth,
+    healthy: health.filter(item => item.score >= 80).length,
+    needsAttention: health.filter(item => item.score < 60).length,
+    awaitingReview: statuses.in_review || 0,
+    documents: documents.map(document => ({ document, health: health.find(item => item.documentId === document.id) })),
+    recentReviews: reviews.slice(0, 30),
+  };
 }
 
 export async function listCustomers(search?: string) {
