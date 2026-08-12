@@ -11,6 +11,11 @@ const { Zalo, ThreadType, LoginQRCallbackEventType } = require("zca-js");
 
 import { query, queryOne } from "./db";
 import { upsertConversation, incrementUnreadCount } from "./zalo-inbox-store";
+import {
+  isRailwayBucketConfigured,
+  sanitizeMediaSegment,
+  storeMediaObject,
+} from "./media-storage";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +54,19 @@ export interface ZaloAttachment {
   height?: number;
   fileSize?: number;
   fileName?: string;
+}
+
+export interface ZaloInboxMessageDto {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  contentType: ZaloMessage["type"];
+  isSelf: boolean;
+  isRead: boolean;
+  createdAt: string;
+  attachments: ZaloAttachment[];
 }
 
 export interface SSEClient {
@@ -239,7 +257,13 @@ export async function saveMessage(msg: ZaloMessage & { senderName?: string }) {
     await query(
       `INSERT INTO zalo_inbox_messages (msg_id, thread_id, from_id, to_id, sender_name, content, attachments, msg_type, is_self, timestamp)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (msg_id) DO NOTHING`,
+       ON CONFLICT (msg_id) DO UPDATE SET
+         sender_name = COALESCE(EXCLUDED.sender_name, zalo_inbox_messages.sender_name),
+         content = CASE WHEN EXCLUDED.content <> '' THEN EXCLUDED.content ELSE zalo_inbox_messages.content END,
+         attachments = CASE WHEN EXCLUDED.attachments <> '[]' THEN EXCLUDED.attachments ELSE zalo_inbox_messages.attachments END,
+         msg_type = EXCLUDED.msg_type,
+         is_self = EXCLUDED.is_self,
+         timestamp = EXCLUDED.timestamp`,
       [
         msg.msgId,
         msg.isSelf ? msg.toId : msg.fromId,
@@ -263,73 +287,72 @@ export async function saveMessage(msg: ZaloMessage & { senderName?: string }) {
 function parseAttachments(data: Record<string, unknown>): ZaloAttachment[] {
   const attachments: ZaloAttachment[] = [];
 
-  // Handle image attachments
-  if (data.params && typeof data.params === "object") {
-    const params = data.params as Record<string, unknown>;
+  const asRecord = (value: unknown): Record<string, unknown> | null => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? parsed as Record<string, unknown>
+          : null;
+      } catch { return null; }
+    }
+    return null;
+  };
 
-    // Single image
-    if (params.url && typeof params.url === "string") {
-      attachments.push({
-        type: "image",
-        url: params.url as string,
-        thumb: (params.thumb as string) || (params.url as string),
-        width: (params.width as number) || 0,
-        height: (params.height as number) || 0,
+  const firstString = (source: Record<string, unknown>, keys: string[]): string => {
+    for (const key of keys) {
+      if (typeof source[key] === "string" && source[key]) return source[key] as string;
+    }
+    return "";
+  };
+
+  const addAttachment = (attachment: ZaloAttachment) => {
+    if (!attachment.url) return;
+    if (attachments.some((item) => item.url === attachment.url)) return;
+    attachments.push(attachment);
+  };
+
+  const extractFromRecord = (source: Record<string, unknown>, hintedType?: string) => {
+    const imageUrl = firstString(source, ["hdUrl", "normalUrl", "oriUrl", "originalUrl", "url", "href"]);
+    const fileUrl = firstString(source, ["fileUrl", "downloadUrl"]);
+    const thumb = firstString(source, ["thumbUrl", "thumb", "thumbnailUrl"]);
+    const rawType = String(source.fileType || source.type || hintedType || "").toLowerCase();
+    const isFile = Boolean(fileUrl) || rawType === "file" || rawType === "others";
+    const isVideo = rawType.includes("video");
+    const url = fileUrl || imageUrl;
+    if (url) {
+      addAttachment({
+        type: isFile ? "file" : isVideo ? "video" : "image",
+        url,
+        thumb: thumb || (isFile ? undefined : url),
+        width: Number(source.width || 0) || undefined,
+        height: Number(source.height || 0) || undefined,
+        fileSize: Number(source.fileSize || source.totalSize || 0) || undefined,
+        fileName: firstString(source, ["fileName", "filename", "name"]) || undefined,
       });
     }
 
-    // Multiple images (album)
-    if (Array.isArray(params.media)) {
-      for (const item of params.media as Record<string, unknown>[]) {
-        if (item.url) {
-          attachments.push({
-            type: (item.type as string) === "video" ? "video" : "image",
-            url: item.url as string,
-            thumb: (item.thumb as string) || (item.url as string),
-            width: (item.width as number) || 0,
-            height: (item.height as number) || 0,
-          });
-        }
+    const media = source.media;
+    if (Array.isArray(media)) {
+      for (const item of media) {
+        const record = asRecord(item);
+        if (record) extractFromRecord(record);
       }
     }
+  };
 
-    // Video
-    if (params.video && typeof params.video === "object") {
-      const video = params.video as Record<string, unknown>;
-      if (video.url) {
-        attachments.push({
-          type: "video",
-          url: video.url as string,
-          thumb: (video.thumb as string) || "",
-          fileSize: (video.fileSize as number) || 0,
-        });
-      }
-    }
-
-    // File
-    if (params.fileUrl && typeof params.fileUrl === "string") {
-      attachments.push({
-        type: "file",
-        url: params.fileUrl as string,
-        fileName: (params.fileName as string) || "file",
-        fileSize: (params.fileSize as number) || 0,
-      });
-    }
-  }
+  const rootParams = asRecord(data.params);
+  if (rootParams) extractFromRecord(rootParams);
 
   // Handle content as object (new format)
   if (data.content && typeof data.content === "object") {
     const content = data.content as Record<string, unknown>;
-    if (content.href && typeof content.href === "string") {
-      const isVideo = (content.type as string) === "video";
-      attachments.push({
-        type: isVideo ? "video" : "image",
-        url: content.href as string,
-        thumb: (content.thumb as string) || (content.href as string),
-        width: (content.width as number) || 0,
-        height: (content.height as number) || 0,
-      });
-    }
+    extractFromRecord(content, String(content.type || ""));
+    const contentParams = asRecord(content.params);
+    if (contentParams) extractFromRecord(contentParams, String(content.type || ""));
   }
 
   return attachments;
@@ -358,8 +381,20 @@ function processIncomingMessage(message: Record<string, unknown>): ZaloMessage |
     const fromId = (data.uidFrom as string) || "";
     const toId = (data.idTo as string) || "";
     const isSelf = (message.isSelf as boolean) || false;
-    const timestamp = (data.ts as number) || Date.now();
-    const content = isPlainText ? (data.content as string) : "";
+    const rawTimestamp = Number(data.ts || Date.now());
+    // Một số event Zalo trả ts theo giây, một số trả theo mili-giây.
+    const timestamp = rawTimestamp > 0 && rawTimestamp < 10_000_000_000
+      ? rawTimestamp * 1000
+      : rawTimestamp;
+    let content = isPlainText ? (data.content as string) : "";
+    if (!content && data.content && typeof data.content === "object") {
+      const objectContent = data.content as Record<string, unknown>;
+      content = typeof objectContent.title === "string"
+        ? objectContent.title
+        : typeof objectContent.description === "string"
+          ? objectContent.description
+          : "";
+    }
 
     return {
       msgId,
@@ -722,7 +757,7 @@ export async function sendZaloMessage(params: {
   content: string;
   senderName?: string;
   senderId?: string;
-}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+}): Promise<{ success: boolean; messageId?: string; message?: ZaloInboxMessageDto; error?: string }> {
   // Tự động kết nối lại nếu server vừa restart
   await ensureZaloConnected();
   if (!isConnected || !zaloApi) {
@@ -730,26 +765,30 @@ export async function sendZaloMessage(params: {
   }
   try {
     const api = zaloApi as {
-      sendMessage: (msg: { msg: string }, threadId: string, type: number) => Promise<{ msgId?: string }>;
+      sendMessage: (msg: { msg: string }, threadId: string, type: number) => Promise<{
+        message?: { msgId?: string | number } | null;
+      }>;
     };
     // ThreadType.USER = 0 (tin nhắn cá nhân)
     const result = await api.sendMessage(
       { msg: params.content },
       params.conversationId,
-      ThreadType?.USER ?? 0
+      ThreadType?.User ?? 0
     );
-    const msgId = result?.msgId || `sent_${Date.now()}`;
+    const sentAt = Date.now();
+    const msgId = String(result?.message?.msgId || `sent_${sentAt}`);
+    const senderName = currentUserDisplayName || params.senderName || currentUserId || "Tôi";
     // Lưu tin nhắn gửi đi vào DB (kèm senderName để hiển thị đúng tên)
     await saveMessage({
       msgId,
       fromId: currentUserId,
       toId: params.conversationId,
       content: params.content,
-      timestamp: Date.now(),
+      timestamp: sentAt,
       isSelf: true,
       attachments: [],
       type: "text",
-      senderName: currentUserDisplayName || params.senderName || currentUserId,
+      senderName,
     });
     // Upsert conversation — lấy tên thật của khách từ getUserInfo (zalo-personal pattern)
     try {
@@ -790,7 +829,22 @@ export async function sendZaloMessage(params: {
         lastMessage: params.content,
       });
     } catch { /* ignore */ }
-    return { success: true, messageId: msgId };
+    return {
+      success: true,
+      messageId: msgId,
+      message: {
+        id: msgId,
+        conversationId: params.conversationId,
+        senderId: currentUserId,
+        senderName,
+        content: params.content,
+        contentType: "text",
+        isSelf: true,
+        isRead: true,
+        createdAt: new Date(sentAt).toISOString(),
+        attachments: [],
+      },
+    };
   } catch (err: unknown) {
     const error = err as Error;
     console.error("[ZaloGateway] sendZaloMessage error:", error);
@@ -851,7 +905,7 @@ export async function sendZaloAttachment(params: {
   fileSize: number;
   width?: number;
   height?: number;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; messageId?: string; message?: ZaloInboxMessageDto; error?: string }> {
   // Tự động kết nối lại nếu server vừa restart
   await ensureZaloConnected();
   if (!isConnected || !zaloApi) {
@@ -859,56 +913,40 @@ export async function sendZaloAttachment(params: {
   }
   try {
     const { ThreadType } = await import("zca-js");
-    // Cast sang type có uploadAttachment và sendMessage
+    // zca-js tự upload attachment bên trong sendMessage.
     const api = zaloApi as {
       uploadAttachment: (sources: unknown[], threadId: string, type: unknown) => Promise<unknown[]>;
-      sendMessage: (msg: unknown, threadId: string, type: unknown) => Promise<unknown>;
+      sendMessage: (msg: unknown, threadId: string, type: unknown) => Promise<{
+        message?: { msgId?: string | number } | null;
+        attachment?: Array<{ msgId?: string | number }>;
+      }>;
     };
+
+    let width = params.width;
+    let height = params.height;
+    if (params.mimeType.startsWith("image/") && (!width || !height)) {
+      try {
+        const sharp = (await import("sharp")).default;
+        const metadata = await sharp(params.fileBuffer).metadata();
+        width = width || metadata.width;
+        height = height || metadata.height;
+      } catch { /* zca-js vẫn có thể gửi ảnh không có metadata kích thước */ }
+    }
 
     const attachmentSource = {
       data: params.fileBuffer,
       filename: params.fileName as `${string}.${string}`,
       metadata: {
         totalSize: params.fileSize,
-        width: params.width,
-        height: params.height,
+        width,
+        height,
       },
     };
 
-    // Upload attachment trước
-    const uploadResults = await api.uploadAttachment(
-      [attachmentSource],
-      params.conversationId,
-      ThreadType?.User ?? 0
-    );
-
-    if (!uploadResults || uploadResults.length === 0) {
-      return { success: false, error: "Upload attachment thất bại" };
-    }
-
-    // Lấy URL từ kết quả upload (zca-js trả về URL CDN ngay sau khi upload)
-    const uploadResult = uploadResults[0] as {
-      normalUrl?: string;
-      hdUrl?: string;
-      thumbUrl?: string;
-      fileUrl?: string;
-      fileType?: string;
-    };
-    let attachUrl = "";
-    let attachThumb = "";
-    if (uploadResult.fileType === "image") {
-      attachUrl = uploadResult.hdUrl || uploadResult.normalUrl || "";
-      attachThumb = uploadResult.thumbUrl || uploadResult.normalUrl || "";
-    } else if (uploadResult.fileType === "video" || uploadResult.fileType === "others") {
-      attachUrl = uploadResult.fileUrl || "";
-    }
-    console.log(`[ZaloGateway] Upload result fileType=${uploadResult.fileType} url=${attachUrl}`);
-
-    // Gửi message với attachment đã upload
-    await api.sendMessage(
+    const sendResult = await api.sendMessage(
       {
         msg: "",
-        attachments: attachmentSource,
+        attachments: [attachmentSource],
       },
       params.conversationId,
       ThreadType?.User ?? 0
@@ -919,23 +957,74 @@ export async function sendZaloAttachment(params: {
     if (params.mimeType.startsWith("image/")) attachType = "image";
     else if (params.mimeType.startsWith("video/")) attachType = "video";
 
-    const msgId = `sent_att_${Date.now()}`;
-    // Lưu tin nhắn gửi đi vào DB với URL thực từ Zalo CDN
+    const sentAt = Date.now();
+    const msgId = String(
+      sendResult?.attachment?.[0]?.msgId
+      || sendResult?.message?.msgId
+      || `sent_att_${sentAt}`
+    );
+
+    // Giữ một bản bền vững trong Railway Bucket. URL CDN Zalo có thể hết hạn
+    // hoặc từ chối tải khi trình duyệt CRM không có phiên Zalo Web tương ứng.
+    let attachUrl = "";
+    if (isRailwayBucketConfigured()) {
+      try {
+        const stored = await storeMediaObject({
+          body: params.fileBuffer,
+          key: `zalo-inbox/${sanitizeMediaSegment(params.conversationId)}/${sentAt}-${sanitizeMediaSegment(params.fileName)}`,
+          contentType: params.mimeType,
+          visibility: "private",
+          cacheControl: "private, max-age=31536000, immutable",
+          originalName: params.fileName,
+          entityType: "zalo_inbox_message",
+          entityId: msgId,
+          createdBy: currentUserId || undefined,
+        });
+        attachUrl = stored.url;
+      } catch (storageError) {
+        console.error("[ZaloGateway] Không lưu được attachment vào Railway Bucket:", storageError);
+      }
+    }
+
+    // Fallback cho môi trường chưa cấu hình Bucket: lấy URL CDN Zalo để CRM
+    // vẫn hiển thị được file vừa gửi (dù độ bền thấp hơn URL nội bộ).
+    let attachThumb = "";
+    if (!attachUrl) {
+      try {
+        const uploadResults = await api.uploadAttachment(
+          [attachmentSource],
+          params.conversationId,
+          ThreadType?.User ?? 0
+        );
+        const upload = (uploadResults?.[0] || {}) as Record<string, unknown>;
+        attachUrl = String(upload.hdUrl || upload.normalUrl || upload.fileUrl || "");
+        attachThumb = String(upload.thumbUrl || upload.normalUrl || attachUrl || "");
+      } catch (uploadError) {
+        console.error("[ZaloGateway] Không lấy được URL attachment fallback:", uploadError);
+      }
+    }
+
+    const senderName = currentUserDisplayName || currentUserId || "Tôi";
+    const attachment: ZaloAttachment = {
+      type: attachType,
+      url: attachUrl,
+      thumb: attachThumb || attachUrl,
+      width,
+      height,
+      fileName: params.fileName,
+      fileSize: params.fileSize,
+    };
+
     await saveMessage({
       msgId,
       fromId: currentUserId,
       toId: params.conversationId,
       content: "",
-      timestamp: Date.now(),
+      timestamp: sentAt,
       isSelf: true,
-      attachments: [{
-        type: attachType,
-        url: attachUrl,
-        thumb: attachThumb || attachUrl,
-        fileName: params.fileName,
-        fileSize: params.fileSize,
-      }],
+      attachments: [attachment],
       type: attachType,
+      senderName,
     });
     // Upsert conversation để cập nhật lastMessage
     const lastMsgLabel = attachType === "image" ? "[Hình ảnh]" : attachType === "video" ? "[Video]" : `[File: ${params.fileName}]`;
@@ -949,7 +1038,22 @@ export async function sendZaloAttachment(params: {
     } catch { /* ignore */ }
 
     console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}`);
-    return { success: true };
+    return {
+      success: true,
+      messageId: msgId,
+      message: {
+        id: msgId,
+        conversationId: params.conversationId,
+        senderId: currentUserId,
+        senderName,
+        content: "",
+        contentType: attachType,
+        isSelf: true,
+        isRead: true,
+        createdAt: new Date(sentAt).toISOString(),
+        attachments: [attachment],
+      },
+    };
   } catch (err: unknown) {
     const error = err as Error;
     console.error("[ZaloGateway] sendZaloAttachment error:", error);

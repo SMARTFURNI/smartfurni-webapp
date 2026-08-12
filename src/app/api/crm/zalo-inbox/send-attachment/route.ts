@@ -75,7 +75,11 @@ export async function POST(req: NextRequest) {
       });
     } catch { /* ignore */ }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      messageId: result.messageId,
+      message: result.message,
+    });
   } catch (err: any) {
     console.error("[zalo-inbox/send-attachment] Error:", err);
     return NextResponse.json(
