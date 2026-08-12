@@ -177,6 +177,6 @@
 
   .contactCell::before { content: "Liên hệ"; }
   .campaignCell::before { content: "Chiến dịch"; }
-  .roleCell::before { content: "Vai trò / nhu cầu"; }
+  .roleCell::before { content: "Loại / sản phẩm"; }
   .staffCell::before { content: "Nhân viên / thời gian"; }
 }

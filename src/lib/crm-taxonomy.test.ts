@@ -54,6 +54,26 @@ describe("crm taxonomy", () => {
     expect(preview.patch.tags).toContain("SEG:DAI_LY");
     expect(preview.patch.tags).toContain("VIP");
     expect(preview.patch.tags).not.toContain("SEG:BAN_LE");
-    expect(preview.patch.tags).not.toContain("PROD:SOFA_GIUONG");
+    expect(preview.patch.tags).toContain("PROD:SOFA_GIUONG");
+    expect(preview.patch.interestedProducts).toEqual(["sofa_bed"]);
+  });
+
+  it("uses customer type as the source of truth when an old segment is stale", () => {
+    const preview = previewCanonicalLeadTaxonomy(lead({
+      type: "retail",
+      customerSegment: "project",
+      tags: ["SEG:DU_AN"],
+    }));
+    expect(preview.patch.customerSegment).toBe("retail");
+    expect(preview.patch.tags).toContain("SEG:BAN_LE");
+    expect(preview.patch.tags).not.toContain("SEG:DU_AN");
+  });
+
+  it("restores interested products from canonical product tags", () => {
+    const preview = previewCanonicalLeadTaxonomy(lead({
+      interestedProducts: undefined,
+      tags: ["PROD:SOFA_GIUONG"],
+    }));
+    expect(preview.patch.interestedProducts).toEqual(["sofa_bed"]);
   });
 });

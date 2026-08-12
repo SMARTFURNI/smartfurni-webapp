@@ -116,6 +116,13 @@ export function segmentForLeadType(type: LeadType): CustomerSegment {
   return "retail";
 }
 
+export function leadTypeForSegment(segment: CustomerSegment): LeadType {
+  if (segment === "dealer") return "dealer";
+  if (segment === "project") return "investor";
+  if (segment === "b2b") return "b2b";
+  return "retail";
+}
+
 export function normalizeLeadStage(value: unknown): LeadStage | undefined {
   const stage = String(value ?? "").trim();
   if (CRM_LEAD_STAGE_OPTIONS.some(item => item.id === stage)) return stage as LeadStage;
@@ -137,9 +144,18 @@ function unique(values: string[]) {
  * Chỉ namespace SEG/PROD/TEMP được thay thế; các tag nghiệp vụ khác được giữ nguyên.
  */
 export function previewCanonicalLeadTaxonomy(lead: Lead) {
-  const type = normalizeLeadType(lead.type);
-  const customerSegment = lead.customerSegment ?? segmentForLeadType(type ?? "retail");
-  const products = lead.interestedProducts ?? [];
+  const normalizedType = normalizeLeadType(lead.type);
+  const segmentFromTag = CRM_CUSTOMER_SEGMENT_OPTIONS.find(item => (lead.tags ?? []).includes(item.tag))?.id;
+  const type = normalizedType ?? leadTypeForSegment(lead.customerSegment ?? segmentFromTag ?? "retail");
+  // `type` is the user-editable source of truth for customer classification.
+  // Older records may still carry a stale customerSegment from a previous type;
+  // always derive it again when the type is valid so every CRM screen agrees.
+  const customerSegment = segmentForLeadType(type);
+  const productsFromTags = (lead.tags ?? []).flatMap(tag => {
+    const option = CRM_PRODUCT_OPTIONS.find(item => item.tag === tag);
+    return option ? [option.id] : [];
+  });
+  const products = [...new Set(lead.interestedProducts ?? productsFromTags)] as InterestedProduct[];
   const stage = normalizeLeadStage(lead.stage);
   const preservedTags = (lead.tags ?? []).filter(tag =>
     !tag.startsWith("SEG:") && !tag.startsWith("PROD:") && !tag.startsWith("TEMP:"),
@@ -152,7 +168,7 @@ export function previewCanonicalLeadTaxonomy(lead: Lead) {
   ]);
 
   const changes: string[] = [];
-  if (type && type !== lead.type) changes.push("type");
+  if (type !== lead.type) changes.push("type");
   if (!lead.customerSegment || lead.customerSegment !== customerSegment) changes.push("customerSegment");
   if (!lead.interestedProducts) changes.push("interestedProducts");
   if (stage && stage !== lead.stage) changes.push("stage");
@@ -165,11 +181,16 @@ export function previewCanonicalLeadTaxonomy(lead: Lead) {
     patch: {
       customerSegment,
       interestedProducts: products,
-      ...(type ? { type } : {}),
+      type,
       ...(stage ? { stage } : {}),
       tags,
     },
     invalidStage: !stage,
-    invalidType: !type,
+    invalidType: !normalizedType,
   };
+}
+
+/** Chuẩn hóa dữ liệu khi đọc để các màn hình không tự suy diễn phân loại khác nhau. */
+export function canonicalizeLeadTaxonomy(lead: Lead): Lead {
+  return { ...lead, ...previewCanonicalLeadTaxonomy(lead).patch };
 }

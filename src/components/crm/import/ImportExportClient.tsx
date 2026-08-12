@@ -16,9 +16,9 @@ function ImportExportTab() {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const CSV_TEMPLATE = `Tên khách hàng,Điện thoại,Email,Loại khách hàng,Giai đoạn,Tỉnh/Thành phố,Quận/Huyện,Địa chỉ,Nguồn,Giá trị dự kiến,Ghi chú
-Nguyễn Văn A,0901234567,a@email.com,Kiến trúc sư,Khách hàng mới,TP. Hồ Chí Minh,Quận 1,123 Nguyễn Huệ,Facebook Ads,150000000,Quan tâm sofa giường
-Trần Thị B,0912345678,b@email.com,Đối tác dự án,Đã gửi Profile,Hà Nội,Quận Hoàn Kiếm,456 Hàng Bài,KTS giới thiệu,500000000,Dự án 20 phòng`;
+  const CSV_TEMPLATE = `Tên khách hàng,Điện thoại,Email,Loại khách hàng,Giai đoạn,Tỉnh/Thành phố,Quận/Huyện,Địa chỉ,Nguồn,Sản phẩm quan tâm,Giá trị dự kiến,Ghi chú
+Nguyễn Văn A,0901234567,a@email.com,Kiến trúc sư,Khách hàng mới,TP. Hồ Chí Minh,Quận 1,123 Nguyễn Huệ,Facebook Ads,sofa_bed,150000000,Quan tâm sofa giường
+Trần Thị B,0912345678,b@email.com,Đối tác dự án,Đã gửi Profile,Hà Nội,Quận Hoàn Kiếm,456 Hàng Bài,KTS giới thiệu,ergonomic_bed,500000000,Dự án 20 phòng`;
 
   const downloadTemplate = () => {
     const blob = new Blob(["\uFEFF" + CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
@@ -180,6 +180,7 @@ Trần Thị B,0912345678,b@email.com,Đối tác dự án,Đã gửi Profile,H�
           <div><strong style={{ color: "#4b5563" }}>Loại KH:</strong> Khách mua lẻ | Kiến trúc sư | Đối tác dự án | Đại lý / nhà phân phối | Doanh nghiệp / B2B</div>
           <div><strong style={{ color: "#4b5563" }}>Giai đoạn:</strong> Khách hàng mới | Đã gửi Profile | Đã khảo sát | Đã báo giá | Thương thảo | Đã chốt | Thất bại</div>
           <div><strong style={{ color: "#4b5563" }}>Nguồn:</strong> Facebook Ads | Google Ads | KTS giới thiệu | Zalo | Triển lãm</div>
+          <div><strong style={{ color: "#4b5563" }}>Sản phẩm:</strong> sofa_bed | ergonomic_bed | other (nhiều sản phẩm ngăn cách bằng dấu |)</div>
           <div><strong style={{ color: "#4b5563" }}>Giá trị:</strong> Số nguyên (VND), không có dấu phẩy</div>
         </div>
       </div>

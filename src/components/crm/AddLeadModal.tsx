@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { X, Loader2, User, Building2, Phone, Mail, MapPin, DollarSign, Tag, FileText, Users } from "lucide-react";
-import type { Lead, LeadType, LeadStage } from "@/lib/crm-types";
+import type { Lead, LeadType, LeadStage, InterestedProduct } from "@/lib/crm-types";
 import { SOURCES, STAGE_LABELS } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES, getDistricts } from "@/lib/crm-locations";
 import customerStyles from "./CustomerWorkspace.module.css";
-import { CRM_LEAD_TYPE_OPTIONS } from "@/lib/crm-taxonomy";
+import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS } from "@/lib/crm-taxonomy";
 
 interface Props {
   onClose: () => void;
@@ -74,6 +74,7 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
     projectAddress: "",
     unitCount: "",
     notes: "",
+    interestedProducts: [] as InterestedProduct[],
   });
 
   const districts = getDistricts(form.province);
@@ -84,6 +85,15 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
     } else {
       setForm(prev => ({ ...prev, [key]: value }));
     }
+  }
+
+  function toggleProduct(product: InterestedProduct) {
+    setForm(prev => ({
+      ...prev,
+      interestedProducts: prev.interestedProducts.includes(product)
+        ? prev.interestedProducts.filter(item => item !== product)
+        : [...prev.interestedProducts, product],
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -232,6 +242,21 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
                     <DLInput value={form.company} onChange={v => set("company", v)} placeholder="Công ty ABC" inputStyle={inputStyle} />
                   </DLField>
                 </div>
+
+                <DLField label="Sản phẩm quan tâm" icon={<Tag size={13} />}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {CRM_PRODUCT_OPTIONS.map(product => {
+                      const active = form.interestedProducts.includes(product.id);
+                      return (
+                        <button key={product.id} type="button" onClick={() => toggleProduct(product.id)}
+                          className="rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all"
+                          style={{ background: active ? `${product.color}16` : DL.surface, border: `1px solid ${active ? product.color : DL.border}`, color: active ? product.color : DL.textMuted }}>
+                          {active ? "✓ " : ""}{product.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </DLField>
 
                 <div className="grid grid-cols-2 gap-3">
                   <DLField label="Số điện thoại *" icon={<Phone size={13} />}>

@@ -11,7 +11,7 @@ import {
   PhoneCall, PhoneMissed, PhoneIncoming, Mic, Play, Pause, Volume2, Save,
   MessageCircle,
 } from "lucide-react";
-import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog } from "@/lib/crm-types";
+import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog, InterestedProduct } from "@/lib/crm-types";
 import type { FacebookGroupLeadSource } from "@/lib/facebook-group-marketing-types";
 import CustomerContactActions from "@/components/crm/high-performance-features/CustomerContactActions";
 import { ItyCallButton } from "@/components/crm/ItySoftphone";
@@ -21,7 +21,7 @@ import {
   ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
 } from "@/lib/crm-types";
 import customerStyles from "./CustomerWorkspace.module.css";
-import { CRM_LEAD_TYPE_OPTIONS } from "@/lib/crm-taxonomy";
+import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS, PRODUCT_LABELS } from "@/lib/crm-taxonomy";
 
 // ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
@@ -312,7 +312,7 @@ export default function LeadDetailClient({
         <div className="flex-1 xl:overflow-y-auto p-3 sm:p-4 min-w-0">
           {/* Quick stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3">
-            <DLInfoCard icon={DollarSign} label="Giá trị dự kiến" value={formatVND(lead.expectedValue)} color={DL.gold} />
+            <DLInfoCard icon={Tag} label="Sản phẩm quan tâm" value={lead.interestedProducts?.length ? lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ") : "Chưa xác định"} color="#6366f1" />
             <DLInfoCard icon={Home} label="Số căn" value={lead.unitCount > 0 ? `${lead.unitCount} căn` : "—"} color="#60a5fa" />
             <DLInfoCard icon={MapPin} label="Khu vực" value={lead.district || "—"} color="#a78bfa" />
             <DLInfoCard icon={Tag} label="Nguồn" value={lead.source} color="#34d399" />
@@ -840,6 +840,7 @@ export default function LeadDetailClient({
               {lead.district && <SidebarInfoRow icon={MapPin} label="Khu vực" value={lead.district} iconColor="#a78bfa" />}
               {lead.assignedTo && <SidebarInfoRow icon={User} label="Sales phụ trách" value={lead.assignedTo} iconColor={DL.gold} highlight />}
               {lead.source && <SidebarInfoRow icon={Tag} label="Nguồn" value={lead.source} iconColor="#34d399" />}
+              <SidebarInfoRow icon={Star} label="Sản phẩm" value={lead.interestedProducts?.length ? lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ") : "Chưa xác định"} iconColor="#6366f1" highlight />
               <SidebarInfoRow icon={Calendar} label="Ngày tạo" value={new Date(lead.createdAt).toLocaleDateString("vi-VN")} iconColor={DL.textMuted} />
             </div>
           </div>
@@ -1436,9 +1437,18 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
     source: lead.source || "", assignedTo: lead.assignedTo || "",
     projectName: lead.projectName || "", projectAddress: lead.projectAddress || "",
     unitCount: lead.unitCount > 0 ? String(lead.unitCount) : "", notes: lead.notes || "",
+    interestedProducts: (lead.interestedProducts ?? []) as InterestedProduct[],
   });
 
   function set(key: string, value: string) { setForm(prev => ({ ...prev, [key]: value })); }
+  function toggleProduct(product: InterestedProduct) {
+    setForm(prev => ({
+      ...prev,
+      interestedProducts: prev.interestedProducts.includes(product)
+        ? prev.interestedProducts.filter(item => item !== product)
+        : [...prev.interestedProducts, product],
+    }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -1516,6 +1526,21 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Thông tin kinh doanh</h3>
             <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold mb-2" style={labelStyle}>Sản phẩm quan tâm</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {CRM_PRODUCT_OPTIONS.map(product => {
+                    const active = form.interestedProducts.includes(product.id);
+                    return (
+                      <button key={product.id} type="button" onClick={() => toggleProduct(product.id)}
+                        className="rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all"
+                        style={{ background: active ? `${product.color}16` : DL.surface, border: `1px solid ${active ? product.color : DL.border}`, color: active ? product.color : DL.textMuted }}>
+                        {active ? "✓ " : ""}{product.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Giá trị dự kiến (VND)</label>
                 <input type="number" value={form.expectedValue} onChange={e => set("expectedValue", e.target.value)}

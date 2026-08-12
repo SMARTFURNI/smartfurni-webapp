@@ -17,9 +17,7 @@ import CrmFoundationHeader from "./CrmFoundationHeader";
 import customerStyles from "./CustomerWorkspace.module.css";
 import {
   CRM_LEAD_TYPE_OPTIONS,
-  CUSTOMER_SEGMENT_LABELS,
   PRODUCT_LABELS,
-  segmentForLeadType,
   getLeadTypeMeta,
 } from "@/lib/crm-taxonomy";
 
@@ -405,16 +403,16 @@ function LeadCard({
             </div>
           )}
 
-          {/* Tags row */}
+          {/* Product and operational context */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-              {CUSTOMER_SEGMENT_LABELS[lead.customerSegment ?? segmentForLeadType(lead.type)]}
-            </span>
-            {lead.interestedProducts?.slice(0, 1).map(product => (
+            {lead.interestedProducts?.map(product => (
               <span key={product} className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600">
                 {PRODUCT_LABELS[product]}
               </span>
             ))}
+            {!lead.interestedProducts?.length && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Chưa xác định sản phẩm</span>
+            )}
             {lead.district && (
               <div className="flex items-center gap-1 text-[11px]" style={{ color: "#9ca3af" }}>
                 <MapPin size={10} />

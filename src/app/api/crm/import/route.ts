@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createLead, getLeads } from "@/lib/crm-store";
 import type { Lead, LeadStage, LeadType } from "@/lib/crm-store";
+import type { InterestedProduct } from "@/lib/crm-types";
 import { normalizeLeadStage } from "@/lib/crm-taxonomy";
 
 // ─── Export ───────────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
       "Giai đoạn (new/profile_sent/surveyed/quoted/negotiating/won/lost)",
       "Nguồn (Facebook Ads/Google Ads/KTS giới thiệu/...)",
       "Tỉnh/Thành phố", "Quận/Huyện",
+      "Sản phẩm quan tâm (sofa_bed/ergonomic_bed/other)",
       "Giá trị dự kiến (VND)", "Số lượng dự kiến",
       "Tên dự án", "Ghi chú",
     ].join(",");
@@ -26,6 +28,7 @@ export async function GET(req: NextRequest) {
       "Nguyễn Văn A", "0901234567", "a@example.com", "Công ty ABC",
       "investor", "new", "Facebook Ads",
       "TP. Hồ Chí Minh", "Quận 7",
+      "sofa_bed",
       "500000000", "20",
       "Dự án căn hộ XYZ", "Quan tâm giường Pro Max",
     ].join(",");
@@ -41,13 +44,13 @@ export async function GET(req: NextRequest) {
   const leads = await getLeads({}) as Lead[];
   const csvHeaders = [
     "ID", "Tên khách hàng", "Điện thoại", "Email", "Công ty",
-    "Phân loại", "Giai đoạn", "Nguồn", "Quận/Huyện",
+    "Phân loại", "Giai đoạn", "Nguồn", "Quận/Huyện", "Sản phẩm quan tâm",
     "Giá trị dự kiến", "Số lượng", "Tên dự án", "Ghi chú",
     "Ngày tạo", "Tương tác cuối",
   ];
   const csvRows = leads.map((l: Lead) => [
     l.id, l.name, l.phone, l.email, l.company,
-    l.type, l.stage, l.source, l.district,
+    l.type, l.stage, l.source, l.district, (l.interestedProducts ?? []).join("|"),
     l.expectedValue, l.unitCount, l.projectName, l.notes,
     l.createdAt, l.lastContactAt,
   ].map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
@@ -91,6 +94,13 @@ function parseRow(row: Record<string, string>, lineNum: number): Omit<Lead, "id"
 
   const evRaw = row["Giá trị dự kiến (VND)"] ?? row["Giá trị dự kiến"] ?? row["expectedValue"] ?? "";
   const ucRaw = row["Số lượng dự kiến"] ?? row["Số lượng"] ?? row["unitCount"] ?? "";
+  const productMap: Record<string, InterestedProduct> = {
+    "sofa_bed": "sofa_bed", "sofa giường": "sofa_bed", "sofa bed": "sofa_bed",
+    "ergonomic_bed": "ergonomic_bed", "giường công thái học": "ergonomic_bed", "giường thông minh": "ergonomic_bed",
+    "other": "other", "sản phẩm khác": "other",
+  };
+  const productsRaw = row["Sản phẩm quan tâm (sofa_bed/ergonomic_bed/other)"] ?? row["Sản phẩm quan tâm"] ?? row["interestedProducts"] ?? "";
+  const interestedProducts = [...new Set(productsRaw.split(/[|;,]/).map(item => productMap[item.trim().toLowerCase()]).filter(Boolean))] as InterestedProduct[];
 
   return {
     name,
@@ -109,6 +119,7 @@ function parseRow(row: Record<string, string>, lineNum: number): Omit<Lead, "id"
     projectName: (row["Tên dự án"] ?? row["projectName"] ?? "").trim(),
     projectAddress: (row["Địa chỉ dự án"] ?? row["projectAddress"] ?? "").trim(),
     unitCount: ucRaw ? parseInt(ucRaw) || 0 : 0,
+    interestedProducts,
   };
 }
 

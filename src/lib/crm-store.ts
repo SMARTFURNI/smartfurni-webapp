@@ -14,7 +14,7 @@ import type {
   CrmStats, CrmSourceStat, StaffPerformance, MonthlyRevenue,
 } from "./crm-types";
 import { mergeStandardizedLead, normalizeCrmEmail, normalizeCrmPhone } from "./crm-lead-standardization";
-import { previewCanonicalLeadTaxonomy } from "./crm-taxonomy";
+import { canonicalizeLeadTaxonomy, previewCanonicalLeadTaxonomy } from "./crm-taxonomy";
 
 // Re-export everything from crm-types for backward compatibility
 export * from "./crm-types";
@@ -101,6 +101,7 @@ export async function getLeads(filters?: {
   type?: LeadType;
   assignedTo?: string;
   search?: string;
+  canonicalize?: boolean;
 }): Promise<Lead[]> {
   await initCrmSchema();
 
@@ -137,7 +138,10 @@ export async function getLeads(filters?: {
   sql += ` ORDER BY updated_at DESC`;
 
   const rows = await query<{ data: Lead | string }>(sql, params);
-  return rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
+  return rows.map(r => {
+    const lead = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
+    return filters?.canonicalize === false ? lead : canonicalizeLeadTaxonomy(lead);
+  });
 }
 
 export async function getLead(id: string): Promise<Lead | null> {
@@ -146,7 +150,7 @@ export async function getLead(id: string): Promise<Lead | null> {
     `SELECT data FROM crm_leads WHERE id = $1`, [id]
   );
   if (!row) return null;
-  return typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+  return canonicalizeLeadTaxonomy(typeof row.data === "string" ? JSON.parse(row.data) : row.data);
 }
 
 export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updatedAt">): Promise<Lead> {
@@ -187,7 +191,7 @@ export async function findLeadByIdentity(identity: { phone?: string; email?: str
     [phone, phone84, email]
   );
   if (!row) return null;
-  return typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+  return canonicalizeLeadTaxonomy(typeof row.data === "string" ? JSON.parse(row.data) : row.data);
 }
 
 export async function createOrMergeStandardizedLead(

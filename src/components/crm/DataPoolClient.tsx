@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-store";
 import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-store";
+import { classifyRawLead, PRODUCT_LABELS } from "@/lib/crm-lead-standardization";
 import CrmFoundationHeader from "./CrmFoundationHeader";
 import styles from "./DataPoolClient.module.css";
 
@@ -586,6 +587,7 @@ function AssignModal({
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) {
   const [copied, setCopied] = useState<string | null>(null);
+  const classification = classifyRawLead(lead);
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
@@ -648,12 +650,21 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
             </div>
           )}
 
-          {lead.customerRole && (
-            <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Vai trò / Nhu cầu chính</p>
-              <p className="text-sm text-gray-700">{lead.customerRole}</p>
+          <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Loại khách / Sản phẩm quan tâm</p>
+            <div className="flex flex-wrap gap-2">
+              {lead.customerRole && (
+                <span className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: "#eef6ff", color: "#2563eb" }}>
+                  {lead.customerRole}
+                </span>
+              )}
+              {classification.interestedProducts.map(product => (
+                <span key={product} className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: "#fff7df", color: "#9a6b08" }}>
+                  {PRODUCT_LABELS[product]}
+                </span>
+              ))}
             </div>
-          )}
+          </div>
 
           {lead.message && (
             <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
@@ -950,7 +961,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
             <div>Khách hàng</div>
             <div>Liên hệ</div>
             <div>Kênh / Chiến dịch</div>
-            <div>Vai trò / Nhu cầu</div>
+            <div>Loại / Sản phẩm</div>
             <div>Trạng thái</div>
             <div>Nhân viên / Thời gian</div>
             <div className="text-right">Thao tác</div>
@@ -972,6 +983,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
               {leads.map((lead, idx) => {
                 const isNextFifo = lead.id === nextFifoId && lead.status === "pending";
                 const rowNum = (page - 1) * PAGE_SIZE + idx + 1;
+                const classification = classifyRawLead(lead);
 
                 return (
                   <div
@@ -1015,13 +1027,14 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                       {!lead.campaignName && !lead.adName && <p className="text-xs text-gray-300">—</p>}
                     </div>
 
-                    {/* Vai trò / Nhu cầu */}
+                    {/* Loại khách / Sản phẩm */}
                     <div className={styles.roleCell}>
-                      {lead.customerRole ? (
-                        <p className="text-xs text-gray-700 truncate font-medium">{lead.customerRole}</p>
-                      ) : (
-                        <p className="text-xs text-gray-300">—</p>
-                      )}
+                      <p className="text-xs text-gray-700 truncate font-medium">
+                        {lead.customerRole || "Chưa xác định loại"}
+                      </p>
+                      <p className="text-xs truncate mt-0.5" style={{ color: "#9a6b08" }}>
+                        {classification.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ")}
+                      </p>
                     </div>
 
                     {/* Trạng thái */}

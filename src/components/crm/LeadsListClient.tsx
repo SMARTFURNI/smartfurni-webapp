@@ -7,7 +7,7 @@ import {
   ChevronUp, ChevronDown, Users, DollarSign,
   Award, Eye, Edit3, Trash2, Loader2, UserCheck,
 } from "lucide-react";
-import type { Lead, LeadType, LeadStage } from "@/lib/crm-types";
+import type { Lead, LeadType, LeadStage, InterestedProduct } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS,
   formatVND, isOverdue,
@@ -16,14 +16,14 @@ import AddLeadModal from "./AddLeadModal";
 import CustomerContactActions from "./high-performance-features/CustomerContactActions";
 import { ItyCallButton } from "./ItySoftphone";
 import CrmFoundationHeader from "./CrmFoundationHeader";
-import { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
+import { PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
 import customerStyles from "./CustomerWorkspace.module.css";
-import { CRM_LEAD_TYPE_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
+import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
 
 interface LeadTypeItem { id: string; label: string; color?: string; }
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
 
-type SortKey = "name" | "expectedValue" | "lastContactAt" | "createdAt";
+type SortKey = "name" | "lastContactAt" | "createdAt";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
@@ -64,6 +64,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   const [search, setSearch] = useState("");
   const [filterStage, setFilterStage] = useState<LeadStage | "">("");
   const [filterType, setFilterType] = useState<LeadType | "">("");
+  const [filterProduct, setFilterProduct] = useState<InterestedProduct | "">("");
   const [filterAssigned, setFilterAssigned] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [leadTypes, setLeadTypes] = useState<LeadTypeItem[]>(
@@ -107,23 +108,23 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
         !l.phone.includes(search)) return false;
       if (filterStage && l.stage !== filterStage) return false;
       if (filterType && l.type !== filterType) return false;
+      if (filterProduct && !(l.interestedProducts ?? []).includes(filterProduct)) return false;
       if (filterAssigned && l.assignedTo !== filterAssigned) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
       let va: string | number = a[sortKey] ?? "";
       let vb: string | number = b[sortKey] ?? "";
-      if (sortKey === "expectedValue") { va = Number(va); vb = Number(vb); }
       if (va < vb) return sortDir === "asc" ? -1 : 1;
       if (va > vb) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
     return list;
-  }, [leads, search, filterStage, filterType, filterAssigned, sortKey, sortDir]);
+  }, [leads, search, filterStage, filterType, filterProduct, filterAssigned, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const activeFilters = [filterStage, filterType, filterAssigned].filter(Boolean).length;
+  const activeFilters = [filterStage, filterType, filterProduct, filterAssigned].filter(Boolean).length;
 
   const overdueCount = leads.filter(isOverdue).length;
   const wonCount = leads.filter(l => l.stage === "won").length;
@@ -242,6 +243,16 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 <option key={lt.id} value={lt.id}>{lt.label}</option>
               ))}
             </select>
+            <select
+              value={filterProduct}
+              onChange={e => { setFilterProduct(e.target.value as InterestedProduct | ""); setPage(1); }}
+              style={{ background: C.surface2, border: `1px solid ${C.border}`, color: C.text }}
+              className="text-sm px-3 py-1.5 rounded-xl focus:outline-none">
+              <option value="">Tất cả sản phẩm</option>
+              {CRM_PRODUCT_OPTIONS.map(product => (
+                <option key={product.id} value={product.id}>{product.label}</option>
+              ))}
+            </select>
             {/* Filter by assignee */}
             {(isAdmin || assigneeList.length > 1) && (
               <select
@@ -257,7 +268,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             )}
             {activeFilters > 0 && (
               <button
-                onClick={() => { setFilterStage(""); setFilterType(""); setFilterAssigned(""); setPage(1); }}
+                onClick={() => { setFilterStage(""); setFilterType(""); setFilterProduct(""); setFilterAssigned(""); setPage(1); }}
                 className="flex items-center gap-1 text-sm transition-colors"
                 style={{ color: C.red }}>
                 <X size={13} /> Xóa bộ lọc
@@ -315,14 +326,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 {/* Khu vực */}
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden lg:table-cell"
                   style={{ color: C.textMuted }}>Khu vực</th>
-                {/* Giá trị */}
-                <th className="text-right px-4 py-3">
-                  <button onClick={() => toggleSort("expectedValue")}
-                    className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest ml-auto"
-                    style={{ color: C.textMuted }}>
-                    Giá trị <SortIcon k="expectedValue" />
-                  </button>
-                </th>
+                {/* Sản phẩm quan tâm */}
+                <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: C.textMuted }}>Sản phẩm</th>
                 {/* Tương tác */}
                 <th className="text-left px-4 py-3 hidden xl:table-cell">
                   <button onClick={() => toggleSort("lastContactAt")}
@@ -346,7 +352,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       </div>
                       <p className="text-sm" style={{ color: C.textMuted }}>Không có khách hàng nào</p>
                       {(search || activeFilters > 0) && (
-                        <button onClick={() => { setSearch(""); setFilterStage(""); setFilterType(""); setFilterAssigned(""); }}
+                        <button onClick={() => { setSearch(""); setFilterStage(""); setFilterType(""); setFilterProduct(""); setFilterAssigned(""); }}
                           className="text-xs hover:underline" style={{ color: C.gold }}>
                           Xóa bộ lọc
                         </button>
@@ -406,18 +412,13 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       </Link>
                     </td>
 
-                    {/* Standardized segment */}
+                    {/* Canonical customer type */}
                     <td className="px-4 py-2.5">
                       <div className="flex max-w-[190px] flex-wrap gap-1">
                         <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
                           style={{ background: `${typeInfo.color}20`, color: typeInfo.color, border: `1px solid ${typeInfo.color}30` }}>
-                          {lead.customerSegment ? CUSTOMER_SEGMENT_LABELS[lead.customerSegment] : typeInfo.label}
+                          {typeInfo.label}
                         </span>
-                        {lead.interestedProducts?.slice(0, 1).map(product => (
-                          <span key={product} className="rounded-full border border-[#bae6fd] bg-[#f0f9ff] px-2 py-1 text-[10px] font-semibold text-[#0369a1]">
-                            {PRODUCT_LABELS[product]}
-                          </span>
-                        ))}
                         {lead.leadTemperature && (
                           <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${lead.leadTemperature === "hot" ? "bg-[#fff1f2] text-[#e11d48]" : lead.leadTemperature === "warm" ? "bg-[#fff7ed] text-[#ea580c]" : "bg-[#f1f5f9] text-[#64748b]"}`}>
                             {TEMPERATURE_LABELS[lead.leadTemperature]} · {lead.leadScore ?? 0}đ
@@ -468,12 +469,17 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       </div>
                     </td>
 
-                    {/* Value */}
-                    <td className="px-4 py-2.5 text-right">
-                      <span className="font-bold text-sm whitespace-nowrap"
-                        style={{ color: lead.expectedValue > 0 ? C.gold : C.textMuted }}>
-                        {lead.expectedValue > 0 ? formatVND(lead.expectedValue) : "—"}
-                      </span>
+                    {/* Interested products */}
+                    <td className="px-4 py-2.5">
+                      <div className="flex max-w-[210px] flex-wrap gap-1">
+                        {lead.interestedProducts?.length ? lead.interestedProducts.map(product => (
+                          <span key={product} className="rounded-full border border-[#c7d2fe] bg-[#eef2ff] px-2 py-1 text-[10px] font-semibold text-[#4f46e5]">
+                            {PRODUCT_LABELS[product]}
+                          </span>
+                        )) : (
+                          <span className="text-xs" style={{ color: C.textMuted }}>Chưa xác định</span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Last contact */}

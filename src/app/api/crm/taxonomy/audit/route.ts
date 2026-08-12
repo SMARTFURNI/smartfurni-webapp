@@ -12,7 +12,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!session.isAdmin) return NextResponse.json({ error: "Admin only" }, { status: 403 });
 
-  const leads = await getLeads();
+  const leads = await getLeads({ canonicalize: false });
   const previews = leads.map(previewCanonicalLeadTaxonomy);
   const affected = previews.filter(item => item.changes.length > 0 || item.invalidStage || item.invalidType);
 
