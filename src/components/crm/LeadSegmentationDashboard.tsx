@@ -11,25 +11,25 @@ import {
 } from 'lucide-react';
 import type { Lead, LeadType, LeadStage } from '@/lib/crm-types';
 import { STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS } from '@/lib/crm-types';
+import CrmFoundationHeader from './CrmFoundationHeader';
 
-// ─── Dark Luxury Theme ────────────────────────────────────────────────────────
 const DL = {
-  bg: 'linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)',
-  surface: 'rgba(255,255,255,0.05)',
-  surfaceHover: 'rgba(255,255,255,0.08)',
-  border: 'rgba(255,255,255,0.10)',
-  borderGold: 'rgba(245,158,11,0.35)',
-  text: '#f5edd6',
-  textMuted: '#9ca3af',
-  textDim: 'rgba(245,237,214,0.5)',
-  gold: '#f59e0b',
-  goldDark: '#d97706',
-  header: 'rgba(15,23,42,0.95)',
-  card: 'rgba(255,255,255,0.06)',
-  cardBorder: 'rgba(255,255,255,0.10)',
-  inputBg: 'rgba(255,255,255,0.07)',
-  inputBorder: 'rgba(255,255,255,0.15)',
-  modalBg: 'rgba(20,16,0,0.97)',
+  bg: 'linear-gradient(160deg, #f8fbff 0%, #fffdf7 100%)',
+  surface: '#f8fafc',
+  surfaceHover: '#f1f5f9',
+  border: '#dbe5f0',
+  borderGold: '#e7cd7d',
+  text: '#14213d',
+  textMuted: '#64748b',
+  textDim: '#94a3b8',
+  gold: '#b88912',
+  goldDark: '#8a6710',
+  header: '#ffffff',
+  card: '#ffffff',
+  cardBorder: '#dbe5f0',
+  inputBg: '#ffffff',
+  inputBorder: '#cbd5e1',
+  modalBg: '#ffffff',
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,24 +62,18 @@ const SEGMENT_COLORS = [
 
 const DEFAULT_SEGMENTS: LeadSegment[] = [
   {
-    id: 'segment-investor',
-    name: 'Chủ Đầu Tư',
-    description: 'Khách hàng là chủ đầu tư dự án',
-    criteria: { type: ['investor'] },
-    tags: ['Chủ đầu tư', 'B2B', 'High Value'],
-    leadCount: 0,
-    color: '#f59e0b',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    id: 'segment-retail', name: 'Khách mua lẻ', description: 'Khách hàng cá nhân mua cho gia đình',
+    criteria: { type: ['retail'] }, tags: ['SEG:BAN_LE'], leadCount: 0, color: '#0ea5e9',
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
   {
-    id: 'segment-architect',
-    name: 'Kiến Trúc Sư',
-    description: 'Khách hàng là kiến trúc sư, thiết kế',
-    criteria: { type: ['architect'] },
-    tags: ['Kiến trúc sư', 'B2B', 'Professional'],
+    id: 'segment-investor',
+    name: 'Đối tác dự án',
+    description: 'Chủ đầu tư, kiến trúc sư, nhà thầu và đơn vị thiết kế',
+    criteria: { type: ['investor', 'architect'] },
+    tags: ['SEG:DU_AN'],
     leadCount: 0,
-    color: '#3b82f6',
+    color: '#f59e0b',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -88,11 +82,26 @@ const DEFAULT_SEGMENTS: LeadSegment[] = [
     name: 'Đại Lý',
     description: 'Khách hàng là đại lý, nhà phân phối',
     criteria: { type: ['dealer'] },
-    tags: ['Đại lý', 'B2B', 'Reseller'],
+    tags: ['SEG:DAI_LY'],
     leadCount: 0,
     color: '#22c55e',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'segment-b2b', name: 'Doanh nghiệp / B2B', description: 'Khách mua cho văn phòng, doanh nghiệp hoặc số lượng lớn',
+    criteria: { type: ['b2b'] }, tags: ['SEG:B2B'], leadCount: 0, color: '#14b8a6',
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'product-sofa-bed', name: 'Quan tâm Sofa giường', description: 'Phân nhóm chăm sóc theo danh mục Sofa giường',
+    criteria: { requiredTags: ['PROD:SOFA_GIUONG'] }, tags: ['PROD:SOFA_GIUONG'], leadCount: 0, color: '#6366f1',
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'product-ergonomic-bed', name: 'Quan tâm Giường công thái học', description: 'Phân nhóm chăm sóc theo danh mục Giường công thái học',
+    criteria: { requiredTags: ['PROD:GIUONG_CONG_THAI_HOC'] }, tags: ['PROD:GIUONG_CONG_THAI_HOC'], leadCount: 0, color: '#ec4899',
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   },
 ];
 
@@ -277,7 +286,7 @@ export default function LeadSegmentationDashboard() {
   );
 
   const totalLeads = allLeads.length;
-  const totalSegmented = segments.reduce((sum, s) => sum + s.leadCount, 0);
+  const totalSegmented = allLeads.filter(lead => segments.some(segment => matchesSegment(lead, segment.criteria))).length;
 
   // ─── Stats ─────────────────────────────────────────────────────────────────
   const stats = [
@@ -290,17 +299,9 @@ export default function LeadSegmentationDashboard() {
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ background: DL.bg, minHeight: '100vh' }}>
-      {/* Header */}
-      <div className="px-6 py-4 backdrop-blur-sm sticky top-0 z-30"
-        style={{ background: DL.header, borderBottom: `1px solid ${DL.border}` }}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-xl font-bold" style={{ color: DL.gold }}>Phân loại Lead</h1>
-            <p className="text-xs mt-0.5" style={{ color: DL.textMuted }}>
-              Quản lý và phân nhóm khách hàng theo tiêu chí
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+      <CrmFoundationHeader active="segments" title="Phân nhóm & kích hoạt chăm sóc"
+        description="Nhóm khách hàng theo đối tượng, sản phẩm quan tâm và độ ưu tiên để dùng thống nhất cho Zalo OA, Email Marketing và công việc gọi lại."
+        actions={<>
             <button onClick={loadData}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
               style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
@@ -313,9 +314,7 @@ export default function LeadSegmentationDashboard() {
               <Plus size={14} />
               <span>Tạo phân loại</span>
             </button>
-          </div>
-        </div>
-      </div>
+        </>} />
 
       <div className="px-6 py-6 max-w-7xl mx-auto space-y-6">
         {/* Stats */}
@@ -420,7 +419,7 @@ export default function LeadSegmentationDashboard() {
                   </div>
 
                   {/* Progress bar */}
-                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: '#e8eef6' }}>
                     <div className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${percent}%`, background: color }} />
                   </div>
@@ -443,7 +442,7 @@ export default function LeadSegmentationDashboard() {
                   )}
 
                   {/* Criteria summary */}
-                  <div className="text-xs space-y-1 rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${DL.border}` }}>
+                  <div className="text-xs space-y-1 rounded-lg p-3" style={{ background: '#f8fafc', border: `1px solid ${DL.border}` }}>
                     {seg.criteria.type && seg.criteria.type.length > 0 && (
                       <p style={{ color: DL.textMuted }}>
                         <span style={{ color: DL.textDim }}>Loại: </span>
@@ -487,9 +486,9 @@ export default function LeadSegmentationDashboard() {
             {/* Add new card */}
             <button onClick={openCreate}
               className="rounded-xl p-5 flex flex-col items-center justify-center gap-3 transition-all border-dashed"
-              style={{ background: 'rgba(255,255,255,0.02)', border: `2px dashed ${DL.border}`, minHeight: '280px' }}
+              style={{ background: '#f8fafc', border: `2px dashed ${DL.border}`, minHeight: '280px' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = `${DL.gold}50`; e.currentTarget.style.background = 'rgba(245,158,11,0.04)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = DL.border; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}>
+              onMouseLeave={e => { e.currentTarget.style.borderColor = DL.border; e.currentTarget.style.background = '#f8fafc'; }}>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center"
                 style={{ background: `${DL.gold}15`, border: `1px solid ${DL.gold}30` }}>
                 <Plus size={20} style={{ color: DL.gold }} />
@@ -574,7 +573,7 @@ export default function LeadSegmentationDashboard() {
                   Lọc theo loại khách hàng
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['investor', 'architect', 'dealer'] as LeadType[]).map(t => (
+                  {(['retail', 'investor', 'architect', 'dealer', 'b2b'] as LeadType[]).map(t => (
                     <button key={t} onClick={() => toggleType(t)}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{

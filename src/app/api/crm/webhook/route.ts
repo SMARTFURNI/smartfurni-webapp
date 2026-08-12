@@ -12,7 +12,7 @@
  *   "email": "a@example.com",
  *   "company": "Công ty ABC",
  *   "source": "Facebook Ads",
- *   "type": "investor",         // architect | investor | dealer (optional, default: investor)
+ *   "type": "retail",           // retail | architect | investor | dealer | b2b (optional)
  *   "district": "Q7",           // optional
  *   "notes": "Quan tâm giường Pro Max",
  *   "projectName": "Dự án XYZ", // optional
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       phone: body.phone,
       email: body.email || "",
       company: body.company || "",
-      type: body.type || "investor",
+      type: body.type || "retail",
       stage: "new",
       district: body.district || "",
       source: body.source || "Webhook",
@@ -87,13 +87,13 @@ export async function GET() {
     authentication: "Header: x-webhook-secret: <secret>",
     requiredFields: ["name", "phone"],
     optionalFields: ["email", "company", "source", "type", "district", "notes", "projectName", "unitCount", "expectedValue", "assignedTo", "tags"],
-    typeValues: ["architect", "investor", "dealer"],
+    typeValues: ["retail", "architect", "investor", "dealer", "b2b"],
     sourceExamples: ["Facebook Ads", "Google Ads", "Zalo", "Website", "KTS giới thiệu"],
     examplePayload: {
       name: "Nguyễn Văn A",
       phone: "0901234567",
       source: "Facebook Ads",
-      type: "investor",
+      type: "retail",
       district: "Q7",
       notes: "Quan tâm 20 căn dự án Vinhomes",
       unitCount: 20,

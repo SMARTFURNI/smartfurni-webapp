@@ -14,7 +14,12 @@ export type LeadStage =
   | "won"           // Đã chốt
   | "lost";         // Thất bại
 
-export type LeadType = "architect" | "investor" | "dealer";
+export type LeadType = "retail" | "architect" | "investor" | "dealer" | "b2b";
+
+export type CustomerSegment = "retail" | "dealer" | "project" | "b2b";
+export type InterestedProduct = "sofa_bed" | "ergonomic_bed" | "other";
+export type LeadTemperature = "hot" | "warm" | "cold";
+export type LeadDataQuality = "complete" | "needs_verification" | "incomplete";
 
 export type ActivityType = "call" | "meeting" | "email" | "note" | "quote_sent" | "contract";
 
@@ -41,6 +46,13 @@ export interface Lead {
   projectAddress: string;
   unitCount: number;
   lostReason?: string;
+  customerSegment?: CustomerSegment;
+  interestedProducts?: InterestedProduct[];
+  leadTemperature?: LeadTemperature;
+  leadScore?: number;
+  dataQuality?: LeadDataQuality;
+  rawLeadIds?: string[];
+  sourceDetail?: string;
 }
 
 export interface Activity {
@@ -200,15 +212,19 @@ export const STAGE_COLORS: Record<LeadStage, string> = {
 };
 
 export const TYPE_LABELS: Record<LeadType, string> = {
+  retail: "Khách mua lẻ",
   architect: "Kiến trúc sư",
   investor: "Chủ đầu tư CHDV",
   dealer: "Đại lý",
+  b2b: "Doanh nghiệp / B2B",
 };
 
 export const TYPE_COLORS: Record<LeadType, string> = {
+  retail: "#0ea5e9",
   architect: "#8b5cf6",
   investor: "#3b82f6",
   dealer: "#f59e0b",
+  b2b: "#14b8a6",
 };
 
 export const ACTIVITY_LABELS: Record<ActivityType, string> = {

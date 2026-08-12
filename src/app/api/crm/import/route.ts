@@ -65,18 +65,20 @@ function parseRow(row: Record<string, string>, lineNum: number): Omit<Lead, "id"
   const name = row["Tên khách hàng"]?.trim() || row["name"]?.trim();
   if (!name) return null;
 
-  const validTypes: LeadType[] = ["architect", "investor", "dealer"];
+  const validTypes: LeadType[] = ["retail", "architect", "investor", "dealer", "b2b"];
   const typeMap: Record<string, LeadType> = {
+    "khách mua lẻ": "retail", "khách lẻ": "retail", "retail": "retail",
     "kiến trúc sư": "architect", "architect": "architect",
     "chủ đầu tư chdv": "investor", "investor": "investor",
     "đại lý": "dealer", "dealer": "dealer",
+    "doanh nghiệp": "b2b", "b2b": "b2b",
   };
   const typeRaw = (
     row["Phân loại (architect/investor/dealer)"] ??
     row["Loại khách hàng"] ??
     row["type"] ?? ""
   ).trim().toLowerCase();
-  const type: LeadType = typeMap[typeRaw] ?? (validTypes.includes(typeRaw as LeadType) ? typeRaw as LeadType : "investor");
+  const type: LeadType = typeMap[typeRaw] ?? (validTypes.includes(typeRaw as LeadType) ? typeRaw as LeadType : "retail");
 
   const validStages: LeadStage[] = ["new", "profile_sent", "surveyed", "quoted", "negotiating", "won", "lost"];
   const stageMap: Record<string, LeadStage> = {

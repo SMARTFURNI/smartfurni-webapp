@@ -311,6 +311,17 @@ export async function convertRawLead(id: string, crmLeadId: string): Promise<voi
   );
 }
 
+/** Hoàn lại trạng thái khi bước tạo/cập nhật khách hàng thất bại. */
+export async function releaseRawLeadClaim(id: string, staffId: string): Promise<void> {
+  await initRawLeadSchema();
+  await query(
+    `UPDATE crm_raw_leads
+     SET status = 'pending', claimed_by = NULL, claimed_by_name = NULL, claimed_at = NULL
+     WHERE id = $1 AND status = 'claimed' AND claimed_by = $2`,
+    [id, staffId]
+  );
+}
+
 /** Xóa raw lead (admin only) */
 export async function deleteRawLead(id: string): Promise<void> {
   await initRawLeadSchema();

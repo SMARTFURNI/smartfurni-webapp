@@ -13,6 +13,7 @@ import type {
   Lead, LeadStage, LeadType, Activity, CrmProduct, Quote, CrmTask,
   CrmStats, CrmSourceStat, StaffPerformance, MonthlyRevenue,
 } from "./crm-types";
+import { mergeStandardizedLead, normalizeCrmEmail, normalizeCrmPhone } from "./crm-lead-standardization";
 
 // Re-export everything from crm-types for backward compatibility
 export * from "./crm-types";
@@ -163,6 +164,38 @@ export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updated
     [lead.id, JSON.stringify(lead), lead.stage, lead.lastContactAt]
   );
   return lead;
+}
+
+export async function findLeadByIdentity(identity: { phone?: string; email?: string }): Promise<Lead | null> {
+  await initCrmSchema();
+  const phone = normalizeCrmPhone(identity.phone ?? "");
+  const email = normalizeCrmEmail(identity.email ?? "");
+  if (!phone && !email) return null;
+
+  const phone84 = phone.startsWith("0") ? `84${phone.slice(1)}` : phone;
+  const row = await queryOne<{ data: Lead | string }>(
+    `SELECT data FROM crm_leads
+     WHERE ($1 <> '' AND regexp_replace(COALESCE(data->>'phone', ''), '[^0-9]', '', 'g') IN ($1, $2))
+        OR ($3 <> '' AND lower(trim(COALESCE(data->>'email', ''))) = $3)
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [phone, phone84, email]
+  );
+  if (!row) return null;
+  return typeof row.data === "string" ? JSON.parse(row.data) : row.data;
+}
+
+export async function createOrMergeStandardizedLead(
+  input: Omit<Lead, "id" | "createdAt" | "updatedAt">
+): Promise<{ lead: Lead; created: boolean; matchedBy?: "phone" | "email" }> {
+  const existing = await findLeadByIdentity({ phone: input.phone, email: input.email });
+  if (!existing) return { lead: await createLead(input), created: true };
+
+  const normalizedIncomingPhone = normalizeCrmPhone(input.phone);
+  const normalizedExistingPhone = normalizeCrmPhone(existing.phone);
+  const matchedBy = normalizedIncomingPhone && normalizedIncomingPhone === normalizedExistingPhone ? "phone" : "email";
+  const updated = await updateLead(existing.id, mergeStandardizedLead(existing, input));
+  return { lead: updated ?? existing, created: false, matchedBy };
 }
 
 export async function updateLead(id: string, updates: Partial<Lead>): Promise<Lead | null> {

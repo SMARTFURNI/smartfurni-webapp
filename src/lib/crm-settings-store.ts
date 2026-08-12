@@ -341,9 +341,11 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     { id: "other",          label: "Khác",                      color: "#64748b", order: 8 },
   ],
   leadTypes: [
-    { id: "architect", label: "Kiến trúc sư",         color: "#a78bfa", order: 0 },
-    { id: "investor",  label: "Chủ đầu tư CHDV",      color: "#60a5fa", order: 1 },
-    { id: "dealer",    label: "Đại lý",                color: "#C9A84C", order: 2 },
+    { id: "retail",    label: "Khách mua lẻ",           color: "#0ea5e9", order: 0 },
+    { id: "architect", label: "Kiến trúc sư",          color: "#a78bfa", order: 1 },
+    { id: "investor",  label: "Đối tác dự án",          color: "#60a5fa", order: 2 },
+    { id: "dealer",    label: "Đại lý / nhà phân phối", color: "#C9A84C", order: 3 },
+    { id: "b2b",       label: "Doanh nghiệp / B2B",     color: "#14b8a6", order: 4 },
   ],
   discountTiers: [
     { minQty: 5,  discountPct: 10, label: "Từ 5 bộ" },

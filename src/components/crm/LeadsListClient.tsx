@@ -15,6 +15,8 @@ import {
 import AddLeadModal from "./AddLeadModal";
 import CustomerContactActions from "./high-performance-features/CustomerContactActions";
 import { ItyCallButton } from "./ItySoftphone";
+import CrmFoundationHeader from "./CrmFoundationHeader";
+import { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
 
 interface LeadTypeItem { id: string; label: string; color?: string; }
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
@@ -25,24 +27,26 @@ type SortDir = "asc" | "desc";
 const PAGE_SIZE = 20;
 
 const DEFAULT_LEAD_TYPES_FALLBACK: LeadTypeItem[] = [
+  { id: "retail", label: "Khách mua lẻ", color: "#0ea5e9" },
   { id: "architect", label: "Kiến trúc sư",    color: "#8b5cf6" },
   { id: "investor",  label: "Chủ đầu tư CHDV", color: "#3b82f6" },
   { id: "dealer",    label: "Đại lý",           color: "#f59e0b" },
+  { id: "b2b", label: "Doanh nghiệp / B2B", color: "#14b8a6" },
 ];
 
 // ── Dark Luxury Color Tokens — đồng bộ với Content Marketing AI ─────────────
 // Nền: linear-gradient(160deg, #0f172a → #1e1a0e → #1a1200) — navy → warm brown
 const C = {
-  bg:         "#0f172a",                    // deep navy (same as CM AI)
-  bgGradient: "linear-gradient(160deg, #0f172a 0%, #1e1a0e 40%, #1a1200 100%)",
-  surface:    "rgba(255,255,255,0.06)",      // card bg — CM AI style
-  surface2:   "rgba(255,255,255,0.04)",      // elevated card
-  surfaceSolid: "#1a1200",                  // solid bg for inputs/selects
-  border:     "rgba(255,255,255,0.10)",      // CM AI border
+  bg:         "#f4f7fb",
+  bgGradient: "linear-gradient(160deg, #f8fbff 0%, #fffdf7 100%)",
+  surface:    "#ffffff",
+  surface2:   "#f8fafc",
+  surfaceSolid: "#ffffff",
+  border:     "#dbe5f0",
   borderGold: "rgba(245,158,11,0.30)",       // gold border
-  text:       "#f5edd6",                    // CM AI primary text (warm cream)
-  textMuted:  "#9ca3af",                    // CM AI muted
-  textDim:    "rgba(255,255,255,0.45)",      // CM AI dim
+  text:       "#14213d",
+  textMuted:  "#64748b",
+  textDim:    "#74849a",
   gold:       "#f59e0b",                    // CM AI gold
   goldDark:   "#d97706",                    // CM AI gold dark
   goldBg:     "rgba(245,158,11,0.15)",       // gold bg tint
@@ -55,9 +59,9 @@ const C = {
   redBg:      "rgba(248,113,113,0.15)",      // red bg tint
   purple:     "#c084fc",                    // soft purple
   purpleBg:   "rgba(192,132,252,0.15)",      // purple bg tint
-  headerBg:   "rgba(0,0,0,0.25)",           // table header
+  headerBg:   "#f1f5f9",
   rowHover:   "rgba(245,158,11,0.06)",       // row hover — warm gold tint
-  rowBorder:  "rgba(255,255,255,0.06)",      // row divider
+  rowBorder:  "#e8eef6",
 };
 
 export default function LeadsListClient({ initialLeads, isAdmin = false, currentUserName = "", initialLeadTypes }: Props) {
@@ -170,9 +174,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
 
   return (
     <div className="flex flex-col h-full" style={{ background: C.bg }}>
-
-      {/* ── Header ── */}
-      <div className="flex-shrink-0 px-6 py-4" style={{ background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+      <CrmFoundationHeader active="customers" title="Hồ sơ khách hàng chuẩn hóa"
+        description="Một khách hàng duy nhất theo SĐT/email, có đủ nhóm đối tượng, sản phẩm quan tâm, nguồn và mức độ ưu tiên chăm sóc." />
+      <div className="flex-shrink-0 mx-5 mt-4 rounded-2xl px-6 py-4" style={{ background: C.surface, border: `1px solid ${C.border}` }}>
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold" style={{ color: C.text }}>Quản lý khách hàng</h1>
@@ -307,9 +311,9 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     Khách hàng <SortIcon k="name" />
                   </button>
                 </th>
-                {/* Loại */}
+                {/* Phân loại */}
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest"
-                  style={{ color: C.textMuted }}>Loại</th>
+                  style={{ color: C.textMuted }}>Phân loại</th>
                 {/* Giai đoạn */}
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest"
                   style={{ color: C.textMuted }}>Giai đoạn</th>
@@ -345,7 +349,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 <tr>
                   <td colSpan={8} className="text-center py-16">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}` }}>
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: C.surface2, border: `1px solid ${C.border}` }}>
                         <Users size={24} style={{ color: C.textMuted }} />
                       </div>
                       <p className="text-sm" style={{ color: C.textMuted }}>Không có khách hàng nào</p>
@@ -369,12 +373,12 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     key={lead.id}
                     style={{
                       borderBottom: `1px solid ${C.rowBorder}`,
-                      borderLeft: overdue ? `3px solid ${C.red}` : `3px solid ${isOwnLead ? C.gold : "rgba(255,255,255,0.15)"}`,
-                      background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)",
+                      borderLeft: overdue ? `3px solid ${C.red}` : `3px solid ${isOwnLead ? C.gold : "#e2e8f0"}`,
+                      background: idx % 2 === 0 ? "transparent" : "#fbfdff",
                       transition: "background 0.15s",
                     }}
                     onMouseEnter={e => (e.currentTarget.style.background = C.rowHover)}
-                    onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "#fbfdff")}
                   >
                     {/* Customer */}
                     <td className="px-4 py-3">
@@ -410,12 +414,24 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       </Link>
                     </td>
 
-                    {/* Type */}
+                    {/* Standardized segment */}
                     <td className="px-4 py-3">
-                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
-                        style={{ background: `${typeInfo.color}20`, color: typeInfo.color, border: `1px solid ${typeInfo.color}30` }}>
-                        {typeInfo.label}
-                      </span>
+                      <div className="flex max-w-[190px] flex-wrap gap-1">
+                        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+                          style={{ background: `${typeInfo.color}20`, color: typeInfo.color, border: `1px solid ${typeInfo.color}30` }}>
+                          {lead.customerSegment ? CUSTOMER_SEGMENT_LABELS[lead.customerSegment] : typeInfo.label}
+                        </span>
+                        {lead.interestedProducts?.slice(0, 1).map(product => (
+                          <span key={product} className="rounded-full border border-[#bae6fd] bg-[#f0f9ff] px-2 py-1 text-[10px] font-semibold text-[#0369a1]">
+                            {PRODUCT_LABELS[product]}
+                          </span>
+                        ))}
+                        {lead.leadTemperature && (
+                          <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${lead.leadTemperature === "hot" ? "bg-[#fff1f2] text-[#e11d48]" : lead.leadTemperature === "warm" ? "bg-[#fff7ed] text-[#ea580c]" : "bg-[#f1f5f9] text-[#64748b]"}`}>
+                            {TEMPERATURE_LABELS[lead.leadTemperature]} · {lead.leadScore ?? 0}đ
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Stage */}
@@ -544,7 +560,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="px-3 py-1.5 text-xs rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: "rgba(255,255,255,0.07)" }}>
+                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: C.surface2 }}>
                   ← Trước
                 </button>
                 {(() => {
@@ -570,7 +586,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   className="px-3 py-1.5 text-xs rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: "rgba(255,255,255,0.07)" }}>
+                  style={{ border: `1px solid ${C.border}`, color: C.textDim, background: C.surface2 }}>
                   Sau →
                 </button>
               </div>

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-store";
 import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-store";
+import CrmFoundationHeader from "./CrmFoundationHeader";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface StaffMember {
@@ -781,19 +782,9 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
 
   return (
     <div className="h-full flex flex-col" style={{ background: "#f8f9fb", color: "#111827" }}>
-      {/* Header */}
-      <div className="crm-admin-page-header m-5 mb-0 flex items-center justify-between px-6 py-4 bg-white" style={{ borderBottom: "1px solid #e5e7eb" }}>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #C9A84C20, #C9A84C10)", border: "1px solid #C9A84C30" }}>
-            <Database size={18} style={{ color: "#C9A84C" }} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Data Pool</h1>
-            <p className="text-xs text-gray-500">Kho data tổng hợp từ các kênh quảng cáo</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <CrmFoundationHeader active="pool" title="Tiếp nhận & chuẩn hóa Data Pool"
+        description="Lead quảng cáo được nhận theo FIFO, giữ nguyên nguồn chiến dịch và tự động chuẩn hóa trước khi vào hồ sơ khách hàng."
+        actions={<>
           <button
             onClick={() => fetchData(false)}
             disabled={refreshing}
@@ -812,8 +803,7 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
               Thêm data
             </button>
           )}
-        </div>
-      </div>
+        </>} />
 
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
         {/* Stats Cards */}

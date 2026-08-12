@@ -1,18 +1,27 @@
 import { getCrmSession } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
+import { getRoleById } from "@/lib/crm-roles-store";
 import { NextRequest, NextResponse } from "next/server";
 import { getLeads, createLead } from "@/lib/crm-store";
 import { logAudit, getClientIp, resolveActorName } from "@/lib/audit-helper";
 
 export async function GET(req: NextRequest) {
-  if (!await getCrmSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await getCrmSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { searchParams } = new URL(req.url);
+    let assignedTo = searchParams.get("assignedTo") || undefined;
+    if (!session.isAdmin && session.staffId) {
+      const staff = await getStaffById(session.staffId);
+      const role = staff?.role ? await getRoleById(staff.role) : null;
+      if (!role?.permissions?.leads_view_all) assignedTo = staff?.fullName || "__unassigned_session__";
+    }
     const leads = await getLeads({
       stage: searchParams.get("stage") as any || undefined,
       district: searchParams.get("district") || undefined,
       type: searchParams.get("type") as any || undefined,
       search: searchParams.get("search") || undefined,
+      assignedTo,
     });
     return NextResponse.json(leads);
   } catch (e) {
