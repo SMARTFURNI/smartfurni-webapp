@@ -87,12 +87,28 @@ const EMPTY_FORM: DocForm = {
   flowSteps: [],
 };
 
-const TABS: Array<{ key: TabKey; label: string; icon: LucideIcon }> = [
-  { key: "overview", label: "Tổng quan", icon: LayoutDashboard },
-  { key: "library", label: "Thư viện tài liệu", icon: Library },
-  { key: "editor", label: "Soạn thảo", icon: FilePenLine },
-  { key: "diagram", label: "Sơ đồ quy trình", icon: Network },
-  { key: "history", label: "Phiên bản", icon: History },
+const TAB_GROUPS: Array<{
+  label: string;
+  tabs: Array<{ key: TabKey; label: string; icon: LucideIcon }>;
+}> = [
+  {
+    label: "Tra cứu",
+    tabs: [
+      { key: "overview", label: "Tổng quan", icon: LayoutDashboard },
+      { key: "library", label: "Thư viện", icon: Library },
+    ],
+  },
+  {
+    label: "Xây dựng",
+    tabs: [
+      { key: "editor", label: "Biên soạn", icon: FilePenLine },
+      { key: "diagram", label: "Quy trình", icon: Network },
+    ],
+  },
+  {
+    label: "Kiểm soát",
+    tabs: [{ key: "history", label: "Phiên bản", icon: History }],
+  },
 ];
 
 const CATEGORY_ICONS: Partial<Record<KnowledgeCategory, LucideIcon>> = {
@@ -114,9 +130,13 @@ const TONE_STYLES: Record<Tone, { card: string; icon: string; line: string }> = 
   rose: { card: "border-rose-200 bg-gradient-to-br from-rose-50 to-white", icon: "bg-rose-500 text-white", line: "bg-rose-300" },
 };
 
-const FIELD = "w-full rounded-xl border border-[#d9e2ef] bg-white px-3.5 py-2.5 text-sm text-[#16233b] outline-none transition placeholder:text-[#9aa8bc] focus:border-[#d6aa35] focus:ring-4 focus:ring-[#d6aa35]/10";
-const BUTTON_PRIMARY = "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f3cf68] to-[#d7a51e] px-4 py-2.5 text-sm font-bold text-[#2e250c] shadow-[0_8px_24px_rgba(203,154,21,0.2)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50";
+const FIELD = "w-full rounded-xl border border-[#d9e2ef] bg-white px-3.5 py-2.5 text-[15px] leading-6 text-[#16233b] outline-none transition placeholder:text-[#9aa8bc] focus:border-[#d6aa35] focus:ring-4 focus:ring-[#d6aa35]/10";
+const BUTTON_PRIMARY = "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f3cf68] to-[#d7a51e] px-4 py-2.5 text-sm font-semibold text-[#2e250c] shadow-[0_8px_24px_rgba(203,154,21,0.2)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50";
 const BUTTON_SECONDARY = "inline-flex items-center justify-center gap-2 rounded-xl border border-[#d8e1ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5c75] transition hover:border-[#b8c6da] hover:bg-[#f7f9fc] disabled:opacity-50";
+const EYEBROW = "text-[11px] font-bold uppercase tracking-[0.22em]";
+const SECTION_TITLE = "text-lg font-semibold tracking-[-0.01em] text-[#17243a] md:text-xl";
+const SECTION_DESCRIPTION = "mt-1 text-sm leading-6 text-[#718097]";
+const FORM_LABEL = "text-[13px] font-semibold leading-5 text-[#5c6d84]";
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { cache: "no-store", ...init });
@@ -198,13 +218,13 @@ function DocumentPreview({ content }: { content: string }) {
       {lines.map((raw, index) => {
         const line = raw.trim();
         if (!line) return <div key={index} className="h-1" />;
-        if (line.startsWith("# ")) return <h2 key={index} className="mt-2 text-2xl font-black tracking-tight text-[#152238]">{line.slice(2)}</h2>;
+        if (line.startsWith("# ")) return <h2 key={index} className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-[#152238]">{line.slice(2)}</h2>;
         if (line.startsWith("## ")) return <h3 key={index} className="mt-5 text-lg font-bold text-[#1d2d47]">{line.slice(3)}</h3>;
         if (line.startsWith("### ")) return <h4 key={index} className="mt-4 font-bold text-[#243650]">{line.slice(4)}</h4>;
         if (/^[-*] /.test(line)) return <div key={index} className="flex gap-2.5"><CheckCircle2 className="mt-1.5 shrink-0 text-emerald-500" size={15} /><span>{line.slice(2)}</span></div>;
         if (/^\d+\. /.test(line)) {
           const match = line.match(/^(\d+)\.\s(.*)$/);
-          return <div key={index} className="flex gap-2.5"><span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#fff4cd] text-[10px] font-black text-[#977018]">{match?.[1]}</span><span>{match?.[2]}</span></div>;
+          return <div key={index} className="flex gap-2.5"><span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#fff4cd] text-[10px] font-bold text-[#977018]">{match?.[1]}</span><span>{match?.[2]}</span></div>;
         }
         return <p key={index}>{line}</p>;
       })}
@@ -223,34 +243,44 @@ function FlowDiagram({ steps, compact = false }: { steps: BusinessBrainFlowStep[
     );
   }
   return (
-    <div className={cn("grid items-stretch", compact ? "gap-2 lg:grid-flow-col lg:auto-cols-fr" : "gap-3 xl:grid-flow-col xl:auto-cols-fr")}>
-      {steps.map((step, index) => {
-        const tone = TONE_STYLES[step.tone];
-        return (
-          <div key={step.id} className="contents">
-            <article className={cn("relative rounded-2xl border p-4 shadow-sm", tone.card)}>
-              <div className="flex items-start gap-3">
-                <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-sm", tone.icon)}>{String(index + 1).padStart(2, "0")}</div>
-                <div className="min-w-0">
-                  <h4 className="font-extrabold text-[#17253d]">{step.title}</h4>
-                  <p className="mt-1 text-xs leading-5 text-[#6b7b92]">{step.description}</p>
+    <div className={cn("mx-auto", compact ? "max-w-5xl" : "max-w-6xl")}>
+      <div className="mb-2 hidden grid-cols-[56px_minmax(0,1fr)_180px_160px] gap-3 px-1 md:grid">
+        <span />
+        <span className={cn(EYEBROW, "text-[#8794a7]")}>Nội dung & kết quả</span>
+        <span className={cn(EYEBROW, "text-[#8794a7]")}>Phụ trách</span>
+        <span className={cn(EYEBROW, "text-[#8794a7]")}>Kênh thực hiện</span>
+      </div>
+      <div className="relative">
+        {steps.map((step, index) => {
+          const tone = TONE_STYLES[step.tone];
+          const isLast = index === steps.length - 1;
+          return (
+            <div key={step.id} className={cn("relative grid gap-3", !isLast && (compact ? "pb-3" : "pb-4"), "md:grid-cols-[56px_minmax(0,1fr)_180px_160px] md:items-stretch")}>
+              <div className="relative flex justify-center md:block">
+                {!isLast && <span className={cn("absolute left-1/2 top-10 h-[calc(100%+4px)] w-0.5 -translate-x-1/2 rounded-full", tone.line)} />}
+                <div className={cn("relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-4 border-white text-xs font-bold shadow-md", tone.icon)}>
+                  {String(index + 1).padStart(2, "0")}
                 </div>
               </div>
-              {(step.owner || step.channel) && (
-                <div className="mt-4 flex flex-wrap gap-1.5 border-t border-black/[0.06] pt-3 text-[10px] font-bold uppercase tracking-wide text-[#6f7e91]">
-                  {step.owner && <span className="rounded-full bg-white/75 px-2 py-1">{step.owner}</span>}
-                  {step.channel && <span className="rounded-full bg-white/75 px-2 py-1">{step.channel}</span>}
-                </div>
-              )}
-            </article>
-            {index < steps.length - 1 && (
-              <div className="hidden items-center justify-center xl:flex">
-                <ChevronRight className="text-[#aab7c9]" size={20} />
+
+              <article className={cn("rounded-2xl border p-4 shadow-sm", tone.card)}>
+                <h4 className="text-base font-semibold leading-6 text-[#17253d]">{step.title}</h4>
+                <p className="mt-1.5 text-sm leading-6 text-[#64758c]">{step.description || "Chưa có mô tả cho bước này."}</p>
+              </article>
+
+              <div className="rounded-2xl border border-[#dfe6ef] bg-[#f8fafd] p-4">
+                <p className={cn(EYEBROW, "md:hidden text-[#8b98aa]")}>Phụ trách</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-[#40516a] md:mt-0">{step.owner || "Chưa phân công"}</p>
               </div>
-            )}
-          </div>
-        );
-      })}
+
+              <div className="rounded-2xl border border-[#dfe6ef] bg-white p-4">
+                <p className={cn(EYEBROW, "md:hidden text-[#8b98aa]")}>Kênh thực hiện</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-[#40516a] md:mt-0">{step.channel || "Chưa xác định"}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -456,7 +486,7 @@ export function BusinessBrainClient() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-48px)] bg-[#f3f6fb] text-[#17243a]">
+    <div className="min-h-[calc(100vh-48px)] bg-[#f3f6fb] font-sans text-[15px] leading-6 text-[#17243a]">
       <div className="mx-auto max-w-[1680px] p-4 md:p-6">
         <header className="overflow-hidden rounded-3xl border border-[#ead9a8] bg-white shadow-[0_16px_50px_rgba(40,57,88,0.08)]">
           <div className="relative flex flex-col gap-5 overflow-hidden bg-[radial-gradient(circle_at_92%_10%,rgba(230,189,70,0.18),transparent_26%),linear-gradient(120deg,#ffffff_0%,#fffdf7_58%,#faf4df_100%)] px-5 py-6 md:px-8 lg:flex-row lg:items-center lg:justify-between">
@@ -466,8 +496,8 @@ export function BusinessBrainClient() {
                 <BrainCircuit size={28} />
               </div>
               <div>
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-[#aa7c13]"><Sparkles size={13} /> SmartFurni Business Brain</div>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-[#142036] md:text-3xl">Bộ não doanh nghiệp</h1>
+                <div className={cn(EYEBROW, "flex items-center gap-2 text-[#aa7c13]")}><Sparkles size={13} /> SmartFurni Business Brain</div>
+                <h1 className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-[#142036] md:text-3xl">Bộ não doanh nghiệp</h1>
                 <p className="mt-1 max-w-3xl text-sm leading-6 text-[#718097]">Nơi lưu trữ hướng dẫn, chính sách và sơ đồ vận hành chính thức trước khi chuyển thành chức năng trong CRM.</p>
               </div>
             </div>
@@ -477,16 +507,21 @@ export function BusinessBrainClient() {
               <button className={BUTTON_PRIMARY} onClick={newDoc}><FilePlus2 size={16} /> Tạo tài liệu</button>
             </div>
           </div>
-          <nav className="flex gap-1 overflow-x-auto border-t border-[#edf0f5] bg-[#fbfcfe] px-3 py-2 md:px-5">
-            {TABS.map(tab => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.key;
-              return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={cn("flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition", active ? "border border-[#e9ca6b] bg-[#fff7d9] text-[#805e0e] shadow-sm" : "border border-transparent text-[#708097] hover:bg-white hover:text-[#32445e]")}>
-                  <Icon size={16} /> {tab.label}
-                </button>
-              );
-            })}
+          <nav className="flex gap-3 overflow-x-auto border-t border-[#edf0f5] bg-[#fbfcfe] px-3 py-2.5 md:px-5" aria-label="Điều hướng Bộ não doanh nghiệp">
+            {TAB_GROUPS.map((group, groupIndex) => (
+              <div key={group.label} className={cn("flex shrink-0 items-center gap-1 rounded-2xl border border-[#e3e8f0] bg-white p-1", groupIndex > 0 && "ml-0 md:ml-1")}>
+                <span className={cn(EYEBROW, "hidden px-2 text-[#9aa6b6] xl:inline")}>{group.label}</span>
+                {group.tabs.map(tab => {
+                  const Icon = tab.icon;
+                  const active = activeTab === tab.key;
+                  return (
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={cn("flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition", active ? "border-[#e7c65f] bg-gradient-to-r from-[#fff8df] to-[#ffefb8] text-[#805e0e] shadow-sm" : "border-transparent text-[#687990] hover:bg-[#f5f7fa] hover:text-[#32445e]")}>
+                      <Icon size={16} /> {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </header>
 
@@ -510,40 +545,37 @@ export function BusinessBrainClient() {
                     { label: "Có sơ đồ", value: stats.diagrams, hint: "Quy trình nhìn trực quan", icon: Network, tone: "border-violet-200 bg-gradient-to-br from-violet-50 to-white text-violet-600" },
                   ].map(item => {
                     const Icon = item.icon;
-                    return <Panel key={item.label} className={cn("border p-5", item.tone)}><div className="flex items-start justify-between"><div><p className="text-xs font-black uppercase tracking-[0.14em] opacity-70">{item.label}</p><p className="mt-2 text-3xl font-black text-[#17243a]">{item.value}</p><p className="mt-1 text-xs text-[#7d8ba0]">{item.hint}</p></div><div className="rounded-xl bg-white p-2.5 shadow-sm"><Icon size={21} /></div></div></Panel>;
+                    return <Panel key={item.label} className={cn("border p-5", item.tone)}><div className="flex items-start justify-between"><div><p className={cn(EYEBROW, "opacity-70")}>{item.label}</p><p className="mt-2 text-3xl font-semibold tracking-[-0.02em] text-[#17243a]">{item.value}</p><p className="mt-1 text-sm leading-6 text-[#738198]">{item.hint}</p></div><div className="rounded-xl bg-white p-2.5 shadow-sm"><Icon size={21} /></div></div></Panel>;
                   })}
                 </div>
 
                 <Panel className="overflow-hidden">
                   <div className="flex flex-col gap-3 border-b border-[#e6ebf2] bg-gradient-to-r from-[#fffdf7] to-[#f4f8ff] px-5 py-5 md:flex-row md:items-center md:justify-between">
-                    <div><p className="text-xs font-black uppercase tracking-[0.18em] text-[#b18216]">Bản đồ vận hành</p><h2 className="mt-1 text-xl font-black">Từ tài liệu đến chức năng CRM</h2><p className="mt-1 text-sm text-[#75849a]">Chỉ triển khai chức năng sau khi hướng dẫn đã rõ chủ sở hữu, quy trình và cổng kiểm soát.</p></div>
+                    <div><p className={cn(EYEBROW, "text-[#b18216]")}>Bản đồ vận hành</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Từ tài liệu đến chức năng CRM</h2><p className={SECTION_DESCRIPTION}>Chỉ triển khai chức năng sau khi hướng dẫn đã rõ chủ sở hữu, quy trình và cổng kiểm soát.</p></div>
                     <button onClick={() => setActiveTab("diagram")} className={BUTTON_SECONDARY}>Xem sơ đồ <ArrowRight size={15} /></button>
                   </div>
-                  <div className="grid gap-3 p-5 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] lg:items-center">
-                    {[
-                      ["01", "Viết hướng dẫn", "Mục tiêu, quy tắc, biểu mẫu", FilePenLine],
-                      ["02", "Phê duyệt áp dụng", "Đúng người chịu trách nhiệm", ShieldCheck],
-                      ["03", "Chuyển thành chức năng", "Trigger, dữ liệu, hành động", GitBranch],
-                      ["04", "Đo lường & cập nhật", "Kết quả quay lại tài liệu", Activity],
-                    ].map(([number, title, hint, icon], index) => {
-                      const Icon = icon as LucideIcon;
-                      return <div key={String(title)} className="contents"><div className="rounded-2xl border border-[#dfe6ef] bg-white p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff2bd] font-black text-[#9b7214]">{String(number)}</div><Icon className="text-[#547198]" size={19} /></div><h3 className="mt-4 font-black">{String(title)}</h3><p className="mt-1 text-xs leading-5 text-[#7b899d]">{String(hint)}</p></div>{index < 3 && <ChevronRight className="mx-auto hidden text-[#b3becc] lg:block" />}</div>;
-                    })}
+                  <div className="p-5">
+                    <FlowDiagram compact steps={[
+                      { id: "overview-write", title: "Viết hướng dẫn", description: "Xác định mục tiêu, quy tắc và biểu mẫu đầu ra.", owner: "Chủ quy trình", channel: "Tài liệu", tone: "amber" },
+                      { id: "overview-approve", title: "Phê duyệt áp dụng", description: "Người có thẩm quyền xác nhận nội dung được dùng.", owner: "Quản lý", channel: "Phê duyệt", tone: "emerald" },
+                      { id: "overview-build", title: "Chuyển thành chức năng", description: "Chuẩn hóa trigger, dữ liệu và hành động trong CRM.", owner: "Sản phẩm & IT", channel: "CRM", tone: "blue" },
+                      { id: "overview-measure", title: "Đo lường & cập nhật", description: "Kết quả vận hành quay lại tài liệu cho lần cải tiến tiếp theo.", owner: "Chủ quy trình", channel: "Báo cáo", tone: "violet" },
+                    ]} />
                   </div>
                 </Panel>
 
                 <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
                   <Panel className="p-5">
-                    <div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-black">Tài liệu vận hành cốt lõi</h2><p className="text-sm text-[#7a899e]">Bộ hướng dẫn nền tảng đã được chuẩn hóa.</p></div><button onClick={() => setActiveTab("library")} className="text-sm font-bold text-[#9b7317]">Xem tất cả →</button></div>
+                    <div className="mb-4 flex items-center justify-between"><div><h2 className={SECTION_TITLE}>Tài liệu vận hành cốt lõi</h2><p className={SECTION_DESCRIPTION}>Bộ hướng dẫn nền tảng đã được chuẩn hóa.</p></div><button onClick={() => setActiveTab("library")} className="text-sm font-semibold text-[#9b7317]">Xem tất cả →</button></div>
                     <div className="grid gap-3 md:grid-cols-2">
                       {docs.filter(doc => doc.source === "business-playbook-v1").slice(0, 6).map(doc => {
                         const Icon = CATEGORY_ICONS[doc.category] || FileText;
-                        return <button key={doc.id} onClick={() => openDoc(doc)} className="group rounded-2xl border border-[#e0e6ef] bg-[#fbfcfe] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#dfbd58] hover:bg-white hover:shadow-md"><div className="flex items-start gap-3"><div className="rounded-xl bg-[#fff4cc] p-2.5 text-[#9a7215]"><Icon size={19} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><h3 className="line-clamp-2 font-extrabold text-[#1b2b44]">{doc.title}</h3><ChevronRight className="shrink-0 text-[#a4b0c1] group-hover:text-[#b1841a]" size={17} /></div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#7b899c]">{doc.summary}</p></div></div></button>;
+                        return <button key={doc.id} onClick={() => openDoc(doc)} className="group rounded-2xl border border-[#e0e6ef] bg-[#fbfcfe] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#dfbd58] hover:bg-white hover:shadow-md"><div className="flex items-start gap-3"><div className="rounded-xl bg-[#fff4cc] p-2.5 text-[#9a7215]"><Icon size={19} /></div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><h3 className="line-clamp-2 text-[15px] font-semibold leading-6 text-[#1b2b44]">{doc.title}</h3><ChevronRight className="shrink-0 text-[#a4b0c1] group-hover:text-[#b1841a]" size={17} /></div><p className="mt-1 line-clamp-2 text-sm leading-6 text-[#718096]">{doc.summary}</p></div></div></button>;
                       })}
                     </div>
                   </Panel>
                   <Panel className="p-5">
-                    <div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600"><ShieldCheck size={21} /></div><div><h2 className="font-black">Quy tắc sử dụng</h2><p className="text-xs text-[#8390a3]">Nguồn chuẩn duy nhất</p></div></div>
+                    <div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-50 p-2.5 text-emerald-600"><ShieldCheck size={21} /></div><div><h2 className="text-[15px] font-semibold">Quy tắc sử dụng</h2><p className="text-sm text-[#77869a]">Nguồn chuẩn duy nhất</p></div></div>
                     <div className="mt-5 space-y-4">
                       {["Tài liệu Đang dùng mới được AI tham chiếu", "Mọi cập nhật đều có lịch sử phiên bản", "Quy trình phải có người chịu trách nhiệm", "Chức năng CRM phải dẫn chiếu hướng dẫn"].map((item, index) => <div key={item} className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-black text-emerald-600">{index + 1}</span><p className="text-sm leading-6 text-[#607087]">{item}</p></div>)}
                     </div>
@@ -555,19 +587,19 @@ export function BusinessBrainClient() {
             {activeTab === "library" && (
               <div className="grid gap-5 xl:grid-cols-[300px_1fr]">
                 <Panel className="h-fit p-4 xl:sticky xl:top-4">
-                  <div className="flex items-center gap-2 font-black"><Filter size={17} className="text-[#b1851c]" /> Bộ lọc tài liệu</div>
+                  <div className="flex items-center gap-2 text-[15px] font-semibold"><Filter size={17} className="text-[#b1851c]" /> Bộ lọc tài liệu</div>
                   <div className="relative mt-4"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ba8ba]" size={16} /><input className={cn(FIELD, "pl-9")} value={search} onChange={event => setSearch(event.target.value)} placeholder="Tìm nội dung..." /></div>
-                  <label className="mt-4 block text-xs font-bold text-[#607086]">Danh mục<select className={cn(FIELD, "mt-1.5")} value={category} onChange={event => setCategory(event.target.value as KnowledgeCategory | "all")}><option value="all">Tất cả danh mục</option>{Object.entries(KNOWLEDGE_CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <label className="mt-4 block text-xs font-bold text-[#607086]">Trạng thái<select className={cn(FIELD, "mt-1.5")} value={status} onChange={event => setStatus(event.target.value as KnowledgeStatus | "all")}><option value="all">Tất cả trạng thái</option>{Object.entries(KNOWLEDGE_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <div className="mt-5 rounded-xl bg-[#f5f8fc] p-3 text-xs leading-5 text-[#718097]"><b>{filteredDocs.length}</b> tài liệu phù hợp. Dùng tag và danh mục để AI tìm đúng hướng dẫn.</div>
+                  <label className={cn(FORM_LABEL, "mt-4 block")}>Danh mục<select className={cn(FIELD, "mt-1.5")} value={category} onChange={event => setCategory(event.target.value as KnowledgeCategory | "all")}><option value="all">Tất cả danh mục</option>{Object.entries(KNOWLEDGE_CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  <label className={cn(FORM_LABEL, "mt-4 block")}>Trạng thái<select className={cn(FIELD, "mt-1.5")} value={status} onChange={event => setStatus(event.target.value as KnowledgeStatus | "all")}><option value="all">Tất cả trạng thái</option>{Object.entries(KNOWLEDGE_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  <div className="mt-5 rounded-xl bg-[#f5f8fc] p-3 text-sm leading-6 text-[#718097]"><b>{filteredDocs.length}</b> tài liệu phù hợp. Dùng tag và danh mục để AI tìm đúng hướng dẫn.</div>
                 </Panel>
                 <Panel className="overflow-hidden">
-                  <div className="flex flex-col gap-3 border-b border-[#e5eaf1] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-black">Thư viện hướng dẫn</h2><p className="text-sm text-[#7c8a9e]">Tài liệu nghiệp vụ có thể tìm kiếm, chỉnh sửa và tái sử dụng.</p></div><button className={BUTTON_PRIMARY} onClick={newDoc}><Plus size={16} /> Thêm tài liệu</button></div>
+                  <div className="flex flex-col gap-3 border-b border-[#e5eaf1] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className={SECTION_TITLE}>Thư viện hướng dẫn</h2><p className={SECTION_DESCRIPTION}>Tài liệu nghiệp vụ có thể tìm kiếm, chỉnh sửa và tái sử dụng.</p></div><button className={BUTTON_PRIMARY} onClick={newDoc}><Plus size={16} /> Thêm tài liệu</button></div>
                   <div className="grid gap-4 p-5 md:grid-cols-2 2xl:grid-cols-3">
                     {filteredDocs.map(doc => {
                       const Icon = CATEGORY_ICONS[doc.category] || FileText;
                       const meta = objectValue(doc.metadata);
-                      return <article key={doc.id} className="flex min-h-60 flex-col rounded-2xl border border-[#dde5ef] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#dfbf62] hover:shadow-[0_12px_30px_rgba(45,64,94,0.1)]"><div className="flex items-start justify-between gap-3"><div className="rounded-xl bg-gradient-to-br from-[#fff7d9] to-[#f5df91] p-2.5 text-[#8c6710]"><Icon size={20} /></div><StatusBadge status={doc.status} /></div><div className="mt-4 flex-1"><p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#aa7f1b]">{KNOWLEDGE_CATEGORY_LABELS[doc.category]}</p><h3 className="mt-1 line-clamp-2 text-lg font-black text-[#192943]">{doc.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#718096]">{doc.summary || doc.content}</p></div><div className="mt-4 flex flex-wrap gap-1.5">{doc.tags.slice(0, 3).map(tag => <span key={tag} className="rounded-full bg-[#f1f5fa] px-2 py-1 text-[10px] font-bold text-[#65758b]">#{tag}</span>)}</div><div className="mt-4 flex items-center justify-between border-t border-[#edf0f4] pt-3"><div className="text-[11px] text-[#8b98aa]"><span className="font-bold text-[#607087]">{String(meta.owner || "Chưa giao")}</span><br />{formatDate(doc.updatedAt, false)}</div><button className={BUTTON_SECONDARY} onClick={() => openDoc(doc)}>Mở <ArrowRight size={14} /></button></div></article>;
+                      return <article key={doc.id} className="flex min-h-60 flex-col rounded-2xl border border-[#dde5ef] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#dfbf62] hover:shadow-[0_12px_30px_rgba(45,64,94,0.1)]"><div className="flex items-start justify-between gap-3"><div className="rounded-xl bg-gradient-to-br from-[#fff7d9] to-[#f5df91] p-2.5 text-[#8c6710]"><Icon size={20} /></div><StatusBadge status={doc.status} /></div><div className="mt-4 flex-1"><p className={cn(EYEBROW, "text-[#aa7f1b]")}>{KNOWLEDGE_CATEGORY_LABELS[doc.category]}</p><h3 className="mt-1 line-clamp-2 text-base font-semibold leading-6 text-[#192943]">{doc.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#718096]">{doc.summary || doc.content}</p></div><div className="mt-4 flex flex-wrap gap-1.5">{doc.tags.slice(0, 3).map(tag => <span key={tag} className="rounded-full bg-[#f1f5fa] px-2.5 py-1 text-xs font-semibold text-[#65758b]">#{tag}</span>)}</div><div className="mt-4 flex items-center justify-between border-t border-[#edf0f4] pt-3"><div className="text-xs leading-5 text-[#8b98aa]"><span className="font-semibold text-[#607087]">{String(meta.owner || "Chưa giao")}</span><br />{formatDate(doc.updatedAt, false)}</div><button className={BUTTON_SECONDARY} onClick={() => openDoc(doc)}>Mở <ArrowRight size={14} /></button></div></article>;
                     })}
                     {!filteredDocs.length && <div className="col-span-full py-20 text-center text-[#8290a4]"><Search className="mx-auto mb-3" size={32} /><p className="font-bold">Không tìm thấy tài liệu phù hợp</p></div>}
                   </div>
@@ -578,36 +610,36 @@ export function BusinessBrainClient() {
             {activeTab === "editor" && (
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]">
                 <Panel className="overflow-hidden">
-                  <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#ad821b]">{form.id ? "Chỉnh sửa tài liệu" : "Tài liệu mới"}</p><h2 className="mt-1 text-xl font-black">Nội dung hướng dẫn doanh nghiệp</h2></div><div className="flex flex-wrap gap-2">{form.id && <button className={BUTTON_SECONDARY} onClick={duplicateDoc}><Copy size={14} /> Nhân bản</button>}<button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu tài liệu</button></div></div>
+                  <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className={cn(EYEBROW, "text-[#ad821b]")}>{form.id ? "Chỉnh sửa tài liệu" : "Tài liệu mới"}</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Nội dung hướng dẫn doanh nghiệp</h2></div><div className="flex flex-wrap gap-2">{form.id && <button className={BUTTON_SECONDARY} onClick={duplicateDoc}><Copy size={14} /> Nhân bản</button>}<button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu tài liệu</button></div></div>
                   <div className="space-y-5 p-5">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <label className="md:col-span-2 text-xs font-bold text-[#5c6d84]">Tiêu đề tài liệu *<input className={cn(FIELD, "mt-1.5 text-base font-bold")} value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} placeholder="Ví dụ: Quy trình chăm sóc khách mua lẻ" /></label>
-                      <label className="text-xs font-bold text-[#5c6d84]">Danh mục<select className={cn(FIELD, "mt-1.5")} value={form.category} onChange={event => setForm(prev => ({ ...prev, category: event.target.value as KnowledgeCategory }))}>{Object.entries(KNOWLEDGE_CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                      <label className="text-xs font-bold text-[#5c6d84]">Trạng thái<select className={cn(FIELD, "mt-1.5")} value={form.status} onChange={event => setForm(prev => ({ ...prev, status: event.target.value as KnowledgeStatus }))}>{Object.entries(KNOWLEDGE_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                      <label className="md:col-span-2 text-xs font-bold text-[#5c6d84]">Tóm tắt<input className={cn(FIELD, "mt-1.5")} value={form.summary} onChange={event => setForm(prev => ({ ...prev, summary: event.target.value }))} placeholder="Một câu giúp nhân viên hiểu tài liệu dùng để làm gì" /></label>
-                      <label className="text-xs font-bold text-[#5c6d84]">Người chịu trách nhiệm<input className={cn(FIELD, "mt-1.5")} value={form.owner} onChange={event => setForm(prev => ({ ...prev, owner: event.target.value }))} placeholder="Ví dụ: Trưởng phòng Kinh doanh" /></label>
-                      <label className="text-xs font-bold text-[#5c6d84]">Đối tượng áp dụng<input className={cn(FIELD, "mt-1.5")} value={form.audience} onChange={event => setForm(prev => ({ ...prev, audience: event.target.value }))} placeholder="Sale, CSKH, Marketing" /></label>
-                      <label className="text-xs font-bold text-[#5c6d84]">Chu kỳ rà soát<input className={cn(FIELD, "mt-1.5")} value={form.reviewCycle} onChange={event => setForm(prev => ({ ...prev, reviewCycle: event.target.value }))} /></label>
-                      <label className="text-xs font-bold text-[#5c6d84]">Tag tìm kiếm<input className={cn(FIELD, "mt-1.5")} value={form.tagsText} onChange={event => setForm(prev => ({ ...prev, tagsText: event.target.value }))} placeholder="bán lẻ, Zalo OA, báo giá" /></label>
+                      <label className={cn(FORM_LABEL, "md:col-span-2")}>Tiêu đề tài liệu *<input className={cn(FIELD, "mt-1.5 text-base font-semibold")} value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} placeholder="Ví dụ: Quy trình chăm sóc khách mua lẻ" /></label>
+                      <label className={FORM_LABEL}>Danh mục<select className={cn(FIELD, "mt-1.5")} value={form.category} onChange={event => setForm(prev => ({ ...prev, category: event.target.value as KnowledgeCategory }))}>{Object.entries(KNOWLEDGE_CATEGORY_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                      <label className={FORM_LABEL}>Trạng thái<select className={cn(FIELD, "mt-1.5")} value={form.status} onChange={event => setForm(prev => ({ ...prev, status: event.target.value as KnowledgeStatus }))}>{Object.entries(KNOWLEDGE_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                      <label className={cn(FORM_LABEL, "md:col-span-2")}>Tóm tắt<input className={cn(FIELD, "mt-1.5")} value={form.summary} onChange={event => setForm(prev => ({ ...prev, summary: event.target.value }))} placeholder="Một câu giúp nhân viên hiểu tài liệu dùng để làm gì" /></label>
+                      <label className={FORM_LABEL}>Người chịu trách nhiệm<input className={cn(FIELD, "mt-1.5")} value={form.owner} onChange={event => setForm(prev => ({ ...prev, owner: event.target.value }))} placeholder="Ví dụ: Trưởng phòng Kinh doanh" /></label>
+                      <label className={FORM_LABEL}>Đối tượng áp dụng<input className={cn(FIELD, "mt-1.5")} value={form.audience} onChange={event => setForm(prev => ({ ...prev, audience: event.target.value }))} placeholder="Sale, CSKH, Marketing" /></label>
+                      <label className={FORM_LABEL}>Chu kỳ rà soát<input className={cn(FIELD, "mt-1.5")} value={form.reviewCycle} onChange={event => setForm(prev => ({ ...prev, reviewCycle: event.target.value }))} /></label>
+                      <label className={FORM_LABEL}>Tag tìm kiếm<input className={cn(FIELD, "mt-1.5")} value={form.tagsText} onChange={event => setForm(prev => ({ ...prev, tagsText: event.target.value }))} placeholder="bán lẻ, Zalo OA, báo giá" /></label>
                     </div>
                     <div>
-                      <div className="mb-2 flex items-center justify-between"><label className="text-xs font-bold text-[#5c6d84]">Nội dung tài liệu *</label><div className="flex rounded-lg bg-[#f1f4f8] p-1 text-xs font-bold"><button className={cn("rounded-md px-3 py-1.5", !preview && "bg-white text-[#9a7214] shadow-sm")} onClick={() => setPreview(false)}>Soạn thảo</button><button className={cn("rounded-md px-3 py-1.5", preview && "bg-white text-[#9a7214] shadow-sm")} onClick={() => setPreview(true)}>Xem trước</button></div></div>
+                      <div className="mb-2 flex items-center justify-between"><label className={FORM_LABEL}>Nội dung tài liệu *</label><div className="flex rounded-lg bg-[#f1f4f8] p-1 text-sm font-semibold"><button className={cn("rounded-md px-3 py-1.5", !preview && "bg-white text-[#9a7214] shadow-sm")} onClick={() => setPreview(false)}>Soạn thảo</button><button className={cn("rounded-md px-3 py-1.5", preview && "bg-white text-[#9a7214] shadow-sm")} onClick={() => setPreview(true)}>Xem trước</button></div></div>
                       {preview ? <div className="min-h-[460px] rounded-2xl border border-[#dce4ee] bg-[#fbfcfe] p-5"><DocumentPreview content={form.content} /></div> : <textarea className={cn(FIELD, "min-h-[460px] resize-y font-mono leading-6")} value={form.content} onChange={event => setForm(prev => ({ ...prev, content: event.target.value }))} />}
                     </div>
-                    <label className="block text-xs font-bold text-[#5c6d84]">Ghi chú thay đổi<input className={cn(FIELD, "mt-1.5")} value={form.changeNote} onChange={event => setForm(prev => ({ ...prev, changeNote: event.target.value }))} placeholder="Ví dụ: Bổ sung quy tắc follow-up ngày 7" /></label>
+                    <label className={cn(FORM_LABEL, "block")}>Ghi chú thay đổi<input className={cn(FIELD, "mt-1.5")} value={form.changeNote} onChange={event => setForm(prev => ({ ...prev, changeNote: event.target.value }))} placeholder="Ví dụ: Bổ sung quy tắc follow-up ngày 7" /></label>
                   </div>
                 </Panel>
 
                 <div className="space-y-5">
                   <Panel className="p-5 xl:sticky xl:top-4">
-                    <div className="flex items-center gap-3"><div className="rounded-xl bg-[#fff3c6] p-2.5 text-[#987013]"><FileText size={20} /></div><div><h3 className="font-black">Thông tin quản trị</h3><p className="text-xs text-[#8592a4]">Dùng để kiểm soát và tìm kiếm</p></div></div>
+                    <div className="flex items-center gap-3"><div className="rounded-xl bg-[#fff3c6] p-2.5 text-[#987013]"><FileText size={20} /></div><div><h3 className="text-[15px] font-semibold">Thông tin quản trị</h3><p className="text-sm text-[#7b899c]">Dùng để kiểm soát và tìm kiếm</p></div></div>
                     <dl className="mt-5 space-y-3 text-sm">{[
                       ["Mã tài liệu", form.id || "Tạo sau khi lưu"],
                       ["Nguồn", form.source],
                       ["Số bước sơ đồ", `${form.flowSteps.length} bước`],
                       ["Cập nhật gần nhất", selected ? formatDate(selected.updatedAt) : "Chưa lưu"],
                     ].map(([label, value]) => <div key={label} className="flex items-start justify-between gap-4 border-b border-[#edf0f4] pb-3"><dt className="text-[#8491a3]">{label}</dt><dd className="max-w-[60%] break-all text-right font-bold text-[#33455e]">{value}</dd></div>)}</dl>
-                    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><b>Chú ý:</b> Chuyển sang “Đang dùng” chỉ khi nội dung đã được người chịu trách nhiệm xác nhận.</div>
+                    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800"><b>Chú ý:</b> Chuyển sang “Đang dùng” chỉ khi nội dung đã được người chịu trách nhiệm xác nhận.</div>
                     <div className="mt-4 grid grid-cols-2 gap-2"><button className={BUTTON_SECONDARY} onClick={() => exportDocument("markdown")}><Download size={14} /> Markdown</button><button className={BUTTON_SECONDARY} onClick={() => exportDocument("json")}><Download size={14} /> JSON</button></div>
                     {form.id && <button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100" onClick={deleteDoc}><Trash2 size={15} /> Xóa tài liệu</button>}
                   </Panel>
@@ -616,22 +648,29 @@ export function BusinessBrainClient() {
             )}
 
             {activeTab === "diagram" && (
-              <div className="space-y-5">
-                <Panel className="p-5">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#ab7f17]">Sơ đồ chỉnh sửa được</p><h2 className="mt-1 text-xl font-black">{form.title || "Chọn hoặc tạo tài liệu"}</h2><p className="mt-1 text-sm text-[#7b899d]">Mỗi khối là một bước nghiệp vụ; có thể đổi nội dung, người phụ trách, kênh và thứ tự.</p></div><div className="flex gap-2"><button className={BUTTON_SECONDARY} onClick={addStep}><Plus size={15} /> Thêm bước</button><button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}><Save size={15} /> Lưu sơ đồ</button></div></div>
-                  <div className="mt-5"><FlowDiagram steps={form.flowSteps} /></div>
+              <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(430px,0.65fr)]">
+                <Panel className="h-fit p-5 2xl:sticky 2xl:top-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><p className={cn(EYEBROW, "text-[#ab7f17]")}>Sơ đồ nghiệp vụ</p><h2 className={cn(SECTION_TITLE, "mt-1")}>{form.title || "Chọn hoặc tạo tài liệu"}</h2><p className={SECTION_DESCRIPTION}>Theo dõi tuần tự bước thực hiện, người phụ trách và kênh xử lý trong cùng một trục.</p></div><button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}><Save size={15} /> Lưu sơ đồ</button></div>
+                  <div className="mt-6"><FlowDiagram steps={form.flowSteps} /></div>
                 </Panel>
-                <div className="grid gap-4 xl:grid-cols-2">
-                  {form.flowSteps.map((step, index) => <Panel key={step.id} className="p-4"><div className="flex items-start gap-3"><div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black", TONE_STYLES[step.tone].icon)}>{index + 1}</div><div className="min-w-0 flex-1 space-y-3"><div className="flex items-start gap-2"><input className={cn(FIELD, "font-bold")} value={step.title} onChange={event => updateStep(index, { title: event.target.value })} /><button className="rounded-lg border border-[#dfe5ed] p-2 text-[#718096] hover:text-[#9a7215]" onClick={() => moveStep(index, -1)} disabled={index === 0}><ArrowUp size={14} /></button><button className="rounded-lg border border-[#dfe5ed] p-2 text-[#718096] hover:text-[#9a7215]" onClick={() => moveStep(index, 1)} disabled={index === form.flowSteps.length - 1}><ArrowDown size={14} /></button><button className="rounded-lg border border-red-100 bg-red-50 p-2 text-red-500" onClick={() => setForm(prev => ({ ...prev, flowSteps: prev.flowSteps.filter((_, i) => i !== index) }))}><Trash2 size={14} /></button></div><textarea className={cn(FIELD, "min-h-20 resize-y")} value={step.description} onChange={event => updateStep(index, { description: event.target.value })} placeholder="Mô tả bước..." /><div className="grid gap-3 sm:grid-cols-3"><input className={FIELD} value={step.owner} onChange={event => updateStep(index, { owner: event.target.value })} placeholder="Người phụ trách" /><input className={FIELD} value={step.channel} onChange={event => updateStep(index, { channel: event.target.value })} placeholder="Kênh/Công cụ" /><select className={FIELD} value={step.tone} onChange={event => updateStep(index, { tone: event.target.value as Tone })}><option value="blue">Xanh dương</option><option value="violet">Tím</option><option value="amber">Vàng</option><option value="emerald">Xanh lá</option><option value="rose">Đỏ hồng</option></select></div></div></div></Panel>)}
-                  {!form.flowSteps.length && <Panel className="col-span-full p-10 text-center"><Network className="mx-auto text-[#aab6c6]" size={36} /><h3 className="mt-3 font-black">Bắt đầu bằng bước đầu tiên</h3><p className="mt-1 text-sm text-[#7f8da0]">Ví dụ: Lead mới → Gọi xác nhận → Phân loại → Chăm sóc → Kết quả.</p><button className={cn(BUTTON_PRIMARY, "mt-5")} onClick={addStep}><Plus size={15} /> Thêm bước</button></Panel>}
-                </div>
+
+                <Panel className="h-fit overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4">
+                    <div><h3 className="text-base font-semibold">Biên tập các bước</h3><p className="mt-1 text-sm leading-6 text-[#7b899d]">Sắp xếp từ trên xuống theo đúng thứ tự vận hành.</p></div>
+                    <button className={BUTTON_SECONDARY} onClick={addStep}><Plus size={15} /> Thêm bước</button>
+                  </div>
+                  <div className="max-h-[calc(100vh-260px)] space-y-3 overflow-y-auto p-4">
+                    {form.flowSteps.map((step, index) => <div key={step.id} className="rounded-2xl border border-[#dde5ee] bg-white p-4"><div className="flex items-start gap-3"><div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold shadow-sm", TONE_STYLES[step.tone].icon)}>{String(index + 1).padStart(2, "0")}</div><div className="min-w-0 flex-1 space-y-3"><div className="flex items-start gap-2"><input aria-label={`Tên bước ${index + 1}`} className={cn(FIELD, "font-semibold")} value={step.title} onChange={event => updateStep(index, { title: event.target.value })} /><button aria-label="Di chuyển lên" className="rounded-lg border border-[#dfe5ed] p-2.5 text-[#718096] hover:text-[#9a7215]" onClick={() => moveStep(index, -1)} disabled={index === 0}><ArrowUp size={14} /></button><button aria-label="Di chuyển xuống" className="rounded-lg border border-[#dfe5ed] p-2.5 text-[#718096] hover:text-[#9a7215]" onClick={() => moveStep(index, 1)} disabled={index === form.flowSteps.length - 1}><ArrowDown size={14} /></button><button aria-label="Xóa bước" className="rounded-lg border border-red-100 bg-red-50 p-2.5 text-red-500" onClick={() => setForm(prev => ({ ...prev, flowSteps: prev.flowSteps.filter((_, i) => i !== index) }))}><Trash2 size={14} /></button></div><textarea className={cn(FIELD, "min-h-24 resize-y")} value={step.description} onChange={event => updateStep(index, { description: event.target.value })} placeholder="Mô tả đầu việc và kết quả cần đạt..." /><div className="grid gap-3"><input className={FIELD} value={step.owner} onChange={event => updateStep(index, { owner: event.target.value })} placeholder="Người phụ trách" /><input className={FIELD} value={step.channel} onChange={event => updateStep(index, { channel: event.target.value })} placeholder="Kênh/Công cụ" /><select className={FIELD} value={step.tone} onChange={event => updateStep(index, { tone: event.target.value as Tone })}><option value="blue">Xanh dương</option><option value="violet">Tím</option><option value="amber">Vàng</option><option value="emerald">Xanh lá</option><option value="rose">Đỏ hồng</option></select></div></div></div></div>)}
+                    {!form.flowSteps.length && <div className="p-10 text-center"><Network className="mx-auto text-[#aab6c6]" size={36} /><h3 className="mt-3 text-base font-semibold">Bắt đầu bằng bước đầu tiên</h3><p className="mt-1 text-sm leading-6 text-[#7f8da0]">Ví dụ: Lead mới → Gọi xác nhận → Phân loại → Chăm sóc → Kết quả.</p><button className={cn(BUTTON_PRIMARY, "mt-5")} onClick={addStep}><Plus size={15} /> Thêm bước</button></div>}
+                  </div>
+                </Panel>
               </div>
             )}
 
             {activeTab === "history" && (
               <div className="grid gap-5 xl:grid-cols-[330px_1fr]">
-                <Panel className="h-fit p-4"><div className="flex items-center gap-2 font-black"><BookOpen size={18} className="text-[#a87b16]" /> Chọn tài liệu</div><div className="mt-4 max-h-[650px] space-y-2 overflow-y-auto">{docs.map(doc => <button key={doc.id} onClick={() => { openDoc(doc, "history"); void loadVersions(doc.id); }} className={cn("w-full rounded-xl border p-3 text-left", doc.id === selectedId ? "border-[#dfbc55] bg-[#fff8df]" : "border-[#e2e7ef] hover:bg-[#f7f9fc]")}><p className="line-clamp-2 text-sm font-bold">{doc.title}</p><p className="mt-1 text-[11px] text-[#8794a6]">{formatDate(doc.updatedAt)}</p></button>)}</div></Panel>
-                <Panel className="overflow-hidden"><div className="border-b border-[#e4e9f0] bg-[#fbfcfe] px-5 py-4"><p className="text-xs font-black uppercase tracking-[0.16em] text-[#aa7e16]">Lịch sử cập nhật</p><h2 className="mt-1 text-xl font-black">{selected?.title || "Chưa chọn tài liệu"}</h2><p className="mt-1 text-sm text-[#7c899d]">Khôi phục an toàn; phiên bản hiện tại vẫn được lưu lại.</p></div><div className="p-5"><div className="relative space-y-4 before:absolute before:bottom-3 before:left-[17px] before:top-3 before:w-px before:bg-[#dfe5ed]">{versions.map((version, index) => <div key={version.id} className="relative flex gap-4"><div className={cn("relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-white text-xs font-black", index === 0 ? "bg-emerald-500 text-white" : "bg-[#eaf0f7] text-[#65758a]")}>{version.version}</div><div className="min-w-0 flex-1 rounded-2xl border border-[#dee5ee] bg-white p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-black">Phiên bản {version.version}</h3>{index === 0 && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700">MỚI NHẤT</span>}<StatusBadge status={version.status} /></div><p className="mt-1 text-xs text-[#8491a3]">{formatDate(version.createdAt)} · {version.changedBy || "Hệ thống"}</p><p className="mt-2 text-sm font-semibold text-[#52637a]">{version.changeNote || "Cập nhật nội dung tài liệu"}</p></div><button disabled={saving || index === 0} onClick={() => void restoreVersion(version)} className={BUTTON_SECONDARY}><RotateCcw size={14} /> Khôi phục</button></div><details className="mt-3"><summary className="cursor-pointer text-xs font-bold text-[#997116]">Xem nội dung phiên bản</summary><div className="mt-3 max-h-72 overflow-y-auto rounded-xl bg-[#f7f9fc] p-4"><DocumentPreview content={version.content} /></div></details></div></div>)}{!versions.length && <div className="py-24 text-center text-[#8491a3]"><History className="mx-auto mb-3" size={36} /><p className="font-bold">Chưa có lịch sử phiên bản</p><p className="mt-1 text-sm">Lưu tài liệu để bắt đầu ghi nhận thay đổi.</p></div>}</div></div></Panel>
+                <Panel className="h-fit p-4"><div className="flex items-center gap-2 text-[15px] font-semibold"><BookOpen size={18} className="text-[#a87b16]" /> Chọn tài liệu</div><div className="mt-4 max-h-[650px] space-y-2 overflow-y-auto">{docs.map(doc => <button key={doc.id} onClick={() => { openDoc(doc, "history"); void loadVersions(doc.id); }} className={cn("w-full rounded-xl border p-3 text-left", doc.id === selectedId ? "border-[#dfbc55] bg-[#fff8df]" : "border-[#e2e7ef] hover:bg-[#f7f9fc]")}><p className="line-clamp-2 text-sm font-semibold leading-6">{doc.title}</p><p className="mt-1 text-xs text-[#8794a6]">{formatDate(doc.updatedAt)}</p></button>)}</div></Panel>
+                <Panel className="overflow-hidden"><div className="border-b border-[#e4e9f0] bg-[#fbfcfe] px-5 py-4"><p className={cn(EYEBROW, "text-[#aa7e16]")}>Lịch sử cập nhật</p><h2 className={cn(SECTION_TITLE, "mt-1")}>{selected?.title || "Chưa chọn tài liệu"}</h2><p className={SECTION_DESCRIPTION}>Khôi phục an toàn; phiên bản hiện tại vẫn được lưu lại.</p></div><div className="p-5"><div className="relative space-y-4 before:absolute before:bottom-3 before:left-[17px] before:top-3 before:w-px before:bg-[#dfe5ed]">{versions.map((version, index) => <div key={version.id} className="relative flex gap-4"><div className={cn("relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-white text-xs font-bold", index === 0 ? "bg-emerald-500 text-white" : "bg-[#eaf0f7] text-[#65758a]")}>{version.version}</div><div className="min-w-0 flex-1 rounded-2xl border border-[#dee5ee] bg-white p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-[15px] font-semibold">Phiên bản {version.version}</h3>{index === 0 && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">MỚI NHẤT</span>}<StatusBadge status={version.status} /></div><p className="mt-1 text-xs text-[#8491a3]">{formatDate(version.createdAt)} · {version.changedBy || "Hệ thống"}</p><p className="mt-2 text-sm font-semibold text-[#52637a]">{version.changeNote || "Cập nhật nội dung tài liệu"}</p></div><button disabled={saving || index === 0} onClick={() => void restoreVersion(version)} className={BUTTON_SECONDARY}><RotateCcw size={14} /> Khôi phục</button></div><details className="mt-3"><summary className="cursor-pointer text-sm font-semibold text-[#997116]">Xem nội dung phiên bản</summary><div className="mt-3 max-h-72 overflow-y-auto rounded-xl bg-[#f7f9fc] p-4"><DocumentPreview content={version.content} /></div></details></div></div>)}{!versions.length && <div className="py-24 text-center text-[#8491a3]"><History className="mx-auto mb-3" size={36} /><p className="font-semibold">Chưa có lịch sử phiên bản</p><p className="mt-1 text-sm">Lưu tài liệu để bắt đầu ghi nhận thay đổi.</p></div>}</div></div></Panel>
               </div>
             )}
           </main>
