@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { authorizeBusinessBrain } from "@/lib/business-brain-auth";
 import {
   createKnowledgeDocument,
+  createKnowledgeDocumentChangeRequest,
+  createKnowledgeRestoreRequest,
   deleteKnowledgeDocument,
   listKnowledgeDocuments,
   listKnowledgeDocumentVersions,
-  restoreKnowledgeDocumentVersion,
   reviewKnowledgeDocument,
-  updateKnowledgeDocument,
 } from "@/lib/business-brain-store";
 import type { KnowledgeCategory, KnowledgeStatus } from "@/types/business-brain";
 
@@ -65,20 +65,28 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   if (!body.id) return NextResponse.json({ error: "Thiếu ID tài liệu." }, { status: 400 });
 
-  const doc = await updateKnowledgeDocument(String(body.id), {
-    title: body.title,
-    category: body.category,
-    content: body.content,
-    summary: body.summary,
-    tags: Array.isArray(body.tags) ? body.tags.map(String) : undefined,
-    source: body.source,
-    metadata: body.metadata,
-    updatedBy: access.actor.name,
-    changeNote: body.changeNote ? String(body.changeNote) : undefined,
-  });
-
-  if (!doc) return NextResponse.json({ error: "Không tìm thấy tài liệu." }, { status: 404 });
-  return NextResponse.json({ document: doc });
+  let changeRequest;
+  try {
+    changeRequest = await createKnowledgeDocumentChangeRequest({
+      documentId: String(body.id),
+      proposedDocument: {
+        title: body.title,
+        category: body.category,
+        content: body.content,
+        summary: body.summary,
+        tags: Array.isArray(body.tags) ? body.tags.map(String) : undefined,
+        source: body.source,
+        metadata: body.metadata,
+      },
+      changeNote: body.changeNote ? String(body.changeNote) : "",
+      requestedById: access.actor.id,
+      requestedByName: access.actor.name,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Không thể tạo yêu cầu thay đổi." }, { status: 400 });
+  }
+  if (!changeRequest) return NextResponse.json({ error: "Không tìm thấy tài liệu." }, { status: 404 });
+  return NextResponse.json({ changeRequest, requiresApproval: true }, { status: 202 });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -118,13 +126,20 @@ export async function PATCH(req: NextRequest) {
   if (!body.id || !body.versionId) {
     return NextResponse.json({ error: "Thiếu tài liệu hoặc phiên bản cần khôi phục." }, { status: 400 });
   }
-  const document = await restoreKnowledgeDocumentVersion(
-    String(body.id),
-    String(body.versionId),
-    access.actor.name,
-  );
-  if (!document) return NextResponse.json({ error: "Không tìm thấy phiên bản." }, { status: 404 });
-  return NextResponse.json({ document });
+  let changeRequest;
+  try {
+    changeRequest = await createKnowledgeRestoreRequest({
+      documentId: String(body.id),
+      versionId: String(body.versionId),
+      changeNote: body.changeNote ? String(body.changeNote) : "Đề xuất khôi phục phiên bản cũ",
+      requestedById: access.actor.id,
+      requestedByName: access.actor.name,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Không thể tạo yêu cầu khôi phục." }, { status: 400 });
+  }
+  if (!changeRequest) return NextResponse.json({ error: "Không tìm thấy phiên bản." }, { status: 404 });
+  return NextResponse.json({ changeRequest, requiresApproval: true }, { status: 202 });
 }
 
 export async function DELETE(req: NextRequest) {

@@ -32,6 +32,12 @@ export interface CrmAutomationSpecificationDocument {
     audience: string;
     reviewCycle: string;
     implementationMode: string;
+    linkedCrmModules: string[];
+    developmentRequirements: string[];
+    acceptanceCriteria: string[];
+    aiProgrammingPrompt: string;
+    codeVersion: string;
+    implementationStatus: "specified" | "planned" | "in_development" | "testing" | "deployed";
     flowSteps: BusinessBrainFlowStep[];
     flowEdges: BusinessBrainFlowEdge[];
   };
@@ -84,6 +90,20 @@ function createDocument(input: Omit<CrmAutomationSpecificationDocument, "source"
       audience: input.audience,
       reviewCycle: input.reviewCycle,
       implementationMode: input.implementationMode,
+      linkedCrmModules: input.flow.flowSteps.map(step => step.channel).filter((value, index, values) => Boolean(value) && values.indexOf(value) === index),
+      developmentRequirements: [
+        `Triển khai đúng phạm vi ${input.title.replace(/^SF-AUTO-\d+\s*·\s*/, "")}.`,
+        "Mọi mutation phải có RBAC, audit log, idempotency và trạng thái lỗi rõ ràng.",
+        "Không tự động hóa hành động vượt quá implementationMode đã được phê duyệt.",
+      ],
+      acceptanceCriteria: [
+        "Đạt toàn bộ tiêu chí nghiệm thu nêu trong nội dung tài liệu.",
+        "Có unit test, integration test và bằng chứng kiểm thử giao diện tương ứng.",
+        "Mã nguồn và cấu hình triển khai dẫn chiếu đúng documentCode và version.",
+      ],
+      aiProgrammingPrompt: `Đọc SF-AUTO-${String(input.sequence).padStart(2, "0")} cùng SF-AUTO-01, SF-AUTO-08 và SF-AUTO-09 trước khi phân tích hoặc lập trình. Chỉ đề xuất thay đổi trong phạm vi tài liệu active; nêu rõ file, dữ liệu, quyền, guardrail, test và rollback. Không sửa tài liệu doanh nghiệp hoặc triển khai hành động rủi ro nếu chưa có phê duyệt của quản trị viên.`,
+      codeVersion: "Chưa liên kết commit",
+      implementationStatus: "specified",
       flowSteps: input.flow.flowSteps,
       flowEdges: input.flow.flowEdges,
     },

@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { query, queryOne } from "@/lib/db";
+import { getDb, query, queryOne } from "@/lib/db";
 import { calculateKnowledgeHealth, canTransitionKnowledgeStatus } from "@/lib/business-brain-governance";
 import { CRM_AUTOMATION_SPEC_DOCUMENTS } from "@/lib/business-brain-crm-automation-documents";
 import type {
@@ -10,6 +10,7 @@ import type {
   CustomerConversation,
   KnowledgeCategory,
   KnowledgeDocument,
+  KnowledgeDocumentChangeRequest,
   KnowledgeDocumentVersion,
   KnowledgeStatus,
   LeadScoreRecord,
@@ -90,6 +91,24 @@ export async function initBusinessBrainSchema() {
   `);
 
   await query(`ALTER TABLE knowledge_documents ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS knowledge_document_change_requests (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      proposed_document JSONB NOT NULL,
+      change_note TEXT NOT NULL,
+      requested_by_id TEXT,
+      requested_by_name TEXT,
+      reviewed_by_id TEXT,
+      reviewed_by_name TEXT,
+      review_note TEXT,
+      applied_version INTEGER,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      reviewed_at TIMESTAMPTZ
+    )
+  `);
 
   await query(`
     CREATE TABLE IF NOT EXISTS knowledge_document_reviews (
@@ -257,6 +276,8 @@ export async function initBusinessBrainSchema() {
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_deleted ON knowledge_documents(deleted_at)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_reviews_document ON knowledge_document_reviews(document_id, created_at DESC)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_versions_document ON knowledge_document_versions(document_id, version DESC)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_knowledge_change_requests_document ON knowledge_document_change_requests(document_id, created_at DESC)`);
+  await query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_knowledge_one_pending_change ON knowledge_document_change_requests(document_id) WHERE status='pending'`);
   await query(`CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_conversations_customer ON conversations(customer_id)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_agent_actions_customer ON agent_actions(customer_id)`);
@@ -553,6 +574,22 @@ async function seedDefaults() {
     );
     if (inserted[0]) {
       await snapshotKnowledgeDocument(specification.id, specification.createdBy, "Nhập bộ đặc tả CRM SmartFurni v1.0");
+    } else {
+      // Bổ sung các trường liên kết lập trình còn thiếu mà không ghi đè nội dung doanh nghiệp đã chỉnh sửa.
+      // Đây là migration một lần được thực hiện trong đợt nâng cấp cơ chế quản trị tài liệu.
+      const backfilled = await query<{ id: string }>(
+        `UPDATE knowledge_documents
+         SET metadata=$2::jsonb || metadata
+         WHERE id=$1 AND deleted_at IS NULL
+           AND NOT (metadata ? 'linkedCrmModules' AND metadata ? 'developmentRequirements'
+                    AND metadata ? 'acceptanceCriteria' AND metadata ? 'aiProgrammingPrompt'
+                    AND metadata ? 'codeVersion' AND metadata ? 'implementationStatus')
+         RETURNING id`,
+        [specification.id, JSON.stringify(specification.metadata)],
+      );
+      if (backfilled[0]) {
+        await snapshotKnowledgeDocument(specification.id, "SmartFurni System Migration", "Bổ sung liên kết đặc tả với chức năng CRM và tiêu chí nghiệm thu");
+      }
     }
   }
 }
@@ -592,6 +629,25 @@ function mapKnowledgeVersion(row: Record<string, unknown>): KnowledgeDocumentVer
     changedBy: row.changed_by ? String(row.changed_by) : undefined,
     changeNote: row.change_note ? String(row.change_note) : undefined,
     createdAt: new Date(String(row.created_at)).toISOString(),
+  };
+}
+
+function mapKnowledgeChangeRequest(row: Record<string, unknown>): KnowledgeDocumentChangeRequest {
+  return {
+    id: String(row.id),
+    documentId: String(row.document_id),
+    documentTitle: String(row.document_title || ""),
+    status: String(row.status || "pending") as KnowledgeDocumentChangeRequest["status"],
+    proposedDocument: asJson<Partial<KnowledgeDocument>>(row.proposed_document, {}),
+    changeNote: String(row.change_note || ""),
+    requestedById: row.requested_by_id ? String(row.requested_by_id) : undefined,
+    requestedByName: row.requested_by_name ? String(row.requested_by_name) : undefined,
+    reviewedById: row.reviewed_by_id ? String(row.reviewed_by_id) : undefined,
+    reviewedByName: row.reviewed_by_name ? String(row.reviewed_by_name) : undefined,
+    reviewNote: row.review_note ? String(row.review_note) : undefined,
+    appliedVersion: row.applied_version == null ? undefined : Number(row.applied_version),
+    createdAt: new Date(String(row.created_at)).toISOString(),
+    reviewedAt: row.reviewed_at ? new Date(String(row.reviewed_at)).toISOString() : undefined,
   };
 }
 
@@ -636,6 +692,209 @@ export async function restoreKnowledgeDocumentVersion(documentId: string, versio
   }, { skipSnapshot: true });
   if (restored) await snapshotKnowledgeDocument(documentId, actor, `Khôi phục phiên bản ${Number(version.version || 1)}`);
   return restored;
+}
+
+export async function createKnowledgeDocumentChangeRequest(input: {
+  documentId: string;
+  proposedDocument: Partial<KnowledgeDocument>;
+  changeNote: string;
+  requestedById?: string;
+  requestedByName?: string;
+}) {
+  await initBusinessBrainSchema();
+  const document = await queryOne<Record<string, unknown>>(
+    `SELECT id,title FROM knowledge_documents WHERE id=$1 AND deleted_at IS NULL`,
+    [input.documentId],
+  );
+  if (!document) return null;
+  const proposal: Partial<KnowledgeDocument> = {};
+  for (const key of ["title", "category", "content", "summary", "tags", "source", "metadata"] as const) {
+    if (input.proposedDocument[key] !== undefined) {
+      (proposal as Record<string, unknown>)[key] = input.proposedDocument[key];
+    }
+  }
+  if (!Object.keys(proposal).length) throw new Error("Yêu cầu thay đổi chưa có nội dung cập nhật.");
+  if (!input.changeNote.trim()) throw new Error("Cần nêu lý do và phạm vi thay đổi để người duyệt xác nhận.");
+  try {
+    const rows = await query<Record<string, unknown>>(
+      `INSERT INTO knowledge_document_change_requests
+        (id,document_id,status,proposed_document,change_note,requested_by_id,requested_by_name)
+       VALUES ($1,$2,'pending',$3::jsonb,$4,$5,$6)
+       RETURNING *, $7::text AS document_title`,
+      [randomUUID(), input.documentId, JSON.stringify(proposal), input.changeNote.trim(), input.requestedById || null, input.requestedByName || null, document.title],
+    );
+    await query(
+      `INSERT INTO knowledge_document_reviews
+        (id,document_id,action,from_status,to_status,actor_id,actor_name,note)
+       SELECT $1,id,'Đề xuất cập nhật',status,status,$3,$4,$5 FROM knowledge_documents WHERE id=$2`,
+      [randomUUID(), input.documentId, input.requestedById || null, input.requestedByName || null, input.changeNote.trim()],
+    );
+    return mapKnowledgeChangeRequest(rows[0]);
+  } catch (error) {
+    if (error instanceof Error && /idx_knowledge_one_pending_change|duplicate key/i.test(error.message)) {
+      throw new Error("Tài liệu đã có một yêu cầu thay đổi đang chờ duyệt. Hãy xử lý yêu cầu đó trước.");
+    }
+    throw error;
+  }
+}
+
+export async function createKnowledgeRestoreRequest(input: {
+  documentId: string;
+  versionId: string;
+  changeNote: string;
+  requestedById?: string;
+  requestedByName?: string;
+}) {
+  await initBusinessBrainSchema();
+  const version = await queryOne<Record<string, unknown>>(
+    `SELECT * FROM knowledge_document_versions WHERE id=$1 AND document_id=$2`,
+    [input.versionId, input.documentId],
+  );
+  if (!version) return null;
+  return createKnowledgeDocumentChangeRequest({
+    documentId: input.documentId,
+    proposedDocument: {
+      title: String(version.title || ""),
+      category: String(version.category || "faq") as KnowledgeCategory,
+      content: String(version.content || ""),
+      summary: version.summary ? String(version.summary) : undefined,
+      tags: Array.isArray(version.tags) ? version.tags.map(String) : [],
+      source: version.source ? String(version.source) : "manual",
+      metadata: asJson<Record<string, unknown>>(version.metadata, {}),
+    },
+    changeNote: input.changeNote || `Đề xuất khôi phục phiên bản ${Number(version.version || 1)}`,
+    requestedById: input.requestedById,
+    requestedByName: input.requestedByName,
+  });
+}
+
+export async function listKnowledgeDocumentChangeRequests(filters?: {
+  documentId?: string;
+  status?: KnowledgeDocumentChangeRequest["status"] | "all";
+  limit?: number;
+}) {
+  await initBusinessBrainSchema();
+  const params: unknown[] = [];
+  const where: string[] = [];
+  let index = 1;
+  if (filters?.documentId) {
+    where.push(`r.document_id=$${index++}`);
+    params.push(filters.documentId);
+  }
+  if (filters?.status && filters.status !== "all") {
+    where.push(`r.status=$${index++}`);
+    params.push(filters.status);
+  }
+  params.push(filters?.limit || 120);
+  const rows = await query<Record<string, unknown>>(
+    `SELECT r.*,d.title AS document_title
+     FROM knowledge_document_change_requests r
+     JOIN knowledge_documents d ON d.id=r.document_id
+     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+     ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END,r.created_at DESC
+     LIMIT $${index}`,
+    params,
+  );
+  return rows.map(mapKnowledgeChangeRequest);
+}
+
+export async function decideKnowledgeDocumentChangeRequest(input: {
+  requestId: string;
+  decision: "approved" | "rejected";
+  reviewerId?: string;
+  reviewerName?: string;
+  reviewNote?: string;
+}) {
+  await initBusinessBrainSchema();
+  const client = await getDb().connect();
+  try {
+    await client.query("BEGIN");
+    const requestResult = await client.query(
+      `SELECT r.*,d.title AS document_title
+       FROM knowledge_document_change_requests r
+       JOIN knowledge_documents d ON d.id=r.document_id
+       WHERE r.id=$1 FOR UPDATE OF r`,
+      [input.requestId],
+    );
+    const request = requestResult.rows[0] as Record<string, unknown> | undefined;
+    if (!request) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    if (String(request.status) !== "pending") throw new Error("Yêu cầu thay đổi này đã được xử lý.");
+    if (input.decision === "rejected") {
+      const rejected = await client.query(
+        `UPDATE knowledge_document_change_requests
+         SET status='rejected',reviewed_by_id=$2,reviewed_by_name=$3,review_note=$4,reviewed_at=NOW()
+         WHERE id=$1 RETURNING *`,
+        [input.requestId, input.reviewerId || null, input.reviewerName || null, input.reviewNote || null],
+      );
+      await client.query(
+        `INSERT INTO knowledge_document_reviews
+          (id,document_id,action,from_status,to_status,actor_id,actor_name,note)
+         SELECT $1,id,'Từ chối cập nhật',status,status,$3,$4,$5 FROM knowledge_documents WHERE id=$2`,
+        [randomUUID(), request.document_id, input.reviewerId || null, input.reviewerName || null, input.reviewNote || null],
+      );
+      await client.query("COMMIT");
+      return { request: mapKnowledgeChangeRequest({ ...rejected.rows[0], document_title: request.document_title }), document: null };
+    }
+
+    const proposal = asJson<Partial<KnowledgeDocument>>(request.proposed_document, {});
+    const currentResult = await client.query(`SELECT * FROM knowledge_documents WHERE id=$1 AND deleted_at IS NULL FOR UPDATE`, [request.document_id]);
+    const current = currentResult.rows[0] as Record<string, unknown> | undefined;
+    if (!current) throw new Error("Tài liệu không còn tồn tại để áp dụng thay đổi.");
+    const updatedResult = await client.query(
+      `UPDATE knowledge_documents
+       SET title=COALESCE($2,title),category=COALESCE($3,category),content=COALESCE($4,content),
+           summary=CASE WHEN $5::boolean THEN $6 ELSE summary END,
+           tags=COALESCE($7,tags),source=COALESCE($8,source),metadata=COALESCE($9::jsonb,metadata),
+           updated_by=$10,updated_at=NOW()
+       WHERE id=$1 RETURNING *`,
+      [
+        request.document_id,
+        proposal.title ?? null,
+        proposal.category ?? null,
+        proposal.content ?? null,
+        Object.hasOwn(proposal, "summary"),
+        proposal.summary ?? null,
+        proposal.tags ?? null,
+        proposal.source ?? null,
+        proposal.metadata ? JSON.stringify(proposal.metadata) : null,
+        input.reviewerName || input.reviewerId || null,
+      ],
+    );
+    const versionResult = await client.query<{ version: number }>(
+      `INSERT INTO knowledge_document_versions
+        (id,document_id,version,title,category,status,content,summary,tags,source,metadata,changed_by,change_note)
+       SELECT $2,id,COALESCE((SELECT MAX(version)+1 FROM knowledge_document_versions WHERE document_id=$1),1),
+         title,category,status,content,summary,tags,source,metadata,$3,$4
+       FROM knowledge_documents WHERE id=$1 RETURNING version`,
+      [request.document_id, randomUUID(), input.reviewerName || input.reviewerId || null, `Đã duyệt: ${String(request.change_note || "Cập nhật tài liệu")}`],
+    );
+    const appliedVersion = Number(versionResult.rows[0]?.version || 1);
+    const approved = await client.query(
+      `UPDATE knowledge_document_change_requests
+       SET status='approved',reviewed_by_id=$2,reviewed_by_name=$3,review_note=$4,applied_version=$5,reviewed_at=NOW()
+       WHERE id=$1 RETURNING *`,
+      [input.requestId, input.reviewerId || null, input.reviewerName || null, input.reviewNote || null, appliedVersion],
+    );
+    await client.query(
+      `INSERT INTO knowledge_document_reviews
+        (id,document_id,action,from_status,to_status,actor_id,actor_name,note)
+       VALUES ($1,$2,'Phê duyệt và áp dụng cập nhật',$3,$3,$4,$5,$6)`,
+      [randomUUID(), request.document_id, current.status, input.reviewerId || null, input.reviewerName || null, input.reviewNote || request.change_note],
+    );
+    await client.query("COMMIT");
+    return {
+      request: mapKnowledgeChangeRequest({ ...approved.rows[0], document_title: updatedResult.rows[0]?.title || request.document_title }),
+      document: mapKnowledge(updatedResult.rows[0]),
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function mapCustomer(row: Record<string, unknown>): BusinessCustomer {
@@ -731,7 +990,13 @@ export async function listKnowledgeDocuments(filters?: {
 export async function searchKnowledge(queryText: string, limit = 5) {
   const docs = await listKnowledgeDocuments({ status: "active", limit: 200 });
   return docs
-    .map(doc => ({ doc, score: scoreText(queryText, `${doc.title} ${doc.summary ?? ""} ${doc.tags.join(" ")} ${doc.content}`) }))
+    .map(doc => ({
+      doc,
+      score: scoreText(
+        queryText,
+        `${doc.title} ${doc.summary ?? ""} ${doc.tags.join(" ")} ${doc.content} ${JSON.stringify(doc.metadata)}`,
+      ),
+    }))
     .filter(item => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

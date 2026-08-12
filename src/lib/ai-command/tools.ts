@@ -133,7 +133,7 @@ export function createAiCommandTools() {
 
   const knowledgeSearch = tool({
     name: "search_business_knowledge",
-    description: "Tra cứu Knowledge Base SmartFurni. Chỉ trả thông tin có nguồn, không tự suy đoán chính sách hoặc giá.",
+    description: "Tra cứu Knowledge Base SmartFurni cho nghiệp vụ hoặc lập trình CRM. Chỉ dùng tài liệu active, trả mã đặc tả, module liên quan, yêu cầu phát triển và tiêu chí nghiệm thu có nguồn.",
     parameters: z.object({ query: z.string().trim().min(2).max(300), limit: z.number().int().min(1).max(5).default(3) }),
     async execute(input, runContext) {
       const context = runContext!.context as AiCommandRunContext;
@@ -142,10 +142,26 @@ export function createAiCommandTools() {
         const documents = await searchKnowledge(input.query, input.limit);
         return {
           count: documents.length,
-          documents: documents.map(doc => ({
-            id: doc.id, title: doc.title, category: doc.category, source: doc.source,
-            summary: doc.summary, excerpt: doc.content.slice(0, 1200), updatedAt: doc.updatedAt,
-          })),
+          documents: documents.map(doc => {
+            const metadata = doc.metadata || {};
+            return {
+              id: doc.id,
+              documentCode: typeof metadata.documentCode === "string" ? metadata.documentCode : undefined,
+              title: doc.title,
+              category: doc.category,
+              status: doc.status,
+              source: doc.source,
+              summary: doc.summary,
+              excerpt: doc.content.slice(0, 2400),
+              linkedCrmModules: Array.isArray(metadata.linkedCrmModules) ? metadata.linkedCrmModules : [],
+              developmentRequirements: Array.isArray(metadata.developmentRequirements) ? metadata.developmentRequirements : [],
+              acceptanceCriteria: Array.isArray(metadata.acceptanceCriteria) ? metadata.acceptanceCriteria : [],
+              aiProgrammingPrompt: typeof metadata.aiProgrammingPrompt === "string" ? metadata.aiProgrammingPrompt : undefined,
+              implementationStatus: typeof metadata.implementationStatus === "string" ? metadata.implementationStatus : undefined,
+              codeVersion: typeof metadata.codeVersion === "string" ? metadata.codeVersion : undefined,
+              updatedAt: doc.updatedAt,
+            };
+          }),
         };
       }});
     },

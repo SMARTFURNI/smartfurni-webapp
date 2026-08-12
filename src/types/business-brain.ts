@@ -57,6 +57,25 @@ export interface KnowledgeDocumentVersion {
   createdAt: string;
 }
 
+export type KnowledgeChangeRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export interface KnowledgeDocumentChangeRequest {
+  id: string;
+  documentId: string;
+  documentTitle: string;
+  status: KnowledgeChangeRequestStatus;
+  proposedDocument: Partial<KnowledgeDocument>;
+  changeNote: string;
+  requestedById?: string;
+  requestedByName?: string;
+  reviewedById?: string;
+  reviewedByName?: string;
+  reviewNote?: string;
+  appliedVersion?: number;
+  createdAt: string;
+  reviewedAt?: string;
+}
+
 export interface BusinessBrainFlowStep {
   id: string;
   title: string;

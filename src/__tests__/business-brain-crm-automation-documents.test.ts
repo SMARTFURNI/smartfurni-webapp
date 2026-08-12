@@ -33,6 +33,13 @@ describe("Bộ 10 tài liệu đặc tả tự động hóa CRM", () => {
       expect(document.metadata.reviewCycle).not.toBe("");
       expect(document.metadata.version).toBe("1.0");
       expect(document.metadata.sourceFile).toBe("Bo_Dac_Ta_Tu_Dong_Hoa_CRM_SmartFurni.pdf");
+      expect(document.metadata.linkedCrmModules.length).toBeGreaterThan(0);
+      expect(document.metadata.developmentRequirements.length).toBeGreaterThanOrEqual(3);
+      expect(document.metadata.acceptanceCriteria.length).toBeGreaterThanOrEqual(3);
+      expect(document.metadata.aiProgrammingPrompt).toContain(document.metadata.documentCode);
+      expect(document.metadata.aiProgrammingPrompt).toContain("Không sửa tài liệu doanh nghiệp");
+      expect(document.metadata.codeVersion).not.toBe("");
+      expect(document.metadata.implementationStatus).toBe("specified");
     }
   });
 

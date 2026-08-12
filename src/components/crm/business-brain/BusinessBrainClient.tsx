@@ -48,6 +48,7 @@ import type {
   BusinessBrainFlowEdge,
   BusinessBrainFlowStep,
   KnowledgeCategory,
+  KnowledgeDocumentChangeRequest,
   KnowledgeDocument,
   KnowledgeDocumentVersion,
   KnowledgeStatus,
@@ -95,6 +96,12 @@ type DocForm = {
   audience: string;
   reviewCycle: string;
   documentType: string;
+  linkedCrmModulesText: string;
+  developmentRequirementsText: string;
+  acceptanceCriteriaText: string;
+  aiProgrammingPrompt: string;
+  codeVersion: string;
+  implementationStatus: string;
   changeNote: string;
   flowSteps: BusinessBrainFlowStep[];
   flowEdges: BusinessBrainFlowEdge[];
@@ -112,6 +119,12 @@ const EMPTY_FORM: DocForm = {
   audience: "",
   reviewCycle: "Hàng quý",
   documentType: "process",
+  linkedCrmModulesText: "",
+  developmentRequirementsText: "",
+  acceptanceCriteriaText: "",
+  aiProgrammingPrompt: "",
+  codeVersion: "Chưa liên kết commit",
+  implementationStatus: "specified",
   changeNote: "",
   flowSteps: [],
   flowEdges: [],
@@ -245,6 +258,12 @@ function docToForm(doc: KnowledgeDocument): DocForm {
     audience: String(metadata.audience || ""),
     reviewCycle: String(metadata.reviewCycle || "Hàng quý"),
     documentType: String(metadata.documentType || "guide"),
+    linkedCrmModulesText: Array.isArray(metadata.linkedCrmModules) ? metadata.linkedCrmModules.map(String).join(", ") : "",
+    developmentRequirementsText: Array.isArray(metadata.developmentRequirements) ? metadata.developmentRequirements.map(String).join("\n") : "",
+    acceptanceCriteriaText: Array.isArray(metadata.acceptanceCriteria) ? metadata.acceptanceCriteria.map(String).join("\n") : "",
+    aiProgrammingPrompt: String(metadata.aiProgrammingPrompt || ""),
+    codeVersion: String(metadata.codeVersion || "Chưa liên kết commit"),
+    implementationStatus: String(metadata.implementationStatus || "specified"),
     changeNote: "",
     flowSteps: steps,
     flowEdges: flowEdgeValue(metadata.flowEdges, steps),
@@ -368,6 +387,7 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [docs, setDocs] = useState<KnowledgeDocument[]>([]);
   const [versions, setVersions] = useState<KnowledgeDocumentVersion[]>([]);
+  const [changeRequests, setChangeRequests] = useState<KnowledgeDocumentChangeRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [form, setForm] = useState<DocForm>(EMPTY_FORM);
   const [search, setSearch] = useState("");
@@ -403,12 +423,14 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
   }, []);
 
   const loadOperationalData = useCallback(async () => {
-    const [governanceData, agentsData] = await Promise.all([
+    const [governanceData, agentsData, requestData] = await Promise.all([
       fetchJson<{ governance: GovernanceReport }>("/api/crm/business-brain/governance"),
       fetchJson<AgentsPayload>("/api/crm/business-brain/agents"),
+      fetchJson<{ requests: KnowledgeDocumentChangeRequest[] }>("/api/crm/business-brain/change-requests?limit=200"),
     ]);
     setGovernance(governanceData.governance);
     setAgentData(agentsData);
+    setChangeRequests(requestData.requests);
   }, []);
 
   useEffect(() => {
@@ -469,6 +491,7 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
   const saveDoc = async () => {
     if (!capabilities.canEdit) return setError("Bạn không có quyền biên soạn tài liệu.");
     if (!form.title.trim() || !form.content.trim()) return setError("Cần nhập tiêu đề và nội dung tài liệu.");
+    if (form.id && !form.changeNote.trim()) return setError("Cần mô tả lý do và phạm vi cập nhật để gửi người có quyền xác nhận.");
     setSaving(true);
     setError("");
     setSuccess("");
@@ -489,19 +512,31 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
           audience: form.audience.trim(),
           reviewCycle: form.reviewCycle.trim(),
           documentType: form.documentType,
+          linkedCrmModules: form.linkedCrmModulesText.split(",").map(item => item.trim()).filter(Boolean),
+          developmentRequirements: form.developmentRequirementsText.split("\n").map(item => item.trim()).filter(Boolean),
+          acceptanceCriteria: form.acceptanceCriteriaText.split("\n").map(item => item.trim()).filter(Boolean),
+          aiProgrammingPrompt: form.aiProgrammingPrompt.trim(),
+          codeVersion: form.codeVersion.trim(),
+          implementationStatus: form.implementationStatus,
           flowSteps: form.flowSteps,
           flowEdges: form.flowEdges,
         },
       };
-      const data = await fetchJson<{ document: KnowledgeDocument }>("/api/crm/business-brain/knowledge", {
+      const data = await fetchJson<{ document?: KnowledgeDocument; changeRequest?: KnowledgeDocumentChangeRequest; requiresApproval?: boolean }>("/api/crm/business-brain/knowledge", {
         method: form.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      await loadDocs(data.document.id);
-      setSuccess("Đã lưu tài liệu và tạo phiên bản mới.");
-      setForm(prev => ({ ...prev, id: data.document.id, changeNote: "" }));
-      if (activeTab === "history") await loadVersions(data.document.id);
+      if (data.requiresApproval && data.changeRequest) {
+        await loadOperationalData();
+        setSuccess("Đã tạo yêu cầu thay đổi. Tài liệu hiện tại chưa bị sửa và đang chờ quản trị viên xác nhận.");
+        setForm(prev => ({ ...prev, changeNote: "" }));
+      } else if (data.document) {
+        await loadDocs(data.document.id);
+        setSuccess("Đã tạo tài liệu nháp và phiên bản đầu tiên.");
+        setForm(prev => ({ ...prev, id: data.document?.id, changeNote: "" }));
+        if (activeTab === "history") await loadVersions(data.document.id);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không lưu được tài liệu.");
     } finally {
@@ -553,6 +588,27 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
     }
   };
 
+  const decideChangeRequest = async (request: KnowledgeDocumentChangeRequest, decision: "approved" | "rejected") => {
+    if (!capabilities.canReview) return setError("Bạn không có quyền xác nhận cập nhật tài liệu.");
+    const note = window.prompt(decision === "approved" ? "Ghi chú xác nhận (không bắt buộc)" : "Lý do từ chối yêu cầu", "") || "";
+    if (decision === "rejected" && !note.trim()) return setError("Cần nhập lý do từ chối để người đề xuất biết cần sửa gì.");
+    setSaving(true);
+    setError("");
+    try {
+      const data = await fetchJson<{ document?: KnowledgeDocument }>("/api/crm/business-brain/change-requests", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: request.id, decision, note }),
+      });
+      await Promise.all([loadDocs(data.document?.id || selectedId), loadOperationalData()]);
+      setSuccess(decision === "approved" ? "Đã xác nhận và áp dụng thay đổi vào tài liệu chính thức." : "Đã từ chối yêu cầu; tài liệu chính thức không thay đổi.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không xử lý được yêu cầu thay đổi.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleAgentStatus = async (agent: NonNullable<AgentsPayload>["agents"][number]) => {
     if (!capabilities.canManageAgents) return setError("Bạn không có quyền quản lý AI Agent.");
     setSaving(true);
@@ -587,14 +643,13 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
     if (!form.id || !window.confirm(`Khôi phục phiên bản ${version.version}? Nội dung hiện tại vẫn được lưu trong lịch sử.`)) return;
     setSaving(true);
     try {
-      const data = await fetchJson<{ document: KnowledgeDocument }>("/api/crm/business-brain/knowledge", {
+      const data = await fetchJson<{ changeRequest: KnowledgeDocumentChangeRequest }>("/api/crm/business-brain/knowledge", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: form.id, versionId: version.id }),
+        body: JSON.stringify({ id: form.id, versionId: version.id, changeNote: `Đề xuất khôi phục phiên bản ${version.version}` }),
       });
-      await loadDocs(data.document.id);
-      await loadVersions(data.document.id);
-      setSuccess(`Đã khôi phục phiên bản ${version.version}.`);
+      await loadOperationalData();
+      setSuccess(`Đã tạo yêu cầu khôi phục phiên bản ${version.version}; nội dung chỉ đổi sau khi được xác nhận.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không khôi phục được phiên bản.");
     } finally {
@@ -747,7 +802,7 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
             {activeTab === "editor" && (
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)]">
                 <Panel className="overflow-hidden">
-                  <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className={cn(EYEBROW, "text-[#ad821b]")}>{form.id ? "Chỉnh sửa tài liệu" : "Tài liệu mới"}</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Nội dung hướng dẫn doanh nghiệp</h2></div>{capabilities.canEdit && <div className="flex flex-wrap gap-2">{form.id && <button className={BUTTON_SECONDARY} onClick={duplicateDoc}><Copy size={14} /> Nhân bản</button>}<button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu tài liệu</button></div>}</div>
+                  <div className="flex flex-col gap-3 border-b border-[#e4eaf1] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className={cn(EYEBROW, "text-[#ad821b]")}>{form.id ? "Đề xuất chỉnh sửa" : "Tài liệu mới"}</p><h2 className={cn(SECTION_TITLE, "mt-1")}>Nội dung hướng dẫn doanh nghiệp</h2><p className={SECTION_DESCRIPTION}>{form.id ? "Mọi thay đổi chỉ được áp dụng sau khi người có quyền xác nhận." : "Tài liệu mới được tạo ở trạng thái nháp."}</p></div>{capabilities.canEdit && <div className="flex flex-wrap gap-2">{form.id && <button className={BUTTON_SECONDARY} onClick={duplicateDoc}><Copy size={14} /> Nhân bản</button>}<button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : form.id ? <FileCheck2 size={15} /> : <Save size={15} />} {form.id ? "Gửi yêu cầu duyệt" : "Tạo tài liệu nháp"}</button></div>}</div>
                   <div className="space-y-5 p-5">
                     <div className="grid gap-4 md:grid-cols-2">
                       <label className={cn(FORM_LABEL, "md:col-span-2")}>Tiêu đề tài liệu *<input className={cn(FIELD, "mt-1.5 text-base font-semibold")} value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} placeholder="Ví dụ: Quy trình chăm sóc khách mua lẻ" /></label>
@@ -759,11 +814,22 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
                       <label className={FORM_LABEL}>Chu kỳ rà soát<input className={cn(FIELD, "mt-1.5")} value={form.reviewCycle} onChange={event => setForm(prev => ({ ...prev, reviewCycle: event.target.value }))} /></label>
                       <label className={FORM_LABEL}>Tag tìm kiếm<input className={cn(FIELD, "mt-1.5")} value={form.tagsText} onChange={event => setForm(prev => ({ ...prev, tagsText: event.target.value }))} placeholder="bán lẻ, Zalo OA, báo giá" /></label>
                     </div>
+                    <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4">
+                      <div className="flex items-center gap-2"><GitBranch size={18} className="text-blue-600" /><h3 className="font-semibold text-[#1b2b44]">Liên kết tài liệu với chức năng CRM và AI lập trình</h3></div>
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <label className={cn(FORM_LABEL, "md:col-span-2")}>Phân hệ CRM liên quan<input className={cn(FIELD, "mt-1.5")} value={form.linkedCrmModulesText} onChange={event => setForm(prev => ({ ...prev, linkedCrmModulesText: event.target.value }))} placeholder="Data Pool, Zalo OA, Email Marketing, Báo giá" /></label>
+                        <label className={FORM_LABEL}>Trạng thái triển khai<select className={cn(FIELD, "mt-1.5")} value={form.implementationStatus} onChange={event => setForm(prev => ({ ...prev, implementationStatus: event.target.value }))}><option value="specified">Đã đặc tả</option><option value="planned">Đã lên kế hoạch</option><option value="in_development">Đang lập trình</option><option value="testing">Đang kiểm thử</option><option value="deployed">Đã triển khai</option></select></label>
+                        <label className={FORM_LABEL}>Phiên bản code / commit<input className={cn(FIELD, "mt-1.5 font-mono")} value={form.codeVersion} onChange={event => setForm(prev => ({ ...prev, codeVersion: event.target.value }))} placeholder="Ví dụ: c20db45 hoặc release 1.2.0" /></label>
+                        <label className={FORM_LABEL}>Yêu cầu phát triển — mỗi dòng một yêu cầu<textarea className={cn(FIELD, "mt-1.5 min-h-36")} value={form.developmentRequirementsText} onChange={event => setForm(prev => ({ ...prev, developmentRequirementsText: event.target.value }))} /></label>
+                        <label className={FORM_LABEL}>Tiêu chí nghiệm thu — mỗi dòng một tiêu chí<textarea className={cn(FIELD, "mt-1.5 min-h-36")} value={form.acceptanceCriteriaText} onChange={event => setForm(prev => ({ ...prev, acceptanceCriteriaText: event.target.value }))} /></label>
+                        <label className={cn(FORM_LABEL, "md:col-span-2")}>Chỉ dẫn cho AI lập trình<textarea className={cn(FIELD, "mt-1.5 min-h-32")} value={form.aiProgrammingPrompt} onChange={event => setForm(prev => ({ ...prev, aiProgrammingPrompt: event.target.value }))} placeholder="AI phải đọc tài liệu nào, được phép làm gì, cần test và rollback ra sao..." /></label>
+                      </div>
+                    </div>
                     <div>
                       <div className="mb-2 flex items-center justify-between"><label className={FORM_LABEL}>Nội dung tài liệu *</label><div className="flex rounded-lg bg-[#f1f4f8] p-1 text-sm font-semibold"><button className={cn("rounded-md px-3 py-1.5", !preview && "bg-white text-[#9a7214] shadow-sm")} onClick={() => setPreview(false)}>Soạn thảo</button><button className={cn("rounded-md px-3 py-1.5", preview && "bg-white text-[#9a7214] shadow-sm")} onClick={() => setPreview(true)}>Xem trước</button></div></div>
                       {preview ? <div className="min-h-[460px] rounded-2xl border border-[#dce4ee] bg-[#fbfcfe] p-5"><DocumentPreview content={form.content} /></div> : <textarea className={cn(FIELD, "min-h-[460px] resize-y font-mono leading-6")} value={form.content} onChange={event => setForm(prev => ({ ...prev, content: event.target.value }))} />}
                     </div>
-                    <label className={cn(FORM_LABEL, "block")}>Ghi chú thay đổi<input className={cn(FIELD, "mt-1.5")} value={form.changeNote} onChange={event => setForm(prev => ({ ...prev, changeNote: event.target.value }))} placeholder="Ví dụ: Bổ sung quy tắc follow-up ngày 7" /></label>
+                    <label className={cn(FORM_LABEL, "block")}>Lý do và phạm vi thay đổi {form.id ? "*" : ""}<input className={cn(FIELD, "mt-1.5")} value={form.changeNote} onChange={event => setForm(prev => ({ ...prev, changeNote: event.target.value }))} placeholder="Ví dụ: Bổ sung quy tắc follow-up ngày 7 và tiêu chí nghiệm thu" /></label>
                   </div>
                 </Panel>
 
@@ -776,7 +842,7 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
                       ["Số bước sơ đồ", `${form.flowSteps.length} bước`],
                       ["Cập nhật gần nhất", selected ? formatDate(selected.updatedAt) : "Chưa lưu"],
                     ].map(([label, value]) => <div key={label} className="flex items-start justify-between gap-4 border-b border-[#edf0f4] pb-3"><dt className="text-[#8491a3]">{label}</dt><dd className="max-w-[60%] break-all text-right font-bold text-[#33455e]">{value}</dd></div>)}</dl>
-                    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800"><b>Chú ý:</b> Chuyển sang “Đang dùng” chỉ khi nội dung đã được người chịu trách nhiệm xác nhận.</div>
+                    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800"><b>Cổng xác nhận bắt buộc:</b> cập nhật nội dung, metadata, sơ đồ, liên kết chức năng và prompt AI đều chỉ được áp dụng sau khi người có quyền duyệt.</div>
                     <div className="mt-4 grid grid-cols-2 gap-2"><button className={BUTTON_SECONDARY} onClick={() => exportDocument("markdown")}><Download size={14} /> Markdown</button><button className={BUTTON_SECONDARY} onClick={() => exportDocument("json")}><Download size={14} /> JSON</button></div>
                     {form.id && capabilities.canDelete && <button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-100" onClick={deleteDoc}><Trash2 size={15} /> Chuyển vào lưu trữ</button>}
                   </Panel>
@@ -792,7 +858,7 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
                     <h2 className={cn(SECTION_TITLE, "mt-1")}>{form.title || "Chọn hoặc tạo tài liệu"}</h2>
                     <p className={SECTION_DESCRIPTION}>Kéo thả khối, nối nhiều nhánh và đặt nhãn điều kiện trực tiếp trên sơ đồ.</p>
                   </div>
-                  {capabilities.canEdit && <button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} Lưu quy trình</button>}
+                  {capabilities.canEdit && <button className={BUTTON_PRIMARY} disabled={saving} onClick={saveDoc}>{saving ? <Loader2 className="animate-spin" size={15} /> : <FileCheck2 size={15} />} {form.id ? "Gửi quy trình để duyệt" : "Tạo tài liệu nháp"}</button>}
                 </div>
                 <div className="p-4">
                   <BusinessFlowBuilder
@@ -822,7 +888,7 @@ export function BusinessBrainClient({ capabilities }: { capabilities: Capabiliti
 
             {activeTab === "review" && (
               <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
-                <Panel className="overflow-hidden"><div className="border-b border-[#e4eaf1] px-5 py-4"><h2 className={SECTION_TITLE}>Hàng kiểm duyệt</h2><p className={SECTION_DESCRIPTION}>Tài liệu phải đi qua phê duyệt trước khi AI và nhân viên được sử dụng.</p></div><div className="space-y-3 p-5">{docs.filter(doc => ["draft", "in_review", "approved", "scheduled"].includes(doc.status)).map(doc => { const health = governance?.documents.find(item => item.document.id === doc.id)?.health; return <article key={doc.id} className="rounded-2xl border border-[#dfe6ef] bg-white p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><StatusBadge status={doc.status} /><span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", (health?.score || 0) >= 80 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>Sức khỏe {health?.score || 0}%</span></div><h3 className="mt-2 font-semibold">{doc.title}</h3><p className="mt-1 text-xs text-[#7b899c]">{health?.missing.length ? `Còn thiếu: ${health.missing.join(", ")}` : "Đủ điều kiện quản trị cơ bản"}</p></div><div className="flex flex-wrap gap-2">{doc.status === "draft" && capabilities.canEdit && <button onClick={() => void reviewDocument(doc, "in_review", "Gửi kiểm duyệt")} className={BUTTON_SECONDARY}>Gửi duyệt</button>}{doc.status === "in_review" && capabilities.canReview && <><button onClick={() => void reviewDocument(doc, "draft", "Yêu cầu chỉnh sửa")} className={BUTTON_SECONDARY}>Yêu cầu sửa</button><button onClick={() => void reviewDocument(doc, "approved", "Phê duyệt nội dung")} className={BUTTON_PRIMARY}>Phê duyệt</button></>}{doc.status === "approved" && capabilities.canPublish && <button onClick={() => void reviewDocument(doc, "active", "Xuất bản áp dụng")} className={BUTTON_PRIMARY}>Đưa vào sử dụng</button>}<button onClick={() => openDoc(doc)} className={BUTTON_SECONDARY}>Mở</button></div></div></article>})}{!docs.some(doc => ["draft", "in_review", "approved", "scheduled"].includes(doc.status)) && <div className="py-20 text-center text-[#8290a4]"><CheckCircle2 className="mx-auto mb-3 text-emerald-500" size={36} /><p className="font-semibold">Không có tài liệu đang chờ xử lý</p></div>}</div></Panel>
+                <Panel className="overflow-hidden"><div className="border-b border-[#e4eaf1] px-5 py-4"><h2 className={SECTION_TITLE}>Hàng kiểm duyệt</h2><p className={SECTION_DESCRIPTION}>Tài liệu và mọi nội dung cập nhật chỉ có hiệu lực sau khi người có quyền xác nhận.</p></div><div className="border-b border-[#e4eaf1] bg-[#fffaf0] p-5"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><p className={cn(EYEBROW, "text-[#ad821b]")}>Yêu cầu cập nhật</p><h3 className="mt-1 font-semibold text-[#17243a]">Chờ xác nhận trước khi sửa tài liệu</h3></div><span className="rounded-full border border-[#e8c75d] bg-white px-3 py-1 text-xs font-bold text-[#8b6711]">{changeRequests.filter(request => request.status === "pending").length} đang chờ</span></div><div className="space-y-3">{changeRequests.filter(request => request.status === "pending").map(request => <article key={request.id} className="rounded-2xl border border-[#ead9a8] bg-white p-4 shadow-sm"><div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Chờ xác nhận</span><span className="text-xs text-[#7b899c]">{new Date(request.createdAt).toLocaleString("vi-VN")}</span></div><h4 className="mt-2 font-semibold text-[#17243a]">{request.documentTitle}</h4><p className="mt-1 text-sm text-[#53627a]">{request.changeNote}</p><p className="mt-2 text-xs text-[#7b899c]">Người đề xuất: {request.requestedByName || "Không rõ"} · Phạm vi: {Object.keys(request.proposedDocument).join(", ")}</p><details className="mt-3 rounded-xl border border-[#e4e9f0] bg-[#f8fafc] p-3"><summary className="cursor-pointer text-xs font-bold text-[#8b6711]">Xem chính xác dữ liệu được đề xuất</summary><pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-[#42536b]">{JSON.stringify(request.proposedDocument, null, 2)}</pre></details></div>{capabilities.canReview && <div className="flex shrink-0 flex-wrap gap-2"><button className={BUTTON_SECONDARY} disabled={saving} onClick={() => void decideChangeRequest(request, "rejected")}>Từ chối</button><button className={BUTTON_PRIMARY} disabled={saving} onClick={() => void decideChangeRequest(request, "approved")}><CheckCircle2 size={15} /> Xác nhận & áp dụng</button></div>}</div></article>)}{!changeRequests.some(request => request.status === "pending") && <div className="rounded-2xl border border-dashed border-[#dfd4b5] bg-white/70 px-4 py-8 text-center text-sm text-[#8290a4]"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />Không có yêu cầu cập nhật đang chờ xác nhận.</div>}</div></div><div className="space-y-3 p-5">{docs.filter(doc => ["draft", "in_review", "approved", "scheduled"].includes(doc.status)).map(doc => { const health = governance?.documents.find(item => item.document.id === doc.id)?.health; return <article key={doc.id} className="rounded-2xl border border-[#dfe6ef] bg-white p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><StatusBadge status={doc.status} /><span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", (health?.score || 0) >= 80 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700")}>Sức khỏe {health?.score || 0}%</span></div><h3 className="mt-2 font-semibold">{doc.title}</h3><p className="mt-1 text-xs text-[#7b899c]">{health?.missing.length ? `Còn thiếu: ${health.missing.join(", ")}` : "Đủ điều kiện quản trị cơ bản"}</p></div><div className="flex flex-wrap gap-2">{doc.status === "draft" && capabilities.canEdit && <button onClick={() => void reviewDocument(doc, "in_review", "Gửi kiểm duyệt")} className={BUTTON_SECONDARY}>Gửi duyệt</button>}{doc.status === "in_review" && capabilities.canReview && <><button onClick={() => void reviewDocument(doc, "draft", "Yêu cầu chỉnh sửa")} className={BUTTON_SECONDARY}>Yêu cầu sửa</button><button onClick={() => void reviewDocument(doc, "approved", "Phê duyệt nội dung")} className={BUTTON_PRIMARY}>Phê duyệt</button></>}{doc.status === "approved" && capabilities.canPublish && <button onClick={() => void reviewDocument(doc, "active", "Xuất bản áp dụng")} className={BUTTON_PRIMARY}>Đưa vào sử dụng</button>}<button onClick={() => openDoc(doc)} className={BUTTON_SECONDARY}>Mở</button></div></div></article>})}{!docs.some(doc => ["draft", "in_review", "approved", "scheduled"].includes(doc.status)) && <div className="py-20 text-center text-[#8290a4]"><CheckCircle2 className="mx-auto mb-3 text-emerald-500" size={36} /><p className="font-semibold">Không có tài liệu đang chờ xuất bản</p></div>}</div></Panel>
                 <Panel className="h-fit p-5"><h3 className="font-semibold">Nhật ký phê duyệt</h3><div className="mt-4 space-y-4">{governance?.recentReviews.slice(0, 8).map(review => <div key={review.id} className="border-l-2 border-[#dfbd58] pl-3"><p className="text-sm font-semibold">{review.action}</p><p className="text-xs text-[#7e8b9e]">{review.actorName || "Hệ thống"} · {formatDate(review.createdAt)}</p>{review.note && <p className="mt-1 text-xs text-[#607087]">{review.note}</p>}</div>)}{!governance?.recentReviews.length && <p className="text-sm text-[#8491a3]">Chưa có hoạt động kiểm duyệt.</p>}</div></Panel>
               </div>
             )}
