@@ -154,6 +154,7 @@ export async function sendPushNotification(input: {
   body: string;
   url?: string;
   tag?: string;
+  renotify?: boolean;
   data?: Record<string, unknown>;
   urgency?: "very-low" | "low" | "normal" | "high";
 }) {
@@ -185,6 +186,7 @@ export async function sendPushNotification(input: {
     body: input.body.slice(0, 300),
     url: input.url || "/",
     tag: input.tag || "smartfurni-update",
+    renotify: Boolean(input.renotify),
     data: input.data || {},
   });
   let sent = 0;

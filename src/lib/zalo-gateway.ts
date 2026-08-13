@@ -24,7 +24,9 @@ import {
   getZaloMediaExpiresAt,
   getZaloMediaKind,
   getZaloMediaMaxBytes,
+  getZaloNativeUploadFileName,
 } from "./zalo-media-policy";
+import { notifyInboundZaloMessage } from "./zalo-inbox-push";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -571,6 +573,18 @@ function setupListeners(api: unknown) {
     }
     if (!options.historical) broadcastSSE("message", { ...processed, threadId });
 
+    if (!processed.isSelf && !options.historical) {
+      void notifyInboundZaloMessage({
+        msgId: processed.msgId,
+        conversationId: threadId,
+        senderName,
+        content: processed.content,
+        attachments: processed.attachments,
+      }).catch((error) => {
+        console.error("[ZaloGateway] Không gửi được PWA cho tin nhắn đến:", error);
+      });
+    }
+
     // CDN của Zalo dùng URL có thể hết hạn hoặc yêu cầu phiên Zalo Web.
     // Lưu bản gốc trước để không chặn text, sau đó mirror media vào Railway
     // Bucket và upsert cùng msg_id. SSE lần hai cập nhật đúng message cũ.
@@ -1102,7 +1116,7 @@ export async function sendZaloAttachment(params: {
   }
   try {
     const { ThreadType } = await import("zca-js");
-    const mediaKind = getZaloMediaKind(params.mimeType);
+    const mediaKind = getZaloMediaKind(params.mimeType, params.fileName);
     if (params.fileSize > getZaloMediaMaxBytes(mediaKind)) {
       return { success: false, error: `File ${mediaKind} vượt giới hạn lưu trữ cho phép.` };
     }
@@ -1125,9 +1139,12 @@ export async function sendZaloAttachment(params: {
       } catch { /* zca-js vẫn có thể gửi ảnh không có metadata kích thước */ }
     }
 
+    // zca-js chỉ nhận diện `.mp4` là video. Chuẩn hóa MOV/M4V (thường từ
+    // iPhone) để thư viện gọi endpoint video native thay vì gửi như tài liệu.
+    const nativeUploadFileName = getZaloNativeUploadFileName(params.fileName, params.mimeType);
     const attachmentSource = {
       data: params.fileBuffer,
-      filename: params.fileName as `${string}.${string}`,
+      filename: nativeUploadFileName as `${string}.${string}`,
       metadata: {
         totalSize: params.fileSize,
         width,
@@ -1244,7 +1261,7 @@ function scheduleOutgoingAttachmentMirror(params: {
   if (!isRailwayBucketConfigured()) return;
   setTimeout(() => {
     void (async () => {
-      const mediaKind = getZaloMediaKind(params.mimeType);
+      const mediaKind = getZaloMediaKind(params.mimeType, params.fileName);
       const stored = await storeMediaObject({
         body: params.fileBuffer,
         key: `zalo-inbox/${sanitizeMediaSegment(params.conversationId)}/${params.sentAt}-${sanitizeMediaSegment(params.fileName)}`,

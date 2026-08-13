@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     const mimeType = file.type || "application/octet-stream";
-    const mediaKind = getZaloMediaKind(mimeType);
+    const mediaKind = getZaloMediaKind(mimeType, file.name);
     if (file.size > getZaloMediaMaxBytes(mediaKind)) {
       return NextResponse.json(
         { error: `File quá lớn. ${mediaKind === "image" ? "Ảnh" : mediaKind === "video" ? "Video" : "File"} tối đa ${formatZaloMediaLimit(mediaKind)}.` },

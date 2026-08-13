@@ -56,4 +56,29 @@ describe("Zalo Inbox durable sync", () => {
     expect(client).toContain("releaseLocalPreviewLater");
     expect(client).toContain("!remoteHasUsableAttachment && previousHasUsableAttachment");
   });
+
+  it("clears the composer immediately and prevents duplicate text sends", () => {
+    const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
+
+    expect(client).toContain("if (!inputText.trim() || !selectedConv || sendingRef.current) return");
+    expect(client).toContain("sendingRef.current = true");
+    expect(client).toContain('setInputText("")');
+    expect(client).toContain("if (data.sent !== true) setInputText(current => current.trim() ? current : text)");
+    expect(client).toContain("tránh gửi trùng");
+  });
+
+  it("pushes each inbound realtime message to all CRM and Admin PWA accounts", () => {
+    const gateway = source("src/lib/zalo-gateway.ts");
+    const push = source("src/lib/zalo-inbox-push.ts");
+    const store = source("src/lib/zalo-inbox-message-store.ts");
+    const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
+
+    expect(gateway).toContain("!processed.isSelf && !options.historical");
+    expect(gateway).toContain("notifyInboundZaloMessage");
+    expect(push).toContain('ownerScope: "crm"');
+    expect(push).toContain('ownerScope: "admin"');
+    expect(store).toContain("pwa_notified_at IS NULL");
+    expect(client).toContain('get("conversation")');
+    expect(client).toContain("subscribeToPush");
+  });
 });

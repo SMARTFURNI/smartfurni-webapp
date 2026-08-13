@@ -14,6 +14,11 @@ import ZaloAutoReplyPanel from "./ZaloAutoReplyPanel";
 import ZaloCatalogPanel from "./ZaloCatalogPanel";
 import ZaloLeadLinkModal from "./ZaloLeadLinkModal";
 import styles from "./ZaloInboxClient.module.css";
+import {
+  getPushPermissionState,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/pwa-notifications";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -958,6 +963,8 @@ export default function ZaloInboxClient() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const forceScrollToLatestRef = useRef(false);
+  const sendingRef = useRef(false);
+  const openedPushConversationRef = useRef<string | null>(null);
 
   // ─── Load conversations ──────────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
@@ -990,6 +997,21 @@ export default function ZaloInboxClient() {
       setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: 0 } : c));
     } catch { }
   }, []);
+
+  // A notification click opens the exact conversation instead of leaving the
+  // user at the generic Inbox screen.
+  useEffect(() => {
+    const requestedId = new URLSearchParams(window.location.search).get("conversation");
+    if (!requestedId || openedPushConversationRef.current === requestedId) return;
+    const requestedConversation = conversations.find(item => item.id === requestedId);
+    if (!requestedConversation) return;
+    openedPushConversationRef.current = requestedId;
+    setSelectedConv(requestedConversation);
+    setMessages([]);
+    setReplyContext(null);
+    setMainView("messages");
+    void loadMessages(requestedId, true);
+  }, [conversations, loadMessages]);
 
   const mergeSentMessage = useCallback((message: ZaloMessage | undefined) => {
     if (!message?.id) return;
@@ -1024,11 +1046,21 @@ export default function ZaloInboxClient() {
     } catch { }
   }, [soundEnabled]);
 
-  const sendBrowserNotif = useCallback((title: string, body: string, convId: string) => {
+  const sendBrowserNotif = useCallback(async (title: string, body: string, convId: string) => {
     if (!notifEnabled || !document.hidden) return;
     try {
+      // The server PWA push already reaches this device. The local polling
+      // notification is only a fallback for a legacy permission-only device.
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const registration = await navigator.serviceWorker.ready;
+        if (await registration.pushManager.getSubscription()) return;
+      }
       const n = new Notification(title, { body, icon: "/favicon.ico", tag: convId });
-      n.onclick = () => { window.focus(); n.close(); };
+      n.onclick = () => {
+        window.focus();
+        window.location.href = `/crm/zalo-inbox?conversation=${encodeURIComponent(convId)}`;
+        n.close();
+      };
     } catch { }
   }, [notifEnabled]);
 
@@ -1217,7 +1249,9 @@ export default function ZaloInboxClient() {
   }, [contextMenu]);
 
   useEffect(() => {
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") setNotifEnabled(true);
+    void getPushPermissionState()
+      .then(state => setNotifEnabled(state === "subscribed"))
+      .catch(() => setNotifEnabled(false));
   }, []);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
@@ -1232,9 +1266,11 @@ export default function ZaloInboxClient() {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || !selectedConv || sending) return;
+    if (!inputText.trim() || !selectedConv || sendingRef.current) return;
     const text = inputText.trim();
     const reply = replyContext;
+    const conversationId = selectedConv.id;
+    sendingRef.current = true;
     setInputText("");
     setReplyContext(null);
     setSending(true);
@@ -1250,22 +1286,32 @@ export default function ZaloInboxClient() {
       const res = await fetch("/api/crm/zalo-inbox/send", {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ conversationId: selectedConv.id, content: fullText }),
+        body: JSON.stringify({ conversationId, content: fullText }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: "Phản hồi gửi tin nhắn không hợp lệ" }));
       if (!res.ok) {
         alert(data.error || "Lỗi gửi tin nhắn");
-        setInputText(text);
+        // Chỉ phục hồi nội dung khi máy chủ xác nhận Zalo chưa nhận lệnh gửi.
+        // Không ghi đè nếu nhân viên đã bắt đầu soạn tin tiếp theo.
+        if (data.sent !== true) setInputText(current => current.trim() ? current : text);
+        if (reply) setReplyContext(reply);
       } else {
         // Hiển thị ngay bản ghi đã được gateway lưu, không chờ vòng polling DB.
         mergeSentMessage(data.message);
-        setConversations(previous => previous.map(conversation => conversation.id === selectedConv.id
+        setConversations(previous => previous.map(conversation => conversation.id === conversationId
           ? { ...conversation, lastMessage: fullText, lastMessageAt: data.message?.createdAt || new Date().toISOString() }
           : conversation));
-        setTimeout(() => loadMessages(selectedConv.id, true), 800);
+        setTimeout(() => loadMessages(conversationId, true), 800);
       }
-    } catch { setInputText(text); }
-    finally { setSending(false); }
+    } catch {
+      // Kết nối có thể rớt sau khi Zalo đã nhận tin. Giữ ô soạn thảo trống để
+      // tránh gửi trùng; vòng đồng bộ sẽ xác nhận tin trong hội thoại.
+      alert("Chưa xác minh được phản hồi gửi. Vui lòng kiểm tra hội thoại trước khi gửi lại.");
+    }
+    finally {
+      sendingRef.current = false;
+      setSending(false);
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1336,10 +1382,17 @@ export default function ZaloInboxClient() {
   }, []);
 
   const toggleNotif = useCallback(async () => {
-    if (notifEnabled) { setNotifEnabled(false); return; }
-    if (typeof Notification === "undefined") return;
-    const perm = await Notification.requestPermission();
-    setNotifEnabled(perm === "granted");
+    try {
+      if (notifEnabled) {
+        await unsubscribeFromPush();
+        setNotifEnabled(false);
+        return;
+      }
+      await subscribeToPush();
+      setNotifEnabled(true);
+    } catch {
+      setNotifEnabled(false);
+    }
   }, [notifEnabled]);
 
   const toggleSound = useCallback(() => {
@@ -1728,7 +1781,12 @@ export default function ZaloInboxClient() {
                   e.target.style.height = "40px";
                   e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                 }}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder={replyContext ? `Trả lời ${replyContext.senderName}...` : "Nhập tin nhắn... (Enter để gửi)"}
                 rows={1}
                 style={{

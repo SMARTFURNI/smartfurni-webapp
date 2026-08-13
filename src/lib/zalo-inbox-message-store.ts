@@ -46,12 +46,14 @@ async function createSchema(): Promise<void> {
       msg_type TEXT NOT NULL DEFAULT 'text',
       is_self BOOLEAN NOT NULL DEFAULT FALSE,
       timestamp BIGINT NOT NULL,
+      pwa_notified_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
   await query(`ALTER TABLE zalo_inbox_messages ADD COLUMN IF NOT EXISTS sender_name TEXT`);
   await query(`ALTER TABLE zalo_inbox_messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+  await query(`ALTER TABLE zalo_inbox_messages ADD COLUMN IF NOT EXISTS pwa_notified_at TIMESTAMPTZ`);
   await query(`CREATE INDEX IF NOT EXISTS idx_zalo_inbox_messages_thread_time ON zalo_inbox_messages(thread_id, timestamp DESC, msg_id DESC)`);
 
   // Một số bản triển khai cũ ghi vào zalo_messages. Chuyển dữ liệu cũ sang
@@ -87,6 +89,32 @@ async function createSchema(): Promise<void> {
       ON CONFLICT (msg_id) DO NOTHING
     `);
   }
+}
+
+/**
+ * Atomic claim used by the realtime listener so reconnects and repeated Zalo
+ * events cannot produce duplicate PWA notifications for the same message.
+ */
+export async function claimCanonicalZaloMessagePush(msgId: string): Promise<boolean> {
+  await ensureCanonicalZaloMessageSchema();
+  const claimed = await queryOne<{ msg_id: string }>(
+    `UPDATE zalo_inbox_messages
+     SET pwa_notified_at = NOW()
+     WHERE msg_id = $1
+       AND is_self = FALSE
+       AND pwa_notified_at IS NULL
+     RETURNING msg_id`,
+    [msgId],
+  );
+  return Boolean(claimed);
+}
+
+export async function releaseCanonicalZaloMessagePush(msgId: string): Promise<void> {
+  await ensureCanonicalZaloMessageSchema();
+  await query(
+    `UPDATE zalo_inbox_messages SET pwa_notified_at = NULL WHERE msg_id = $1`,
+    [msgId],
+  );
 }
 
 export async function ensureCanonicalZaloMessageSchema(): Promise<void> {
