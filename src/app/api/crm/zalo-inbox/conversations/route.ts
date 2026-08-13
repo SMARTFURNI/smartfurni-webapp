@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getConversationCount, getConversations, linkConversationToLead, upsertConversation } from "@/lib/zalo-inbox-store";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
-import { getGatewayStatus, ensureZaloConnected, getZaloUserProfiles } from "@/lib/zalo-gateway";
+import { getAllGatewayStatuses, getGatewayStatus, ensureZaloConnected, getZaloUserProfiles } from "@/lib/zalo-gateway";
 import { getDb } from "@/lib/db";
 
 const avatarEnrichmentAttempts = new Map<string, number>();
@@ -31,19 +31,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   }
 
-  // Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy)
-  ensureZaloConnected().catch(() => {/* ignore */});
-
   try {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const accountFilter = searchParams.get("accountId");
+    const accountId = accountFilter && accountFilter !== "all" ? accountFilter : null;
+    // Tự động kết nối đúng tài khoản được chọn sau khi Railway restart.
+    ensureZaloConnected(accountId || undefined).catch(() => {/* ignore */});
 
     const [conversations, total] = await Promise.all([
-      getConversations(limit, offset),
-      getConversationCount(),
+      getConversations(limit, offset, accountId),
+      getConversationCount(accountId),
     ]);
-    const gatewayStatus = getGatewayStatus();
+    const gatewayStatus = getGatewayStatus(accountId || undefined);
+    const allGatewayStatuses = accountId ? [] : await getAllGatewayStatuses();
+    const anyAccountConnected = accountId
+      ? gatewayStatus.isConnected
+      : allGatewayStatuses.some(status => status.isConnected);
 
     // Đối soát CRM theo một truy vấn thay vì N+1 truy vấn cho từng hội thoại.
     const db = getDb();
@@ -117,6 +122,7 @@ export async function GET(req: NextRequest) {
           recent_quotes: lead.recent_quotes || [],
         } : null;
         return {
+          accountId: conv.accountId,
           id: conv.id,
           leadId: lead?.id || conv.leadId,
           zaloUserId: conv.zaloUserId,
@@ -137,63 +143,50 @@ export async function GET(req: NextRequest) {
     const missingAvatarConvs = enriched.filter(c =>
       avatarNeedsRefresh(c.avatarUrl, now)
       && c.id
-      && now - (avatarEnrichmentAttempts.get(c.id) || 0) >= AVATAR_RETRY_MS,
+      && now - (avatarEnrichmentAttempts.get(`${c.accountId}:${c.id}`) || 0) >= AVATAR_RETRY_MS,
     );
-    if (missingAvatarConvs.length > 0 && gatewayStatus.isConnected) {
-      const batch = missingAvatarConvs.slice(0, 50);
-      batch.forEach(conv => avatarEnrichmentAttempts.set(conv.id, now));
-      const result = await getZaloUserProfiles(batch.map(conv => conv.id));
-      if (result.success && result.users) {
+    if (missingAvatarConvs.length > 0) {
+      const grouped = new Map<string, typeof missingAvatarConvs>();
+      missingAvatarConvs.slice(0, 50).forEach(conv => {
+        const group = grouped.get(conv.accountId) || [];
+        group.push(conv);
+        grouped.set(conv.accountId, group);
+        avatarEnrichmentAttempts.set(`${conv.accountId}:${conv.id}`, now);
+      });
+      await Promise.all(Array.from(grouped.entries()).map(async ([profileAccountId, batch]) => {
+        const result = await getZaloUserProfiles(batch.map(conv => conv.id), profileAccountId);
+        if (!result.success || !result.users) {
+          batch.forEach(conv => avatarEnrichmentAttempts.delete(`${conv.accountId}:${conv.id}`));
+          return;
+        }
         let updatedCount = 0;
         let clearedCount = 0;
         await Promise.all(batch.map(async (conv) => {
           const info = result.users?.get(conv.id);
           const avatar = info?.avatar && !avatarNeedsRefresh(info.avatar, now) ? info.avatar : null;
           const name = info?.displayName || info?.zaloName || null;
-
-          if (avatar || name) {
-            await upsertConversation({
-              id: conv.id,
-              zaloUserId: conv.zaloUserId || conv.id,
-              displayName: name || conv.displayName,
-              avatarUrl: avatar,
-              lastMessage: conv.lastMessage,
-              lastMessageAt: conv.lastMessageAt,
-            });
-          }
-
-          if (avatar) {
-            conv.avatarUrl = avatar;
-            updatedCount += 1;
-          } else if (conv.avatarUrl) {
-            // Không tiếp tục đưa URL chắc chắn đã hết hạn xuống client. Những
-            // tài khoản không có/không chia sẻ avatar sẽ dùng initials ổn định.
-            await db.query(
-              "UPDATE zalo_conversations SET avatar_url = NULL, updated_at = NOW() WHERE id = $1",
-              [conv.id],
-            );
+          if (avatar || name) await upsertConversation({ accountId: conv.accountId, id: conv.id, zaloUserId: conv.zaloUserId || conv.id, displayName: name || conv.displayName, avatarUrl: avatar, lastMessage: conv.lastMessage, lastMessageAt: conv.lastMessageAt });
+          if (avatar) { conv.avatarUrl = avatar; updatedCount += 1; }
+          else if (conv.avatarUrl) {
+            await db.query("UPDATE zalo_conversations_v2 SET avatar_url = NULL, updated_at = NOW() WHERE account_id = $1 AND thread_id = $2", [conv.accountId, conv.id]);
             conv.avatarUrl = null;
             clearedCount += 1;
           }
           if (name && /^\d{8,}$/.test(conv.displayName)) conv.displayName = name;
         }));
-        console.log(
-          `[zalo-inbox/conversations] Avatar sync requested=${batch.length} updated=${updatedCount} cleared=${clearedCount}`,
-        );
-      } else {
-        // Cho phép thử lại sớm nếu cả request đồng bộ thất bại.
-        batch.forEach(conv => avatarEnrichmentAttempts.delete(conv.id));
-      }
+        console.log(`[zalo-inbox/conversations] Avatar sync account=${profileAccountId} requested=${batch.length} updated=${updatedCount} cleared=${clearedCount}`);
+      }));
     }
 
     return NextResponse.json({
       conversations: enriched,
       total,
-      connected: gatewayStatus.isConnected,
+      connected: anyAccountConnected,
       status: gatewayStatus.status,
       // phone: hiển thị tên thật nếu có, fallback về userId
       phone: gatewayStatus.displayName || gatewayStatus.phone,
       displayName: gatewayStatus.displayName || null,
+      accountId: accountId || "all",
     });
   } catch (error: any) {
     console.error("[zalo-inbox/conversations] Error:", error);
@@ -212,10 +205,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
   try {
-    const { conversationId, leadId } = await req.json();
+    const { accountId, conversationId, leadId } = await req.json();
     if (!conversationId) return NextResponse.json({ error: "Thiếu conversationId" }, { status: 400 });
     if (!leadId) {
-      await linkConversationToLead(conversationId, null);
+      await linkConversationToLead(conversationId, null, null, accountId);
       return NextResponse.json({ success: true });
     }
     const db = getDb();
@@ -224,7 +217,7 @@ export async function POST(req: NextRequest) {
       [leadId]
     );
     if (!leadResult.rows[0]) return NextResponse.json({ error: "Không tìm thấy khách hàng" }, { status: 404 });
-    await linkConversationToLead(conversationId, leadId, leadResult.rows[0].phone || null);
+    await linkConversationToLead(conversationId, leadId, leadResult.rows[0].phone || null, accountId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[zalo-inbox/conversations] Link lead failed", error);

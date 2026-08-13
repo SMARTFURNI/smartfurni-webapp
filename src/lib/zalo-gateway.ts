@@ -27,6 +27,14 @@ import {
 } from "./zalo-media-policy";
 import { notifyInboundZaloMessage } from "./zalo-inbox-push";
 import { normalizeVideoForZalo, type NormalizedZaloVideo } from "./zalo-video-normalizer";
+import {
+  deleteZaloAccount,
+  listZaloAccounts,
+  loadZaloAccountCredentials,
+  saveZaloAccount,
+  touchZaloAccountConnected,
+  type StoredZaloCredentials,
+} from "./zalo-account-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -85,6 +93,18 @@ export interface SSEClient {
   controller: ReadableStreamDefaultController;
 }
 
+interface ZaloGatewayRuntime {
+  accountId: string;
+  api: any;
+  isConnected: boolean;
+  isConnecting: boolean;
+  userId: string;
+  displayName: string;
+  avatar: string;
+  listenerRetrying: boolean;
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
+}
+
 // ─── SSE Event Broadcasting ───────────────────────────────────────────────────
 
 const sseClients: SSEClient[] = [];
@@ -98,8 +118,8 @@ export function removeSSEClient(clientId: string) {
   if (idx !== -1) sseClients.splice(idx, 1);
 }
 
-export function broadcastSSE(event: string, data: unknown) {
-  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+export function broadcastSSE(event: string, data: unknown, accountId?: string) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(accountId ? { ...(data as object), accountId } : data)}\n\n`;
   const encoder = new TextEncoder();
   for (const client of [...sseClients]) {
     try {
@@ -124,21 +144,34 @@ export interface FriendRequest {
 // In-memory store for pending friend requests (incoming)
 const incomingFriendRequests: Map<string, FriendRequest> = new Map();
 
-export function getIncomingFriendRequests(): FriendRequest[] {
-  return Array.from(incomingFriendRequests.values()).sort((a, b) => b.timestamp - a.timestamp);
+export function getIncomingFriendRequests(accountId?: string): FriendRequest[] {
+  const prefix = accountId ? `${accountId}:` : "";
+  return Array.from(incomingFriendRequests.entries())
+    .filter(([key]) => !prefix || key.startsWith(prefix))
+    .map(([, request]) => request)
+    .sort((a, b) => b.timestamp - a.timestamp);
 }
 
-export function clearIncomingFriendRequest(fromUid: string) {
-  incomingFriendRequests.delete(fromUid);
+export function clearIncomingFriendRequest(fromUid: string, accountId?: string) {
+  if (accountId) incomingFriendRequests.delete(`${accountId}:${fromUid}`);
+  else {
+    for (const key of incomingFriendRequests.keys()) {
+      if (key.endsWith(`:${fromUid}`)) incomingFriendRequests.delete(key);
+    }
+  }
 }
 
 // ─── Gateway State ────────────────────────────────────────────────────────────
 
-let zaloApi: unknown = null;
+const gatewayRuntimes = new Map<string, ZaloGatewayRuntime>();
+let defaultAccountId = "";
+// Cầu tương thích tạm thời cho các tính năng phụ chưa truyền accountId (nhóm,
+// nhãn, catalogue). Luồng hội thoại/gửi tin bên dưới luôn chọn runtime tường minh.
+let zaloApi: any = null;
 let isConnected = false;
 let isConnecting = false;
 let currentUserId = "";
-let currentUserDisplayName = ""; // Tên hiển thị của tài khoản Zalo đang đăng nhập
+let currentUserDisplayName = "";
 let listenerRetrying = false;
 let autoReconnectDone = false;
 let autoReconnectPromise: Promise<void> | null = null;
@@ -146,45 +179,79 @@ let qrCallbackFn: ((qrBase64: string) => void) | null = null;
 let loginResolve: ((api: unknown) => void) | null = null;
 let loginReject: ((err: Error) => void) | null = null;
 let currentQRImage: string | null = null; // Lưu QR image mới nhất để client poll
+let qrLoginInProgress = false;
+let qrLoginResult: { accountId: string; displayName: string } | null = null;
 
 export function getCurrentQRImage(): string | null {
   return currentQRImage;
 }
 
+export function getQRLoginStatus() {
+  return { connecting: qrLoginInProgress, result: qrLoginResult };
+}
+
 export function resetQRLogin(): void {
-  if (!isConnected) {
-    isConnecting = false;
-    currentQRImage = null;
-    loginResolve = null;
-    loginReject = null;
-  }
+  currentQRImage = null;
+  qrLoginInProgress = false;
+  qrLoginResult = null;
+  loginResolve = null;
+  loginReject = null;
 }
 
-export function getZaloApi() {
-  return zaloApi;
+function selectedRuntime(accountId?: string | null): ZaloGatewayRuntime | null {
+  if (accountId) return gatewayRuntimes.get(accountId) || null;
+  if (defaultAccountId) return gatewayRuntimes.get(defaultAccountId) || null;
+  return Array.from(gatewayRuntimes.values()).find(runtime => runtime.isConnected) || null;
 }
 
-export function isZaloConnected() {
-  return isConnected && zaloApi !== null;
+function syncDefaultCompatibilityRuntime(): void {
+  const runtime = selectedRuntime(defaultAccountId);
+  zaloApi = runtime?.api || null;
+  isConnected = Boolean(runtime?.isConnected && runtime.api);
+  isConnecting = Boolean(runtime?.isConnecting);
+  currentUserId = runtime?.userId || "";
+  currentUserDisplayName = runtime?.displayName || "";
+  listenerRetrying = Boolean(runtime?.listenerRetrying);
 }
 
-export function getZaloUserId() {
-  return currentUserId;
+export function getZaloApi(accountId?: string) {
+  return selectedRuntime(accountId)?.api || null;
 }
 
-export function getZaloUserDisplayName() {
-  return currentUserDisplayName;
+export function isZaloConnected(accountId?: string) {
+  const runtime = selectedRuntime(accountId);
+  return Boolean(runtime?.isConnected && runtime.api);
 }
 
-export function getGatewayStatus() {
+export function getZaloUserId(accountId?: string) {
+  return selectedRuntime(accountId)?.userId || "";
+}
+
+export function getZaloUserDisplayName(accountId?: string) {
+  return selectedRuntime(accountId)?.displayName || "";
+}
+
+export function getGatewayStatus(accountId?: string) {
+  const runtime = selectedRuntime(accountId);
   return {
-    isConnected: isConnected && zaloApi !== null,
-    isConnecting,
-    userId: currentUserId || null,
-    phone: currentUserId || null,
-    displayName: currentUserDisplayName || null,
-    status: isConnected ? "connected" : isConnecting ? "connecting" : listenerRetrying ? "reconnecting" : "disconnected",
+    accountId: runtime?.accountId || accountId || null,
+    isConnected: Boolean(runtime?.isConnected && runtime.api),
+    isConnecting: Boolean(runtime?.isConnecting),
+    userId: runtime?.userId || null,
+    phone: runtime?.userId || null,
+    displayName: runtime?.displayName || null,
+    avatar: runtime?.avatar || null,
+    status: runtime?.isConnected ? "connected" : runtime?.isConnecting ? "connecting" : runtime?.listenerRetrying ? "reconnecting" : "disconnected",
   };
+}
+
+export async function getAllGatewayStatuses() {
+  const accounts = await listZaloAccounts();
+  return accounts.map(account => ({
+    ...getGatewayStatus(account.id),
+    ...account,
+    accountId: account.id,
+  }));
 }
 
 // ─── Database Helpers ─────────────────────────────────────────────────────────
@@ -245,10 +312,11 @@ export async function loadCredentials(): Promise<ZaloCredentials | null> {
   }
 }
 
-export async function saveMessage(msg: ZaloMessage & { senderName?: string; threadId?: string }) {
+export async function saveMessage(msg: ZaloMessage & { accountId: string; senderName?: string; threadId?: string }) {
   const threadId = msg.threadId || (msg.isSelf ? msg.toId : msg.fromId);
   if (!threadId) throw new Error("Tin nhắn Zalo không có threadId");
   return upsertCanonicalZaloMessage({
+    accountId: msg.accountId,
     msgId: msg.msgId,
     threadId,
     fromId: msg.fromId,
@@ -449,6 +517,7 @@ function extensionForContentType(contentType: string, sourceUrl: string): string
 }
 
 async function mirrorIncomingAttachments(
+  accountId: string,
   threadId: string,
   msgId: string,
   attachments: ZaloAttachment[],
@@ -492,7 +561,7 @@ async function mirrorIncomingAttachments(
         originalName,
         entityType: "zalo_inbox_message",
         entityId: msgId,
-        createdBy: currentUserId || undefined,
+        createdBy: accountId,
         expiresAt: getZaloMediaExpiresAt(mediaKind),
       });
       return {
@@ -513,7 +582,8 @@ async function mirrorIncomingAttachments(
 
 // ─── Connection Management ────────────────────────────────────────────────────
 
-function setupListeners(api: unknown) {
+function setupListeners(runtime: ZaloGatewayRuntime) {
+  const api = runtime.api;
   const apiObj = api as {
     listener: {
       on: (event: string, cb: (...args: any[]) => void) => void;
@@ -548,7 +618,7 @@ function setupListeners(api: unknown) {
       || null;
     // PostgreSQL là nguồn dữ liệu chuẩn. Chỉ cập nhật conversation/SSE sau
     // khi upsert tin nhắn thành công để tránh trạng thái "thấy rồi lại mất".
-    await saveMessage({ ...processed, threadId, senderName: senderName || undefined });
+    await saveMessage({ ...processed, accountId: runtime.accountId, threadId, senderName: senderName || undefined });
     try {
       // Chỉ cập nhật displayName khi có tên thật (không phải ID số thuần)
       const isNumericId = /^\d{8,}$/.test(senderName);
@@ -558,6 +628,7 @@ function setupListeners(api: unknown) {
         ? senderName
         : threadId;
       await upsertConversation({
+        accountId: runtime.accountId,
         id: threadId,
         zaloUserId: threadId,
         displayName: displayNameToSave,
@@ -566,15 +637,16 @@ function setupListeners(api: unknown) {
         lastMessageAt: processed.timestamp,
       });
       if (!processed.isSelf && !options.historical) {
-        await incrementUnreadCount(threadId);
+        await incrementUnreadCount(threadId, runtime.accountId);
       }
     } catch (err) {
       console.error("[ZaloGateway] upsertConversation error:", err);
     }
-    if (!options.historical) broadcastSSE("message", { ...processed, threadId });
+    if (!options.historical) broadcastSSE("message", { ...processed, threadId }, runtime.accountId);
 
     if (!processed.isSelf && !options.historical) {
       void notifyInboundZaloMessage({
+        accountId: runtime.accountId,
         msgId: processed.msgId,
         conversationId: threadId,
         senderName,
@@ -590,6 +662,7 @@ function setupListeners(api: unknown) {
     // Bucket và upsert cùng msg_id. SSE lần hai cập nhật đúng message cũ.
     if (processed.attachments.length > 0) {
       const mirroredAttachments = await mirrorIncomingAttachments(
+        runtime.accountId,
         threadId,
         processed.msgId,
         processed.attachments,
@@ -600,8 +673,8 @@ function setupListeners(api: unknown) {
       );
       if (changed) {
         const stableMessage = { ...processed, attachments: mirroredAttachments };
-        await saveMessage({ ...stableMessage, threadId, senderName: senderName || undefined });
-        if (!options.historical) broadcastSSE("message", { ...stableMessage, threadId });
+        await saveMessage({ ...stableMessage, accountId: runtime.accountId, threadId, senderName: senderName || undefined });
+        if (!options.historical) broadcastSSE("message", { ...stableMessage, threadId }, runtime.accountId);
       }
     }
   };
@@ -609,7 +682,7 @@ function setupListeners(api: unknown) {
   apiObj.listener.on("message", (message: Record<string, unknown>) => {
     void persistGatewayMessage(message).catch((error) => {
       console.error("[ZaloGateway] Không lưu được realtime message:", error);
-      broadcastSSE("sync_error", { message: "Không lưu được tin nhắn mới vào cơ sở dữ liệu" });
+      broadcastSSE("sync_error", { message: "Không lưu được tin nhắn mới vào cơ sở dữ liệu" }, runtime.accountId);
     });
   });
 
@@ -625,15 +698,14 @@ function setupListeners(api: unknown) {
           console.error("[ZaloGateway] Không lưu được old_message:", error);
         }
       }
-      broadcastSSE("sync_complete", { count: messages.length });
+      broadcastSSE("sync_complete", { count: messages.length }, runtime.accountId);
     })();
   });
 
   apiObj.listener.on("connected", () => {
-    isConnected = true;
-    listenerRetrying = false;
-    autoReconnectDone = true;
-    broadcastSSE("connected", { userId: currentUserId, displayName: currentUserDisplayName });
+    runtime.isConnected = true;
+    runtime.listenerRetrying = false;
+    broadcastSSE("connected", { userId: runtime.userId, displayName: runtime.displayName }, runtime.accountId);
     try {
       apiObj.listener.requestOldMessages(ThreadType?.User ?? 0, null);
     } catch (error) {
@@ -663,33 +735,33 @@ function setupListeners(api: unknown) {
           };
           // Thử lấy thông tin user
           try {
-            const api2 = zaloApi as { findUser: (phone: string) => Promise<{ display_name?: string; zalo_name?: string; avatar?: string; uid?: string }> };
+            const api2 = runtime.api as { findUser: (phone: string) => Promise<{ display_name?: string; zalo_name?: string; avatar?: string; uid?: string }> };
             // Không có phone, dùng uid để tìm nếu có thể
             req.displayName = fromUid;
           } catch { /* ignore */ }
-          incomingFriendRequests.set(fromUid, req);
-          broadcastSSE("friend_request", { type: "incoming", request: req });
+          incomingFriendRequests.set(`${runtime.accountId}:${fromUid}`, req);
+          broadcastSSE("friend_request", { type: "incoming", request: req }, runtime.accountId);
           console.log(`[ZaloGateway] Incoming friend request from ${fromUid}: ${message}`);
         }
       }
       // FriendEventType.ADD = 0 (đã kết bạn thành công)
       else if (eventType === 0) {
         const friendUid = (eventData as unknown as string) || "";
-        broadcastSSE("friend_event", { type: "added", userId: friendUid, isSelf });
+        broadcastSSE("friend_event", { type: "added", userId: friendUid, isSelf }, runtime.accountId);
         console.log(`[ZaloGateway] Friend added: ${friendUid}`);
       }
       // FriendEventType.REJECT_REQUEST = 4
       else if (eventType === 4) {
         const fromUid = (eventData.fromUid as string) || "";
         const toUid = (eventData.toUid as string) || "";
-        broadcastSSE("friend_event", { type: "rejected", fromUid, toUid, isSelf });
+        broadcastSSE("friend_event", { type: "rejected", fromUid, toUid, isSelf }, runtime.accountId);
         console.log(`[ZaloGateway] Friend request rejected: from=${fromUid} to=${toUid}`);
       }
       // FriendEventType.UNDO_REQUEST = 3
       else if (eventType === 3) {
         const fromUid = (eventData.fromUid as string) || "";
-        if (fromUid) incomingFriendRequests.delete(fromUid);
-        broadcastSSE("friend_event", { type: "undo_request", fromUid, isSelf });
+        if (fromUid) incomingFriendRequests.delete(`${runtime.accountId}:${fromUid}`);
+        broadcastSSE("friend_event", { type: "undo_request", fromUid, isSelf }, runtime.accountId);
       }
     } catch (err) {
       console.error("[ZaloGateway] friend_event error:", err);
@@ -698,160 +770,96 @@ function setupListeners(api: unknown) {
 
   apiObj.listener.on("disconnected", (code: unknown, reason: unknown) => {
     console.warn("[ZaloGateway] WebSocket disconnected:", code, reason);
-    isConnected = false;
-    listenerRetrying = true;
-    broadcastSSE("disconnected", { code, reason, retrying: true });
+    runtime.isConnected = false;
+    runtime.listenerRetrying = true;
+    if (defaultAccountId === runtime.accountId) syncDefaultCompatibilityRuntime();
+    broadcastSSE("disconnected", { code, reason, retrying: true }, runtime.accountId);
   });
 
   apiObj.listener.on("closed", (code: unknown, reason: unknown) => {
     console.log("[ZaloGateway] Connection closed:", code, reason);
-    isConnected = false;
-    listenerRetrying = false;
-    zaloApi = null;
-    autoReconnectDone = false;
-    broadcastSSE("disconnected", { code, reason, retrying: false });
+    runtime.isConnected = false;
+    runtime.listenerRetrying = false;
+    runtime.api = null;
+    if (defaultAccountId === runtime.accountId) syncDefaultCompatibilityRuntime();
+    broadcastSSE("disconnected", { code, reason, retrying: false }, runtime.accountId);
 
     // Auto-reconnect after 5 seconds
-    setTimeout(() => {
-      autoReconnect();
+    runtime.reconnectTimer = setTimeout(() => {
+      void connectAccount(runtime.accountId).catch(error => console.error(`[ZaloGateway:${runtime.accountId}] reconnect failed`, error));
     }, 5000);
   });
 
   apiObj.listener.on("error", (error: unknown) => {
     console.error("[ZaloGateway] Listener error:", error);
-    broadcastSSE("sync_error", { message: "Kết nối nhận tin Zalo đang gặp lỗi" });
+    broadcastSSE("sync_error", { message: "Kết nối nhận tin Zalo đang gặp lỗi" }, runtime.accountId);
   });
 
   apiObj.listener.start({ retryOnClose: true });
   console.log("[ZaloGateway] Listener started");
 }
 
-async function autoReconnect() {
-  if (isConnected || isConnecting) return;
-  console.log("[ZaloGateway] Attempting auto-reconnect...");
-
-  const creds = await loadCredentials();
-  if (!creds) {
-    console.log("[ZaloGateway] No credentials found, skipping auto-reconnect");
-    return;
-  }
-
+async function connectRuntime(accountId: string, creds: StoredZaloCredentials): Promise<ZaloGatewayRuntime> {
+  const existing = gatewayRuntimes.get(accountId);
+  if (existing?.isConnected && existing.api) return existing;
+  if (existing?.isConnecting) throw new Error("Tài khoản đang kết nối");
+  const runtime: ZaloGatewayRuntime = existing || {
+    accountId, api: null, isConnected: false, isConnecting: false,
+    userId: accountId, displayName: accountId, avatar: "", listenerRetrying: false, reconnectTimer: null,
+  };
+  runtime.isConnecting = true;
+  gatewayRuntimes.set(accountId, runtime);
   try {
-    await connectWithCredentials(creds);
-    console.log("[ZaloGateway] Auto-reconnect successful");
-  } catch (err) {
-    console.error("[ZaloGateway] Auto-reconnect failed:", err);
-    // Retry after 30 seconds
-    setTimeout(() => autoReconnect(), 30000);
+    const zalo = new Zalo({ logging: false, selfListen: true });
+    runtime.api = await zalo.login(creds);
+    runtime.userId = String(await runtime.api.getOwnId());
+    const account = (await listZaloAccounts()).find(item => item.id === accountId);
+    runtime.displayName = account?.displayName || runtime.userId;
+    runtime.avatar = account?.avatar || "";
+    runtime.isConnected = true;
+    runtime.isConnecting = false;
+    runtime.listenerRetrying = false;
+    if (!defaultAccountId) defaultAccountId = accountId;
+    if (defaultAccountId === accountId) syncDefaultCompatibilityRuntime();
+    setupListeners(runtime);
+    await touchZaloAccountConnected(accountId);
+    broadcastSSE("connected", { userId: runtime.userId, displayName: runtime.displayName }, accountId);
+    console.log(`[ZaloGateway:${accountId}] Connected as ${runtime.displayName}`);
+    return runtime;
+  } catch (error) {
+    runtime.api = null;
+    runtime.isConnected = false;
+    runtime.isConnecting = false;
+    runtime.listenerRetrying = false;
+    throw error;
   }
 }
 
+export async function connectAccount(accountId: string): Promise<void> {
+  const credentials = await loadZaloAccountCredentials(accountId);
+  if (!credentials) throw new Error("Không tìm thấy phiên đăng nhập Zalo");
+  await connectRuntime(accountId, credentials);
+}
+
+/** Tương thích API cũ, dùng cho migration phiên đơn tài khoản. */
 export async function connectWithCredentials(creds: ZaloCredentials): Promise<void> {
-  if (isConnected && zaloApi) return;
-  if (isConnecting) throw new Error("Already connecting");
-  isConnecting = true;
-
-  try {
-    const zalo = new Zalo({ logging: false, selfListen: true });
-
-    const api = await zalo.login({
-      cookie: creds.cookie,
-      imei: creds.imei,
-      userAgent: creds.userAgent,
-    });
-
-    zaloApi = api;
-    isConnected = true;
-    listenerRetrying = false;
-    autoReconnectDone = true;
-    isConnecting = false;
-
-    // Get own user ID
-    try {
-      const apiObj = api as { getOwnId: () => Promise<string> };
-      currentUserId = await apiObj.getOwnId();
-    } catch {
-      currentUserId = "";
-    }
-
-    // Load display name from credentials DB
-    try {
-      const credRow = await queryOne<{ display_name: string | null; user_id: string | null }>(
-        "SELECT display_name, user_id FROM zalo_inbox_credentials LIMIT 1"
-      );
-      const rawName = credRow?.display_name || "";
-      const isNumericName = /^\d{8,}$/.test(rawName.trim());
-      if (rawName && !isNumericName) {
-        currentUserDisplayName = rawName;
-      } else {
-        // display_name chưa có hoặc là ID số — thử lấy từ getUserInfo (parse đúng cấu trúc zalo-personal)
-        try {
-          const apiObj2 = api as { getUserInfo?: (uid: string) => Promise<any> };
-          if (currentUserId && apiObj2.getUserInfo) {
-            const rawInfo = await apiObj2.getUserInfo(currentUserId);
-            // zalo-personal: result.changed_profiles[userId].displayName
-            const profiles = rawInfo?.changed_profiles ?? {};
-            const info = profiles[currentUserId] ?? Object.values(profiles)[0] as any;
-            const displayName = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "";
-            const avatar = info?.avatar ?? "";
-            if (displayName && !/^\d{8,}$/.test(displayName)) {
-              currentUserDisplayName = displayName;
-              // Cập nhật vào DB
-              if (creds) await saveCredentials(creds, currentUserId, displayName, avatar);
-            } else {
-              currentUserDisplayName = credRow?.user_id || currentUserId;
-            }
-          } else {
-            currentUserDisplayName = credRow?.user_id || currentUserId;
-          }
-        } catch {
-          currentUserDisplayName = credRow?.user_id || currentUserId;
-        }
-      }
-    } catch {
-      currentUserDisplayName = currentUserId;
-    }
-
-    setupListeners(api);
-    broadcastSSE("connected", { userId: currentUserId, displayName: currentUserDisplayName });
-    console.log("[ZaloGateway] Connected as", currentUserId, "/", currentUserDisplayName);
-  } catch (err) {
-    isConnecting = false;
-    isConnected = false;
-    listenerRetrying = false;
-    autoReconnectDone = false;
-    zaloApi = null;
-    throw err;
-  }
+  const accounts = await listZaloAccounts();
+  const accountId = accounts[0]?.id;
+  if (!accountId) throw new Error("Chưa có tài khoản Zalo");
+  await connectRuntime(accountId, creds);
 }
 
 // ─── QR Login ─────────────────────────────────────────────────────────────────
 
 export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<void> {
-  // Reset trạng thái nếu đang connecting nhưng chưa connected (cho phép retry)
-  if (isConnecting && !isConnected) {
-    isConnecting = false;
-    currentQRImage = null;
-  }
-  if (isConnecting) throw new Error("Already connecting");
-  isConnecting = true;
+  if (qrLoginInProgress) throw new Error("Một mã QR đăng nhập khác đang chờ xác nhận");
+  qrLoginInProgress = true;
+  qrLoginResult = null;
   currentQRImage = null;
   qrCallbackFn = onQR;
+  let pendingCredentials: StoredZaloCredentials | null = null;
 
   return new Promise<void>((resolve, reject) => {
-    loginResolve = (api: unknown) => {
-      zaloApi = api;
-      isConnected = true;
-      isConnecting = false;
-      setupListeners(api);
-      broadcastSSE("connected", { userId: currentUserId });
-      resolve();
-    };
-    loginReject = (err: Error) => {
-      isConnecting = false;
-      reject(err);
-    };
-
     const zalo = new Zalo({ logging: false, selfListen: true });
 
     zalo
@@ -870,12 +878,11 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
             // Save credentials
             const loginData = event.data as { cookie: unknown; imei: string; userAgent: string } | null;
             if (loginData) {
-              const creds: ZaloCredentials = {
+              pendingCredentials = {
                 cookie: loginData.cookie,
                 imei: loginData.imei,
                 userAgent: loginData.userAgent,
               };
-              await saveCredentials(creds);
             }
           }
         }
@@ -884,56 +891,86 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
         // Get user info including display name and avatar
         try {
           const apiObj = api as { getOwnId: () => Promise<string>; getCookie: () => unknown; getUserInfo?: (uid: string) => Promise<any> };
-          currentUserId = await apiObj.getOwnId();
+          const userId = String(await apiObj.getOwnId());
+          let displayName = userId;
+          let avatar = "";
           // Try to get display name and avatar (parse đúng cấu trúc zalo-personal)
-          if (currentUserId && apiObj.getUserInfo) {
+          if (userId && apiObj.getUserInfo) {
             try {
-              const rawInfo = await apiObj.getUserInfo(currentUserId);
+              const rawInfo = await apiObj.getUserInfo(userId);
               // zalo-personal: result.changed_profiles[userId].displayName
               const profiles = rawInfo?.changed_profiles ?? {};
-              const info = profiles[currentUserId] ?? Object.values(profiles)[0] as any;
-              const displayName = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "";
-              const avatar = info?.avatar ?? "";
-              if (displayName) currentUserDisplayName = displayName;
-              // Update credentials with display name and avatar
-              const creds2 = await loadCredentials();
-              if (creds2) await saveCredentials(creds2, currentUserId, displayName || currentUserId, avatar);
+              const info = profiles[userId] ?? Object.values(profiles)[0] as any;
+              displayName = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? userId;
+              avatar = info?.avatar ?? "";
             } catch { /* ignore */ }
           }
-        } catch {
-          currentUserId = "";
+          if (!pendingCredentials) throw new Error("Không nhận được thông tin phiên đăng nhập Zalo");
+          const existingAccounts = await listZaloAccounts();
+          if (existingAccounts.length >= 10 && !existingAccounts.some(account => account.id === userId)) {
+            try { (api as any)?.listener?.stop?.(); } catch { /* ignore */ }
+            throw new Error("Đã đạt giới hạn 10 tài khoản Zalo");
+          }
+          await saveZaloAccount({ userId, displayName, avatar, credentials: pendingCredentials });
+          const runtime: ZaloGatewayRuntime = {
+            accountId: userId, api, isConnected: true, isConnecting: false,
+            userId, displayName, avatar, listenerRetrying: false, reconnectTimer: null,
+          };
+          gatewayRuntimes.set(userId, runtime);
+          if (!defaultAccountId) defaultAccountId = userId;
+          if (defaultAccountId === userId) syncDefaultCompatibilityRuntime();
+          setupListeners(runtime);
+          broadcastSSE("connected", { userId, displayName }, userId);
+          qrLoginResult = { accountId: userId, displayName };
+          qrLoginInProgress = false;
+          currentQRImage = null;
+          resolve();
+        } catch (error) {
+          qrLoginInProgress = false;
+          reject(error instanceof Error ? error : new Error("Không thể hoàn tất đăng nhập Zalo"));
         }
-
-        if (loginResolve) loginResolve(api);
       })
       .catch((err: Error) => {
-        if (loginReject) loginReject(err);
+        qrLoginInProgress = false;
+        reject(err);
       });
   });
 }
 
-export async function disconnectZalo() {
-  isConnected = false;
-  zaloApi = null;
-  currentUserId = "";
-  broadcastSSE("disconnected", { reason: "manual" });
+export async function disconnectZalo(accountId?: string, removeCredentials = false) {
+  const targetId = accountId || defaultAccountId;
+  if (!targetId) return;
+  const runtime = gatewayRuntimes.get(targetId);
+  if (runtime?.reconnectTimer) clearTimeout(runtime.reconnectTimer);
+  if (runtime?.api?.listener?.stop) {
+    try { runtime.api.listener.stop(); } catch { /* ignore */ }
+  }
+  gatewayRuntimes.delete(targetId);
+  if (removeCredentials) await deleteZaloAccount(targetId);
+  if (defaultAccountId === targetId) {
+    defaultAccountId = Array.from(gatewayRuntimes.keys())[0] || "";
+  }
+  syncDefaultCompatibilityRuntime();
+  broadcastSSE("disconnected", { reason: "manual" }, targetId);
 }
 
 // ─── Initialize on startup ────────────────────────────────────────────────────
 
 export async function initZaloGateway() {
+  if (autoReconnectDone && Array.from(gatewayRuntimes.values()).some(runtime => runtime.isConnected && runtime.api)) return;
+  autoReconnectDone = true;
   console.log("[ZaloGateway] Initializing...");
-  const creds = await loadCredentials();
-  if (creds) {
-    console.log("[ZaloGateway] Found saved credentials, attempting auto-connect...");
-    try {
-      await connectWithCredentials(creds);
-    } catch (err) {
-      console.error("[ZaloGateway] Auto-connect failed:", err);
-    }
-  } else {
+  const accounts = (await listZaloAccounts()).filter(account => account.isActive).slice(0, 10);
+  if (!accounts.length) {
     console.log("[ZaloGateway] No saved credentials found");
+    return;
   }
+  defaultAccountId = accounts[0].id;
+  const results = await Promise.allSettled(accounts.map(account => connectAccount(account.id)));
+  results.forEach((result, index) => {
+    if (result.status === "rejected") console.error(`[ZaloGateway:${accounts[index].id}] Auto-connect failed:`, result.reason);
+  });
+  syncDefaultCompatibilityRuntime();
 }
 
 // ─── Send Message ─────────────────────────────────────────────────────────────
@@ -943,18 +980,20 @@ export async function initZaloGateway() {
  * Sau khi gửi thành công, lưu vào zalo_inbox_messages và upsert conversation
  */
 export async function sendZaloMessage(params: {
+  accountId?: string;
   conversationId: string;
   content: string;
   senderName?: string;
   senderId?: string;
 }): Promise<{ success: boolean; messageId?: string; message?: ZaloInboxMessageDto; error?: string }> {
   // Tự động kết nối lại nếu server vừa restart
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+  await ensureZaloConnected(params.accountId);
+  const runtime = selectedRuntime(params.accountId);
+  if (!runtime?.isConnected || !runtime.api) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       sendMessage: (msg: { msg: string }, threadId: string, type: number) => Promise<{
         message?: { msgId?: string | number } | null;
       }>;
@@ -967,14 +1006,15 @@ export async function sendZaloMessage(params: {
     );
     const sentAt = Date.now();
     const msgId = String(result?.message?.msgId || `sent_${sentAt}`);
-    const senderName = currentUserDisplayName || params.senderName || currentUserId || "Tôi";
+    const senderName = runtime.displayName || params.senderName || runtime.userId || "Tôi";
     // Lưu tin nhắn gửi đi vào DB (kèm senderName để hiển thị đúng tên)
     // Hai bản ghi độc lập nên chạy song song. Đường phản hồi chỉ chờ Zalo xác
     // nhận và PostgreSQL lưu bền vững; enrichment hồ sơ chạy nền phía dưới.
     await Promise.all([
       saveMessage({
+        accountId: runtime.accountId,
         msgId,
-        fromId: currentUserId,
+        fromId: runtime.userId,
         toId: params.conversationId,
         content: params.content,
         timestamp: sentAt,
@@ -984,6 +1024,7 @@ export async function sendZaloMessage(params: {
         senderName,
       }),
       upsertConversation({
+        accountId: runtime.accountId,
         id: params.conversationId,
         zaloUserId: params.conversationId,
         displayName: params.conversationId,
@@ -994,22 +1035,22 @@ export async function sendZaloMessage(params: {
     broadcastSSE("message", {
       msgId,
       threadId: params.conversationId,
-      fromId: currentUserId,
+      fromId: runtime.userId,
       toId: params.conversationId,
       content: params.content,
       timestamp: sentAt,
       isSelf: true,
       attachments: [],
       type: "text",
-    });
-    scheduleConversationIdentityEnrichment(params.conversationId);
+    }, runtime.accountId);
+    scheduleConversationIdentityEnrichment(params.conversationId, runtime.accountId);
     return {
       success: true,
       messageId: msgId,
       message: {
         id: msgId,
         conversationId: params.conversationId,
-        senderId: currentUserId,
+        senderId: runtime.userId,
         senderName,
         content: params.content,
         contentType: "text",
@@ -1026,16 +1067,16 @@ export async function sendZaloMessage(params: {
   }
 }
 
-function scheduleConversationIdentityEnrichment(conversationId: string): void {
+function scheduleConversationIdentityEnrichment(conversationId: string, accountId: string): void {
   setTimeout(() => {
     void (async () => {
       const existing = await queryOne<{ display_name: string | null }>(
-        "SELECT display_name FROM zalo_conversations WHERE id=$1",
-        [conversationId],
+        "SELECT display_name FROM zalo_conversations_v2 WHERE account_id=$1 AND thread_id=$2",
+        [accountId, conversationId],
       );
       const existingName = existing?.display_name?.trim() || "";
       if (existingName && !/^\d{8,}$/.test(existingName)) return;
-      const apiForInfo = zaloApi as { getUserInfo?: (uid: string) => Promise<any> };
+      const apiForInfo = selectedRuntime(accountId)?.api as { getUserInfo?: (uid: string) => Promise<any> };
       if (!apiForInfo?.getUserInfo) return;
       const rawInfo = await apiForInfo.getUserInfo(conversationId);
       const profiles = rawInfo?.changed_profiles ?? {};
@@ -1043,6 +1084,7 @@ function scheduleConversationIdentityEnrichment(conversationId: string): void {
       const name = String(info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "");
       if (!name || /^\d{8,}$/.test(name)) return;
       await upsertConversation({
+        accountId,
         id: conversationId,
         zaloUserId: conversationId,
         displayName: name,
@@ -1062,8 +1104,12 @@ function scheduleConversationIdentityEnrichment(conversationId: string): void {
  * Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy).
  * Gọi từ SSE route và conversations route — chỉ chạy 1 lần per process.
  */
-export async function ensureZaloConnected(): Promise<void> {
-  if (isConnected) return;
+export async function ensureZaloConnected(accountId?: string): Promise<void> {
+  if (isZaloConnected(accountId)) return;
+  if (accountId) {
+    await connectAccount(accountId);
+    return;
+  }
   // zca-js đang tự retry WebSocket. Không tạo thêm listener thứ hai vì một
   // tài khoản Zalo Web chỉ nên có một phiên listener tại một thời điểm.
   if (listenerRetrying && zaloApi) return;
@@ -1071,7 +1117,6 @@ export async function ensureZaloConnected(): Promise<void> {
   if (autoReconnectPromise) return autoReconnectPromise;
 
   autoReconnectPromise = (async () => {
-    autoReconnectDone = true;
     try {
       await initZaloGateway();
       if (isConnected) {
@@ -1092,6 +1137,12 @@ export async function ensureZaloConnected(): Promise<void> {
   return autoReconnectPromise;
 }
 
+async function connectedRuntimeFor(accountId?: string): Promise<ZaloGatewayRuntime | null> {
+  await ensureZaloConnected(accountId);
+  const runtime = selectedRuntime(accountId);
+  return runtime?.isConnected && runtime.api ? runtime : null;
+}
+
 // ─── Send Attachment ──────────────────────────────────────────────────────────
 /**
  * Gửi ảnh/file/video qua Zalo cá nhân
@@ -1101,6 +1152,7 @@ export async function ensureZaloConnected(): Promise<void> {
  * @param mimeType - MIME type của file
  */
 export async function sendZaloAttachment(params: {
+  accountId?: string;
   conversationId: string;
   fileBuffer: Buffer;
   fileName: string;
@@ -1116,8 +1168,9 @@ export async function sendZaloAttachment(params: {
   skipMirror?: boolean;
 }): Promise<{ success: boolean; messageId?: string; message?: ZaloInboxMessageDto; error?: string }> {
   // Tự động kết nối lại nếu server vừa restart
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+  await ensureZaloConnected(params.accountId);
+  const runtime = selectedRuntime(params.accountId);
+  if (!runtime?.isConnected || !runtime.api) {
     return { success: false, error: "Zalo chưa được kết nối. Vui lòng đăng nhập lại." };
   }
   try {
@@ -1128,7 +1181,7 @@ export async function sendZaloAttachment(params: {
     }
     // Ảnh/file được sendMessage tự upload; video dùng hai bước uploadAttachment
     // + sendVideo để phía nhận có trình phát native.
-    const api = zaloApi as {
+    const api = runtime.api as {
       sendMessage: (msg: unknown, threadId: string, type: unknown) => Promise<{
         message?: { msgId?: string | number } | null;
         attachment?: Array<{ msgId?: string | number }>;
@@ -1288,7 +1341,7 @@ export async function sendZaloAttachment(params: {
             originalName: normalizedVideo.fileName,
             entityType: "zalo_inbox_message",
             entityId: msgId,
-            createdBy: currentUserId || undefined,
+            createdBy: runtime.accountId,
             expiresAt: getZaloMediaExpiresAt("video", sentAt),
           }),
           storeMediaObject({
@@ -1300,7 +1353,7 @@ export async function sendZaloAttachment(params: {
             originalName: `${normalizedVideo.fileName.replace(/\.mp4$/i, "")}-thumbnail.jpg`,
             entityType: "zalo_inbox_message_thumbnail",
             entityId: msgId,
-            createdBy: currentUserId || undefined,
+            createdBy: runtime.accountId,
             expiresAt: getZaloMediaExpiresAt("image", sentAt),
           }),
         ]);
@@ -1313,7 +1366,7 @@ export async function sendZaloAttachment(params: {
       }
     }
 
-    const senderName = currentUserDisplayName || currentUserId || "Tôi";
+    const senderName = runtime.displayName || runtime.userId || "Tôi";
     const attachment: ZaloAttachment = {
       type: attachType,
       // Video native đã có URL bền vững trước khi gửi; ảnh/file tiếp tục dùng
@@ -1329,8 +1382,9 @@ export async function sendZaloAttachment(params: {
     const lastMsgLabel = attachType === "image" ? "[Hình ảnh]" : attachType === "video" ? "[Video]" : `[File: ${params.fileName}]`;
     await Promise.all([
       saveMessage({
+        accountId: runtime.accountId,
         msgId,
-        fromId: currentUserId,
+        fromId: runtime.userId,
         toId: params.conversationId,
         content: "",
         timestamp: sentAt,
@@ -1340,6 +1394,7 @@ export async function sendZaloAttachment(params: {
         senderName,
       }),
       upsertConversation({
+        accountId: runtime.accountId,
         id: params.conversationId,
         zaloUserId: params.conversationId,
         displayName: params.conversationId,
@@ -1353,6 +1408,7 @@ export async function sendZaloAttachment(params: {
     // phát SSE khi hoàn tất.
     if (!params.skipMirror && attachType !== "video") {
       scheduleOutgoingAttachmentMirror({
+        accountId: runtime.accountId,
         conversationId: params.conversationId,
         fileBuffer: sentFileBuffer,
         fileName: sentFileName,
@@ -1374,7 +1430,7 @@ export async function sendZaloAttachment(params: {
       message: {
         id: msgId,
         conversationId: params.conversationId,
-        senderId: currentUserId,
+        senderId: runtime.userId,
         senderName,
         content: "",
         contentType: attachType,
@@ -1392,6 +1448,7 @@ export async function sendZaloAttachment(params: {
 }
 
 function scheduleOutgoingAttachmentMirror(params: {
+  accountId: string;
   conversationId: string;
   fileBuffer: Buffer;
   fileName: string;
@@ -1417,7 +1474,7 @@ function scheduleOutgoingAttachmentMirror(params: {
         originalName: params.fileName,
         entityType: "zalo_inbox_message",
         entityId: params.msgId,
-        createdBy: currentUserId || undefined,
+        createdBy: params.accountId,
         expiresAt: getZaloMediaExpiresAt(mediaKind, params.sentAt),
       });
       const attachment: ZaloAttachment = {
@@ -1430,8 +1487,9 @@ function scheduleOutgoingAttachmentMirror(params: {
         fileSize: params.fileSize,
       };
       await saveMessage({
+        accountId: params.accountId,
         msgId: params.msgId,
-        fromId: currentUserId,
+        fromId: params.accountId,
         toId: params.conversationId,
         content: "",
         timestamp: params.sentAt,
@@ -1443,14 +1501,14 @@ function scheduleOutgoingAttachmentMirror(params: {
       broadcastSSE("message", {
         msgId: params.msgId,
         threadId: params.conversationId,
-        fromId: currentUserId,
+        fromId: params.accountId,
         toId: params.conversationId,
         content: "",
         timestamp: params.sentAt,
         isSelf: true,
         attachments: [attachment],
         type: params.attachType,
-      });
+      }, params.accountId);
     })().catch((error) => {
       console.error("[ZaloGateway] Không lưu được attachment vào Railway Bucket:", error);
     });
@@ -1462,17 +1520,17 @@ function scheduleOutgoingAttachmentMirror(params: {
 /**
  * Tìm user Zalo qua số điện thoại
  */
-export async function findZaloUserByPhone(phone: string): Promise<{
+export async function findZaloUserByPhone(phone: string, accountId?: string): Promise<{
   success: boolean;
   user?: { uid: string; displayName: string; avatar: string; zaloName: string };
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       findUser: (phone: string) => Promise<{
         uid?: string;
         display_name?: string;
@@ -1506,13 +1564,14 @@ export async function findZaloUserByPhone(phone: string): Promise<{
 export async function sendZaloFriendRequest(params: {
   userId: string;
   message?: string;
+  accountId?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+  const runtime = await connectedRuntimeFor(params.accountId);
+  if (!runtime) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       sendFriendRequest: (msg: string, userId: string) => Promise<unknown>;
     };
     const msg = params.message || "Xin chào, tôi muốn kết bạn với bạn!";
@@ -1528,19 +1587,19 @@ export async function sendZaloFriendRequest(params: {
 /**
  * Chấp nhận lời mời kết bạn
  */
-export async function acceptZaloFriendRequest(friendId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+export async function acceptZaloFriendRequest(friendId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       acceptFriendRequest: (friendId: string) => Promise<unknown>;
     };
     await api.acceptFriendRequest(friendId);
     // Xóa khỏi danh sách incoming requests
-    clearIncomingFriendRequest(friendId);
-    broadcastSSE("friend_event", { type: "accepted", userId: friendId });
+    clearIncomingFriendRequest(friendId, runtime.accountId);
+    broadcastSSE("friend_event", { type: "accepted", userId: friendId }, runtime.accountId);
     return { success: true };
   } catch (err: unknown) {
     const error = err as Error;
@@ -1552,19 +1611,19 @@ export async function acceptZaloFriendRequest(friendId: string): Promise<{ succe
 /**
  * Từ chối lời mời kết bạn
  */
-export async function rejectZaloFriendRequest(friendId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+export async function rejectZaloFriendRequest(friendId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       rejectFriendRequest: (friendId: string) => Promise<unknown>;
     };
     await api.rejectFriendRequest(friendId);
     // Xóa khỏi danh sách incoming requests
-    clearIncomingFriendRequest(friendId);
-    broadcastSSE("friend_event", { type: "rejected_by_me", userId: friendId });
+    clearIncomingFriendRequest(friendId, runtime.accountId);
+    broadcastSSE("friend_event", { type: "rejected_by_me", userId: friendId }, runtime.accountId);
     return { success: true };
   } catch (err: unknown) {
     const error = err as Error;
@@ -1576,7 +1635,7 @@ export async function rejectZaloFriendRequest(friendId: string): Promise<{ succe
 /**
  * Kiểm tra trạng thái kết bạn với một user
  */
-export async function getZaloFriendRequestStatus(friendId: string): Promise<{
+export async function getZaloFriendRequestStatus(friendId: string, accountId?: string): Promise<{
   success: boolean;
   status?: {
     isFriend: boolean;
@@ -1585,12 +1644,12 @@ export async function getZaloFriendRequestStatus(friendId: string): Promise<{
   };
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) {
     return { success: false, error: "Chưa kết nối Zalo. Vui lòng đăng nhập lại." };
   }
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       getFriendRequestStatus: (friendId: string) => Promise<{
         is_friend: number;
         is_requested: number;
@@ -1616,15 +1675,15 @@ export async function getZaloFriendRequestStatus(friendId: string): Promise<{
 // ─── Friends Extended API ─────────────────────────────────────────────────────
 
 /** Lấy danh sách tất cả bạn bè */
-export async function getAllZaloFriends(query?: string): Promise<{
+export async function getAllZaloFriends(query?: string, accountId?: string): Promise<{
   success: boolean;
   friends?: Array<{ userId: string; displayName: string; zaloName: string; avatar: string; phoneNumber?: string }>;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getAllFriends: () => Promise<unknown[]> };
+    const api = runtime.api as { getAllFriends: () => Promise<unknown[]> };
     let friends = await api.getAllFriends();
     if (!Array.isArray(friends)) friends = [];
     if (query) {
@@ -1651,15 +1710,15 @@ export async function getAllZaloFriends(query?: string): Promise<{
 }
 
 /** Lấy danh sách lời mời kết bạn đã gửi (đang chờ) */
-export async function getZaloSentFriendRequests(): Promise<{
+export async function getZaloSentFriendRequests(accountId?: string): Promise<{
   success: boolean;
   requests?: Array<{ userId: string; displayName: string; avatar: string; requestMessage?: string; sentAt?: number }>;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getSentFriendRequest: () => Promise<Record<string, any>> };
+    const api = runtime.api as { getSentFriendRequest: () => Promise<Record<string, any>> };
     const response = await api.getSentFriendRequest();
     const requests = Object.entries(response || {}).map(([uid, info]: [string, any]) => ({
       userId: info.userId || uid,
@@ -1675,13 +1734,13 @@ export async function getZaloSentFriendRequests(): Promise<{
 }
 
 /** Thu hồi lời mời kết bạn đã gửi */
-export async function undoZaloFriendRequest(userId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function undoZaloFriendRequest(userId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { undoFriendRequest: (userId: string) => Promise<unknown> };
+    const api = runtime.api as { undoFriendRequest: (userId: string) => Promise<unknown> };
     await api.undoFriendRequest(userId);
-    broadcastSSE("friend_event", { type: "undo_sent", userId });
+    broadcastSSE("friend_event", { type: "undo_sent", userId }, runtime.accountId);
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -1689,13 +1748,13 @@ export async function undoZaloFriendRequest(userId: string): Promise<{ success: 
 }
 
 /** Hủy kết bạn */
-export async function removeZaloFriend(userId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function removeZaloFriend(userId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { removeFriend: (userId: string) => Promise<unknown> };
+    const api = runtime.api as { removeFriend: (userId: string) => Promise<unknown> };
     await api.removeFriend(userId);
-    broadcastSSE("friend_event", { type: "unfriended", userId });
+    broadcastSSE("friend_event", { type: "unfriended", userId }, runtime.accountId);
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
@@ -1703,11 +1762,11 @@ export async function removeZaloFriend(userId: string): Promise<{ success: boole
 }
 
 /** Đặt biệt danh cho bạn bè */
-export async function setZaloFriendNickname(userId: string, nickname: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function setZaloFriendNickname(userId: string, nickname: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { changeFriendAlias: (alias: string, userId: string) => Promise<unknown> };
+    const api = runtime.api as { changeFriendAlias: (alias: string, userId: string) => Promise<unknown> };
     await api.changeFriendAlias(nickname, userId);
     return { success: true };
   } catch (err: any) {
@@ -1716,11 +1775,11 @@ export async function setZaloFriendNickname(userId: string, nickname: string): P
 }
 
 /** Xóa biệt danh bạn bè */
-export async function removeZaloFriendNickname(userId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function removeZaloFriendNickname(userId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { removeFriendAlias: (userId: string) => Promise<unknown> };
+    const api = runtime.api as { removeFriendAlias: (userId: string) => Promise<unknown> };
     await api.removeFriendAlias(userId);
     return { success: true };
   } catch (err: any) {
@@ -1729,15 +1788,15 @@ export async function removeZaloFriendNickname(userId: string): Promise<{ succes
 }
 
 /** Lấy danh sách bạn bè đang online */
-export async function getZaloOnlineFriends(): Promise<{
+export async function getZaloOnlineFriends(accountId?: string): Promise<{
   success: boolean;
   friends?: Array<{ userId: string; status: string }>;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getFriendOnlines: () => Promise<{ onlines?: Array<{ userId: string; status: string }> }> };
+    const api = runtime.api as { getFriendOnlines: () => Promise<{ onlines?: Array<{ userId: string; status: string }> }> };
     const response = await api.getFriendOnlines();
     return { success: true, friends: response?.onlines ?? [] };
   } catch (err: any) {
@@ -1746,15 +1805,15 @@ export async function getZaloOnlineFriends(): Promise<{
 }
 
 /** Lấy gợi ý kết bạn */
-export async function getZaloFriendRecommendations(): Promise<{
+export async function getZaloFriendRecommendations(accountId?: string): Promise<{
   success: boolean;
   recommendations?: Array<{ userId: string; displayName: string; avatar: string; source?: string }>;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getFriendRecommendations: () => Promise<{ recommItems?: any[] }> };
+    const api = runtime.api as { getFriendRecommendations: () => Promise<{ recommItems?: any[] }> };
     const result = await api.getFriendRecommendations();
     return {
       success: true,
@@ -1771,15 +1830,15 @@ export async function getZaloFriendRecommendations(): Promise<{
 }
 
 /** Lấy danh sách biệt danh bạn bè */
-export async function getZaloAliasList(): Promise<{
+export async function getZaloAliasList(accountId?: string): Promise<{
   success: boolean;
   aliases?: Array<{ userId: string; alias: string }>;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getAliasList: () => Promise<{ items?: any[] }> };
+    const api = runtime.api as { getAliasList: () => Promise<{ items?: any[] }> };
     const result = await api.getAliasList();
     return { success: true, aliases: (result?.items ?? []).map((a: any) => ({ userId: a.userId, alias: a.alias })) };
   } catch (err: any) {
@@ -1788,15 +1847,15 @@ export async function getZaloAliasList(): Promise<{
 }
 
 /** Lấy thông tin tài khoản của mình */
-export async function getZaloMyProfile(): Promise<{
+export async function getZaloMyProfile(accountId?: string): Promise<{
   success: boolean;
   profile?: { userId: string; displayName: string; zaloName: string; avatar: string; phoneNumber?: string; gender?: number; dob?: string };
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getOwnId: () => string; fetchAccountInfo?: () => Promise<any> };
+    const api = runtime.api as { getOwnId: () => string; fetchAccountInfo?: () => Promise<any> };
     const ownId = api.getOwnId();
     let raw: any = null;
     try { raw = await api.fetchAccountInfo?.(); } catch { /* ignore */ }
@@ -1821,15 +1880,15 @@ export async function getZaloMyProfile(): Promise<{
 // ─── Groups API ───────────────────────────────────────────────────────────────
 
 /** Lấy danh sách tất cả nhóm */
-export async function getAllZaloGroups(queryStr?: string): Promise<{
+export async function getAllZaloGroups(queryStr?: string, accountId?: string): Promise<{
   success: boolean;
   groups?: Array<{ groupId: string; name: string; desc?: string; totalMember?: number; avatar?: string; adminIds?: string[] }>;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       getAllGroups: () => Promise<{ gridVerMap?: Record<string, unknown> }>;
       getGroupInfo: (ids: string[]) => Promise<{ gridInfoMap?: Record<string, any> }>;
     };
@@ -1858,15 +1917,15 @@ export async function getAllZaloGroups(queryStr?: string): Promise<{
 }
 
 /** Lấy thông tin chi tiết một nhóm */
-export async function getZaloGroupInfo(groupId: string): Promise<{
+export async function getZaloGroupInfo(groupId: string, accountId?: string): Promise<{
   success: boolean;
   group?: any;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getGroupInfo: (id: string | string[]) => Promise<{ gridInfoMap?: Record<string, any> }> };
+    const api = runtime.api as { getGroupInfo: (id: string | string[]) => Promise<{ gridInfoMap?: Record<string, any> }> };
     const infoResp = await api.getGroupInfo(groupId);
     const info = infoResp?.gridInfoMap?.[groupId];
     if (!info) return { success: false, error: "Không tìm thấy nhóm" };
@@ -1877,15 +1936,15 @@ export async function getZaloGroupInfo(groupId: string): Promise<{
 }
 
 /** Tạo nhóm mới */
-export async function createZaloGroup(params: { name?: string; memberIds: string[] }): Promise<{
+export async function createZaloGroup(params: { name?: string; memberIds: string[]; accountId?: string }): Promise<{
   success: boolean;
   groupId?: string;
   error?: string;
 }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(params.accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { createGroup: (opts: { name?: string; members: string[] }) => Promise<{ groupId?: string }> };
+    const api = runtime.api as { createGroup: (opts: { name?: string; members: string[] }) => Promise<{ groupId?: string }> };
     const result = await api.createGroup({ name: params.name, members: params.memberIds });
     return { success: true, groupId: result?.groupId };
   } catch (err: any) {
@@ -1894,11 +1953,11 @@ export async function createZaloGroup(params: { name?: string; memberIds: string
 }
 
 /** Thêm thành viên vào nhóm */
-export async function addZaloUserToGroup(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function addZaloUserToGroup(userId: string, groupId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { addUserToGroup: (memberId: string, groupId: string) => Promise<{ errorMembers?: string[] }> };
+    const api = runtime.api as { addUserToGroup: (memberId: string, groupId: string) => Promise<{ errorMembers?: string[] }> };
     const result = await api.addUserToGroup(userId, groupId);
     if (result?.errorMembers?.length) return { success: false, error: `Không thể thêm: ${result.errorMembers.join(", ")}` };
     return { success: true };
@@ -1908,11 +1967,11 @@ export async function addZaloUserToGroup(userId: string, groupId: string): Promi
 }
 
 /** Xóa thành viên khỏi nhóm */
-export async function removeZaloUserFromGroup(userId: string, groupId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function removeZaloUserFromGroup(userId: string, groupId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { removeUserFromGroup: (memberId: string, groupId: string) => Promise<unknown> };
+    const api = runtime.api as { removeUserFromGroup: (memberId: string, groupId: string) => Promise<unknown> };
     await api.removeUserFromGroup(userId, groupId);
     return { success: true };
   } catch (err: any) {
@@ -1921,11 +1980,11 @@ export async function removeZaloUserFromGroup(userId: string, groupId: string): 
 }
 
 /** Rời nhóm */
-export async function leaveZaloGroup(groupId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function leaveZaloGroup(groupId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { leaveGroup: (groupId: string) => Promise<unknown> };
+    const api = runtime.api as { leaveGroup: (groupId: string) => Promise<unknown> };
     await api.leaveGroup(groupId);
     return { success: true };
   } catch (err: any) {
@@ -1934,11 +1993,11 @@ export async function leaveZaloGroup(groupId: string): Promise<{ success: boolea
 }
 
 /** Đổi tên nhóm */
-export async function changeZaloGroupName(groupId: string, name: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function changeZaloGroupName(groupId: string, name: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { changeGroupName: (name: string, groupId: string) => Promise<unknown> };
+    const api = runtime.api as { changeGroupName: (name: string, groupId: string) => Promise<unknown> };
     await api.changeGroupName(name, groupId);
     return { success: true };
   } catch (err: any) {
@@ -1947,11 +2006,11 @@ export async function changeZaloGroupName(groupId: string, name: string): Promis
 }
 
 /** Lấy link tham gia nhóm */
-export async function getZaloGroupLink(groupId: string): Promise<{ success: boolean; link?: string; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloGroupLink(groupId: string, accountId?: string): Promise<{ success: boolean; link?: string; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getGroupLink: (groupId: string) => Promise<{ link?: string }> };
+    const api = runtime.api as { getGroupLink: (groupId: string) => Promise<{ link?: string }> };
     const result = await api.getGroupLink(groupId);
     return { success: true, link: result?.link };
   } catch (err: any) {
@@ -1960,11 +2019,11 @@ export async function getZaloGroupLink(groupId: string): Promise<{ success: bool
 }
 
 /** Bật link tham gia nhóm */
-export async function enableZaloGroupLink(groupId: string): Promise<{ success: boolean; link?: string; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function enableZaloGroupLink(groupId: string, accountId?: string): Promise<{ success: boolean; link?: string; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { enableGroupLink: (groupId: string) => Promise<{ link?: string }> };
+    const api = runtime.api as { enableGroupLink: (groupId: string) => Promise<{ link?: string }> };
     const result = await api.enableGroupLink(groupId);
     return { success: true, link: result?.link };
   } catch (err: any) {
@@ -1973,11 +2032,11 @@ export async function enableZaloGroupLink(groupId: string): Promise<{ success: b
 }
 
 /** Tham gia nhóm qua link */
-export async function joinZaloGroupByLink(link: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function joinZaloGroupByLink(link: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { joinGroupLink: (link: string) => Promise<unknown> };
+    const api = runtime.api as { joinGroupLink: (link: string) => Promise<unknown> };
     await api.joinGroupLink(link);
     return { success: true };
   } catch (err: any) {
@@ -1986,11 +2045,11 @@ export async function joinZaloGroupByLink(link: string): Promise<{ success: bool
 }
 
 /** Lấy danh sách lời mời vào nhóm */
-export async function getZaloGroupInvites(): Promise<{ success: boolean; invites?: any; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloGroupInvites(accountId?: string): Promise<{ success: boolean; invites?: any; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getGroupInviteBoxList: () => Promise<any> };
+    const api = runtime.api as { getGroupInviteBoxList: () => Promise<any> };
     const result = await api.getGroupInviteBoxList();
     return { success: true, invites: result };
   } catch (err: any) {
@@ -1999,11 +2058,11 @@ export async function getZaloGroupInvites(): Promise<{ success: boolean; invites
 }
 
 /** Chấp nhận lời mời vào nhóm */
-export async function joinZaloGroupInvite(groupId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function joinZaloGroupInvite(groupId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { joinGroupInviteBox: (groupId: string) => Promise<unknown> };
+    const api = runtime.api as { joinGroupInviteBox: (groupId: string) => Promise<unknown> };
     await api.joinGroupInviteBox(groupId);
     return { success: true };
   } catch (err: any) {
@@ -2101,11 +2160,11 @@ export async function disperseZaloGroup(groupId: string): Promise<{ success: boo
 }
 
 /** Lấy nhóm chung với một user */
-export async function getZaloRelatedFriendGroups(userId: string): Promise<{ success: boolean; groupIds?: string[]; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloRelatedFriendGroups(userId: string, accountId?: string): Promise<{ success: boolean; groupIds?: string[]; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getRelatedFriendGroup: (userId: string) => Promise<{ groupRelateds?: Record<string, string[]> }> };
+    const api = runtime.api as { getRelatedFriendGroup: (userId: string) => Promise<{ groupRelateds?: Record<string, string[]> }> };
     const result = await api.getRelatedFriendGroup(userId);
     return { success: true, groupIds: result?.groupRelateds?.[userId] ?? [] };
   } catch (err: any) {
@@ -2265,11 +2324,11 @@ export async function sendZaloTypingEvent(threadId: string, isGroup?: boolean): 
 // ─── Auto-Reply API ───────────────────────────────────────────────────────────
 
 /** Lấy danh sách auto-reply */
-export async function getZaloAutoReplies(): Promise<{ success: boolean; replies?: any[]; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloAutoReplies(accountId?: string): Promise<{ success: boolean; replies?: any[]; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getAutoReplyList: () => Promise<{ items?: any[] }> };
+    const api = runtime.api as { getAutoReplyList: () => Promise<{ items?: any[] }> };
     const result = await api.getAutoReplyList();
     return { success: true, replies: result?.items ?? [] };
   } catch (err: any) {
@@ -2282,11 +2341,12 @@ export async function createZaloAutoReply(params: {
   message: string;
   startTime?: number;
   endTime?: number;
+  accountId?: string;
 }): Promise<{ success: boolean; item?: any; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(params.accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as {
+    const api = runtime.api as {
       createAutoReply: (opts: { content: string; isEnable: boolean; startTime: number; endTime: number; scope: number }) => Promise<{ item?: any }>;
     };
     const result = await api.createAutoReply({
@@ -2303,11 +2363,11 @@ export async function createZaloAutoReply(params: {
 }
 
 /** Xóa auto-reply */
-export async function deleteZaloAutoReply(replyId: number): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function deleteZaloAutoReply(replyId: number, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { deleteAutoReply: (replyId: number) => Promise<unknown> };
+    const api = runtime.api as { deleteAutoReply: (replyId: number) => Promise<unknown> };
     await api.deleteAutoReply(replyId);
     return { success: true };
   } catch (err: any) {
@@ -2318,11 +2378,11 @@ export async function deleteZaloAutoReply(replyId: number): Promise<{ success: b
 // ─── Catalog & Products API ───────────────────────────────────────────────────
 
 /** Lấy danh sách catalog */
-export async function getZaloCatalogs(): Promise<{ success: boolean; catalogs?: any[]; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloCatalogs(accountId?: string): Promise<{ success: boolean; catalogs?: any[]; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getCatalogList: () => Promise<{ items?: any[]; has_more?: number }> };
+    const api = runtime.api as { getCatalogList: () => Promise<{ items?: any[]; has_more?: number }> };
     const result = await api.getCatalogList();
     return { success: true, catalogs: result?.items ?? [] };
   } catch (err: any) {
@@ -2331,11 +2391,11 @@ export async function getZaloCatalogs(): Promise<{ success: boolean; catalogs?: 
 }
 
 /** Tạo catalog */
-export async function createZaloCatalog(title: string): Promise<{ success: boolean; catalog?: any; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function createZaloCatalog(title: string, accountId?: string): Promise<{ success: boolean; catalog?: any; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { createCatalog: (title: string) => Promise<{ item?: any }> };
+    const api = runtime.api as { createCatalog: (title: string) => Promise<{ item?: any }> };
     const result = await api.createCatalog(title);
     return { success: true, catalog: result?.item };
   } catch (err: any) {
@@ -2344,11 +2404,11 @@ export async function createZaloCatalog(title: string): Promise<{ success: boole
 }
 
 /** Cập nhật catalog */
-export async function updateZaloCatalog(catalogId: string, title: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function updateZaloCatalog(catalogId: string, title: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { updateCatalog: (opts: { catalogId: string; catalogName: string }) => Promise<unknown> };
+    const api = runtime.api as { updateCatalog: (opts: { catalogId: string; catalogName: string }) => Promise<unknown> };
     await api.updateCatalog({ catalogId, catalogName: title });
     return { success: true };
   } catch (err: any) {
@@ -2357,11 +2417,11 @@ export async function updateZaloCatalog(catalogId: string, title: string): Promi
 }
 
 /** Xóa catalog */
-export async function deleteZaloCatalog(catalogId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function deleteZaloCatalog(catalogId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { deleteCatalog: (catalogId: string) => Promise<unknown> };
+    const api = runtime.api as { deleteCatalog: (catalogId: string) => Promise<unknown> };
     await api.deleteCatalog(catalogId);
     return { success: true };
   } catch (err: any) {
@@ -2370,11 +2430,11 @@ export async function deleteZaloCatalog(catalogId: string): Promise<{ success: b
 }
 
 /** Lấy danh sách sản phẩm trong catalog */
-export async function getZaloProducts(catalogId: string): Promise<{ success: boolean; products?: any[]; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloProducts(catalogId: string, accountId?: string): Promise<{ success: boolean; products?: any[]; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getProductCatalogList: (opts: { catalogId: string }) => Promise<{ items?: any[] }> };
+    const api = runtime.api as { getProductCatalogList: (opts: { catalogId: string }) => Promise<{ items?: any[] }> };
     const result = await api.getProductCatalogList({ catalogId });
     return { success: true, products: result?.items ?? [] };
   } catch (err: any) {
@@ -2388,11 +2448,12 @@ export async function createZaloProduct(params: {
   title: string;
   price: number;
   description?: string;
+  accountId?: string;
 }): Promise<{ success: boolean; product?: any; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(params.accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { createProductCatalog: (opts: { catalogId: string; productName: string; price: number; description: string }) => Promise<{ item?: any }> };
+    const api = runtime.api as { createProductCatalog: (opts: { catalogId: string; productName: string; price: number; description: string }) => Promise<{ item?: any }> };
     const result = await api.createProductCatalog({ catalogId: params.catalogId, productName: params.title, price: params.price, description: params.description || "" });
     return { success: true, product: result?.item };
   } catch (err: any) {
@@ -2407,11 +2468,12 @@ export async function updateZaloProduct(params: {
   title: string;
   price: number;
   description?: string;
+  accountId?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  const runtime = await connectedRuntimeFor(params.accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { updateProductCatalog: (opts: any) => Promise<unknown> };
+    const api = runtime.api as { updateProductCatalog: (opts: any) => Promise<unknown> };
     await api.updateProductCatalog({ catalogId: params.catalogId, productId: params.productId, productName: params.title, price: params.price, description: params.description || "", createTime: Date.now() });
     return { success: true };
   } catch (err: any) {
@@ -2420,11 +2482,11 @@ export async function updateZaloProduct(params: {
 }
 
 /** Xóa sản phẩm */
-export async function deleteZaloProduct(catalogId: string, productId: string): Promise<{ success: boolean; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function deleteZaloProduct(catalogId: string, productId: string, accountId?: string): Promise<{ success: boolean; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { deleteProductCatalog: (opts: { catalogId: string; productIds: string }) => Promise<unknown> };
+    const api = runtime.api as { deleteProductCatalog: (opts: { catalogId: string; productIds: string }) => Promise<unknown> };
     await api.deleteProductCatalog({ catalogId, productIds: productId });
     return { success: true };
   } catch (err: any) {
@@ -2602,11 +2664,11 @@ export async function getZaloBoards(groupId: string): Promise<{ success: boolean
 // ─── User Info API ────────────────────────────────────────────────────────────
 
 /** Lấy thông tin chi tiết một user - parse đúng cấu trúc zalo-personal */
-export async function getZaloUserInfo(userId: string): Promise<{ success: boolean; user?: any; error?: string }> {
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+export async function getZaloUserInfo(userId: string, accountId?: string): Promise<{ success: boolean; user?: any; error?: string }> {
+  const runtime = await connectedRuntimeFor(accountId);
+  if (!runtime) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getUserInfo: (userId: string) => Promise<any> };
+    const api = runtime.api as { getUserInfo: (userId: string) => Promise<any> };
     const result = await api.getUserInfo(userId);
     // Parse theo cấu trúc zalo-personal: result.changed_profiles[userId]
     const profiles = result?.changed_profiles ?? {};
@@ -2628,17 +2690,18 @@ export async function getZaloUserInfo(userId: string): Promise<{ success: boolea
 }
 
 /** Lấy hồ sơ nhiều user trong một request để đồng bộ avatar hội thoại. */
-export async function getZaloUserProfiles(userIds: string[]): Promise<{
+export async function getZaloUserProfiles(userIds: string[], accountId?: string): Promise<{
   success: boolean;
   users?: Map<string, { userId: string; displayName: string; zaloName: string; avatar: string }>;
   error?: string;
 }> {
   const ids = Array.from(new Set(userIds.map(id => String(id || "").trim()).filter(Boolean)));
   if (ids.length === 0) return { success: true, users: new Map() };
-  await ensureZaloConnected();
-  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  await ensureZaloConnected(accountId);
+  const profileRuntime = selectedRuntime(accountId);
+  if (!profileRuntime?.isConnected || !profileRuntime.api) return { success: false, error: "Chưa kết nối Zalo." };
   try {
-    const api = zaloApi as { getUserInfo: (userId: string[], avatarSize?: number) => Promise<any> };
+    const api = profileRuntime.api as { getUserInfo: (userId: string[], avatarSize?: number) => Promise<any> };
     const result = await api.getUserInfo(ids, 240);
     const profiles = result?.changed_profiles ?? {};
     const users = new Map<string, { userId: string; displayName: string; zaloName: string; avatar: string }>();

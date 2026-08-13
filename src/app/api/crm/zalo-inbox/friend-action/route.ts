@@ -18,9 +18,10 @@ export async function POST(req: NextRequest) {
       action: "send" | "accept" | "reject" | "status";
       userId: string;
       message?: string;
+      accountId?: string;
     };
 
-    const { action, userId, message } = body;
+    const { action, userId, message, accountId } = body;
 
     if (!action || !userId) {
       return NextResponse.json(
@@ -31,19 +32,19 @@ export async function POST(req: NextRequest) {
 
     switch (action) {
       case "send": {
-        const result = await sendZaloFriendRequest({ userId, message });
+        const result = await sendZaloFriendRequest({ userId, message, accountId });
         return NextResponse.json(result);
       }
       case "accept": {
-        const result = await acceptZaloFriendRequest(userId);
+        const result = await acceptZaloFriendRequest(userId, accountId);
         return NextResponse.json(result);
       }
       case "reject": {
-        const result = await rejectZaloFriendRequest(userId);
+        const result = await rejectZaloFriendRequest(userId, accountId);
         return NextResponse.json(result);
       }
       case "status": {
-        const result = await getZaloFriendRequestStatus(userId);
+        const result = await getZaloFriendRequestStatus(userId, accountId);
         return NextResponse.json(result);
       }
       default:

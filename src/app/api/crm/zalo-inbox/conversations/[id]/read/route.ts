@@ -29,11 +29,13 @@ export async function POST(
 
   // ✅ Fix Bug 1: await params trước khi dùng (Next.js 15)
   const { id: conversationId } = await params;
+  const accountId = new URL(req.url).searchParams.get("accountId") || undefined;
+  if (!accountId) return NextResponse.json({ error: "Thiếu accountId" }, { status: 400 });
 
   try {
     // ✅ Fix Bug 2: Dùng zalo-inbox-store thay vì pancake-service
     await markMessagesAsRead(conversationId);
-    await markConversationAsRead(conversationId);
+    await markConversationAsRead(conversationId, accountId);
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

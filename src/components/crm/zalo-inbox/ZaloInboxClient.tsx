@@ -89,6 +89,7 @@ interface LeadInfo {
   recent_quotes: Array<{ id: string; name: string; status: string; total_amount: number }> | null;
 }
 interface ZaloConversation {
+  accountId: string;
   id: string;
   zaloUserId?: string;
   phone: string | null;
@@ -106,6 +107,16 @@ interface GatewayStatus {
   displayName?: string | null;
   status?: string;
   message?: string;
+}
+interface ZaloAccountStatus {
+  id: string;
+  accountId: string;
+  userId: string;
+  displayName: string;
+  label: string;
+  avatar?: string | null;
+  isConnected: boolean;
+  status: string;
 }
 interface ReplyContext {
   messageId: string;
@@ -169,7 +180,7 @@ async function readVideoMetadata(file: File): Promise<{
   }
 }
 
-async function sendAttachmentBinary(conversationId: string, file: File): Promise<Response> {
+async function sendAttachmentBinary(accountId: string, conversationId: string, file: File): Promise<Response> {
   const videoMetadata = await readVideoMetadata(file);
   return fetch("/api/crm/zalo-inbox/send-attachment", {
     method: "POST",
@@ -177,6 +188,7 @@ async function sendAttachmentBinary(conversationId: string, file: File): Promise
     headers: {
       "Content-Type": file.type || "application/octet-stream",
       "X-Zalo-Conversation-Id": conversationId,
+      "X-Zalo-Account-Id": accountId,
       "X-Zalo-File-Name": encodeURIComponent(file.name),
       "X-Zalo-File-Size": String(file.size),
       ...(videoMetadata.duration ? { "X-Zalo-Video-Duration": String(videoMetadata.duration) } : {}),
@@ -569,8 +581,8 @@ function MediaPreviewBar({ files, onRemove, onSend, sending }: {
 }
 
 // ─── ConversationItem ─────────────────────────────────────────────────────────
-function ConversationItem({ conv, isSelected, onClick }: {
-  conv: ZaloConversation; isSelected: boolean; onClick: () => void;
+function ConversationItem({ conv, isSelected, onClick, accountLabel }: {
+  conv: ZaloConversation; isSelected: boolean; onClick: () => void; accountLabel?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const hasUnread = conv.unreadCount > 0;
@@ -597,6 +609,11 @@ function ConversationItem({ conv, isSelected, onClick }: {
             {formatTime(conv.lastMessageAt)}
           </span>
         </div>
+        {accountLabel && (
+          <div style={{ color: T.accent, fontSize: 10, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {accountLabel}
+          </div>
+        )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{
             fontSize: 12, color: hasUnread ? T.textSecondary : T.textMuted,
@@ -994,8 +1011,17 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ connected: boolean; phone: string | null; displayName: string | null } | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<ZaloAccountStatus[]>([]);
+
+  const loadAccounts = useCallback(() => {
+    fetch("/api/crm/zalo-inbox/accounts", { credentials: "include" })
+      .then(r => r.json())
+      .then(d => setAccounts(Array.isArray(d.accounts) ? d.accounts : []))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
+    loadAccounts();
     fetch("/api/crm/zalo-inbox/status", { credentials: "include" })
       .then(r => r.json()).then(d => setStatus({
         connected: d.connected,
@@ -1003,7 +1029,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
         displayName: d.displayName || null,
       }))
       .catch(() => { });
-  }, []);
+  }, [loadAccounts]);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -1053,6 +1079,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
           setQrData(null);
           setLoading(false);
           stopPolling();
+          loadAccounts();
         } else if (d.qrImage) {
           setQrData({ qr: d.qrImage, status: "pending" });
           setLoading(false);
@@ -1077,6 +1104,25 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
     }
     onDisconnect();
     onClose();
+  };
+
+  const disconnectAccount = async (accountId: string) => {
+    const response = await fetch("/api/crm/zalo-inbox/disconnect", {
+      method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId }),
+    });
+    if (response.ok) loadAccounts();
+  };
+
+  const reconnectAccount = async (accountId: string) => {
+    setSettingsError(null);
+    const response = await fetch("/api/crm/zalo-inbox/accounts", {
+      method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId, isActive: true }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) setSettingsError(data.error || "Không thể kết nối lại tài khoản Zalo.");
+    else loadAccounts();
   };
 
   return (
@@ -1129,6 +1175,26 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
             </button>
           )}
         </div>
+
+        {accounts.length > 0 && (
+          <div style={{ marginTop: 18, borderTop: `1px solid ${T.sidebarBorder}`, paddingTop: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: T.textPrimary, marginBottom: 8 }}>Tài khoản đã kết nối ({accounts.length}/10)</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {accounts.map(account => (
+                <div key={account.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: 9, border: `1px solid ${T.sidebarBorder}`, borderRadius: 10 }}>
+                  <Avatar name={account.displayName} avatarUrl={account.avatar} size={34} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.label || account.displayName}</div>
+                    <div style={{ fontSize: 10, color: account.isConnected ? T.success : T.textMuted }}>{account.isConnected ? "Đang kết nối" : "Đã lưu phiên"}</div>
+                  </div>
+                  {account.isConnected
+                    ? <button onClick={() => disconnectAccount(account.id)} style={{ border: "none", background: "none", color: T.error, cursor: "pointer", fontSize: 11 }}>Ngắt</button>
+                    : <button onClick={() => reconnectAccount(account.id)} style={{ border: "none", background: "none", color: T.accent, cursor: "pointer", fontSize: 11 }}>Kết nối</button>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1144,6 +1210,8 @@ export default function ZaloInboxClient() {
   const [inputText, setInputText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [gatewayStatus, setGatewayStatus] = useState<GatewayStatus>({ connected: false, phone: null });
+  const [accounts, setAccounts] = useState<ZaloAccountStatus[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -1172,7 +1240,7 @@ export default function ZaloInboxClient() {
     return true;
   });
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ convId: string; x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ accountId: string; convId: string; x: number; y: number } | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
   const emojiRef = useRef<HTMLDivElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -1190,10 +1258,31 @@ export default function ZaloInboxClient() {
   const sendingRef = useRef(false);
   const openedPushConversationRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    fetch("/api/crm/zalo-inbox/accounts", { credentials: "include" })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        const nextAccounts = Array.isArray(data?.accounts) ? data.accounts : [];
+        setAccounts(nextAccounts);
+        const requestedAccount = new URLSearchParams(window.location.search).get("account");
+        if (requestedAccount && nextAccounts.some((account: ZaloAccountStatus) => account.id === requestedAccount)) {
+          setSelectedAccountId(requestedAccount);
+        }
+      })
+      .catch(() => undefined);
+  }, [showSettings]);
+
+  useEffect(() => {
+    setSelectedConv(null);
+    setMessages([]);
+    setLoading(true);
+    lastConvTimestampRef.current = "";
+  }, [selectedAccountId]);
+
   // ─── Load conversations ──────────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
+      const res = await fetch(`/api/crm/zalo-inbox/conversations?accountId=${encodeURIComponent(selectedAccountId)}`, { credentials: "include" });
       if (res.status === 401) { setGatewayStatus({ connected: false, phone: null, message: "Phiên đăng nhập hết hạn" }); return; }
       if (res.status === 403) { setGatewayStatus({ connected: false, phone: null, message: "Bạn chưa được cấp quyền truy cập" }); return; }
       if (!res.ok) return;
@@ -1201,24 +1290,26 @@ export default function ZaloInboxClient() {
       const nextConversations: ZaloConversation[] = data.conversations || [];
       setConversations(nextConversations);
       setSelectedConv(previous => previous
-        ? nextConversations.find(conversation => conversation.id === previous.id) || previous
+        ? nextConversations.find(conversation => conversation.id === previous.id && conversation.accountId === previous.accountId) || previous
         : previous);
       setGatewayStatus({ connected: data.connected || false, phone: data.phone || null, status: data.status, message: data.error });
     } catch { }
     finally { setLoading(false); }
-  }, []);
+  }, [selectedAccountId]);
 
   // ─── Load messages ───────────────────────────────────────────────────────
-  const loadMessages = useCallback(async (convId: string, forceLatest = false) => {
+  const loadMessages = useCallback(async (convId: string, forceLatest = false, accountIdOverride?: string) => {
     try {
-      const res = await fetch(`/api/crm/zalo-inbox/conversations/${convId}/messages`, { credentials: "include" });
+      const accountId = accountIdOverride || selectedConvRef.current?.accountId;
+      const suffix = accountId ? `?accountId=${encodeURIComponent(accountId)}` : "";
+      const res = await fetch(`/api/crm/zalo-inbox/conversations/${convId}/messages${suffix}`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       const remoteMessages: ZaloMessage[] = data.messages || [];
       if (forceLatest) forceScrollToLatestRef.current = true;
       setMessages(previous => mergeRemoteWithRecentSent(remoteMessages, previous, convId));
-      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read`, { method: "POST", credentials: "include" });
-      setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: 0 } : c));
+      await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read${suffix}`, { method: "POST", credentials: "include" });
+      setConversations(prev => prev.map(c => c.id === convId && c.accountId === accountId ? { ...c, unreadCount: 0 } : c));
     } catch { }
   }, []);
 
@@ -1226,15 +1317,17 @@ export default function ZaloInboxClient() {
   // user at the generic Inbox screen.
   useEffect(() => {
     const requestedId = new URLSearchParams(window.location.search).get("conversation");
-    if (!requestedId || openedPushConversationRef.current === requestedId) return;
-    const requestedConversation = conversations.find(item => item.id === requestedId);
+    const requestedAccount = new URLSearchParams(window.location.search).get("account");
+    const requestedKey = `${requestedAccount || ""}:${requestedId || ""}`;
+    if (!requestedId || openedPushConversationRef.current === requestedKey) return;
+    const requestedConversation = conversations.find(item => item.id === requestedId && (!requestedAccount || item.accountId === requestedAccount));
     if (!requestedConversation) return;
-    openedPushConversationRef.current = requestedId;
+    openedPushConversationRef.current = requestedKey;
     setSelectedConv(requestedConversation);
     setMessages([]);
     setReplyContext(null);
     setMainView("messages");
-    void loadMessages(requestedId, true);
+    void loadMessages(requestedId, true, requestedConversation.accountId);
   }, [conversations, loadMessages]);
 
   const mergeSentMessage = useCallback((message: ZaloMessage | undefined) => {
@@ -1270,7 +1363,7 @@ export default function ZaloInboxClient() {
     } catch { }
   }, [soundEnabled]);
 
-  const sendBrowserNotif = useCallback(async (title: string, body: string, convId: string) => {
+  const sendBrowserNotif = useCallback(async (title: string, body: string, convId: string, accountId: string) => {
     if (!notifEnabled || !document.hidden) return;
     try {
       // The server PWA push already reaches this device. The local polling
@@ -1279,10 +1372,10 @@ export default function ZaloInboxClient() {
         const registration = await navigator.serviceWorker.ready;
         if (await registration.pushManager.getSubscription()) return;
       }
-      const n = new Notification(title, { body, icon: "/favicon.ico", tag: convId });
+      const n = new Notification(title, { body, icon: "/favicon.ico", tag: `${accountId}:${convId}` });
       n.onclick = () => {
         window.focus();
-        window.location.href = `/crm/zalo-inbox?conversation=${encodeURIComponent(convId)}`;
+        window.location.href = `/crm/zalo-inbox?account=${encodeURIComponent(accountId)}&conversation=${encodeURIComponent(convId)}`;
         n.close();
       };
     } catch { }
@@ -1292,7 +1385,7 @@ export default function ZaloInboxClient() {
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
-        const res = await fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" });
+        const res = await fetch(`/api/crm/zalo-inbox/conversations?accountId=${encodeURIComponent(selectedAccountId)}`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           const convs: ZaloConversation[] = data.conversations || [];
@@ -1307,7 +1400,7 @@ export default function ZaloInboxClient() {
             if (newestConv) {
               playNotifSound();
               if (newestConv.id !== currentConvId || document.hidden) {
-                sendBrowserNotif(newestConv.displayName || "Tin nhắn Zalo mới", newestConv.lastMessage || "Bạn có tin nhắn mới", newestConv.id);
+                sendBrowserNotif(newestConv.displayName || "Tin nhắn Zalo mới", newestConv.lastMessage || "Bạn có tin nhắn mới", newestConv.id, newestConv.accountId);
               }
             }
           } else {
@@ -1319,7 +1412,7 @@ export default function ZaloInboxClient() {
           // Poll messages nếu đang mở hội thoại
           const currentConv = selectedConvRef.current;
           if (currentConv) {
-            const msgRes = await fetch(`/api/crm/zalo-inbox/conversations/${currentConv.id}/messages`, { credentials: "include" });
+            const msgRes = await fetch(`/api/crm/zalo-inbox/conversations/${currentConv.id}/messages?accountId=${encodeURIComponent(currentConv.accountId)}`, { credentials: "include" });
             if (msgRes.ok) {
               const msgData = await msgRes.json();
               const newMsgs: ZaloMessage[] = msgData.messages || [];
@@ -1358,7 +1451,8 @@ export default function ZaloInboxClient() {
           try {
             const p = JSON.parse(e.data);
             // Reload conversations list
-            fetch("/api/crm/zalo-inbox/conversations", { credentials: "include" })
+            if (selectedAccountId !== "all" && p.accountId && p.accountId !== selectedAccountId) return;
+            fetch(`/api/crm/zalo-inbox/conversations?accountId=${encodeURIComponent(selectedAccountId)}`, { credentials: "include" })
               .then(r => r.ok ? r.json() : null)
               .then(d => {
                 if (d?.conversations) setConversations(d.conversations);
@@ -1369,7 +1463,8 @@ export default function ZaloInboxClient() {
             const currentConvId = selectedConvRef.current?.id;
             const msgConvId = p.conversationId || p.threadId || p.fromId;
             if (currentConvId && msgConvId && (currentConvId === msgConvId || msgConvId === currentConvId)) {
-              fetch(`/api/crm/zalo-inbox/conversations/${currentConvId}/messages`, { credentials: "include" })
+              const currentAccountId = selectedConvRef.current?.accountId;
+              fetch(`/api/crm/zalo-inbox/conversations/${currentConvId}/messages?accountId=${encodeURIComponent(currentAccountId || "")}`, { credentials: "include" })
                 .then(r => r.ok ? r.json() : null)
                 .then(d => {
                   if (d?.messages) {
@@ -1409,7 +1504,7 @@ export default function ZaloInboxClient() {
     };
     connectSSE();
     return () => { es?.close(); if (retryTimer) clearTimeout(retryTimer); };
-  }, []);
+  }, [selectedAccountId]);
 
   // ─── Auto scroll ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1489,7 +1584,7 @@ export default function ZaloInboxClient() {
     setInfoActionError(null);
     setProfileDetails(null);
     setRelatedGroups([]);
-    loadMessages(conv.id, true);
+    loadMessages(conv.id, true, conv.accountId);
   };
 
   const handleSend = async () => {
@@ -1497,6 +1592,7 @@ export default function ZaloInboxClient() {
     const text = inputText.trim();
     const reply = replyContext;
     const conversationId = selectedConv.id;
+    const accountId = selectedConv.accountId;
     sendingRef.current = true;
     setInputText("");
     setReplyContext(null);
@@ -1513,7 +1609,7 @@ export default function ZaloInboxClient() {
       const res = await fetch("/api/crm/zalo-inbox/send", {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ conversationId, content: fullText }),
+        body: JSON.stringify({ accountId, conversationId, content: fullText }),
       });
       const data = await res.json().catch(() => ({ error: "Phản hồi gửi tin nhắn không hợp lệ" }));
       if (!res.ok) {
@@ -1525,10 +1621,10 @@ export default function ZaloInboxClient() {
       } else {
         // Hiển thị ngay bản ghi đã được gateway lưu, không chờ vòng polling DB.
         mergeSentMessage(data.message);
-        setConversations(previous => previous.map(conversation => conversation.id === conversationId
+        setConversations(previous => previous.map(conversation => conversation.id === conversationId && conversation.accountId === accountId
           ? { ...conversation, lastMessage: fullText, lastMessageAt: data.message?.createdAt || new Date().toISOString() }
           : conversation));
-        setTimeout(() => loadMessages(conversationId, true), 800);
+        setTimeout(() => loadMessages(conversationId, true, accountId), 800);
       }
     } catch {
       // Kết nối có thể rớt sau khi Zalo đã nhận tin. Giữ ô soạn thảo trống để
@@ -1546,10 +1642,11 @@ export default function ZaloInboxClient() {
     if (!file || !selectedConv) return;
     e.target.value = "";
     const conversationId = selectedConv.id;
+    const accountId = selectedConv.accountId;
     const previewUrl = URL.createObjectURL(file);
     setUploadError(null); setUploadingFile(true);
     try {
-      const res = await sendAttachmentBinary(conversationId, file);
+      const res = await sendAttachmentBinary(accountId, conversationId, file);
       const data = await res.json().catch(() => ({ error: "Phản hồi gửi tài liệu không hợp lệ" }));
       if (!res.ok) {
         URL.revokeObjectURL(previewUrl);
@@ -1557,8 +1654,8 @@ export default function ZaloInboxClient() {
       }
       else {
         mergeSentMessage(withLocalAttachmentPreview(data.message, file, previewUrl));
-        setTimeout(() => loadMessages(conversationId, true), 800);
-        releaseLocalPreviewLater(previewUrl, () => loadMessages(conversationId));
+        setTimeout(() => loadMessages(conversationId, true, accountId), 800);
+        releaseLocalPreviewLater(previewUrl, () => loadMessages(conversationId, false, accountId));
       }
     } catch {
       URL.revokeObjectURL(previewUrl);
@@ -1578,19 +1675,20 @@ export default function ZaloInboxClient() {
     if (!selectedConv || !pendingFiles.length || uploadingFile) return;
     setUploadingFile(true); setUploadError(null);
     const toSend = [...pendingFiles];
+    const conversationId = selectedConv.id;
+    const accountId = selectedConv.accountId;
     try {
       for (let index = 0; index < toSend.length; index += 1) {
         const pf = toSend[index];
-        const response = await sendAttachmentBinary(selectedConv.id, pf.file);
+        const response = await sendAttachmentBinary(accountId, conversationId, pf.file);
         const data = await response.json().catch(() => ({ error: "Phản hồi gửi media không hợp lệ" }));
         if (!response.ok) throw new Error(data.error || `Không gửi được ${pf.file.name}`);
         mergeSentMessage(withLocalAttachmentPreview(data.message, pf.file, pf.previewUrl));
-        releaseLocalPreviewLater(pf.previewUrl, () => loadMessages(selectedConv.id));
+        releaseLocalPreviewLater(pf.previewUrl, () => loadMessages(conversationId, false, accountId));
         // Chỉ giữ các tệp chưa gửi để thao tác thử lại không gửi trùng media.
         setPendingFiles(toSend.slice(index + 1));
       }
-      const conversationId = selectedConv.id;
-      setTimeout(() => loadMessages(conversationId, true), 800);
+      setTimeout(() => loadMessages(conversationId, true, accountId), 800);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Lỗi gửi ảnh/video");
     } finally {
@@ -1602,6 +1700,7 @@ export default function ZaloInboxClient() {
   const handleSendLibraryAssets = async (assetIds: string[]) => {
     if (!selectedConv || !assetIds.length || sendingLibrary) return;
     const conversationId = selectedConv.id;
+    const accountId = selectedConv.accountId;
     setSendingLibrary(true);
     setUploadError(null);
     try {
@@ -1609,7 +1708,7 @@ export default function ZaloInboxClient() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, assetIds }),
+        body: JSON.stringify({ accountId, conversationId, assetIds }),
       });
       const data = await response.json().catch(() => ({ error: "Phản hồi gửi thư viện không hợp lệ" }));
       if (!response.ok) throw new Error(data.error || "Không gửi được tài liệu từ thư viện");
@@ -1619,12 +1718,12 @@ export default function ZaloInboxClient() {
       sentMessages.forEach(message => mergeSentMessage(message));
       if (sentMessages.length) {
         const latest = sentMessages[sentMessages.length - 1];
-        setConversations(previous => previous.map(conversation => conversation.id === conversationId
+        setConversations(previous => previous.map(conversation => conversation.id === conversationId && conversation.accountId === accountId
           ? { ...conversation, lastMessage: sentMessages.length > 1 ? `[${sentMessages.length} tài liệu]` : latest.content, lastMessageAt: latest.createdAt }
           : conversation));
         if (!failures.length) setShowMediaLibraryPicker(false);
         forceScrollToLatestRef.current = true;
-        window.setTimeout(() => loadMessages(conversationId, true), 800);
+        window.setTimeout(() => loadMessages(conversationId, true, accountId), 800);
       }
       if (failures.length) {
         const failedNames = failures.map(failure => failure.name).filter(Boolean).join(", ");
@@ -1638,10 +1737,10 @@ export default function ZaloInboxClient() {
     }
   };
 
-  const markUnread = useCallback(async (convId: string) => {
-    setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: Math.max(c.unreadCount || 0, 1) } : c));
-    try { await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread`, { method: "POST", credentials: "include" }); } catch { }
-  }, []);
+  const markUnread = useCallback(async (convId: string, accountId: string) => {
+    setConversations(prev => prev.map(c => c.id === convId && c.accountId === accountId ? { ...c, unreadCount: Math.max(c.unreadCount || 0, 1) } : c));
+    try { await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread?accountId=${encodeURIComponent(accountId || "")}`, { method: "POST", credentials: "include" }); } catch { }
+  }, [conversations]);
 
   const toggleNotif = useCallback(async () => {
     try {
@@ -1677,7 +1776,7 @@ export default function ZaloInboxClient() {
     setInfoActionError(null);
     try {
       const userId = selectedConv.zaloUserId || selectedConv.id;
-      const response = await fetch(`/api/crm/zalo-inbox/friends?action=profile&userId=${encodeURIComponent(userId)}`, { credentials: "include" });
+      const response = await fetch(`/api/crm/zalo-inbox/friends?action=profile&userId=${encodeURIComponent(userId)}&accountId=${encodeURIComponent(selectedConv.accountId)}`, { credentials: "include" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.success === false) throw new Error(data.error || "Không tải được hồ sơ Zalo");
       setProfileDetails(data.user || {});
@@ -1695,7 +1794,7 @@ export default function ZaloInboxClient() {
     setInfoActionError(null);
     try {
       const userId = selectedConv.zaloUserId || selectedConv.id;
-      const response = await fetch(`/api/crm/zalo-inbox/friends?action=related-groups-details&userId=${encodeURIComponent(userId)}`, { credentials: "include" });
+      const response = await fetch(`/api/crm/zalo-inbox/friends?action=related-groups-details&userId=${encodeURIComponent(userId)}&accountId=${encodeURIComponent(selectedConv.accountId)}`, { credentials: "include" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.success === false) throw new Error(data.error || "Không tải được nhóm chung");
       setRelatedGroups(Array.isArray(data.groups) ? data.groups : []);
@@ -1794,6 +1893,7 @@ export default function ZaloInboxClient() {
         {workspaceHeader}
         <div className={styles.subView} aria-label={subViewTitles[mainView]}>
           {mainView === "friends" && <ZaloFriendsPanel
+            accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId}
             onClose={() => setMainView("messages")}
             onOpenChat={async (userId: string, displayName: string) => {
               // Chuyển sang view messages trước
@@ -1805,6 +1905,7 @@ export default function ZaloInboxClient() {
               } else {
                 // Tạo conversation stub để mở chat ngay lập tức
                 const stub: ZaloConversation = {
+                  accountId: selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId,
                   id: userId,
                   zaloUserId: userId,
                   phone: null,
@@ -1822,14 +1923,14 @@ export default function ZaloInboxClient() {
                 setMsgSearchQuery("");
                 setShowMsgSearch(false);
                 // Load lịch sử tin nhắn nếu có
-                loadMessages(userId, true);
+                loadMessages(userId, true, stub.accountId);
               }
             }}
           />}
-          {mainView === "groups" && <ZaloGroupsPanel onClose={() => setMainView("messages")} />}
-          {mainView === "auto-reply" && <ZaloAutoReplyPanel onClose={() => setMainView("messages")} />}
+          {mainView === "groups" && <ZaloGroupsPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
+          {mainView === "auto-reply" && <ZaloAutoReplyPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
           {mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
-          {mainView === "catalog" && <ZaloCatalogPanel onClose={() => setMainView("messages")} />}
+          {mainView === "catalog" && <ZaloCatalogPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
         </div>
       </div>
     );
@@ -1938,7 +2039,7 @@ export default function ZaloInboxClient() {
       {contextMenu && (
         <div style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x, zIndex: 9999, background: "#FFFFFF", borderRadius: 10, boxShadow: "0 8px 30px rgba(15,23,42,0.14)", border: `1px solid ${T.sidebarBorder}`, minWidth: 180, overflow: "hidden" }}
           onClick={e => e.stopPropagation()}>
-          <button onClick={() => { markUnread(contextMenu.convId); setContextMenu(null); }}
+          <button onClick={() => { markUnread(contextMenu.convId, contextMenu.accountId); setContextMenu(null); }}
             style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 13, color: T.textPrimary, display: "flex", alignItems: "center", gap: 8 }}
             onMouseEnter={e => (e.currentTarget.style.background = T.sidebarHover)}
             onMouseLeave={e => (e.currentTarget.style.background = "none")}>
@@ -1978,6 +2079,24 @@ export default function ZaloInboxClient() {
               </button>
             </div>
           </div>
+
+          {accounts.length > 0 && (
+            <div style={{ marginBottom: 9 }}>
+              <select
+                aria-label="Chọn tài khoản Zalo"
+                value={selectedAccountId}
+                onChange={event => setSelectedAccountId(event.target.value)}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 9, border: `1px solid ${T.sidebarBorder}`, color: T.textPrimary, background: "#fff", fontSize: 12, outline: "none" }}
+              >
+                <option value="all">Tất cả tài khoản ({accounts.length})</option>
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.isConnected ? "●" : "○"} {account.label || account.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Search bar */}
           <div style={{ position: "relative", marginBottom: 10 }}>
@@ -2037,8 +2156,13 @@ export default function ZaloInboxClient() {
             </div>
           ) : (
             filteredConvs.map(conv => (
-              <div key={conv.id} onContextMenu={e => { e.preventDefault(); setContextMenu({ convId: conv.id, x: e.clientX, y: e.clientY }); }}>
-                <ConversationItem conv={conv} isSelected={selectedConv?.id === conv.id} onClick={() => handleSelectConv(conv)} />
+              <div key={`${conv.accountId}:${conv.id}`} onContextMenu={e => { e.preventDefault(); setContextMenu({ accountId: conv.accountId, convId: conv.id, x: e.clientX, y: e.clientY }); }}>
+                <ConversationItem
+                  conv={conv}
+                  isSelected={selectedConv?.id === conv.id && selectedConv.accountId === conv.accountId}
+                  onClick={() => handleSelectConv(conv)}
+                  accountLabel={selectedAccountId === "all" ? accounts.find(account => account.id === conv.accountId)?.label || conv.accountId : undefined}
+                />
               </div>
             ))
           )}
@@ -2421,6 +2545,7 @@ export default function ZaloInboxClient() {
       {showLeadLink && selectedConv && (
         <ZaloLeadLinkModal
           conversationId={selectedConv.id}
+          accountId={selectedConv.accountId}
           currentLeadId={selectedConv.lead?.id || selectedConv.leadId}
           onClose={() => setShowLeadLink(false)}
           onLinked={() => loadConversations()}

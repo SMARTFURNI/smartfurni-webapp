@@ -29,6 +29,8 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") || "100");
   const offset = parseInt(searchParams.get("offset") || "0");
+  const accountId = searchParams.get("accountId") || undefined;
+  if (!accountId) return NextResponse.json({ error: "Thiếu accountId", messages: [] }, { status: 400 });
 
   try {
     // Lấy display_name của conversation để dùng làm fallback tên người gửi
@@ -37,8 +39,9 @@ export async function GET(
     let linkedLeadId = "";
     try {
       const convRows = await query<{ display_name: string; phone: string | null; lead_id: string | null }>(
-        `SELECT display_name, phone, lead_id FROM zalo_conversations WHERE id = $1 LIMIT 1`,
-        [conversationId]
+        `SELECT display_name, phone, lead_id FROM zalo_conversations_v2
+         WHERE thread_id = $1 AND account_id = $2 LIMIT 1`,
+        [conversationId, accountId]
       );
       conversationDisplayName = convRows[0]?.display_name || "";
       conversationPhone = convRows[0]?.phone || "";
@@ -72,7 +75,10 @@ export async function GET(
     let selfDisplayName = "Tôi";
     try {
       const credRows = await query<{ display_name: string; user_id: string }>(
-        `SELECT display_name, user_id FROM zalo_inbox_credentials LIMIT 1`
+        `SELECT display_name, user_id FROM zalo_personal_accounts
+         WHERE account_id = $1
+         ORDER BY created_at ASC LIMIT 1`,
+        [accountId],
       );
       const rawName = credRows[0]?.display_name || "";
       const rawId = credRows[0]?.user_id || "";
@@ -87,7 +93,7 @@ export async function GET(
     // Lấy trang gần hiện tại nhất rồi mới sắp xếp tăng dần để hiển thị.
     // Query cũ ORDER BY ASC + LIMIT lấy 100 tin đầu tiên, khiến mọi tin mới
     // trông như biến mất ngay sau khi tải lại trang.
-    const rows = await getRecentCanonicalZaloMessages(conversationId, limit, offset);
+    const rows = await getRecentCanonicalZaloMessages(conversationId, limit, offset, accountId);
 
     const messages = rows.map((row) => {
       // Ưu tiên: sender_name từ DB > tên từ conversation/lead > "Khách"
@@ -99,6 +105,7 @@ export async function GET(
 
       return {
         id: row.msg_id,
+        accountId: row.account_id,
         conversationId: row.thread_id,
         senderId: row.from_id,
         senderName,

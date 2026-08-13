@@ -19,10 +19,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
   }
   try {
-    const body = await req.json() as { conversationId?: string; assetIds?: string[] };
+    const body = await req.json() as { accountId?: string; conversationId?: string; assetIds?: string[] };
     const conversationId = body.conversationId?.trim() || "";
+    const accountId = body.accountId?.trim() || "";
     const assetIds = [...new Set(body.assetIds || [])].slice(0, 10);
-    if (!conversationId || !assetIds.length) {
+    if (!accountId || !conversationId || !assetIds.length) {
       return NextResponse.json({ error: "Thiếu hội thoại hoặc tài liệu" }, { status: 400 });
     }
     const assets = await getZaloMediaAssets(assetIds);
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
         const object = await getMediaObject(asset.objectKey);
         const fileBuffer = await objectToBuffer(object);
         const result = await sendZaloAttachment({
+          accountId,
           conversationId,
           fileBuffer,
           fileName: asset.name,

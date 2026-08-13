@@ -4,7 +4,7 @@ import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { markConversationAsUnread } from "@/lib/zalo-inbox-store";
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getCrmSession();
@@ -17,7 +17,9 @@ export async function POST(
 
   try {
     const { id } = await params;
-    await markConversationAsUnread(id);
+    const accountId = new URL(req.url).searchParams.get("accountId") || undefined;
+    if (!accountId) return NextResponse.json({ error: "Thiếu accountId" }, { status: 400 });
+    await markConversationAsUnread(id, accountId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[zalo-inbox/unread]", error);

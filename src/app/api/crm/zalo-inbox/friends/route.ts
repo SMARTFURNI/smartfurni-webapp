@@ -21,27 +21,28 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get("action") || "list";
   const query = searchParams.get("query") || undefined;
   const userId = searchParams.get("userId") || "";
+  const accountId = searchParams.get("accountId") || undefined;
 
   try {
     switch (action) {
       case "list":
-        return NextResponse.json(await getAllZaloFriends(query));
+        return NextResponse.json(await getAllZaloFriends(query, accountId));
       case "sent-requests":
-        return NextResponse.json(await getZaloSentFriendRequests());
+        return NextResponse.json(await getZaloSentFriendRequests(accountId));
       case "online":
-        return NextResponse.json(await getZaloOnlineFriends());
+        return NextResponse.json(await getZaloOnlineFriends(accountId));
       case "recommendations":
-        return NextResponse.json(await getZaloFriendRecommendations());
+        return NextResponse.json(await getZaloFriendRecommendations(accountId));
       case "aliases":
-        return NextResponse.json(await getZaloAliasList());
+        return NextResponse.json(await getZaloAliasList(accountId));
       case "related-groups":
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-        return NextResponse.json(await getZaloRelatedFriendGroups(userId));
+        return NextResponse.json(await getZaloRelatedFriendGroups(userId, accountId));
       case "related-groups-details": {
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-        const related = await getZaloRelatedFriendGroups(userId);
+        const related = await getZaloRelatedFriendGroups(userId, accountId);
         if (!related.success) return NextResponse.json(related);
-        const allGroups = await getAllZaloGroups();
+        const allGroups = await getAllZaloGroups(undefined, accountId);
         if (!allGroups.success) return NextResponse.json(allGroups);
         const relatedIds = new Set(related.groupIds || []);
         return NextResponse.json({
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
       }
       case "profile":
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-        return NextResponse.json(await getZaloUserInfo(userId));
+        return NextResponse.json(await getZaloUserInfo(userId, accountId));
       default:
         return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
     }
@@ -64,21 +65,21 @@ export async function POST(request: NextRequest) {
   if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await request.json();
-    const { action, userId, nickname } = body;
+    const { action, userId, nickname, accountId } = body;
 
     switch (action) {
       case "undo-request":
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-        return NextResponse.json(await undoZaloFriendRequest(userId));
+        return NextResponse.json(await undoZaloFriendRequest(userId, accountId));
       case "unfriend":
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-        return NextResponse.json(await removeZaloFriend(userId));
+        return NextResponse.json(await removeZaloFriend(userId, accountId));
       case "set-nickname":
         if (!userId || !nickname) return NextResponse.json({ success: false, error: "userId and nickname required" }, { status: 400 });
-        return NextResponse.json(await setZaloFriendNickname(userId, nickname));
+        return NextResponse.json(await setZaloFriendNickname(userId, nickname, accountId));
       case "remove-nickname":
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-        return NextResponse.json(await removeZaloFriendNickname(userId));
+        return NextResponse.json(await removeZaloFriendNickname(userId, accountId));
       default:
         return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
     }

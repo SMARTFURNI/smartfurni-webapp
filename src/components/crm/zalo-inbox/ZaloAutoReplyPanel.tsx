@@ -16,9 +16,10 @@ interface AutoReply {
 
 interface ZaloAutoReplyPanelProps {
   onClose?: () => void;
+  accountId: string;
 }
 
-export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps) {
+export default function ZaloAutoReplyPanel({ onClose, accountId }: ZaloAutoReplyPanelProps) {
   const [replies, setReplies] = useState<AutoReply[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -36,11 +37,11 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
   const loadReplies = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/auto-reply");
+      const res = await fetch(`/api/crm/zalo-inbox/auto-reply?accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setReplies(data.replies || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   useEffect(() => { loadReplies(); }, [loadReplies]);
 
@@ -56,6 +57,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
           message: message.trim(),
           startTime: startTime ? new Date(startTime).getTime() : undefined,
           endTime: endTime ? new Date(endTime).getTime() : undefined,
+          accountId,
         }),
       });
       const data = await res.json();
@@ -73,7 +75,7 @@ export default function ZaloAutoReplyPanel({ onClose }: ZaloAutoReplyPanelProps)
     const res = await fetch("/api/crm/zalo-inbox/auto-reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", replyId }),
+      body: JSON.stringify({ action: "delete", replyId, accountId }),
     });
     const data = await res.json();
     if (data.success) { showToast("Đã xóa auto-reply"); loadReplies(); }

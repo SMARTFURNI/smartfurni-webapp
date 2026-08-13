@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { disconnectZalo, getGatewayStatus } from "@/lib/zalo-gateway";
-import { query } from "@/lib/db";
+import { listZaloAccounts } from "@/lib/zalo-account-store";
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
@@ -16,7 +16,8 @@ export async function GET(req: NextRequest) {
 
   try {
     // Lấy trạng thái từ gateway (in-memory) trước
-    const status = getGatewayStatus();
+    const accountId = new URL(req.url).searchParams.get("accountId") || undefined;
+    const status = getGatewayStatus(accountId);
     if (status.isConnected) {
       return NextResponse.json({
         phone: status.phone || status.userId || null,
@@ -24,19 +25,15 @@ export async function GET(req: NextRequest) {
         hasCredentials: true,
       });
     }
-    // Fallback: kiểm tra DB
-    try {
-      const rows = await query(`SELECT user_id, display_name FROM zalo_inbox_credentials LIMIT 1`);
-      if (rows.length > 0) {
-        const row = rows[0];
-        return NextResponse.json({
-          phone: row.display_name || row.user_id || null,
-          isActive: false,
-          hasCredentials: true,
-        });
-      }
-    } catch {
-      // Table chưa tồn tại — chưa từng đăng nhập
+    const account = accountId
+      ? (await listZaloAccounts()).find(item => item.id === accountId)
+      : (await listZaloAccounts())[0];
+    if (account) {
+      return NextResponse.json({
+        phone: account.displayName || account.userId,
+        isActive: account.isActive,
+        hasCredentials: true,
+      });
     }
     return NextResponse.json(null);
   } catch (err: unknown) {
@@ -53,13 +50,8 @@ export async function DELETE(req: NextRequest) {
 
   try {
     // ✅ Fix: dùng disconnectZalo (tên đúng) thay vì disconnectZaloGateway
-    await disconnectZalo();
-    // ✅ Fix: xóa credentials trong đúng table (zalo_inbox_credentials)
-    try {
-      await query(`DELETE FROM zalo_inbox_credentials`);
-    } catch {
-      // Table chưa tồn tại — không sao
-    }
+    const accountId = new URL(req.url).searchParams.get("accountId") || undefined;
+    await disconnectZalo(accountId, true);
     return NextResponse.json({ success: true, message: "Đã đăng xuất Zalo" });
   } catch (err: unknown) {
     const error = err as Error;

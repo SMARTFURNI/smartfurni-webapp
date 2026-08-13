@@ -3,10 +3,12 @@
  * Database layer cho Zalo Personal Shared Inbox
  */
 import { getDb } from "./db";
+import { ensureZaloAccountSchema, listZaloAccounts } from "./zalo-account-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ZaloConversation {
+  accountId: string;
   id: string;                    // thread_id từ Zalo API
   zaloUserId: string;            // UID Zalo, không được dùng thay số điện thoại CRM
   phone: string | null;          // số điện thoại thật nếu đã đối soát được
@@ -55,6 +57,7 @@ export interface ZaloCredentials {
 
 export async function ensureZaloInboxTables(): Promise<void> {
   const db = getDb();
+  await ensureZaloAccountSchema();
   
   // Bảng credentials — lưu thông tin đăng nhập Zalo
   await db.query(`
@@ -88,7 +91,29 @@ export async function ensureZaloInboxTables(): Promise<void> {
     )
   `);
 
-  // Migration an toàn cho schema cũ: trước đây UID Zalo bị ghi nhầm vào cột phone.
+  // Schema đa tài khoản. Giữ bảng cũ nguyên vẹn để rollback an toàn.
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS zalo_conversations_v2 (
+      account_id TEXT NOT NULL REFERENCES zalo_personal_accounts(account_id) ON DELETE CASCADE,
+      thread_id TEXT NOT NULL,
+      zalo_user_id TEXT,
+      phone TEXT,
+      display_name TEXT NOT NULL,
+      avatar_url TEXT,
+      last_message TEXT,
+      last_message_at TIMESTAMPTZ DEFAULT NOW(),
+      unread_count INTEGER DEFAULT 0,
+      lead_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (account_id, thread_id)
+    )
+  `);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_zalo_conversations_v2_time ON zalo_conversations_v2(account_id, last_message_at DESC)`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_zalo_conversations_v2_phone ON zalo_conversations_v2(phone)`);
+
+  // Chuẩn hóa bảng đơn tài khoản trước khi đọc nó để migrate. Một số bản cũ
+  // chưa có zalo_user_id và cho phép phone là NOT NULL.
   await db.query(`ALTER TABLE zalo_conversations ADD COLUMN IF NOT EXISTS zalo_user_id TEXT`);
   await db.query(`ALTER TABLE zalo_conversations ALTER COLUMN phone DROP NOT NULL`);
   await db.query(`
@@ -96,6 +121,21 @@ export async function ensureZaloInboxTables(): Promise<void> {
     SET zalo_user_id = COALESCE(zalo_user_id, id),
         phone = CASE WHEN phone = id THEN NULL ELSE phone END
     WHERE zalo_user_id IS NULL OR phone = id
+  `);
+
+  // Gắn lịch sử đơn tài khoản vào tài khoản legacy đầu tiên đúng một lần.
+  await db.query(`
+    INSERT INTO zalo_conversations_v2
+      (account_id, thread_id, zalo_user_id, phone, display_name, avatar_url, last_message,
+       last_message_at, unread_count, lead_id, created_at, updated_at)
+    SELECT a.account_id, c.id, COALESCE(c.zalo_user_id, c.id), c.phone, c.display_name,
+           c.avatar_url, c.last_message, c.last_message_at, c.unread_count, c.lead_id,
+           c.created_at, c.updated_at
+    FROM zalo_conversations c
+    CROSS JOIN LATERAL (
+      SELECT account_id FROM zalo_personal_accounts ORDER BY created_at ASC LIMIT 1
+    ) a
+    ON CONFLICT (account_id, thread_id) DO NOTHING
   `);
 
   // Index để tìm conversation theo số điện thoại
@@ -188,6 +228,7 @@ export async function updateZaloLastConnected(phone: string): Promise<void> {
 // ─── Conversations CRUD ───────────────────────────────────────────────────────
 
 export async function upsertConversation(conv: {
+  accountId?: string;
   id: string;
   zaloUserId?: string | null;
   phone?: string | null;
@@ -199,28 +240,31 @@ export async function upsertConversation(conv: {
 }): Promise<void> {
   const db = getDb();
   await ensureZaloInboxTables();
+  const accountId = conv.accountId || await getDefaultAccountId();
+  if (!accountId) throw new Error("Chưa có tài khoản Zalo để lưu hội thoại");
   await db.query(
-    `INSERT INTO zalo_conversations
-     (id, zalo_user_id, phone, display_name, avatar_url, last_message, last_message_at, lead_id, updated_at)
-     VALUES ($1, COALESCE(NULLIF($2, ''), $1), NULLIF($3, ''), $4, $5, $6, COALESCE($8::timestamptz, NOW()), $7, NOW())
-     ON CONFLICT (id) DO UPDATE SET
-       zalo_user_id = COALESCE(NULLIF($2, ''), zalo_conversations.zalo_user_id, $1),
-       phone = COALESCE(NULLIF($3, ''), zalo_conversations.phone),
+    `INSERT INTO zalo_conversations_v2
+     (account_id, thread_id, zalo_user_id, phone, display_name, avatar_url, last_message, last_message_at, lead_id, updated_at)
+     VALUES ($1, $2, COALESCE(NULLIF($3, ''), $2), NULLIF($4, ''), $5, $6, $7, COALESCE($9::timestamptz, NOW()), $8, NOW())
+     ON CONFLICT (account_id, thread_id) DO UPDATE SET
+       zalo_user_id = COALESCE(NULLIF($3, ''), zalo_conversations_v2.zalo_user_id, $2),
+       phone = COALESCE(NULLIF($4, ''), zalo_conversations_v2.phone),
        display_name = CASE
-         WHEN $4 ~ '^[0-9]{8,}$' AND zalo_conversations.display_name !~ '^[0-9]{8,}$'
-           THEN zalo_conversations.display_name
-         ELSE $4
+         WHEN $5 ~ '^[0-9]{8,}$' AND zalo_conversations_v2.display_name !~ '^[0-9]{8,}$'
+           THEN zalo_conversations_v2.display_name
+         ELSE $5
        END,
-       avatar_url = COALESCE($5, zalo_conversations.avatar_url),
+       avatar_url = COALESCE($6, zalo_conversations_v2.avatar_url),
        last_message = CASE
-         WHEN COALESCE($8::timestamptz, NOW()) >= zalo_conversations.last_message_at
-           THEN COALESCE($6, zalo_conversations.last_message)
-         ELSE zalo_conversations.last_message
+         WHEN COALESCE($9::timestamptz, NOW()) >= zalo_conversations_v2.last_message_at
+           THEN COALESCE($7, zalo_conversations_v2.last_message)
+         ELSE zalo_conversations_v2.last_message
        END,
-       last_message_at = GREATEST(zalo_conversations.last_message_at, COALESCE($8::timestamptz, NOW())),
-       lead_id = COALESCE($7, zalo_conversations.lead_id),
+       last_message_at = GREATEST(zalo_conversations_v2.last_message_at, COALESCE($9::timestamptz, NOW())),
+       lead_id = COALESCE($8, zalo_conversations_v2.lead_id),
        updated_at = NOW()`,
     [
+      accountId,
       conv.id,
       conv.zaloUserId || conv.id,
       conv.phone || null,
@@ -233,71 +277,77 @@ export async function upsertConversation(conv: {
   );
 }
 
-export async function getConversationCount(): Promise<number> {
-  const db = getDb();
-  await ensureZaloInboxTables();
-  const res = await db.query(`SELECT COUNT(*)::int AS count FROM zalo_conversations`);
-  return Number(res.rows[0]?.count || 0);
-}
-
-export async function getConversations(limit = 50, offset = 0): Promise<ZaloConversation[]> {
+export async function getConversationCount(accountId?: string | null): Promise<number> {
   const db = getDb();
   await ensureZaloInboxTables();
   const res = await db.query(
-    `SELECT * FROM zalo_conversations 
+    `SELECT COUNT(*)::int AS count FROM zalo_conversations_v2 WHERE ($1::text IS NULL OR account_id = $1)`,
+    [accountId || null],
+  );
+  return Number(res.rows[0]?.count || 0);
+}
+
+export async function getConversations(limit = 50, offset = 0, accountId?: string | null): Promise<ZaloConversation[]> {
+  const db = getDb();
+  await ensureZaloInboxTables();
+  const res = await db.query(
+    `SELECT * FROM zalo_conversations_v2
+     WHERE ($3::text IS NULL OR account_id = $3)
      ORDER BY last_message_at DESC 
      LIMIT $1 OFFSET $2`,
-    [limit, offset]
+    [limit, offset, accountId || null]
   );
   return res.rows.map(mapZaloConversation);
 }
 
-export async function getConversationById(id: string): Promise<ZaloConversation | null> {
+export async function getConversationById(id: string, accountId?: string): Promise<ZaloConversation | null> {
   const db = getDb();
   await ensureZaloInboxTables();
-  const res = await db.query(`SELECT * FROM zalo_conversations WHERE id = $1`, [id]);
+  const resolvedAccountId = accountId || await getDefaultAccountId();
+  const res = await db.query(`SELECT * FROM zalo_conversations_v2 WHERE account_id = $1 AND thread_id = $2`, [resolvedAccountId, id]);
   if (res.rows.length === 0) return null;
   return mapZaloConversation(res.rows[0]);
 }
 
-export async function markConversationAsRead(id: string): Promise<void> {
+export async function markConversationAsRead(id: string, accountId?: string): Promise<void> {
   const db = getDb();
-  await db.query(`UPDATE zalo_conversations SET unread_count = 0 WHERE id = $1`, [id]);
+  await db.query(`UPDATE zalo_conversations_v2 SET unread_count = 0 WHERE account_id = $1 AND thread_id = $2`, [accountId || await getDefaultAccountId(), id]);
 }
 
-export async function markConversationAsUnread(id: string): Promise<void> {
+export async function markConversationAsUnread(id: string, accountId?: string): Promise<void> {
   const db = getDb();
   await ensureZaloInboxTables();
   await db.query(
-    `UPDATE zalo_conversations
+    `UPDATE zalo_conversations_v2
      SET unread_count = GREATEST(unread_count, 1), updated_at = NOW()
-     WHERE id = $1`,
-    [id]
+     WHERE account_id = $1 AND thread_id = $2`,
+    [accountId || await getDefaultAccountId(), id]
   );
 }
 
-export async function incrementUnreadCount(conversationId: string): Promise<void> {
+export async function incrementUnreadCount(conversationId: string, accountId?: string): Promise<void> {
   const db = getDb();
   await db.query(
-    `UPDATE zalo_conversations SET unread_count = unread_count + 1 WHERE id = $1`,
-    [conversationId]
+    `UPDATE zalo_conversations_v2 SET unread_count = unread_count + 1 WHERE account_id = $1 AND thread_id = $2`,
+    [accountId || await getDefaultAccountId(), conversationId]
   );
 }
 
 export async function linkConversationToLead(
   conversationId: string,
   leadId: string | null,
-  phone?: string | null
+  phone?: string | null,
+  accountId?: string,
 ): Promise<void> {
   const db = getDb();
   await ensureZaloInboxTables();
   await db.query(
-    `UPDATE zalo_conversations
+    `UPDATE zalo_conversations_v2
      SET lead_id = $2,
          phone = CASE WHEN $2::text IS NULL THEN phone ELSE COALESCE($3, phone) END,
          updated_at = NOW()
-     WHERE id = $1`,
-    [conversationId, leadId, phone || null]
+     WHERE account_id = $4 AND thread_id = $1`,
+    [conversationId, leadId, phone || null, accountId || await getDefaultAccountId()]
   );
 }
 
@@ -412,8 +462,9 @@ function mapZaloCredentials(row: any): ZaloCredentials {
 
 function mapZaloConversation(row: any): ZaloConversation {
   return {
-    id: row.id,
-    zaloUserId: row.zalo_user_id || row.id,
+    accountId: row.account_id,
+    id: row.thread_id,
+    zaloUserId: row.zalo_user_id || row.thread_id,
     phone: row.phone,
     displayName: row.display_name,
     avatarUrl: row.avatar_url,
@@ -424,6 +475,11 @@ function mapZaloConversation(row: any): ZaloConversation {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+async function getDefaultAccountId(): Promise<string | null> {
+  const accounts = await listZaloAccounts();
+  return accounts.find(account => account.isActive)?.id || accounts[0]?.id || null;
 }
 
 function mapZaloMessage(row: any): ZaloMessage {

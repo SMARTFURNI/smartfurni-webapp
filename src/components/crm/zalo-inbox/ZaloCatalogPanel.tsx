@@ -23,9 +23,10 @@ interface Product {
 
 interface ZaloCatalogPanelProps {
   onClose?: () => void;
+  accountId: string;
 }
 
-export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
+export default function ZaloCatalogPanel({ onClose, accountId }: ZaloCatalogPanelProps) {
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null);
@@ -53,20 +54,20 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
   const loadCatalogs = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/catalogs");
+      const res = await fetch(`/api/crm/zalo-inbox/catalogs?accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setCatalogs(data.catalogs || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   const loadProducts = useCallback(async (catalogId: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/crm/zalo-inbox/catalogs?catalogId=${catalogId}`);
+      const res = await fetch(`/api/crm/zalo-inbox/catalogs?catalogId=${catalogId}&accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setProducts(data.products || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   useEffect(() => { loadCatalogs(); }, [loadCatalogs]);
 
@@ -80,6 +81,7 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
     try {
       const action = editCatalog ? "update-catalog" : "create-catalog";
       const body: any = { action, title: catalogTitle.trim() };
+      body.accountId = accountId;
       if (editCatalog) body.catalogId = editCatalog.id;
       const res = await fetch("/api/crm/zalo-inbox/catalogs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
@@ -93,7 +95,7 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
 
   const handleDeleteCatalog = async (catalogId: string) => {
     if (!confirm("Xóa catalog này? Tất cả sản phẩm trong catalog sẽ bị xóa.")) return;
-    const res = await fetch("/api/crm/zalo-inbox/catalogs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete-catalog", catalogId }) });
+    const res = await fetch("/api/crm/zalo-inbox/catalogs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete-catalog", catalogId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã xóa catalog"); if (selectedCatalog?.id === catalogId) setSelectedCatalog(null); loadCatalogs(); }
     else showToast(data.error || "Lỗi", "error");
@@ -106,6 +108,7 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
     try {
       const action = editProduct ? "update-product" : "create-product";
       const body: any = { action, catalogId: selectedCatalog.id, title: productName.trim(), price: parseFloat(productPrice), description: productDesc.trim() };
+      body.accountId = accountId;
       if (editProduct) body.productId = editProduct.id;
       const res = await fetch("/api/crm/zalo-inbox/catalogs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
@@ -119,7 +122,7 @@ export default function ZaloCatalogPanel({ onClose }: ZaloCatalogPanelProps) {
 
   const handleDeleteProduct = async (productId: string) => {
     if (!selectedCatalog || !confirm("Xóa sản phẩm này?")) return;
-    const res = await fetch("/api/crm/zalo-inbox/catalogs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete-product", catalogId: selectedCatalog.id, productId }) });
+    const res = await fetch("/api/crm/zalo-inbox/catalogs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete-product", catalogId: selectedCatalog.id, productId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã xóa sản phẩm"); loadProducts(selectedCatalog.id); }
     else showToast(data.error || "Lỗi", "error");

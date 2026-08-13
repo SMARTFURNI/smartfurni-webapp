@@ -32,19 +32,20 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get("action") || "list";
   const groupId = searchParams.get("groupId") || "";
   const query = searchParams.get("query") || undefined;
+  const accountId = searchParams.get("accountId") || undefined;
 
   try {
     switch (action) {
       case "list":
-        return NextResponse.json(await getAllZaloGroups(query));
+        return NextResponse.json(await getAllZaloGroups(query, accountId));
       case "info":
         if (!groupId) return NextResponse.json({ success: false, error: "groupId required" }, { status: 400 });
-        return NextResponse.json(await getZaloGroupInfo(groupId));
+        return NextResponse.json(await getZaloGroupInfo(groupId, accountId));
       case "link":
         if (!groupId) return NextResponse.json({ success: false, error: "groupId required" }, { status: 400 });
-        return NextResponse.json(await getZaloGroupLink(groupId));
+        return NextResponse.json(await getZaloGroupLink(groupId, accountId));
       case "invites":
-        return NextResponse.json(await getZaloGroupInvites());
+        return NextResponse.json(await getZaloGroupInvites(accountId));
       case "blocked-members":
         if (!groupId) return NextResponse.json({ success: false, error: "groupId required" }, { status: 400 });
         return NextResponse.json(await getZaloGroupBlockedMembers(groupId));
@@ -63,33 +64,33 @@ export async function POST(request: NextRequest) {
   if (!await getAuthorizedZaloInboxSession()) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
   try {
     const body = await request.json();
-    const { action, groupId, userId, name, link, memberIds, nickname, title, options, pollId, optionId, pinAct } = body;
+    const { action, groupId, userId, name, link, memberIds, nickname, title, options, pollId, optionId, pinAct, accountId } = body;
 
     switch (action) {
       case "create":
         if (!memberIds?.length) return NextResponse.json({ success: false, error: "memberIds required" }, { status: 400 });
-        return NextResponse.json(await createZaloGroup({ name, memberIds }));
+        return NextResponse.json(await createZaloGroup({ name, memberIds, accountId }));
       case "add-member":
         if (!groupId || !userId) return NextResponse.json({ success: false, error: "groupId and userId required" }, { status: 400 });
-        return NextResponse.json(await addZaloUserToGroup(userId, groupId));
+        return NextResponse.json(await addZaloUserToGroup(userId, groupId, accountId));
       case "remove-member":
         if (!groupId || !userId) return NextResponse.json({ success: false, error: "groupId and userId required" }, { status: 400 });
-        return NextResponse.json(await removeZaloUserFromGroup(userId, groupId));
+        return NextResponse.json(await removeZaloUserFromGroup(userId, groupId, accountId));
       case "leave":
         if (!groupId) return NextResponse.json({ success: false, error: "groupId required" }, { status: 400 });
-        return NextResponse.json(await leaveZaloGroup(groupId));
+        return NextResponse.json(await leaveZaloGroup(groupId, accountId));
       case "rename":
         if (!groupId || !name) return NextResponse.json({ success: false, error: "groupId and name required" }, { status: 400 });
-        return NextResponse.json(await changeZaloGroupName(groupId, name));
+        return NextResponse.json(await changeZaloGroupName(groupId, name, accountId));
       case "enable-link":
         if (!groupId) return NextResponse.json({ success: false, error: "groupId required" }, { status: 400 });
-        return NextResponse.json(await enableZaloGroupLink(groupId));
+        return NextResponse.json(await enableZaloGroupLink(groupId, accountId));
       case "join-link":
         if (!link) return NextResponse.json({ success: false, error: "link required" }, { status: 400 });
-        return NextResponse.json(await joinZaloGroupByLink(link));
+        return NextResponse.json(await joinZaloGroupByLink(link, accountId));
       case "join-invite":
         if (!groupId) return NextResponse.json({ success: false, error: "groupId required" }, { status: 400 });
-        return NextResponse.json(await joinZaloGroupInvite(groupId));
+        return NextResponse.json(await joinZaloGroupInvite(groupId, accountId));
       case "block-member":
         if (!groupId || !userId) return NextResponse.json({ success: false, error: "groupId and userId required" }, { status: 400 });
         return NextResponse.json(await blockZaloGroupMember(userId, groupId));

@@ -48,9 +48,10 @@ function GroupAvatar({ name, avatar, size = 40 }: { name: string; avatar?: strin
 interface ZaloGroupsPanelProps {
   onClose?: () => void;
   onOpenGroupChat?: (groupId: string, name: string) => void;
+  accountId: string;
 }
 
-export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroupsPanelProps) {
+export default function ZaloGroupsPanel({ onClose, onOpenGroupChat, accountId }: ZaloGroupsPanelProps) {
   const [tab, setTab] = useState<"list" | "invites" | "create" | "join">("list");
   const [groups, setGroups] = useState<Group[]>([]);
   const [invites, setInvites] = useState<GroupInvite[]>([]);
@@ -75,20 +76,20 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
   const loadGroups = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/crm/zalo-inbox/groups?action=list${searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : ""}`);
+      const res = await fetch(`/api/crm/zalo-inbox/groups?action=list&accountId=${encodeURIComponent(accountId)}${searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : ""}`);
       const data = await res.json();
       if (data.success) setGroups(data.groups || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, [searchQuery]);
+  }, [searchQuery, accountId]);
 
   const loadInvites = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/groups?action=invites");
+      const res = await fetch(`/api/crm/zalo-inbox/groups?action=invites&accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setInvites(data.invites || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   useEffect(() => {
     if (tab === "list") loadGroups();
@@ -103,12 +104,12 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
   }, [searchQuery, tab, loadGroups]);
 
   const handleGetLink = async (groupId: string) => {
-    const res = await fetch(`/api/crm/zalo-inbox/groups?action=link&groupId=${groupId}`);
+    const res = await fetch(`/api/crm/zalo-inbox/groups?action=link&groupId=${groupId}&accountId=${encodeURIComponent(accountId)}`);
     const data = await res.json();
     if (data.success && data.link) setGroupLink(data.link);
     else {
       // Try enabling link
-      const res2 = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "enable-link", groupId }) });
+      const res2 = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "enable-link", groupId, accountId }) });
       const data2 = await res2.json();
       if (data2.success && data2.link) setGroupLink(data2.link);
       else showToast(data2.error || "Lỗi lấy link nhóm", "error");
@@ -118,7 +119,7 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
   const handleCreateGroup = async () => {
     const memberIds = createMemberIds.split(",").map(s => s.trim()).filter(Boolean);
     if (memberIds.length < 2) { showToast("Cần ít nhất 2 thành viên", "error"); return; }
-    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", name: createName.trim() || undefined, memberIds }) });
+    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", name: createName.trim() || undefined, memberIds, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã tạo nhóm thành công!"); setCreateName(""); setCreateMemberIds(""); setTab("list"); loadGroups(); }
     else showToast(data.error || "Lỗi tạo nhóm", "error");
@@ -126,14 +127,14 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
 
   const handleJoinByLink = async () => {
     if (!joinLink.trim()) return;
-    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-link", link: joinLink.trim() }) });
+    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-link", link: joinLink.trim(), accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã tham gia nhóm!"); setJoinLink(""); setTab("list"); loadGroups(); }
     else showToast(data.error || "Lỗi tham gia nhóm", "error");
   };
 
   const handleAcceptInvite = async (groupId: string) => {
-    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-invite", groupId }) });
+    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join-invite", groupId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã tham gia nhóm!"); loadInvites(); loadGroups(); }
     else showToast(data.error || "Lỗi", "error");
@@ -141,7 +142,7 @@ export default function ZaloGroupsPanel({ onClose, onOpenGroupChat }: ZaloGroups
 
   const handleLeaveGroup = async (groupId: string, name: string) => {
     if (!confirm(`Rời khỏi nhóm "${name}"?`)) return;
-    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "leave", groupId }) });
+    const res = await fetch("/api/crm/zalo-inbox/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "leave", groupId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã rời nhóm"); setSelectedGroup(null); loadGroups(); }
     else showToast(data.error || "Lỗi", "error");

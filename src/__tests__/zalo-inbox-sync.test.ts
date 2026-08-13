@@ -30,15 +30,27 @@ describe("Zalo Inbox durable sync", () => {
 
     expect(store).toMatch(/ORDER BY timestamp DESC, msg_id DESC\s+LIMIT/);
     expect(store).toContain("ORDER BY timestamp ASC, msg_id ASC");
-    expect(store).toContain("ON CONFLICT (msg_id) DO UPDATE");
+    expect(store).toContain("ON CONFLICT (account_id, msg_id) DO UPDATE");
   });
 
   it("forces the latest scroll only after selected conversation data arrives", () => {
     const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
 
-    expect(client).toContain("loadMessages = useCallback(async (convId: string, forceLatest = false)");
+    expect(client).toContain("loadMessages = useCallback(async (convId: string, forceLatest = false, accountIdOverride?: string)");
     expect(client).toContain("if (forceLatest) forceScrollToLatestRef.current = true");
-    expect(client).toContain("loadMessages(conv.id, true)");
+    expect(client).toContain("loadMessages(conv.id, true, conv.accountId)");
+
+  });
+
+  it("isolates conversations and messages by Zalo account", () => {
+    const messageStore = source("src/lib/zalo-inbox-message-store.ts");
+    const conversationStore = source("src/lib/zalo-inbox-store.ts");
+    const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
+
+    expect(messageStore).toContain("UNIQUE (account_id, msg_id)");
+    expect(conversationStore).toContain("PRIMARY KEY (account_id, thread_id)");
+    expect(client).toContain('X-Zalo-Account-Id');
+    expect(client).toContain('value={selectedAccountId}');
   });
 
   it("keeps the send response off the Railway Bucket upload path", () => {

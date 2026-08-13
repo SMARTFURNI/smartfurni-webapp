@@ -31,16 +31,18 @@ export async function GET(request: NextRequest) {
   // Mặc định: lấy danh sách tin nhắn từ DB
   try {
     const threadId = searchParams.get("threadId");
+    const accountId = searchParams.get("accountId");
     const limit = parseInt(searchParams.get("limit") || "50");
 
     if (!threadId) {
       return NextResponse.json({ error: "threadId is required" }, { status: 400 });
     }
 
-    const rows = await getRecentCanonicalZaloMessages(threadId, limit, 0);
+    const rows = await getRecentCanonicalZaloMessages(threadId, limit, 0, accountId);
 
     const messages = rows.map((row) => ({
       msgId: row.msg_id,
+      accountId: row.account_id,
       threadId: row.thread_id,
       fromId: row.from_id,
       toId: row.to_id,

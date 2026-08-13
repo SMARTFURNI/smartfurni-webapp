@@ -7,6 +7,7 @@ import {
 } from "./zalo-inbox-message-store";
 
 interface ZaloInboxPushInput {
+  accountId: string;
   msgId: string;
   conversationId: string;
   senderName?: string | null;
@@ -26,19 +27,20 @@ function messagePreview(input: ZaloInboxPushInput): string {
 
 /** Sends an inbound Zalo message to every subscribed CRM and Admin account. */
 export async function notifyInboundZaloMessage(input: ZaloInboxPushInput) {
-  const claimed = await claimCanonicalZaloMessagePush(input.msgId);
+  const claimed = await claimCanonicalZaloMessagePush(input.msgId, input.accountId);
   if (!claimed) return { deduplicated: true, crm: null, admin: null };
 
   const sender = input.senderName?.trim() || "Khách hàng Zalo";
   const notification = {
     title: `Tin nhắn Zalo mới · ${sender}`,
     body: messagePreview(input),
-    url: `/crm/zalo-inbox?conversation=${encodeURIComponent(input.conversationId)}`,
-    tag: `zalo-inbox-${input.conversationId}`,
+    url: `/crm/zalo-inbox?account=${encodeURIComponent(input.accountId)}&conversation=${encodeURIComponent(input.conversationId)}`,
+    tag: `zalo-inbox-${input.accountId}-${input.conversationId}`,
     renotify: true,
     urgency: "high" as const,
     data: {
       type: "zalo-inbox-message",
+      accountId: input.accountId,
       conversationId: input.conversationId,
       messageId: input.msgId,
     },
@@ -53,7 +55,7 @@ export async function notifyInboundZaloMessage(input: ZaloInboxPushInput) {
   // cơ hội gửi. Nếu một scope đã gửi được thì giữ claim nhằm tránh tài khoản
   // ở scope đó nhận trùng cùng một tin nhắn.
   if (crm.status === "rejected" && admin.status === "rejected") {
-    await releaseCanonicalZaloMessagePush(input.msgId).catch(() => undefined);
+    await releaseCanonicalZaloMessagePush(input.msgId, input.accountId).catch(() => undefined);
     throw new AggregateError([crm.reason, admin.reason], "Không gửi được Web Push Zalo Inbox");
   }
 

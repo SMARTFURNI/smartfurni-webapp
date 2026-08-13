@@ -15,11 +15,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { conversationId, content } = body;
+    const { accountId, conversationId, content } = body;
 
-    if (!conversationId || !content?.trim()) {
+    if (!accountId || !conversationId || !content?.trim()) {
       return NextResponse.json(
-        { error: "Thiếu conversationId hoặc nội dung tin nhắn" },
+        { error: "Thiếu accountId, conversationId hoặc nội dung tin nhắn" },
         { status: 400 }
       );
     }
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     const senderId = session.staffId || "admin";
 
     const result = await sendZaloMessage({
+      accountId: String(accountId),
       conversationId,
       content: content.trim(),
       senderName,

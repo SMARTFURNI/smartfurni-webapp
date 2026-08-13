@@ -64,9 +64,10 @@ function AvatarCircle({ name, avatar, size = 40 }: { name: string; avatar?: stri
 interface ZaloFriendsPanelProps {
   onClose?: () => void;
   onOpenChat?: (userId: string, displayName: string) => void;
+  accountId: string;
 }
 
-export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPanelProps) {
+export default function ZaloFriendsPanel({ onClose, onOpenChat, accountId }: ZaloFriendsPanelProps) {
   const [tab, setTab] = useState<TabType>("friends");
   const [friends, setFriends] = useState<Friend[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
@@ -95,38 +96,38 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
   const loadFriends = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/crm/zalo-inbox/friends?action=list${searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : ""}`);
+      const res = await fetch(`/api/crm/zalo-inbox/friends?action=list&accountId=${encodeURIComponent(accountId)}${searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : ""}`);
       const data = await res.json();
       if (data.success) setFriends(data.friends || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, [searchQuery]);
+  }, [searchQuery, accountId]);
 
   const loadIncoming = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/friend-requests");
+      const res = await fetch(`/api/crm/zalo-inbox/friend-requests?accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setIncomingRequests(data.requests || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   const loadSent = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/friends?action=sent-requests");
+      const res = await fetch(`/api/crm/zalo-inbox/friends?action=sent-requests&accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setSentRequests(data.requests || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   const loadRecommendations = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/friends?action=recommendations");
+      const res = await fetch(`/api/crm/zalo-inbox/friends?action=recommendations&accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success) setRecommendations(data.recommendations || []);
     } catch { /* ignore */ } finally { setLoading(false); }
-  }, []);
+  }, [accountId]);
 
   useEffect(() => {
     if (tab === "friends") loadFriends();
@@ -148,6 +149,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
     es.addEventListener("friend_event", (e) => {
       try {
         const data = JSON.parse(e.data);
+        if (data.accountId && data.accountId !== accountId) return;
         if (data.type === "request") {
           showToast(`${data.displayName || "Ai đó"} muốn kết bạn với bạn!`);
           if (tab === "incoming") loadIncoming();
@@ -164,21 +166,21 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
   // ── Actions ──────────────────────────────────────────────────────────────────
 
   const handleAccept = async (userId: string) => {
-    const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", userId }) });
+    const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", userId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã chấp nhận lời mời kết bạn"); loadIncoming(); }
     else showToast(data.error || "Lỗi", "error");
   };
 
   const handleReject = async (userId: string) => {
-    const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reject", userId }) });
+    const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reject", userId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã từ chối lời mời"); loadIncoming(); }
     else showToast(data.error || "Lỗi", "error");
   };
 
   const handleUndoRequest = async (userId: string) => {
-    const res = await fetch("/api/crm/zalo-inbox/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "undo-request", userId }) });
+    const res = await fetch("/api/crm/zalo-inbox/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "undo-request", userId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã thu hồi lời mời"); loadSent(); }
     else showToast(data.error || "Lỗi", "error");
@@ -186,7 +188,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
 
   const handleUnfriend = async (userId: string, name: string) => {
     if (!confirm(`Bạn có chắc muốn hủy kết bạn với ${name}?`)) return;
-    const res = await fetch("/api/crm/zalo-inbox/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unfriend", userId }) });
+    const res = await fetch("/api/crm/zalo-inbox/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unfriend", userId, accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã hủy kết bạn"); loadFriends(); }
     else showToast(data.error || "Lỗi", "error");
@@ -194,7 +196,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
 
   const handleSetNickname = async () => {
     if (!nicknameModal || !nicknameInput.trim()) return;
-    const res = await fetch("/api/crm/zalo-inbox/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "set-nickname", userId: nicknameModal.userId, nickname: nicknameInput.trim() }) });
+    const res = await fetch("/api/crm/zalo-inbox/friends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "set-nickname", userId: nicknameModal.userId, nickname: nicknameInput.trim(), accountId }) });
     const data = await res.json();
     if (data.success) { showToast("Đã đặt biệt danh"); setNicknameModal(null); loadFriends(); }
     else showToast(data.error || "Lỗi", "error");
@@ -204,7 +206,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
     if (!foundUser) return;
     setSendingRequest(true);
     try {
-      const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", userId: foundUser.uid, message: friendMsg }) });
+      const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", userId: foundUser.uid, message: friendMsg, accountId }) });
       const data = await res.json();
       if (data.success) { showToast("Đã gửi lời mời kết bạn!"); setFoundUser(null); setPhoneInput(""); }
       else showToast(data.error || "Lỗi gửi lời mời", "error");
@@ -216,7 +218,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
     setSearchingPhone(true);
     setFoundUser(null);
     try {
-      const res = await fetch(`/api/crm/zalo-inbox/find-user?phone=${encodeURIComponent(phoneInput.trim())}`);
+      const res = await fetch(`/api/crm/zalo-inbox/find-user?phone=${encodeURIComponent(phoneInput.trim())}&accountId=${encodeURIComponent(accountId)}`);
       const data = await res.json();
       if (data.success && data.user) setFoundUser(data.user);
       else showToast(data.error || "Không tìm thấy người dùng", "error");
@@ -407,7 +409,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat }: ZaloFriendsPan
                       {rec.source && <div className="text-xs text-gray-400">{rec.source}</div>}
                     </div>
                     <button onClick={async () => {
-                      const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", userId: rec.userId, message: "Xin chào! Tôi muốn kết bạn với bạn." }) });
+                      const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "send", userId: rec.userId, message: "Xin chào! Tôi muốn kết bạn với bạn.", accountId }) });
                       const data = await res.json();
                       if (data.success) { showToast("Đã gửi lời mời!"); loadRecommendations(); }
                       else showToast(data.error || "Lỗi", "error");

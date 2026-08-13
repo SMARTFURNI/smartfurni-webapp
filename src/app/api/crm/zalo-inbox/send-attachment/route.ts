@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") || "application/octet-stream";
     let conversationId = "";
+    let accountId = "";
     let fileName = "";
     let mimeType = contentType.split(";", 1)[0].trim() || "application/octet-stream";
     let fileBuffer: Buffer;
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
       conversationId = String(formData.get("conversationId") || "").trim();
+      accountId = String(formData.get("accountId") || "").trim();
       if (!file) {
         return NextResponse.json({ error: "Thiếu file" }, { status: 400 });
       }
@@ -54,6 +56,7 @@ export async function POST(req: NextRequest) {
       fileBuffer = Buffer.from(await file.arrayBuffer());
     } else {
       conversationId = (req.headers.get("x-zalo-conversation-id") || "").trim();
+      accountId = (req.headers.get("x-zalo-account-id") || "").trim();
       const encodedFileName = req.headers.get("x-zalo-file-name") || "";
       try {
         fileName = decodeURIComponent(encodedFileName).trim();
@@ -71,9 +74,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!conversationId || !fileName || fileSize <= 0) {
+    if (!accountId || !conversationId || !fileName || fileSize <= 0) {
       return NextResponse.json(
-        { error: "Thiếu conversationId hoặc file" },
+        { error: "Thiếu accountId, conversationId hoặc file" },
         { status: 400 }
       );
     }
@@ -87,6 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await sendZaloAttachment({
+      accountId,
       conversationId,
       fileBuffer,
       fileName,

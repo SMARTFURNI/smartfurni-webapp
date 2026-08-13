@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const phone = searchParams.get("phone");
+    const accountId = searchParams.get("accountId") || undefined;
 
     if (!phone) {
       return NextResponse.json({ success: false, error: "Thiếu tham số phone" }, { status: 400 });
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     // Chuẩn hóa số điện thoại (bỏ dấu + nếu có, đảm bảo bắt đầu bằng 0 hoặc 84)
     const normalizedPhone = phone.replace(/\s+/g, "").replace(/^\+84/, "0");
 
-    const result = await findZaloUserByPhone(normalizedPhone);
+    const result = await findZaloUserByPhone(normalizedPhone, accountId);
     return NextResponse.json(result);
   } catch (err: unknown) {
     const error = err as Error;

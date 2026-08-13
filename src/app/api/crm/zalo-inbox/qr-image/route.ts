@@ -6,7 +6,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { startQRLogin, getCurrentQRImage, getGatewayStatus } from "@/lib/zalo-gateway";
+import { startQRLogin, getCurrentQRImage, getGatewayStatus, getQRLoginStatus } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
   const session = await getCrmSession();
   if (!session || !session.isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (getQRLoginStatus().connecting) {
+    return NextResponse.json({ error: "Một mã QR đăng nhập khác đang chờ xác nhận" }, { status: 409 });
   }
 
   // Trigger QR login non-blocking (không await)
@@ -37,15 +40,17 @@ export async function GET(req: NextRequest) {
   }
 
   const status = getGatewayStatus();
+  const login = getQRLoginStatus();
   const qrImage = getCurrentQRImage();
 
   return NextResponse.json({
-    connected: status.isConnected,
-    connecting: status.isConnecting,
+    connected: Boolean(login.result),
+    connecting: login.connecting,
     // phone: hiển thị tên thật nếu có, fallback về userId
-    phone: status.displayName || status.phone || null,
-    displayName: status.displayName || null,
+    phone: login.result?.displayName || status.displayName || status.phone || null,
+    displayName: login.result?.displayName || status.displayName || null,
     qrImage: qrImage || null,
     status: status.status,
+    accountId: login.result?.accountId || null,
   });
 }

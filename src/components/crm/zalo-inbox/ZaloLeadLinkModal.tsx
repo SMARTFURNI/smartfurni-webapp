@@ -14,11 +14,13 @@ interface LeadOption {
 
 export default function ZaloLeadLinkModal({
   conversationId,
+  accountId,
   currentLeadId,
   onClose,
   onLinked,
 }: {
   conversationId: string;
+  accountId: string;
   currentLeadId?: string | null;
   onClose: () => void;
   onLinked: () => void;
@@ -55,7 +57,7 @@ export default function ZaloLeadLinkModal({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, leadId }),
+        body: JSON.stringify({ accountId, conversationId, leadId }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Không thể liên kết hồ sơ");
