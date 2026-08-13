@@ -57,10 +57,13 @@ function formatBytes(bytes: number) {
 }
 
 function AssetPreview({ asset }: { asset: MediaAsset }) {
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const thumbnailUrl = `/api/crm/zalo-inbox/media-library/thumbnail?id=${encodeURIComponent(asset.id)}`;
+
   if (asset.mediaKind === "image") {
     return (
       <img
-        src={`/api/crm/zalo-inbox/media-library/thumbnail?id=${encodeURIComponent(asset.id)}`}
+        src={thumbnailUrl}
         alt={asset.name}
         loading="lazy"
         decoding="async"
@@ -69,9 +72,30 @@ function AssetPreview({ asset }: { asset: MediaAsset }) {
   }
   if (asset.mediaKind === "video") {
     return (
-      <div className={styles.videoPreview}>
-        <Video size={30} />
-        <span>VIDEO</span>
+      <div className={styles.videoPreview} data-fallback={String(thumbnailFailed)}>
+        {!thumbnailFailed && (
+          <img
+            src={thumbnailUrl}
+            alt={`Ảnh bìa ${asset.name}`}
+            loading="lazy"
+            decoding="async"
+            onError={() => setThumbnailFailed(true)}
+          />
+        )}
+        {thumbnailFailed && (
+          <video
+            src={asset.url}
+            muted
+            playsInline
+            preload="metadata"
+            aria-label={`Ảnh bìa ${asset.name}`}
+            onLoadedMetadata={event => {
+              const video = event.currentTarget;
+              if (Number.isFinite(video.duration) && video.duration > 0.1) video.currentTime = 0.1;
+            }}
+          />
+        )}
+        <span className={styles.videoBadge}><Video size={14} /> VIDEO</span>
       </div>
     );
   }
@@ -379,7 +403,7 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
                     <button className={styles.assetSelect} onClick={() => toggleAsset(asset.id)} title={asset.name}>
                       <span className={styles.check}>{selected.has(asset.id) ? <Check size={14} /> : null}</span>
                       <span className={styles.preview}><AssetPreview asset={asset} /></span>
-                      <span className={styles.assetName}>{asset.name}</span>
+                      <span className={styles.assetName} title={asset.name}>{asset.name}</span>
                       <span className={styles.assetMeta}>{formatBytes(asset.sizeBytes)} · Đã gửi {asset.usageCount} lần</span>
                     </button>
                     <button

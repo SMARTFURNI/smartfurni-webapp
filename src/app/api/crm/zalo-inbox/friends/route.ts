@@ -10,6 +10,8 @@ import {
   getZaloFriendRecommendations,
   getZaloAliasList,
   getZaloRelatedFriendGroups,
+  getAllZaloGroups,
+  getZaloUserInfo,
 } from "@/lib/zalo-gateway";
 import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 
@@ -35,6 +37,21 @@ export async function GET(request: NextRequest) {
       case "related-groups":
         if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
         return NextResponse.json(await getZaloRelatedFriendGroups(userId));
+      case "related-groups-details": {
+        if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
+        const related = await getZaloRelatedFriendGroups(userId);
+        if (!related.success) return NextResponse.json(related);
+        const allGroups = await getAllZaloGroups();
+        if (!allGroups.success) return NextResponse.json(allGroups);
+        const relatedIds = new Set(related.groupIds || []);
+        return NextResponse.json({
+          success: true,
+          groups: (allGroups.groups || []).filter(group => relatedIds.has(group.groupId)),
+        });
+      }
+      case "profile":
+        if (!userId) return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
+        return NextResponse.json(await getZaloUserInfo(userId));
       default:
         return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
     }

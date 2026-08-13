@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react";
 import {
   MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag,
   ChevronRight, Settings, RefreshCw, X, Paperclip, FileText, Video,
@@ -118,6 +118,21 @@ interface LightboxState {
 interface PendingFile {
   file: File;
   previewUrl: string;
+}
+interface ZaloProfileDetails {
+  userId?: string;
+  displayName?: string;
+  zaloName?: string;
+  avatar?: string;
+  phoneNumber?: string;
+  gender?: number;
+  dob?: string;
+}
+interface RelatedGroup {
+  groupId: string;
+  name: string;
+  avatar?: string;
+  totalMember?: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -362,6 +377,20 @@ function Lightbox({ state, onClose }: { state: LightboxState; onClose: () => voi
         style={{ maxWidth: "88vw", maxHeight: "88vh", objectFit: "contain", borderRadius: 12, boxShadow: "0 25px 80px rgba(0,0,0,0.6)" }}
         onError={(e) => { (e.target as HTMLImageElement).src = state.images[idx]; }}
       />
+    </div>
+  );
+}
+
+function InfoDialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div role="dialog" aria-modal="true" aria-label={title} onMouseDown={onClose} style={{ position: "fixed", inset: 0, zIndex: 10030, display: "grid", placeItems: "center", padding: 18, background: "rgba(15,23,42,.6)", backdropFilter: "blur(5px)" }}>
+      <div onMouseDown={event => event.stopPropagation()} style={{ width: "min(680px,100%)", maxHeight: "min(760px,90dvh)", display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid #dbe3ee", borderRadius: 18, background: "#fff", boxShadow: "0 28px 80px rgba(15,23,42,.28)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "15px 18px", borderBottom: "1px solid #dbe3ee", background: "linear-gradient(120deg,#fff,#fff9e8)" }}>
+          <strong style={{ color: T.textPrimary, fontSize: 15 }}>{title}</strong>
+          <button onClick={onClose} aria-label="Đóng" style={{ width: 34, height: 34, display: "grid", placeItems: "center", cursor: "pointer", border: "1px solid #dbe3ee", borderRadius: 10, color: T.textMuted, background: "#fff" }}><X size={17} /></button>
+        </div>
+        <div style={{ minHeight: 0, overflowY: "auto", padding: 16 }}>{children}</div>
+      </div>
     </div>
   );
 }
@@ -1029,6 +1058,14 @@ export default function ZaloInboxClient() {
   const [showEmoji, setShowEmoji] = useState(false);
   const emojiRef = useRef<HTMLDivElement>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [infoActionLoading, setInfoActionLoading] = useState<"profile" | "groups" | "notification" | null>(null);
+  const [infoActionError, setInfoActionError] = useState<string | null>(null);
+  const [profileDetails, setProfileDetails] = useState<ZaloProfileDetails | null>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [relatedGroups, setRelatedGroups] = useState<RelatedGroup[]>([]);
+  const [showRelatedGroups, setShowRelatedGroups] = useState(false);
+  const [showAllConversationMedia, setShowAllConversationMedia] = useState(false);
+  const [showAllConversationFiles, setShowAllConversationFiles] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const forceScrollToLatestRef = useRef(false);
@@ -1331,6 +1368,9 @@ export default function ZaloInboxClient() {
     setReplyContext(null);
     setMsgSearchQuery("");
     setShowMsgSearch(false);
+    setInfoActionError(null);
+    setProfileDetails(null);
+    setRelatedGroups([]);
     loadMessages(conv.id, true);
   };
 
@@ -1498,9 +1538,73 @@ export default function ZaloInboxClient() {
     }
   }, [notifEnabled]);
 
+  const handleInfoNotification = useCallback(async () => {
+    setInfoActionLoading("notification");
+    setInfoActionError(null);
+    try {
+      await toggleNotif();
+    } catch (error) {
+      setInfoActionError(error instanceof Error ? error.message : "Không cập nhật được thông báo");
+    } finally {
+      setInfoActionLoading(null);
+    }
+  }, [toggleNotif]);
+
+  const openConversationProfile = useCallback(async () => {
+    if (!selectedConv) return;
+    setShowProfileDialog(true);
+    if (profileDetails) return;
+    setInfoActionLoading("profile");
+    setInfoActionError(null);
+    try {
+      const userId = selectedConv.zaloUserId || selectedConv.id;
+      const response = await fetch(`/api/crm/zalo-inbox/friends?action=profile&userId=${encodeURIComponent(userId)}`, { credentials: "include" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) throw new Error(data.error || "Không tải được hồ sơ Zalo");
+      setProfileDetails(data.user || {});
+    } catch (error) {
+      setInfoActionError(error instanceof Error ? error.message : "Không tải được hồ sơ Zalo");
+    } finally {
+      setInfoActionLoading(null);
+    }
+  }, [profileDetails, selectedConv]);
+
+  const openRelatedGroups = useCallback(async () => {
+    if (!selectedConv) return;
+    setShowRelatedGroups(true);
+    setInfoActionLoading("groups");
+    setInfoActionError(null);
+    try {
+      const userId = selectedConv.zaloUserId || selectedConv.id;
+      const response = await fetch(`/api/crm/zalo-inbox/friends?action=related-groups-details&userId=${encodeURIComponent(userId)}`, { credentials: "include" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) throw new Error(data.error || "Không tải được nhóm chung");
+      setRelatedGroups(Array.isArray(data.groups) ? data.groups : []);
+    } catch (error) {
+      setInfoActionError(error instanceof Error ? error.message : "Không tải được nhóm chung");
+    } finally {
+      setInfoActionLoading(null);
+    }
+  }, [selectedConv]);
+
   const toggleSound = useCallback(() => {
     setSoundEnabled(prev => { const next = !prev; localStorage.setItem("zalo_sound", next ? "true" : "false"); return next; });
   }, []);
+
+  const conversationMedia = useMemo(() => messages.flatMap(message =>
+    (message.attachments || [])
+      .filter(attachment => (attachment.type === "image" || attachment.type === "video") && (attachment.url || attachment.thumb))
+      .map(attachment => ({ ...attachment, msgId: message.id, createdAt: message.createdAt })),
+  ), [messages]);
+  const conversationFiles = useMemo(() => messages.flatMap(message =>
+    (message.attachments || [])
+      .filter(attachment => (attachment.type === "others" || attachment.type === "file") && attachment.fileName)
+      .map(attachment => ({ ...attachment, msgId: message.id, createdAt: message.createdAt })),
+  ), [messages]);
+  const conversationImageUrls = useMemo(() => conversationMedia
+    .filter(item => item.type === "image")
+    .map(item => item.url || item.thumb || "")
+    .filter(Boolean), [conversationMedia]);
 
   const filteredConvs = conversations.filter(c => {
     const matchSearch = c.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1617,6 +1721,91 @@ export default function ZaloInboxClient() {
       {workspaceHeader}
       <div className={styles.inboxFrame} data-has-selection={String(!!selectedConv)}>
       {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
+      {showProfileDialog && selectedConv && (
+        <InfoDialog title="Hồ sơ hội thoại" onClose={() => setShowProfileDialog(false)}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: 14, border: `1px solid ${T.sidebarBorder}`, borderRadius: 14, background: T.sidebarHover }}>
+            <Avatar name={profileDetails?.displayName || selectedConv.displayName} avatarUrl={profileDetails?.avatar || selectedConv.avatarUrl} size={58} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: T.textPrimary, fontSize: 16, fontWeight: 750 }}>{profileDetails?.displayName || selectedConv.displayName}</div>
+              <div style={{ marginTop: 3, color: T.textMuted, fontSize: 12 }}>{profileDetails?.zaloName ? `Tên Zalo: ${profileDetails.zaloName}` : "Hồ sơ Zalo cá nhân"}</div>
+            </div>
+          </div>
+          {infoActionLoading === "profile" ? (
+            <div style={{ minHeight: 130, display: "grid", placeItems: "center", color: T.textMuted }}><RefreshCw size={20} style={{ animation: "spin .8s linear infinite" }} /></div>
+          ) : (
+            <div style={{ display: "grid", gap: 9, marginTop: 14 }}>
+              {[
+                ["Số điện thoại", selectedConv.lead?.phone || selectedConv.phone || profileDetails?.phoneNumber || "Chưa đối soát"],
+                ["Zalo UID", profileDetails?.userId || selectedConv.zaloUserId || selectedConv.id],
+                ["Giới tính", profileDetails?.gender === 1 ? "Nam" : profileDetails?.gender === 2 ? "Nữ" : "Chưa cung cấp"],
+                ["Ngày sinh", profileDetails?.dob || "Chưa cung cấp"],
+                ["Liên kết CRM", selectedConv.lead?.name || "Chưa liên kết"],
+              ].map(([label, value]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 20, padding: "9px 2px", borderBottom: `1px solid ${T.sidebarBorder}` }}>
+                  <span style={{ color: T.textMuted, fontSize: 12 }}>{label}</span><span style={{ maxWidth: "65%", color: T.textPrimary, fontSize: 12, fontWeight: 600, textAlign: "right", overflowWrap: "anywhere" }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {infoActionError && <div role="alert" style={{ marginTop: 12, padding: 10, borderRadius: 9, color: "#b42318", background: "#fff1f2", fontSize: 12 }}>{infoActionError}</div>}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+            {selectedConv.lead ? (
+              <a href={`/crm/leads/${selectedConv.lead.id}`} target="_blank" rel="noreferrer" style={{ padding: "9px 13px", borderRadius: 10, color: "#fff", background: T.accent, textDecoration: "none", fontSize: 12, fontWeight: 700 }}>Mở hồ sơ CRM</a>
+            ) : (
+              <button onClick={() => { setShowProfileDialog(false); setShowLeadLink(true); }} style={{ padding: "9px 13px", cursor: "pointer", border: "1px solid #d2a62b", borderRadius: 10, color: "#3d2c08", background: "linear-gradient(135deg,#ffe78c,#d9aa2b)", fontSize: 12, fontWeight: 750 }}>Liên kết hồ sơ CRM</button>
+            )}
+          </div>
+        </InfoDialog>
+      )}
+      {showRelatedGroups && (
+        <InfoDialog title="Nhóm chung trên Zalo" onClose={() => setShowRelatedGroups(false)}>
+          {infoActionLoading === "groups" ? (
+            <div style={{ minHeight: 180, display: "grid", placeItems: "center", color: T.textMuted }}><RefreshCw size={20} style={{ animation: "spin .8s linear infinite" }} /></div>
+          ) : relatedGroups.length === 0 ? (
+            <div style={{ padding: "42px 12px", textAlign: "center", color: T.textMuted }}><Users size={32} style={{ marginBottom: 9, opacity: .55 }} /><div style={{ fontSize: 13 }}>Không có nhóm chung hoặc Zalo chưa cung cấp dữ liệu nhóm.</div></div>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }}>
+              {relatedGroups.map(group => (
+                <button key={group.groupId} onClick={() => { setShowRelatedGroups(false); setMainView("groups"); }} style={{ display: "flex", alignItems: "center", gap: 11, padding: 11, cursor: "pointer", border: `1px solid ${T.sidebarBorder}`, borderRadius: 12, textAlign: "left", background: "#fff" }}>
+                  <Avatar name={group.name} avatarUrl={group.avatar} size={42} />
+                  <span style={{ minWidth: 0, flex: 1 }}><strong style={{ display: "block", overflow: "hidden", color: T.textPrimary, fontSize: 13, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.name}</strong><small style={{ display: "block", marginTop: 3, color: T.textMuted }}>{group.totalMember ? `${group.totalMember} thành viên` : "Mở quản lý nhóm"}</small></span>
+                  <ChevronRight size={16} color={T.textMuted} />
+                </button>
+              ))}
+            </div>
+          )}
+          {infoActionError && <div role="alert" style={{ marginTop: 12, padding: 10, borderRadius: 9, color: "#b42318", background: "#fff1f2", fontSize: 12 }}>{infoActionError}</div>}
+        </InfoDialog>
+      )}
+      {showAllConversationMedia && (
+        <InfoDialog title={`Ảnh/Video (${conversationMedia.length})`} onClose={() => setShowAllConversationMedia(false)}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 10 }}>
+            {conversationMedia.map((attachment, index) => attachment.type === "video" ? (
+              <video key={`${attachment.msgId}-${index}`} src={attachment.url} poster={getZaloImageUrl(attachment.thumb)} controls preload="metadata" style={{ width: "100%", aspectRatio: "1", objectFit: "contain", borderRadius: 10, background: "#0f172a" }} />
+            ) : (
+              <button key={`${attachment.msgId}-${index}`} onClick={() => {
+                const imageIndex = conversationImageUrls.indexOf(attachment.url || attachment.thumb || "");
+                setLightbox({ images: conversationImageUrls, currentIndex: Math.max(0, imageIndex) });
+              }} style={{ padding: 0, aspectRatio: "1", cursor: "pointer", border: `1px solid ${T.sidebarBorder}`, borderRadius: 10, overflow: "hidden", background: T.sidebarHover }}>
+                <img src={getZaloImageUrl(attachment.thumb || attachment.url)} alt="Ảnh hội thoại" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+              </button>
+            ))}
+          </div>
+        </InfoDialog>
+      )}
+      {showAllConversationFiles && (
+        <InfoDialog title={`File (${conversationFiles.length})`} onClose={() => setShowAllConversationFiles(false)}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {conversationFiles.map((attachment, index) => (
+              <a key={`${attachment.msgId}-${index}`} href={attachment.url} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 11, padding: 11, border: `1px solid ${T.sidebarBorder}`, borderRadius: 11, color: T.textPrimary, background: "#fff", textDecoration: "none" }}>
+                <span style={{ width: 38, height: 38, display: "grid", placeItems: "center", flex: "0 0 auto", borderRadius: 9, color: T.accent, background: T.accent + "18" }}><FileText size={18} /></span>
+                <span style={{ minWidth: 0, flex: 1 }}><strong style={{ display: "block", overflow: "hidden", fontSize: 12, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attachment.fileName}</strong><small style={{ color: T.textMuted }}>{attachment.fileSize ? `${(attachment.fileSize / 1024).toFixed(0)} KB` : "Mở file"}</small></span>
+                <Download size={15} color={T.textMuted} />
+              </a>
+            ))}
+          </div>
+        </InfoDialog>
+      )}
       {showMediaLibraryPicker && (
         <ZaloMediaLibraryPanel
           mode="picker"
@@ -1977,19 +2166,19 @@ export default function ZaloInboxClient() {
             {/* Action icons */}
             <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14 }}>
               {[
-                { icon: <Bell size={16} />, label: "Tắt TB" },
-                { icon: <Users size={16} />, label: "Nhóm chung" },
-                { icon: <ShoppingBag size={16} />, label: "Hồ sơ" },
+                { icon: notifEnabled ? <BellOff size={16} /> : <Bell size={16} />, label: notifEnabled ? "Tắt TB" : "Bật TB", loading: infoActionLoading === "notification", action: handleInfoNotification },
+                { icon: <Users size={16} />, label: "Nhóm chung", loading: infoActionLoading === "groups", action: openRelatedGroups },
+                { icon: <ShoppingBag size={16} />, label: "Hồ sơ", loading: infoActionLoading === "profile", action: openConversationProfile },
               ].map(item => (
-                <div key={item.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}
-                  onClick={item.label === "Hồ sơ" && selectedConv.lead ? () => window.open(`/crm/leads/${selectedConv.lead!.id}`, "_blank") : undefined}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: T.sidebarHover, display: "flex", alignItems: "center", justifyContent: "center", color: T.textSecondary }}>
-                    {item.icon}
-                  </div>
+                <button key={item.label} type="button" onClick={item.action} disabled={item.loading} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minWidth: 58, padding: 0, cursor: item.loading ? "wait" : "pointer", border: 0, background: "transparent" }}>
+                  <span style={{ width: 40, height: 40, borderRadius: "50%", background: T.sidebarHover, display: "flex", alignItems: "center", justifyContent: "center", color: T.textSecondary }}>
+                    {item.loading ? <RefreshCw size={16} style={{ animation: "spin .8s linear infinite" }} /> : item.icon}
+                  </span>
                   <span style={{ fontSize: 11, color: T.textMuted }}>{item.label}</span>
-                </div>
+                </button>
               ))}
             </div>
+            {infoActionError && <div role="alert" style={{ marginTop: 12, padding: "8px 10px", borderRadius: 9, color: "#b42318", background: "#fff1f2", fontSize: 11, lineHeight: 1.45 }}>{infoActionError}</div>}
           </div>
 
           {/* Lead info nếu có */}
@@ -2039,56 +2228,49 @@ export default function ZaloInboxClient() {
             </div>
           )}
 
-          {/* Ảnh/Video section - lọc từ messages */}
-          {(() => {
-            const mediaAttachments = messages.flatMap(m =>
-              (m.attachments || []).filter(a => (a.type === "image" || a.type === "video") && (a.url || a.thumb))
-                .map(a => ({ ...a, msgId: m.id, createdAt: m.createdAt }))
-            );
-            const fileAttachments = messages.flatMap(m =>
-              (m.attachments || []).filter(a => (a.type === "others" || a.type === "file") && a.fileName)
-                .map(a => ({ ...a, msgId: m.id, createdAt: m.createdAt }))
-            );
-            return (
-              <>
+          {/* Ảnh/Video và file của hội thoại */}
+          <>
                 <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.sidebarBorder}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>Ảnh/Video</span>
-                    <span style={{ fontSize: 11, color: T.textMuted }}>{mediaAttachments.length > 0 ? `${mediaAttachments.length} mục` : ""}</span>
+                    <span style={{ fontSize: 11, color: T.textMuted }}>{conversationMedia.length > 0 ? `${conversationMedia.length} mục` : ""}</span>
                   </div>
-                  {mediaAttachments.length === 0 ? (
+                  {conversationMedia.length === 0 ? (
                     <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "10px 0" }}>Chưa có ảnh nào</div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
-                      {mediaAttachments.slice(0, 9).map((a, i) => (
-                        <a key={`${a.msgId}-${i}`} href={a.url || a.thumb} target="_blank" rel="noreferrer"
-                          style={{ display: "block", aspectRatio: "1", borderRadius: 6, overflow: "hidden", background: T.sidebarHover, position: "relative" }}>
-                          <img src={a.thumb || a.url} alt=""
+                      {conversationMedia.slice(0, 9).map((a, i) => (
+                        <button key={`${a.msgId}-${i}`} type="button" onClick={() => a.type === "image"
+                          ? setLightbox({ images: conversationImageUrls, currentIndex: Math.max(0, conversationImageUrls.indexOf(a.url || a.thumb || "")) })
+                          : window.open(a.url || a.thumb, "_blank")}
+                          aria-label={a.type === "video" ? "Mở video" : "Mở ảnh"}
+                          style={{ display: "block", padding: 0, aspectRatio: "1", cursor: "pointer", border: 0, borderRadius: 6, overflow: "hidden", background: T.sidebarHover, position: "relative" }}>
+                          <img src={getZaloImageUrl(a.thumb || (a.type === "image" ? a.url : undefined))} alt={a.type === "video" ? "Ảnh bìa video" : "Ảnh hội thoại"}
                             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                           {a.type === "video" && (
                             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}>
                               <div style={{ width: 0, height: 0, borderTop: "7px solid transparent", borderBottom: "7px solid transparent", borderLeft: "12px solid white", marginLeft: 2 }} />
                             </div>
                           )}
-                        </a>
+                        </button>
                       ))}
                     </div>
                   )}
-                  {mediaAttachments.length > 9 && (
-                    <div style={{ fontSize: 12, color: T.accent, textAlign: "center", marginTop: 8, cursor: "pointer" }}>Xem tất cả {mediaAttachments.length} ảnh/video</div>
+                  {conversationMedia.length > 9 && (
+                    <button type="button" onClick={() => setShowAllConversationMedia(true)} style={{ width: "100%", padding: "8px 0 0", cursor: "pointer", border: 0, background: "transparent", fontSize: 12, color: T.accent, textAlign: "center" }}>Xem tất cả {conversationMedia.length} ảnh/video</button>
                   )}
                 </div>
 
                 <div style={{ padding: "0 16px 12px", borderTop: `1px solid ${T.sidebarBorder}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0 10px" }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: T.textSecondary }}>File</span>
-                    <span style={{ fontSize: 11, color: T.textMuted }}>{fileAttachments.length > 0 ? `${fileAttachments.length} mục` : ""}</span>
+                    <span style={{ fontSize: 11, color: T.textMuted }}>{conversationFiles.length > 0 ? `${conversationFiles.length} mục` : ""}</span>
                   </div>
-                  {fileAttachments.length === 0 ? (
+                  {conversationFiles.length === 0 ? (
                     <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "6px 0" }}>Chưa có file nào</div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {fileAttachments.slice(0, 5).map((a, i) => (
+                      {conversationFiles.slice(0, 5).map((a, i) => (
                         <a key={`${a.msgId}-${i}`} href={a.url} target="_blank" rel="noreferrer"
                           style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: T.sidebarHover, borderRadius: 8, textDecoration: "none", border: `1px solid ${T.sidebarBorder}` }}>
                           <div style={{ width: 32, height: 32, borderRadius: 6, background: T.accent + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -2102,10 +2284,11 @@ export default function ZaloInboxClient() {
                       ))}
                     </div>
                   )}
+                  {conversationFiles.length > 5 && (
+                    <button type="button" onClick={() => setShowAllConversationFiles(true)} style={{ width: "100%", padding: "9px 0 0", cursor: "pointer", border: 0, background: "transparent", fontSize: 12, color: T.accent, textAlign: "center" }}>Xem tất cả {conversationFiles.length} file</button>
+                  )}
                 </div>
               </>
-            );
-          })()}
         </div>
       )}
 

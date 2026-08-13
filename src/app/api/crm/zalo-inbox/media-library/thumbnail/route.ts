@@ -6,6 +6,7 @@ import { getMediaObject, setMediaRetained, storeMediaObject } from "@/lib/media-
 import { getZaloMediaAsset } from "@/lib/zalo-media-library-store";
 import {
   createZaloMediaThumbnail,
+  createZaloVideoThumbnail,
   getZaloMediaThumbnailKey,
   ZALO_MEDIA_THUMBNAIL_CACHE_CONTROL,
 } from "@/lib/zalo-media-thumbnails";
@@ -35,8 +36,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const asset = await getZaloMediaAsset(id);
-    if (!asset || asset.mediaKind !== "image") {
-      return NextResponse.json({ error: "Không tìm thấy ảnh" }, { status: 404 });
+    if (!asset || (asset.mediaKind !== "image" && asset.mediaKind !== "video")) {
+      return NextResponse.json({ error: "Không tìm thấy media" }, { status: 404 });
     }
 
     const thumbnailKey = getZaloMediaThumbnailKey(asset.id);
@@ -46,7 +47,9 @@ export async function GET(req: NextRequest) {
     } catch (error) {
       if (!isMissingObject(error)) throw error;
       const source = await objectBytes(asset.objectKey);
-      bytes = await createZaloMediaThumbnail(source);
+      bytes = asset.mediaKind === "video"
+        ? await createZaloVideoThumbnail(source)
+        : await createZaloMediaThumbnail(source);
       await storeMediaObject({
         body: bytes,
         key: thumbnailKey,
@@ -61,7 +64,7 @@ export async function GET(req: NextRequest) {
       await setMediaRetained(thumbnailKey, true, session?.staffId || "system");
     }
 
-    return new NextResponse(bytes, {
+    return new NextResponse(new Uint8Array(bytes), {
       status: 200,
       headers: {
         "Content-Type": "image/webp",

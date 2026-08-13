@@ -3,6 +3,7 @@ import { getCrmSession } from "@/lib/admin-auth";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import {
   createZaloMediaThumbnail,
+  createZaloVideoThumbnail,
   getZaloMediaThumbnailKey,
   ZALO_MEDIA_THUMBNAIL_CACHE_CONTROL,
 } from "@/lib/zalo-media-thumbnails";
@@ -117,9 +118,11 @@ export async function POST(req: NextRequest) {
       createdBy: actor,
     });
     await setMediaRetained(stored.key, true, actor);
-    if (mediaKind === "image") {
+    if (mediaKind === "image" || mediaKind === "video") {
       try {
-        const thumbnail = await createZaloMediaThumbnail(body);
+        const thumbnail = mediaKind === "video"
+          ? await createZaloVideoThumbnail(body)
+          : await createZaloMediaThumbnail(body);
         storedThumbnailKey = getZaloMediaThumbnailKey(assetId);
         await storeMediaObject({
           body: thumbnail,
@@ -134,7 +137,7 @@ export async function POST(req: NextRequest) {
         });
         await setMediaRetained(storedThumbnailKey, true, actor);
       } catch (error) {
-        // Ảnh gốc vẫn hợp lệ; thumbnail sẽ được tạo lười ở lần mở thư viện kế tiếp.
+        // Media gốc vẫn hợp lệ; thumbnail sẽ được tạo lười ở lần mở thư viện kế tiếp.
         storedThumbnailKey = "";
         console.warn("[zalo-media-library] Không tạo được thumbnail lúc upload:", error);
       }
