@@ -6,12 +6,13 @@ import {
   Download, ZoomIn, Reply, ChevronLeft,
   Image as ImageIcon, Bell, BellOff, Volume2, VolumeX, Smile,
   ChevronDown, CheckCheck, MoreVertical, Hash, Info,
-  File as FileIcon, Users, UserPlus, Bot, ShoppingBag as CatalogIcon,
+  File as FileIcon, Users, UserPlus, Bot, ShoppingBag as CatalogIcon, FolderOpen,
 } from "lucide-react";
 import ZaloFriendsPanel from "./ZaloFriendsPanel";
 import ZaloGroupsPanel from "./ZaloGroupsPanel";
 import ZaloAutoReplyPanel from "./ZaloAutoReplyPanel";
 import ZaloCatalogPanel from "./ZaloCatalogPanel";
+import ZaloMediaLibraryPanel from "./ZaloMediaLibraryPanel";
 import ZaloLeadLinkModal from "./ZaloLeadLinkModal";
 import styles from "./ZaloInboxClient.module.css";
 import {
@@ -988,7 +989,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
 
 // ─── Main Component ───────────────────────────────────────────────────────────────────
 export default function ZaloInboxClient() {
-  const [mainView, setMainView] = useState<"messages" | "friends" | "groups" | "auto-reply" | "catalog">("messages");
+  const [mainView, setMainView] = useState<"messages" | "friends" | "groups" | "auto-reply" | "media-library" | "catalog">("messages");
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
   const [conversations, setConversations] = useState<ZaloConversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<ZaloConversation | null>(null);
@@ -1009,6 +1010,8 @@ export default function ZaloInboxClient() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const [showMediaLibraryPicker, setShowMediaLibraryPicker] = useState(false);
+  const [sendingLibrary, setSendingLibrary] = useState(false);
   const [replyContext, setReplyContext] = useState<ReplyContext | null>(null);
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [msgSearchQuery, setMsgSearchQuery] = useState("");
@@ -1438,6 +1441,44 @@ export default function ZaloInboxClient() {
     }
   };
 
+  const handleSendLibraryAssets = async (assetIds: string[]) => {
+    if (!selectedConv || !assetIds.length || sendingLibrary) return;
+    const conversationId = selectedConv.id;
+    setSendingLibrary(true);
+    setUploadError(null);
+    try {
+      const response = await fetch("/api/crm/zalo-inbox/media-library/send", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, assetIds }),
+      });
+      const data = await response.json().catch(() => ({ error: "Phản hồi gửi thư viện không hợp lệ" }));
+      if (!response.ok) throw new Error(data.error || "Không gửi được tài liệu từ thư viện");
+
+      const sentMessages = Array.isArray(data.messages) ? data.messages as ZaloMessage[] : [];
+      const failures = Array.isArray(data.failures) ? data.failures as Array<{ name?: string }> : [];
+      sentMessages.forEach(message => mergeSentMessage(message));
+      if (sentMessages.length) {
+        const latest = sentMessages[sentMessages.length - 1];
+        setConversations(previous => previous.map(conversation => conversation.id === conversationId
+          ? { ...conversation, lastMessage: sentMessages.length > 1 ? `[${sentMessages.length} tài liệu]` : latest.content, lastMessageAt: latest.createdAt }
+          : conversation));
+        if (!failures.length) setShowMediaLibraryPicker(false);
+        forceScrollToLatestRef.current = true;
+        window.setTimeout(() => loadMessages(conversationId, true), 800);
+      }
+      if (failures.length) {
+        const failedNames = failures.map(failure => failure.name).filter(Boolean).join(", ");
+        setUploadError(`Đã gửi ${sentMessages.length}/${assetIds.length} tài liệu. Chưa gửi được: ${failedNames || "một số tài liệu"}.`);
+      }
+    } catch (cause) {
+      setUploadError(cause instanceof Error ? cause.message : "Không gửi được tài liệu từ thư viện");
+    } finally {
+      setSendingLibrary(false);
+    }
+  };
+
   const markUnread = useCallback(async (convId: string) => {
     setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: Math.max(c.unreadCount || 0, 1) } : c));
     try { await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread`, { method: "POST", credentials: "include" }); } catch { }
@@ -1479,6 +1520,7 @@ export default function ZaloInboxClient() {
     { id: "friends" as const, label: "Danh bạ", icon: UserPlus, badge: pendingFriendCount },
     { id: "groups" as const, label: "Nhóm", icon: Users },
     { id: "auto-reply" as const, label: "Tự động", icon: Bot },
+    { id: "media-library" as const, label: "Thư viện", icon: FolderOpen },
     { id: "catalog" as const, label: "Catalogue", icon: CatalogIcon },
   ];
 
@@ -1519,6 +1561,7 @@ export default function ZaloInboxClient() {
     friends: "Quản lý bạn bè",
     groups: "Quản lý nhóm",
     "auto-reply": "Trả lời tự động",
+    "media-library": "Thư viện media dùng chung",
     catalog: "Catalog sản phẩm",
   };
 
@@ -1562,6 +1605,7 @@ export default function ZaloInboxClient() {
           />}
           {mainView === "groups" && <ZaloGroupsPanel onClose={() => setMainView("messages")} />}
           {mainView === "auto-reply" && <ZaloAutoReplyPanel onClose={() => setMainView("messages")} />}
+          {mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
           {mainView === "catalog" && <ZaloCatalogPanel onClose={() => setMainView("messages")} />}
         </div>
       </div>
@@ -1573,6 +1617,14 @@ export default function ZaloInboxClient() {
       {workspaceHeader}
       <div className={styles.inboxFrame} data-has-selection={String(!!selectedConv)}>
       {lightbox && <Lightbox state={lightbox} onClose={() => setLightbox(null)} />}
+      {showMediaLibraryPicker && (
+        <ZaloMediaLibraryPanel
+          mode="picker"
+          sending={sendingLibrary}
+          onClose={() => setShowMediaLibraryPicker(false)}
+          onSend={handleSendLibraryAssets}
+        />
+      )}
 
       {/* Context menu */}
       {contextMenu && (
@@ -1841,6 +1893,12 @@ export default function ZaloInboxClient() {
               <button onClick={() => mediaInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh/video"
                 style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.accent, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
                 <ImageIcon size={16} />
+              </button>
+
+              {/* Shared media library */}
+              <button onClick={() => setShowMediaLibraryPicker(true)} disabled={uploadingFile || sendingLibrary || !selectedConv} title="Chọn từ thư viện media"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: "#A77B12", cursor: uploadingFile || sendingLibrary ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile || sendingLibrary ? 0.5 : 1 }}>
+                <FolderOpen size={16} />
               </button>
 
               {/* Document */}

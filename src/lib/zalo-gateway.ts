@@ -1109,6 +1109,11 @@ export async function sendZaloAttachment(params: {
   width?: number;
   height?: number;
   duration?: number;
+  /** URL file gốc đã tồn tại trong thư viện dùng chung. */
+  stableUrl?: string;
+  stableThumb?: string;
+  /** Không mirror thêm một bản vào Bucket sau khi gửi. */
+  skipMirror?: boolean;
 }): Promise<{ success: boolean; messageId?: string; message?: ZaloInboxMessageDto; error?: string }> {
   // Tự động kết nối lại nếu server vừa restart
   await ensureZaloConnected();
@@ -1268,8 +1273,8 @@ export async function sendZaloAttachment(params: {
       type: attachType,
       // Video native đã có URL bền vững trước khi gửi; ảnh/file tiếp tục dùng
       // blob preview trong lúc tác vụ mirror chạy nền.
-      url: persistentUrl,
-      thumb: persistentThumb,
+      url: params.stableUrl || persistentUrl,
+      thumb: params.stableThumb ?? persistentThumb,
       width,
       height,
       fileName: sentFileName,
@@ -1301,19 +1306,21 @@ export async function sendZaloAttachment(params: {
     // Không upload Zalo lần hai và không bắt response chờ Railway Bucket.
     // Buffer được giữ trong closure; bản sao ổn định sẽ upsert cùng msgId và
     // phát SSE khi hoàn tất.
-    scheduleOutgoingAttachmentMirror({
-      conversationId: params.conversationId,
-      fileBuffer: sentFileBuffer,
-      fileName: sentFileName,
-      mimeType: sentMimeType,
-      fileSize: sentFileSize,
-      msgId,
-      sentAt,
-      senderName,
-      attachType,
-      width,
-      height,
-    });
+    if (!params.skipMirror) {
+      scheduleOutgoingAttachmentMirror({
+        conversationId: params.conversationId,
+        fileBuffer: sentFileBuffer,
+        fileName: sentFileName,
+        mimeType: sentMimeType,
+        fileSize: sentFileSize,
+        msgId,
+        sentAt,
+        senderName,
+        attachType,
+        width,
+        height,
+      });
+    }
 
     console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}`);
     return {
