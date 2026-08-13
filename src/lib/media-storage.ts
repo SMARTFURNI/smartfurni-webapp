@@ -43,6 +43,7 @@ type BucketConfig = {
 
 let client: S3Client | null = null;
 let schemaReady: Promise<void> | null = null;
+let lastAutomaticCleanupAt = 0;
 
 function env(...names: string[]): string {
   for (const name of names) {
@@ -147,10 +148,16 @@ async function ensureMediaSchema(): Promise<void> {
         entity_id TEXT,
         created_by TEXT,
         expires_at TIMESTAMPTZ,
+        retained BOOLEAN NOT NULL DEFAULT FALSE,
+        retained_at TIMESTAMPTZ,
+        retained_by TEXT,
         deleted_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS retained BOOLEAN NOT NULL DEFAULT FALSE;
+      ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS retained_at TIMESTAMPTZ;
+      ALTER TABLE media_assets ADD COLUMN IF NOT EXISTS retained_by TEXT;
       CREATE INDEX IF NOT EXISTS idx_media_assets_entity
         ON media_assets(entity_type, entity_id)
         WHERE deleted_at IS NULL;
@@ -224,6 +231,7 @@ export async function storeMediaObject(input: StoreMediaObjectInput): Promise<St
     },
   }));
   await saveMetadata(input, key, size);
+  scheduleExpiredMediaCleanup();
   return {
     key,
     url: buildMediaUrl(key),
@@ -274,7 +282,8 @@ export async function cleanupExpiredMediaObjects(limit = 100): Promise<{
   await ensureMediaSchema();
   const rows = await query<{ object_key: string }>(
     `SELECT object_key FROM media_assets
-     WHERE expires_at IS NOT NULL AND expires_at <= NOW() AND deleted_at IS NULL
+     WHERE expires_at IS NOT NULL AND expires_at <= NOW()
+       AND retained = FALSE AND deleted_at IS NULL
      ORDER BY expires_at ASC LIMIT $1`,
     [Math.min(Math.max(limit, 1), 500)],
   );
@@ -290,6 +299,40 @@ export async function cleanupExpiredMediaObjects(limit = 100): Promise<{
     }
   }
   return { checked: rows.length, deleted, failed };
+}
+
+/**
+ * Dọn media hết hạn theo kiểu best-effort, tối đa một lần mỗi process/ngày.
+ * Việc dọn không nằm trên đường phản hồi upload nên không làm chậm người dùng.
+ */
+export function scheduleExpiredMediaCleanup(): void {
+  const now = Date.now();
+  if (now - lastAutomaticCleanupAt < 24 * 60 * 60 * 1000) return;
+  lastAutomaticCleanupAt = now;
+  setTimeout(() => {
+    void cleanupExpiredMediaObjects(250).catch((error) => {
+      console.error("[media-storage] Dọn media tự động thất bại:", error);
+      // Cho phép lần upload sau thử lại thay vì chờ đủ một ngày.
+      lastAutomaticCleanupAt = 0;
+    });
+  }, 0);
+}
+
+export async function setMediaRetained(
+  key: string,
+  retained: boolean,
+  actor?: string,
+): Promise<void> {
+  await ensureMediaSchema();
+  await query(
+    `UPDATE media_assets SET
+       retained = $2,
+       retained_at = CASE WHEN $2 THEN NOW() ELSE NULL END,
+       retained_by = CASE WHEN $2 THEN $3 ELSE NULL END,
+       updated_at = NOW()
+     WHERE object_key = $1 AND deleted_at IS NULL`,
+    [normalizeMediaKey(key), retained, actor || null],
+  );
 }
 
 export function isPublicMediaKey(key: string): boolean {

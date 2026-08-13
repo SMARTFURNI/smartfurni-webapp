@@ -120,7 +120,24 @@ function mergeRemoteWithRecentSent(
   previousMessages: ZaloMessage[],
   conversationId: string,
 ): ZaloMessage[] {
-  const remoteIds = new Set(remoteMessages.map(message => message.id));
+  const previousById = new Map(previousMessages.map(message => [message.id, message]));
+  const hydratedRemoteMessages = remoteMessages.map(message => {
+    const previous = previousById.get(message.id);
+    if (!previous) return message;
+
+    // Bản ghi đầu tiên của attachment được lưu ngay sau khi Zalo xác nhận gửi
+    // nên URL bền vững có thể chưa sẵn sàng. Giữ blob preview trên trình duyệt
+    // cho tới khi listener/Bucket cập nhật URL thật để ảnh không biến mất.
+    const remoteHasUsableAttachment = (message.attachments || [])
+      .some(attachment => Boolean(attachment.url || attachment.thumb));
+    const previousHasUsableAttachment = (previous.attachments || [])
+      .some(attachment => Boolean(attachment.url || attachment.thumb));
+    if (!remoteHasUsableAttachment && previousHasUsableAttachment) {
+      return { ...message, attachments: previous.attachments };
+    }
+    return message;
+  });
+  const remoteIds = new Set(hydratedRemoteMessages.map(message => message.id));
   const now = Date.now();
   // Zalo/DB đôi lúc đồng bộ chậm vài giây. Giữ tin vừa gửi trên màn hình
   // trong lúc chờ bản ghi phía máy chủ xuất hiện để tránh nhấp nháy/mất tin.
@@ -129,8 +146,53 @@ function mergeRemoteWithRecentSent(
     const createdAt = new Date(message.createdAt).getTime();
     return Number.isFinite(createdAt) && now - createdAt < 60_000;
   });
-  return [...remoteMessages, ...recentSentMessages]
+  return [...hydratedRemoteMessages, ...recentSentMessages]
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+}
+
+function withLocalAttachmentPreview(
+  message: ZaloMessage | undefined,
+  file: File,
+  previewUrl: string,
+): ZaloMessage | undefined {
+  if (!message) return message;
+  const type = file.type.startsWith("image/")
+    ? "image"
+    : file.type.startsWith("video/")
+      ? "video"
+      : "file";
+  const serverAttachment = message.attachments?.[0];
+  return {
+    ...message,
+    contentType: type,
+    attachments: [{
+      ...serverAttachment,
+      type,
+      url: previewUrl,
+      thumb: type === "file" ? serverAttachment?.thumb : previewUrl,
+      fileName: file.name,
+      fileSize: file.size,
+    }],
+  };
+}
+
+function releaseLocalPreviewLater(previewUrl: string, refresh: () => void): void {
+  // Đủ lâu để listener hoặc tác vụ lưu Bucket hoàn tất; sau đó tải lại URL thật
+  // rồi mới giải phóng blob URL khỏi bộ nhớ trình duyệt.
+  window.setTimeout(() => {
+    refresh();
+    window.setTimeout(() => URL.revokeObjectURL(previewUrl), 2_000);
+  }, 120_000);
+}
+
+function messageListSignature(messages: ZaloMessage[]): string {
+  return messages.map(message => [
+    message.id,
+    message.createdAt,
+    message.content,
+    message.contentType,
+    (message.attachments || []).map(attachment => `${attachment.url}|${attachment.thumb || ""}`).join(","),
+  ].join("~")).join("||");
 }
 
 function formatTime(iso: string | null | undefined): string {
@@ -895,6 +957,7 @@ export default function ZaloInboxClient() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const forceScrollToLatestRef = useRef(false);
 
   // ─── Load conversations ──────────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
@@ -915,12 +978,13 @@ export default function ZaloInboxClient() {
   }, []);
 
   // ─── Load messages ───────────────────────────────────────────────────────
-  const loadMessages = useCallback(async (convId: string) => {
+  const loadMessages = useCallback(async (convId: string, forceLatest = false) => {
     try {
       const res = await fetch(`/api/crm/zalo-inbox/conversations/${convId}/messages`, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       const remoteMessages: ZaloMessage[] = data.messages || [];
+      if (forceLatest) forceScrollToLatestRef.current = true;
       setMessages(previous => mergeRemoteWithRecentSent(remoteMessages, previous, convId));
       await fetch(`/api/crm/zalo-inbox/conversations/${convId}/read`, { method: "POST", credentials: "include" });
       setConversations(prev => prev.map(c => c.id === convId ? { ...c, unreadCount: 0 } : c));
@@ -929,6 +993,7 @@ export default function ZaloInboxClient() {
 
   const mergeSentMessage = useCallback((message: ZaloMessage | undefined) => {
     if (!message?.id) return;
+    forceScrollToLatestRef.current = true;
     setMessages(previous => {
       const exists = previous.some(item => item.id === message.id);
       const next = exists
@@ -1003,10 +1068,8 @@ export default function ZaloInboxClient() {
               const msgData = await msgRes.json();
               const newMsgs: ZaloMessage[] = msgData.messages || [];
               setMessages(prev => {
-                if (newMsgs.length !== prev.length || newMsgs[newMsgs.length - 1]?.id !== prev[prev.length - 1]?.id) {
-                  return mergeRemoteWithRecentSent(newMsgs, prev, currentConv.id);
-                }
-                return prev;
+                const merged = mergeRemoteWithRecentSent(newMsgs, prev, currentConv.id);
+                return messageListSignature(merged) !== messageListSignature(prev) ? merged : prev;
               });
             }
           }
@@ -1056,10 +1119,8 @@ export default function ZaloInboxClient() {
                   if (d?.messages) {
                     setMessages(prev => {
                       const newMsgs: ZaloMessage[] = d.messages;
-                      if (newMsgs.length !== prev.length || newMsgs[newMsgs.length - 1]?.id !== prev[prev.length - 1]?.id) {
-                        return mergeRemoteWithRecentSent(newMsgs, prev, currentConvId);
-                      }
-                      return prev;
+                      const merged = mergeRemoteWithRecentSent(newMsgs, prev, currentConvId);
+                      return messageListSignature(merged) !== messageListSignature(prev) ? merged : prev;
                     });
                   }
                 })
@@ -1099,7 +1160,13 @@ export default function ZaloInboxClient() {
     const container = messagesContainerRef.current;
     if (!container) { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); return; }
     const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-    if (distFromBottom < 200) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (forceScrollToLatestRef.current || distFromBottom < 200) {
+      const force = forceScrollToLatestRef.current;
+      forceScrollToLatestRef.current = false;
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: force ? "auto" : "smooth", block: "end" });
+      });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -1161,7 +1228,7 @@ export default function ZaloInboxClient() {
     setReplyContext(null);
     setMsgSearchQuery("");
     setShowMsgSearch(false);
-    loadMessages(conv.id);
+    loadMessages(conv.id, true);
   };
 
   const handleSend = async () => {
@@ -1195,7 +1262,7 @@ export default function ZaloInboxClient() {
         setConversations(previous => previous.map(conversation => conversation.id === selectedConv.id
           ? { ...conversation, lastMessage: fullText, lastMessageAt: data.message?.createdAt || new Date().toISOString() }
           : conversation));
-        setTimeout(() => loadMessages(selectedConv.id), 800);
+        setTimeout(() => loadMessages(selectedConv.id, true), 800);
       }
     } catch { setInputText(text); }
     finally { setSending(false); }
@@ -1205,18 +1272,27 @@ export default function ZaloInboxClient() {
     const file = e.target.files?.[0];
     if (!file || !selectedConv) return;
     e.target.value = "";
+    const conversationId = selectedConv.id;
+    const previewUrl = URL.createObjectURL(file);
     setUploadError(null); setUploadingFile(true);
     try {
       const formData = new FormData();
-      formData.append("file", file); formData.append("conversationId", selectedConv.id);
+      formData.append("file", file); formData.append("conversationId", conversationId);
       const res = await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: formData });
       const data = await res.json();
-      if (!res.ok) setUploadError(data.error || "Lỗi gửi file");
-      else {
-        mergeSentMessage(data.message);
-        setTimeout(() => loadMessages(selectedConv.id), 800);
+      if (!res.ok) {
+        URL.revokeObjectURL(previewUrl);
+        setUploadError(data.error || "Lỗi gửi file");
       }
-    } catch { setUploadError("Lỗi kết nối"); }
+      else {
+        mergeSentMessage(withLocalAttachmentPreview(data.message, file, previewUrl));
+        setTimeout(() => loadMessages(conversationId, true), 800);
+        releaseLocalPreviewLater(previewUrl, () => loadMessages(conversationId));
+      }
+    } catch {
+      URL.revokeObjectURL(previewUrl);
+      setUploadError("Lỗi kết nối");
+    }
     finally { setUploadingFile(false); }
   };
 
@@ -1231,7 +1307,6 @@ export default function ZaloInboxClient() {
     if (!selectedConv || !pendingFiles.length || uploadingFile) return;
     setUploadingFile(true); setUploadError(null);
     const toSend = [...pendingFiles];
-    let sentAll = false;
     try {
       for (const pf of toSend) {
         const fd = new FormData();
@@ -1239,17 +1314,18 @@ export default function ZaloInboxClient() {
         const response = await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: fd });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || `Không gửi được ${pf.file.name}`);
-        mergeSentMessage(data.message);
+        mergeSentMessage(withLocalAttachmentPreview(data.message, pf.file, pf.previewUrl));
       }
       setPendingFiles([]);
-      sentAll = true;
-      setTimeout(() => loadMessages(selectedConv.id), 800);
+      const conversationId = selectedConv.id;
+      setTimeout(() => loadMessages(conversationId, true), 800);
+      toSend.forEach(file => {
+        releaseLocalPreviewLater(file.previewUrl, () => loadMessages(conversationId));
+      });
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Lỗi gửi ảnh");
     } finally {
-      if (sentAll) {
-        toSend.forEach(file => URL.revokeObjectURL(file.previewUrl));
-      }
+      // Blob preview được giải phóng sau khi URL bền vững đã đồng bộ.
       setUploadingFile(false);
     }
   };
@@ -1365,7 +1441,7 @@ export default function ZaloInboxClient() {
                 setMsgSearchQuery("");
                 setShowMsgSearch(false);
                 // Load lịch sử tin nhắn nếu có
-                loadMessages(userId);
+                loadMessages(userId, true);
               }
             }}
           />}

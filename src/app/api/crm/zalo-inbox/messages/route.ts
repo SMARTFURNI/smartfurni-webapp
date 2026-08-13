@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
-import { query } from "@/lib/db";
+import { getRecentCanonicalZaloMessages } from "@/lib/zalo-inbox-message-store";
 import {
   recallZaloMessage,
   addZaloReaction,
@@ -13,19 +13,6 @@ import {
 } from "@/lib/zalo-gateway";
 
 export const dynamic = "force-dynamic";
-
-interface MessageRow {
-  msg_id: string;
-  thread_id: string;
-  from_id: string;
-  to_id: string;
-  sender_name: string;
-  content: string;
-  attachments: string;
-  msg_type: string;
-  is_self: boolean;
-  timestamp: string;
-}
 
 export async function GET(request: NextRequest) {
   if (!await getAuthorizedZaloInboxSession()) {
@@ -50,14 +37,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "threadId is required" }, { status: 400 });
     }
 
-    const rows = await query<MessageRow>(
-      `SELECT msg_id, thread_id, from_id, to_id, sender_name, content, attachments, msg_type, is_self, timestamp
-       FROM zalo_inbox_messages
-       WHERE thread_id = $1
-       ORDER BY timestamp ASC
-       LIMIT $2`,
-      [threadId, limit]
-    );
+    const rows = await getRecentCanonicalZaloMessages(threadId, limit, 0);
 
     const messages = rows.map((row) => ({
       msgId: row.msg_id,

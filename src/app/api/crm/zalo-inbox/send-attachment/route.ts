@@ -10,7 +10,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { sendZaloAttachment } from "@/lib/zalo-gateway";
-import { upsertConversation } from "@/lib/zalo-inbox-store";
+import {
+  formatZaloMediaLimit,
+  getZaloMediaKind,
+  getZaloMediaMaxBytes,
+} from "@/lib/zalo-media-policy";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,11 +37,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Kiểm tra kích thước file (tối đa 50MB)
-    const MAX_SIZE = 50 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
+    const mimeType = file.type || "application/octet-stream";
+    const mediaKind = getZaloMediaKind(mimeType);
+    if (file.size > getZaloMediaMaxBytes(mediaKind)) {
       return NextResponse.json(
-        { error: "File quá lớn. Tối đa 50MB." },
+        { error: `File quá lớn. ${mediaKind === "image" ? "Ảnh" : mediaKind === "video" ? "Video" : "File"} tối đa ${formatZaloMediaLimit(mediaKind)}.` },
         { status: 400 }
       );
     }
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
       conversationId,
       fileBuffer,
       fileName: file.name,
-      mimeType: file.type || "application/octet-stream",
+      mimeType,
       fileSize: file.size,
     });
 
@@ -60,20 +64,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Upsert conversation với last message là tên file
-    const mimeType = file.type || "";
-    const fileLabel = mimeType.startsWith("image/") ? "[Hình ảnh]"
-      : mimeType.startsWith("video/") ? "[Video]"
-      : `[File: ${file.name}]`;
-    try {
-      await upsertConversation({
-        id: conversationId,
-        zaloUserId: conversationId,
-        displayName: conversationId,
-        lastMessage: fileLabel,
-      });
-    } catch { /* ignore */ }
 
     return NextResponse.json({
       success: true,

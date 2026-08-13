@@ -194,6 +194,7 @@ export async function upsertConversation(conv: {
   displayName: string;
   avatarUrl?: string | null;
   lastMessage?: string | null;
+  lastMessageAt?: string | number | Date | null;
   leadId?: string | null;
 }): Promise<void> {
   const db = getDb();
@@ -201,7 +202,7 @@ export async function upsertConversation(conv: {
   await db.query(
     `INSERT INTO zalo_conversations
      (id, zalo_user_id, phone, display_name, avatar_url, last_message, last_message_at, lead_id, updated_at)
-     VALUES ($1, COALESCE(NULLIF($2, ''), $1), NULLIF($3, ''), $4, $5, $6, NOW(), $7, NOW())
+     VALUES ($1, COALESCE(NULLIF($2, ''), $1), NULLIF($3, ''), $4, $5, $6, COALESCE($8::timestamptz, NOW()), $7, NOW())
      ON CONFLICT (id) DO UPDATE SET
        zalo_user_id = COALESCE(NULLIF($2, ''), zalo_conversations.zalo_user_id, $1),
        phone = COALESCE(NULLIF($3, ''), zalo_conversations.phone),
@@ -211,8 +212,12 @@ export async function upsertConversation(conv: {
          ELSE $4
        END,
        avatar_url = COALESCE($5, zalo_conversations.avatar_url),
-       last_message = COALESCE($6, zalo_conversations.last_message),
-       last_message_at = NOW(),
+       last_message = CASE
+         WHEN COALESCE($8::timestamptz, NOW()) >= zalo_conversations.last_message_at
+           THEN COALESCE($6, zalo_conversations.last_message)
+         ELSE zalo_conversations.last_message
+       END,
+       last_message_at = GREATEST(zalo_conversations.last_message_at, COALESCE($8::timestamptz, NOW())),
        lead_id = COALESCE($7, zalo_conversations.lead_id),
        updated_at = NOW()`,
     [
@@ -223,6 +228,7 @@ export async function upsertConversation(conv: {
       conv.avatarUrl || null,
       conv.lastMessage ?? null,
       conv.leadId || null,
+      conv.lastMessageAt == null ? null : new Date(conv.lastMessageAt).toISOString(),
     ]
   );
 }
@@ -331,10 +337,13 @@ export async function getMessages(conversationId: string, limit = 100, offset = 
   const db = getDb();
   await ensureZaloInboxTables();
   const res = await db.query(
-    `SELECT * FROM zalo_messages 
-     WHERE conversation_id = $1 
-     ORDER BY created_at ASC 
-     LIMIT $2 OFFSET $3`,
+    `SELECT * FROM (
+       SELECT * FROM zalo_messages
+       WHERE conversation_id = $1
+       ORDER BY created_at DESC, id DESC
+       LIMIT $2 OFFSET $3
+     ) recent
+     ORDER BY created_at ASC, id ASC`,
     [conversationId, limit, offset]
   );
   return res.rows.map(mapZaloMessage);

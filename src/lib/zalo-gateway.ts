@@ -12,10 +12,19 @@ const { Zalo, ThreadType, LoginQRCallbackEventType } = require("zca-js");
 import { query, queryOne } from "./db";
 import { upsertConversation, incrementUnreadCount } from "./zalo-inbox-store";
 import {
+  ensureCanonicalZaloMessageSchema,
+  upsertCanonicalZaloMessage,
+} from "./zalo-inbox-message-store";
+import {
   isRailwayBucketConfigured,
   sanitizeMediaSegment,
   storeMediaObject,
 } from "./media-storage";
+import {
+  getZaloMediaExpiresAt,
+  getZaloMediaKind,
+  getZaloMediaMaxBytes,
+} from "./zalo-media-policy";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,6 +137,9 @@ let isConnected = false;
 let isConnecting = false;
 let currentUserId = "";
 let currentUserDisplayName = ""; // Tên hiển thị của tài khoản Zalo đang đăng nhập
+let listenerRetrying = false;
+let autoReconnectDone = false;
+let autoReconnectPromise: Promise<void> | null = null;
 let qrCallbackFn: ((qrBase64: string) => void) | null = null;
 let loginResolve: ((api: unknown) => void) | null = null;
 let loginReject: ((err: Error) => void) | null = null;
@@ -169,7 +181,7 @@ export function getGatewayStatus() {
     userId: currentUserId || null,
     phone: currentUserId || null,
     displayName: currentUserDisplayName || null,
-    status: isConnected ? "connected" : isConnecting ? "connecting" : "disconnected",
+    status: isConnected ? "connected" : isConnecting ? "connecting" : listenerRetrying ? "reconnecting" : "disconnected",
   };
 }
 
@@ -190,27 +202,7 @@ async function ensureZaloTables() {
     )
   `);
 
-  await query(`
-    CREATE TABLE IF NOT EXISTS zalo_inbox_messages (
-      id SERIAL PRIMARY KEY,
-      msg_id TEXT UNIQUE NOT NULL,
-      thread_id TEXT NOT NULL,
-      from_id TEXT NOT NULL,
-      to_id TEXT NOT NULL,
-      sender_name TEXT,
-      content TEXT,
-      attachments TEXT DEFAULT '[]',
-      msg_type TEXT DEFAULT 'text',
-      is_self BOOLEAN DEFAULT FALSE,
-      timestamp BIGINT NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-
-  await query(`CREATE INDEX IF NOT EXISTS idx_zalo_msgs_thread ON zalo_inbox_messages(thread_id)`);
-  await query(`CREATE INDEX IF NOT EXISTS idx_zalo_msgs_ts ON zalo_inbox_messages(timestamp DESC)`);
-  // Migrate: thêm cột sender_name nếu chưa có
-  await query(`ALTER TABLE zalo_inbox_messages ADD COLUMN IF NOT EXISTS sender_name TEXT`).catch(() => {});
+  await ensureCanonicalZaloMessageSchema();
 }
 
 export async function saveCredentials(creds: ZaloCredentials, userId?: string, displayName?: string, avatar?: string) {
@@ -251,35 +243,21 @@ export async function loadCredentials(): Promise<ZaloCredentials | null> {
   }
 }
 
-export async function saveMessage(msg: ZaloMessage & { senderName?: string }) {
-  try {
-    await ensureZaloTables();
-    await query(
-      `INSERT INTO zalo_inbox_messages (msg_id, thread_id, from_id, to_id, sender_name, content, attachments, msg_type, is_self, timestamp)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       ON CONFLICT (msg_id) DO UPDATE SET
-         sender_name = COALESCE(EXCLUDED.sender_name, zalo_inbox_messages.sender_name),
-         content = CASE WHEN EXCLUDED.content <> '' THEN EXCLUDED.content ELSE zalo_inbox_messages.content END,
-         attachments = CASE WHEN EXCLUDED.attachments <> '[]' THEN EXCLUDED.attachments ELSE zalo_inbox_messages.attachments END,
-         msg_type = EXCLUDED.msg_type,
-         is_self = EXCLUDED.is_self,
-         timestamp = EXCLUDED.timestamp`,
-      [
-        msg.msgId,
-        msg.isSelf ? msg.toId : msg.fromId,
-        msg.fromId,
-        msg.toId,
-        msg.senderName || null,
-        msg.content || "",
-        JSON.stringify(msg.attachments),
-        msg.type,
-        msg.isSelf,
-        msg.timestamp,
-      ]
-    );
-  } catch (err) {
-    console.error("[ZaloGateway] saveMessage error:", err);
-  }
+export async function saveMessage(msg: ZaloMessage & { senderName?: string; threadId?: string }) {
+  const threadId = msg.threadId || (msg.isSelf ? msg.toId : msg.fromId);
+  if (!threadId) throw new Error("Tin nhắn Zalo không có threadId");
+  return upsertCanonicalZaloMessage({
+    msgId: msg.msgId,
+    threadId,
+    fromId: msg.fromId,
+    toId: msg.toId,
+    senderName: msg.senderName || null,
+    content: msg.content,
+    attachments: msg.attachments,
+    msgType: msg.type,
+    isSelf: msg.isSelf,
+    timestamp: msg.timestamp,
+  });
 }
 
 // ─── Message Processing ───────────────────────────────────────────────────────
@@ -347,6 +325,15 @@ function parseAttachments(data: Record<string, unknown>): ZaloAttachment[] {
   const rootParams = asRecord(data.params);
   if (rootParams) extractFromRecord(rootParams);
 
+  // zca-js có thể trả nội dung attachment dưới dạng chuỗi JSON, trong đó
+  // params lại là một chuỗi JSON lồng nhau.
+  const stringContent = asRecord(data.content);
+  if (stringContent) {
+    extractFromRecord(stringContent, String(stringContent.type || data.msgType || ""));
+    const nestedParams = asRecord(stringContent.params);
+    if (nestedParams) extractFromRecord(nestedParams, String(stringContent.type || data.msgType || ""));
+  }
+
   // Handle content as object (new format)
   if (data.content && typeof data.content === "object") {
     const content = data.content as Record<string, unknown>;
@@ -363,7 +350,10 @@ function processIncomingMessage(message: Record<string, unknown>): ZaloMessage |
     const data = message.data as Record<string, unknown>;
     if (!data) return null;
 
-    const isPlainText = typeof data.content === "string";
+    const stringContentIsJson = typeof data.content === "string" && Boolean((() => {
+      try { return JSON.parse(data.content as string); } catch { return null; }
+    })());
+    const isPlainText = typeof data.content === "string" && !stringContentIsJson;
     const attachments = parseAttachments(data);
     let msgType: ZaloMessage["type"] = "other";
 
@@ -377,9 +367,18 @@ function processIncomingMessage(message: Record<string, unknown>): ZaloMessage |
       msgType = "file";
     }
 
-    const msgId = (data.msgId as string) || (data.clientId as string) || `${Date.now()}`;
-    const fromId = (data.uidFrom as string) || "";
-    const toId = (data.idTo as string) || "";
+    // msgId/cliMsgId trong zca-js có thể là string hoặc number. Ép kiểu
+    // ngay tại biên hệ thống để cùng một message không bị tạo hai bản ghi
+    // khác nhau giữa event realtime, old_messages và API gửi tin.
+    const msgId = String(
+      data.msgId
+      || data.realMsgId
+      || data.cliMsgId
+      || data.clientId
+      || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    );
+    const fromId = String(data.uidFrom || "");
+    const toId = String(data.idTo || "");
     const isSelf = (message.isSelf as boolean) || false;
     const rawTimestamp = Number(data.ts || Date.now());
     // Một số event Zalo trả ts theo giây, một số trả theo mili-giây.
@@ -412,22 +411,125 @@ function processIncomingMessage(message: Record<string, unknown>): ZaloMessage |
   }
 }
 
+const MAX_MIRRORED_ZALO_MEDIA_BYTES = 40 * 1024 * 1024;
+
+function isRemoteZaloMediaUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+    const host = url.hostname.toLowerCase();
+    return host === "zalo.me"
+      || host.endsWith(".zalo.me")
+      || host.endsWith(".zadn.vn")
+      || host.endsWith(".zdn.vn");
+  } catch {
+    return false;
+  }
+}
+
+function extensionForContentType(contentType: string, sourceUrl: string): string {
+  const normalized = contentType.split(";", 1)[0].trim().toLowerCase();
+  const known: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "video/mp4": "mp4",
+    "video/quicktime": "mov",
+    "application/pdf": "pdf",
+  };
+  if (known[normalized]) return known[normalized];
+  try {
+    const match = new URL(sourceUrl).pathname.match(/\.([a-z0-9]{2,8})$/i);
+    if (match?.[1]) return sanitizeMediaSegment(match[1], "bin");
+  } catch { /* ignore */ }
+  return "bin";
+}
+
+async function mirrorIncomingAttachments(
+  threadId: string,
+  msgId: string,
+  attachments: ZaloAttachment[],
+): Promise<ZaloAttachment[]> {
+  if (!isRailwayBucketConfigured() || attachments.length === 0) return attachments;
+
+  return Promise.all(attachments.map(async (attachment, index) => {
+    if (!attachment.url || attachment.url.startsWith("/api/media/") || !isRemoteZaloMediaUrl(attachment.url)) {
+      return attachment;
+    }
+    try {
+      const response = await fetch(attachment.url, {
+        headers: {
+          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,video/*,application/pdf,*/*;q=0.8",
+          Referer: "https://chat.zalo.me/",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/133 Safari/537.36",
+        },
+        signal: AbortSignal.timeout(12_000),
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const declaredSize = Number(response.headers.get("content-length") || 0);
+      const mediaKind = attachment.type === "image" ? "image" : attachment.type === "video" ? "video" : "file";
+      const maxBytes = Math.min(MAX_MIRRORED_ZALO_MEDIA_BYTES, getZaloMediaMaxBytes(mediaKind));
+      if (declaredSize > maxBytes) throw new Error("media vượt giới hạn lưu trữ");
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (!buffer.length || buffer.length > maxBytes) {
+        throw new Error("media rỗng hoặc vượt giới hạn lưu trữ");
+      }
+      const contentType = response.headers.get("content-type")?.split(";", 1)[0]
+        || (attachment.type === "image" ? "image/jpeg" : attachment.type === "video" ? "video/mp4" : "application/octet-stream");
+      const extension = extensionForContentType(contentType, attachment.url);
+      const originalName = attachment.fileName
+        || `zalo-${attachment.type}-${index + 1}.${extension}`;
+      const stored = await storeMediaObject({
+        body: buffer,
+        key: `zalo-inbox/${sanitizeMediaSegment(threadId)}/${sanitizeMediaSegment(msgId)}-${index + 1}.${extension}`,
+        contentType,
+        visibility: "private",
+        cacheControl: "private, max-age=31536000, immutable",
+        originalName,
+        entityType: "zalo_inbox_message",
+        entityId: msgId,
+        createdBy: currentUserId || undefined,
+        expiresAt: getZaloMediaExpiresAt(mediaKind),
+      });
+      return {
+        ...attachment,
+        url: stored.url,
+        thumb: attachment.type === "file" ? attachment.thumb : stored.url,
+        fileSize: attachment.fileSize || buffer.length,
+        fileName: originalName,
+      };
+    } catch (error) {
+      // Không làm mất message nếu CDN tạm thời từ chối tải. URL gốc vẫn
+      // được lưu và API proxy còn có thể thử lại ở lần tải sau.
+      console.warn(`[ZaloGateway] Không mirror được media ${msgId}/${index}:`, error);
+      return attachment;
+    }
+  }));
+}
+
 // ─── Connection Management ────────────────────────────────────────────────────
 
 function setupListeners(api: unknown) {
   const apiObj = api as {
     listener: {
-      on: (event: string, cb: (msg: Record<string, unknown>) => void) => void;
-      start: () => void;
+      on: (event: string, cb: (...args: any[]) => void) => void;
+      start: (options?: { retryOnClose?: boolean }) => void;
+      requestOldMessages: (threadType: number, lastMsgId?: string | null) => void;
     };
     getOwnId: () => Promise<string>;
   };
 
-    apiObj.listener.on("message", async (message: Record<string, unknown>) => {
+  const persistGatewayMessage = async (
+    message: Record<string, unknown>,
+    options: { historical?: boolean } = {},
+  ) => {
     const processed = processIncomingMessage(message);
     if (!processed) return;
     // Lấy tên người gửi từ nhiều field có thể có trong message data
-    const threadId = processed.isSelf ? processed.toId : processed.fromId;
+    const threadId = String(message.threadId || (processed.isSelf ? processed.toId : processed.fromId));
+    if (!threadId) return;
     const msgData = (message.data || {}) as Record<string, unknown>;
     const senderName = (msgData.dName as string)
       || (msgData.displayName as string)
@@ -442,30 +544,87 @@ function setupListeners(api: unknown) {
       || ((message.data as any)?.params?.avt as string)
       || ((message.data as any)?.params?.avatar as string)
       || null;
-    // Save to DB (zalo_inbox_messages) kèm sender_name
-    await saveMessage({ ...processed, senderName: senderName || undefined });
+    // PostgreSQL là nguồn dữ liệu chuẩn. Chỉ cập nhật conversation/SSE sau
+    // khi upsert tin nhắn thành công để tránh trạng thái "thấy rồi lại mất".
+    await saveMessage({ ...processed, threadId, senderName: senderName || undefined });
     try {
       // Chỉ cập nhật displayName khi có tên thật (không phải ID số thuần)
       const isNumericId = /^\d{8,}$/.test(senderName);
-      const displayNameToSave = (!isNumericId && senderName) ? senderName : threadId;
+      // Tin do chính tài khoản gửi có dName là tên của tài khoản vận hành,
+      // không phải tên khách. Dùng threadId để SQL giữ tên khách đã biết.
+      const displayNameToSave = !processed.isSelf && !isNumericId && senderName
+        ? senderName
+        : threadId;
       await upsertConversation({
         id: threadId,
         zaloUserId: threadId,
         displayName: displayNameToSave,
         avatarUrl: senderAvatar,
         lastMessage: processed.content || "[Hình ảnh]",
+        lastMessageAt: processed.timestamp,
       });
-      if (!processed.isSelf) {
+      if (!processed.isSelf && !options.historical) {
         await incrementUnreadCount(threadId);
       }
     } catch (err) {
       console.error("[ZaloGateway] upsertConversation error:", err);
     }
-    // Broadcast via SSE
-    broadcastSSE("message", {
-      ...processed,
-      threadId,
+    if (!options.historical) broadcastSSE("message", { ...processed, threadId });
+
+    // CDN của Zalo dùng URL có thể hết hạn hoặc yêu cầu phiên Zalo Web.
+    // Lưu bản gốc trước để không chặn text, sau đó mirror media vào Railway
+    // Bucket và upsert cùng msg_id. SSE lần hai cập nhật đúng message cũ.
+    if (processed.attachments.length > 0) {
+      const mirroredAttachments = await mirrorIncomingAttachments(
+        threadId,
+        processed.msgId,
+        processed.attachments,
+      );
+      const changed = mirroredAttachments.some((attachment, index) =>
+        attachment.url !== processed.attachments[index]?.url
+        || attachment.thumb !== processed.attachments[index]?.thumb
+      );
+      if (changed) {
+        const stableMessage = { ...processed, attachments: mirroredAttachments };
+        await saveMessage({ ...stableMessage, threadId, senderName: senderName || undefined });
+        if (!options.historical) broadcastSSE("message", { ...stableMessage, threadId });
+      }
+    }
+  };
+
+  apiObj.listener.on("message", (message: Record<string, unknown>) => {
+    void persistGatewayMessage(message).catch((error) => {
+      console.error("[ZaloGateway] Không lưu được realtime message:", error);
+      broadcastSSE("sync_error", { message: "Không lưu được tin nhắn mới vào cơ sở dữ liệu" });
     });
+  });
+
+  // Khi process khởi động lại hoặc WebSocket gián đoạn, xin lại cửa sổ tin
+  // gần nhất. Upsert theo msg_id giúp thao tác này an toàn và không nhân đôi.
+  apiObj.listener.on("old_messages", (messages: Record<string, unknown>[], type: number) => {
+    if (type !== (ThreadType?.User ?? 0) || !Array.isArray(messages)) return;
+    void (async () => {
+      for (const message of messages) {
+        try {
+          await persistGatewayMessage(message, { historical: true });
+        } catch (error) {
+          console.error("[ZaloGateway] Không lưu được old_message:", error);
+        }
+      }
+      broadcastSSE("sync_complete", { count: messages.length });
+    })();
+  });
+
+  apiObj.listener.on("connected", () => {
+    isConnected = true;
+    listenerRetrying = false;
+    autoReconnectDone = true;
+    broadcastSSE("connected", { userId: currentUserId, displayName: currentUserDisplayName });
+    try {
+      apiObj.listener.requestOldMessages(ThreadType?.User ?? 0, null);
+    } catch (error) {
+      console.error("[ZaloGateway] Không thể yêu cầu lịch sử gần nhất:", error);
+    }
   });
 
   // Lắng nghe friend events (kết bạn, yêu cầu kết bạn)
@@ -523,11 +682,20 @@ function setupListeners(api: unknown) {
     }
   });
 
-  apiObj.listener.on("close", (reason: unknown) => {
-    console.log("[ZaloGateway] Connection closed:", reason);
+  apiObj.listener.on("disconnected", (code: unknown, reason: unknown) => {
+    console.warn("[ZaloGateway] WebSocket disconnected:", code, reason);
     isConnected = false;
+    listenerRetrying = true;
+    broadcastSSE("disconnected", { code, reason, retrying: true });
+  });
+
+  apiObj.listener.on("closed", (code: unknown, reason: unknown) => {
+    console.log("[ZaloGateway] Connection closed:", code, reason);
+    isConnected = false;
+    listenerRetrying = false;
     zaloApi = null;
-    broadcastSSE("disconnected", { reason });
+    autoReconnectDone = false;
+    broadcastSSE("disconnected", { code, reason, retrying: false });
 
     // Auto-reconnect after 5 seconds
     setTimeout(() => {
@@ -535,7 +703,12 @@ function setupListeners(api: unknown) {
     }, 5000);
   });
 
-  apiObj.listener.start();
+  apiObj.listener.on("error", (error: unknown) => {
+    console.error("[ZaloGateway] Listener error:", error);
+    broadcastSSE("sync_error", { message: "Kết nối nhận tin Zalo đang gặp lỗi" });
+  });
+
+  apiObj.listener.start({ retryOnClose: true });
   console.log("[ZaloGateway] Listener started");
 }
 
@@ -560,13 +733,12 @@ async function autoReconnect() {
 }
 
 export async function connectWithCredentials(creds: ZaloCredentials): Promise<void> {
+  if (isConnected && zaloApi) return;
   if (isConnecting) throw new Error("Already connecting");
   isConnecting = true;
 
   try {
-    const zalo = new Zalo({
-      logging: false,
-    });
+    const zalo = new Zalo({ logging: false, selfListen: true });
 
     const api = await zalo.login({
       cookie: creds.cookie,
@@ -576,6 +748,8 @@ export async function connectWithCredentials(creds: ZaloCredentials): Promise<vo
 
     zaloApi = api;
     isConnected = true;
+    listenerRetrying = false;
+    autoReconnectDone = true;
     isConnecting = false;
 
     // Get own user ID
@@ -630,6 +804,8 @@ export async function connectWithCredentials(creds: ZaloCredentials): Promise<vo
   } catch (err) {
     isConnecting = false;
     isConnected = false;
+    listenerRetrying = false;
+    autoReconnectDone = false;
     zaloApi = null;
     throw err;
   }
@@ -662,7 +838,7 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
       reject(err);
     };
 
-    const zalo = new Zalo({ logging: false });
+    const zalo = new Zalo({ logging: false, selfListen: true });
 
     zalo
       .loginQR(
@@ -779,8 +955,31 @@ export async function sendZaloMessage(params: {
     const msgId = String(result?.message?.msgId || `sent_${sentAt}`);
     const senderName = currentUserDisplayName || params.senderName || currentUserId || "Tôi";
     // Lưu tin nhắn gửi đi vào DB (kèm senderName để hiển thị đúng tên)
-    await saveMessage({
+    // Hai bản ghi độc lập nên chạy song song. Đường phản hồi chỉ chờ Zalo xác
+    // nhận và PostgreSQL lưu bền vững; enrichment hồ sơ chạy nền phía dưới.
+    await Promise.all([
+      saveMessage({
+        msgId,
+        fromId: currentUserId,
+        toId: params.conversationId,
+        content: params.content,
+        timestamp: sentAt,
+        isSelf: true,
+        attachments: [],
+        type: "text",
+        senderName,
+      }),
+      upsertConversation({
+        id: params.conversationId,
+        zaloUserId: params.conversationId,
+        displayName: params.conversationId,
+        lastMessage: params.content,
+        lastMessageAt: sentAt,
+      }).catch(() => undefined),
+    ]);
+    broadcastSSE("message", {
       msgId,
+      threadId: params.conversationId,
       fromId: currentUserId,
       toId: params.conversationId,
       content: params.content,
@@ -788,47 +987,8 @@ export async function sendZaloMessage(params: {
       isSelf: true,
       attachments: [],
       type: "text",
-      senderName,
     });
-    // Upsert conversation — lấy tên thật của khách từ getUserInfo (zalo-personal pattern)
-    try {
-      let customerName = params.conversationId;
-      let customerAvatar = "";
-      // Kiểm tra xem conversation đã có tên trong DB chưa
-      try {
-        const existing = await queryOne<{ display_name: string | null; avatar_url: string | null }>(
-          "SELECT display_name, avatar_url FROM zalo_conversations WHERE id=$1",
-          [params.conversationId]
-        );
-        const existingName = existing?.display_name || "";
-        const isNumericName = /^\d{8,}$/.test(existingName.trim());
-        if (existingName && !isNumericName) {
-          customerName = existingName;
-          customerAvatar = existing?.avatar_url || "";
-        } else {
-          // Chưa có tên — gọi getUserInfo để lấy tên thật (parse theo zalo-personal)
-          const apiForInfo = zaloApi as { getUserInfo?: (uid: string) => Promise<any> };
-          if (apiForInfo.getUserInfo) {
-            const rawInfo = await apiForInfo.getUserInfo(params.conversationId);
-            const profiles = rawInfo?.changed_profiles ?? {};
-            const info = profiles[params.conversationId] ?? Object.values(profiles)[0] as any;
-            const name = info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "";
-            const avatar = info?.avatar ?? "";
-            if (name && !/^\d{8,}$/.test(name)) {
-              customerName = name;
-              customerAvatar = avatar;
-            }
-          }
-        }
-      } catch { /* ignore */ }
-      await upsertConversation({
-        id: params.conversationId,
-        zaloUserId: params.conversationId,
-        displayName: customerName,
-        avatarUrl: customerAvatar || undefined,
-        lastMessage: params.content,
-      });
-    } catch { /* ignore */ }
+    scheduleConversationIdentityEnrichment(params.conversationId);
     return {
       success: true,
       messageId: msgId,
@@ -852,19 +1012,48 @@ export async function sendZaloMessage(params: {
   }
 }
 
+function scheduleConversationIdentityEnrichment(conversationId: string): void {
+  setTimeout(() => {
+    void (async () => {
+      const existing = await queryOne<{ display_name: string | null }>(
+        "SELECT display_name FROM zalo_conversations WHERE id=$1",
+        [conversationId],
+      );
+      const existingName = existing?.display_name?.trim() || "";
+      if (existingName && !/^\d{8,}$/.test(existingName)) return;
+      const apiForInfo = zaloApi as { getUserInfo?: (uid: string) => Promise<any> };
+      if (!apiForInfo?.getUserInfo) return;
+      const rawInfo = await apiForInfo.getUserInfo(conversationId);
+      const profiles = rawInfo?.changed_profiles ?? {};
+      const info = profiles[conversationId] ?? Object.values(profiles)[0] as any;
+      const name = String(info?.displayName ?? info?.display_name ?? info?.zaloName ?? info?.zalo_name ?? "");
+      if (!name || /^\d{8,}$/.test(name)) return;
+      await upsertConversation({
+        id: conversationId,
+        zaloUserId: conversationId,
+        displayName: name,
+        avatarUrl: String(info?.avatar || "") || undefined,
+      });
+    })().catch((error) => {
+      console.warn("[ZaloGateway] Không enrich được hồ sơ hội thoại:", error);
+    });
+  }, 0);
+}
+
 // ─── Auto-Reconnect on Server Start ──────────────────────────────────────────
 // Khi Railway deploy lại, process restart → zaloApi = null → cần tự kết nối lại
-// Dùng flag để chỉ chạy 1 lần dù nhiều request cùng lúc
-
-let autoReconnectDone = false;
-let autoReconnectPromise: Promise<void> | null = null;
+// Dùng promise/flag ở Gateway State để chỉ chạy 1 lần dù nhiều request cùng lúc.
 
 /**
  * Tự động kết nối lại Zalo nếu server vừa restart (Railway deploy).
  * Gọi từ SSE route và conversations route — chỉ chạy 1 lần per process.
  */
 export async function ensureZaloConnected(): Promise<void> {
-  if (isConnected || autoReconnectDone) return;
+  if (isConnected) return;
+  // zca-js đang tự retry WebSocket. Không tạo thêm listener thứ hai vì một
+  // tài khoản Zalo Web chỉ nên có một phiên listener tại một thời điểm.
+  if (listenerRetrying && zaloApi) return;
+  if (autoReconnectDone && zaloApi) return;
   if (autoReconnectPromise) return autoReconnectPromise;
 
   autoReconnectPromise = (async () => {
@@ -913,9 +1102,12 @@ export async function sendZaloAttachment(params: {
   }
   try {
     const { ThreadType } = await import("zca-js");
+    const mediaKind = getZaloMediaKind(params.mimeType);
+    if (params.fileSize > getZaloMediaMaxBytes(mediaKind)) {
+      return { success: false, error: `File ${mediaKind} vượt giới hạn lưu trữ cho phép.` };
+    }
     // zca-js tự upload attachment bên trong sendMessage.
     const api = zaloApi as {
-      uploadAttachment: (sources: unknown[], threadId: string, type: unknown) => Promise<unknown[]>;
       sendMessage: (msg: unknown, threadId: string, type: unknown) => Promise<{
         message?: { msgId?: string | number } | null;
         attachment?: Array<{ msgId?: string | number }>;
@@ -964,78 +1156,53 @@ export async function sendZaloAttachment(params: {
       || `sent_att_${sentAt}`
     );
 
-    // Giữ một bản bền vững trong Railway Bucket. URL CDN Zalo có thể hết hạn
-    // hoặc từ chối tải khi trình duyệt CRM không có phiên Zalo Web tương ứng.
-    let attachUrl = "";
-    if (isRailwayBucketConfigured()) {
-      try {
-        const stored = await storeMediaObject({
-          body: params.fileBuffer,
-          key: `zalo-inbox/${sanitizeMediaSegment(params.conversationId)}/${sentAt}-${sanitizeMediaSegment(params.fileName)}`,
-          contentType: params.mimeType,
-          visibility: "private",
-          cacheControl: "private, max-age=31536000, immutable",
-          originalName: params.fileName,
-          entityType: "zalo_inbox_message",
-          entityId: msgId,
-          createdBy: currentUserId || undefined,
-        });
-        attachUrl = stored.url;
-      } catch (storageError) {
-        console.error("[ZaloGateway] Không lưu được attachment vào Railway Bucket:", storageError);
-      }
-    }
-
-    // Fallback cho môi trường chưa cấu hình Bucket: lấy URL CDN Zalo để CRM
-    // vẫn hiển thị được file vừa gửi (dù độ bền thấp hơn URL nội bộ).
-    let attachThumb = "";
-    if (!attachUrl) {
-      try {
-        const uploadResults = await api.uploadAttachment(
-          [attachmentSource],
-          params.conversationId,
-          ThreadType?.User ?? 0
-        );
-        const upload = (uploadResults?.[0] || {}) as Record<string, unknown>;
-        attachUrl = String(upload.hdUrl || upload.normalUrl || upload.fileUrl || "");
-        attachThumb = String(upload.thumbUrl || upload.normalUrl || attachUrl || "");
-      } catch (uploadError) {
-        console.error("[ZaloGateway] Không lấy được URL attachment fallback:", uploadError);
-      }
-    }
-
     const senderName = currentUserDisplayName || currentUserId || "Tôi";
     const attachment: ZaloAttachment = {
       type: attachType,
-      url: attachUrl,
-      thumb: attachThumb || attachUrl,
+      // UI giữ blob preview cục bộ cho tới khi bản sao Bucket hoặc listener
+      // Zalo cập nhật URL ổn định vào đúng msgId.
+      url: "",
+      thumb: "",
       width,
       height,
       fileName: params.fileName,
       fileSize: params.fileSize,
     };
 
-    await saveMessage({
-      msgId,
-      fromId: currentUserId,
-      toId: params.conversationId,
-      content: "",
-      timestamp: sentAt,
-      isSelf: true,
-      attachments: [attachment],
-      type: attachType,
-      senderName,
-    });
-    // Upsert conversation để cập nhật lastMessage
     const lastMsgLabel = attachType === "image" ? "[Hình ảnh]" : attachType === "video" ? "[Video]" : `[File: ${params.fileName}]`;
-    try {
-      await upsertConversation({
+    await Promise.all([
+      saveMessage({
+        msgId,
+        fromId: currentUserId,
+        toId: params.conversationId,
+        content: "",
+        timestamp: sentAt,
+        isSelf: true,
+        attachments: [attachment],
+        type: attachType,
+        senderName,
+      }),
+      upsertConversation({
         id: params.conversationId,
         zaloUserId: params.conversationId,
         displayName: params.conversationId,
         lastMessage: lastMsgLabel,
-      });
-    } catch { /* ignore */ }
+        lastMessageAt: sentAt,
+      }).catch(() => undefined),
+    ]);
+
+    // Không upload Zalo lần hai và không bắt response chờ Railway Bucket.
+    // Buffer được giữ trong closure; bản sao ổn định sẽ upsert cùng msgId và
+    // phát SSE khi hoàn tất.
+    scheduleOutgoingAttachmentMirror({
+      ...params,
+      msgId,
+      sentAt,
+      senderName,
+      attachType,
+      width,
+      height,
+    });
 
     console.log(`[ZaloGateway] Sent attachment to ${params.conversationId}`);
     return {
@@ -1059,6 +1226,72 @@ export async function sendZaloAttachment(params: {
     console.error("[ZaloGateway] sendZaloAttachment error:", error);
     return { success: false, error: error.message || "Lỗi gửi attachment" };
   }
+}
+
+function scheduleOutgoingAttachmentMirror(params: {
+  conversationId: string;
+  fileBuffer: Buffer;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  msgId: string;
+  sentAt: number;
+  senderName: string;
+  attachType: "image" | "video" | "file";
+  width?: number;
+  height?: number;
+}): void {
+  if (!isRailwayBucketConfigured()) return;
+  setTimeout(() => {
+    void (async () => {
+      const mediaKind = getZaloMediaKind(params.mimeType);
+      const stored = await storeMediaObject({
+        body: params.fileBuffer,
+        key: `zalo-inbox/${sanitizeMediaSegment(params.conversationId)}/${params.sentAt}-${sanitizeMediaSegment(params.fileName)}`,
+        contentType: params.mimeType,
+        visibility: "private",
+        cacheControl: "private, max-age=31536000, immutable",
+        originalName: params.fileName,
+        entityType: "zalo_inbox_message",
+        entityId: params.msgId,
+        createdBy: currentUserId || undefined,
+        expiresAt: getZaloMediaExpiresAt(mediaKind, params.sentAt),
+      });
+      const attachment: ZaloAttachment = {
+        type: params.attachType,
+        url: stored.url,
+        thumb: params.attachType === "file" ? "" : stored.url,
+        width: params.width,
+        height: params.height,
+        fileName: params.fileName,
+        fileSize: params.fileSize,
+      };
+      await saveMessage({
+        msgId: params.msgId,
+        fromId: currentUserId,
+        toId: params.conversationId,
+        content: "",
+        timestamp: params.sentAt,
+        isSelf: true,
+        attachments: [attachment],
+        type: params.attachType,
+        senderName: params.senderName,
+      });
+      broadcastSSE("message", {
+        msgId: params.msgId,
+        threadId: params.conversationId,
+        fromId: currentUserId,
+        toId: params.conversationId,
+        content: "",
+        timestamp: params.sentAt,
+        isSelf: true,
+        attachments: [attachment],
+        type: params.attachType,
+      });
+    })().catch((error) => {
+      console.error("[ZaloGateway] Không lưu được attachment vào Railway Bucket:", error);
+    });
+  }, 0);
 }
 
 // ─── Friend API Functions ─────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { query } from "@/lib/db";
+import { getRecentCanonicalZaloMessages } from "@/lib/zalo-inbox-message-store";
 
 export async function GET(
   req: NextRequest,
@@ -83,26 +84,10 @@ export async function GET(
     } catch { /* ignore */ }
 
     // ✅ Fix Bug 2: Đọc từ zalo_inbox_messages kèm sender_name
-    const rows = await query<{
-      msg_id: string;
-      thread_id: string;
-      from_id: string;
-      to_id: string;
-      sender_name: string | null;
-      content: string;
-      attachments: string;
-      msg_type: string;
-      is_self: boolean;
-      timestamp: string;
-      created_at: string;
-    }>(
-      `SELECT msg_id, thread_id, from_id, to_id, sender_name, content, attachments, msg_type, is_self, timestamp, created_at
-       FROM zalo_inbox_messages
-       WHERE thread_id = $1
-       ORDER BY timestamp ASC
-       LIMIT $2 OFFSET $3`,
-      [conversationId, limit, offset]
-    );
+    // Lấy trang gần hiện tại nhất rồi mới sắp xếp tăng dần để hiển thị.
+    // Query cũ ORDER BY ASC + LIMIT lấy 100 tin đầu tiên, khiến mọi tin mới
+    // trông như biến mất ngay sau khi tải lại trang.
+    const rows = await getRecentCanonicalZaloMessages(conversationId, limit, offset);
 
     const messages = rows.map((row) => {
       // Ưu tiên: sender_name từ DB > tên từ conversation/lead > "Khách"
@@ -121,7 +106,7 @@ export async function GET(
         contentType: row.msg_type || "text",
         isSelf: row.is_self,
         isRead: true,
-        createdAt: row.created_at || new Date(parseInt(row.timestamp) || Date.now()).toISOString(),
+        createdAt: new Date(Number(row.timestamp) || Date.now()).toISOString(),
         attachments: (() => {
           try {
             return JSON.parse(row.attachments || "[]");
