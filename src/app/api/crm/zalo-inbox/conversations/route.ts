@@ -11,6 +11,19 @@ import { getDb } from "@/lib/db";
 
 const avatarEnrichmentAttempts = new Map<string, number>();
 const AVATAR_RETRY_MS = 6 * 60 * 60 * 1000;
+const AVATAR_EXPIRY_BUFFER_SECONDS = 5 * 60;
+
+function avatarNeedsRefresh(avatarUrl: string | null | undefined, now = Date.now()) {
+  if (!avatarUrl) return true;
+  try {
+    const expiresAt = Number(new URL(avatarUrl).searchParams.get("time"));
+    return Number.isFinite(expiresAt)
+      && expiresAt > 0
+      && expiresAt <= Math.floor(now / 1000) + AVATAR_EXPIRY_BUFFER_SECONDS;
+  } catch {
+    return false;
+  }
+}
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
@@ -117,12 +130,12 @@ export async function GET(req: NextRequest) {
         };
       });
 
-    // Đồng bộ theo lô thay vì chỉ thử 5 hồ sơ đầu tiên. Cách cũ bị kẹt vĩnh
-    // viễn nếu 5 tài khoản đầu không đặt avatar, khiến các liên hệ sau không
-    // bao giờ được hỏi Zalo. Kết quả được trả ngay trong response hiện tại.
+    // Đồng bộ theo lô cả avatar bị thiếu lẫn URL CDN đã hết hạn. URL avatar
+    // Zalo có tham số `time` và sẽ trả 403 sau thời điểm này; chỉ kiểm tra null
+    // khiến nhiều khách hàng có URL trong DB nhưng giao diện vẫn hiện chữ cái.
     const now = Date.now();
     const missingAvatarConvs = enriched.filter(c =>
-      !c.avatarUrl
+      avatarNeedsRefresh(c.avatarUrl, now)
       && c.id
       && now - (avatarEnrichmentAttempts.get(c.id) || 0) >= AVATAR_RETRY_MS,
     );
@@ -131,23 +144,42 @@ export async function GET(req: NextRequest) {
       batch.forEach(conv => avatarEnrichmentAttempts.set(conv.id, now));
       const result = await getZaloUserProfiles(batch.map(conv => conv.id));
       if (result.success && result.users) {
+        let updatedCount = 0;
+        let clearedCount = 0;
         await Promise.all(batch.map(async (conv) => {
           const info = result.users?.get(conv.id);
-          if (!info) return;
-          const avatar = info.avatar || null;
-          const name = info.displayName || info.zaloName || null;
-          if (!avatar && !name) return;
-          await upsertConversation({
-            id: conv.id,
-            zaloUserId: conv.zaloUserId || conv.id,
-            displayName: name || conv.displayName,
-            avatarUrl: avatar,
-            lastMessage: conv.lastMessage,
-            lastMessageAt: conv.lastMessageAt,
-          });
-          if (avatar) conv.avatarUrl = avatar;
+          const avatar = info?.avatar && !avatarNeedsRefresh(info.avatar, now) ? info.avatar : null;
+          const name = info?.displayName || info?.zaloName || null;
+
+          if (avatar || name) {
+            await upsertConversation({
+              id: conv.id,
+              zaloUserId: conv.zaloUserId || conv.id,
+              displayName: name || conv.displayName,
+              avatarUrl: avatar,
+              lastMessage: conv.lastMessage,
+              lastMessageAt: conv.lastMessageAt,
+            });
+          }
+
+          if (avatar) {
+            conv.avatarUrl = avatar;
+            updatedCount += 1;
+          } else if (conv.avatarUrl) {
+            // Không tiếp tục đưa URL chắc chắn đã hết hạn xuống client. Những
+            // tài khoản không có/không chia sẻ avatar sẽ dùng initials ổn định.
+            await db.query(
+              "UPDATE zalo_conversations SET avatar_url = NULL, updated_at = NOW() WHERE id = $1",
+              [conv.id],
+            );
+            conv.avatarUrl = null;
+            clearedCount += 1;
+          }
           if (name && /^\d{8,}$/.test(conv.displayName)) conv.displayName = name;
         }));
+        console.log(
+          `[zalo-inbox/conversations] Avatar sync requested=${batch.length} updated=${updatedCount} cleared=${clearedCount}`,
+        );
       } else {
         // Cho phép thử lại sớm nếu cả request đồng bộ thất bại.
         batch.forEach(conv => avatarEnrichmentAttempts.delete(conv.id));
