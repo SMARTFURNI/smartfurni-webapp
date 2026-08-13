@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import {
+  createZaloMediaThumbnail,
+  getZaloMediaThumbnailKey,
+  ZALO_MEDIA_THUMBNAIL_CACHE_CONTROL,
+} from "@/lib/zalo-media-thumbnails";
+import {
   deleteMediaObject,
   sanitizeMediaSegment,
   setMediaRetained,
@@ -73,6 +78,7 @@ export async function POST(req: NextRequest) {
   if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
 
   let storedKey = "";
+  let storedThumbnailKey = "";
   try {
     const name = safeHeaderFileName(req);
     const contentType = (req.headers.get("content-type") || "application/octet-stream").split(";", 1)[0].trim();
@@ -111,6 +117,28 @@ export async function POST(req: NextRequest) {
       createdBy: actor,
     });
     await setMediaRetained(stored.key, true, actor);
+    if (mediaKind === "image") {
+      try {
+        const thumbnail = await createZaloMediaThumbnail(body);
+        storedThumbnailKey = getZaloMediaThumbnailKey(assetId);
+        await storeMediaObject({
+          body: thumbnail,
+          key: storedThumbnailKey,
+          contentType: "image/webp",
+          visibility: "private",
+          cacheControl: ZALO_MEDIA_THUMBNAIL_CACHE_CONTROL,
+          originalName: `${assetId}.webp`,
+          entityType: "zalo_media_thumbnail",
+          entityId: assetId,
+          createdBy: actor,
+        });
+        await setMediaRetained(storedThumbnailKey, true, actor);
+      } catch (error) {
+        // Ảnh gốc vẫn hợp lệ; thumbnail sẽ được tạo lười ở lần mở thư viện kế tiếp.
+        storedThumbnailKey = "";
+        console.warn("[zalo-media-library] Không tạo được thumbnail lúc upload:", error);
+      }
+    }
     const asset = await createZaloMediaAsset({
       id: assetId,
       folderId,
@@ -125,6 +153,10 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true, asset }, { status: 201 });
   } catch (error) {
+    if (storedThumbnailKey) {
+      await setMediaRetained(storedThumbnailKey, false).catch(() => undefined);
+      await deleteMediaObject(storedThumbnailKey).catch(() => undefined);
+    }
     if (storedKey) {
       await setMediaRetained(storedKey, false).catch(() => undefined);
       await deleteMediaObject(storedKey).catch(() => undefined);
@@ -160,6 +192,9 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "Thiếu tài liệu" }, { status: 400 });
     const asset = await archiveZaloMediaAsset(id);
     if (!asset) return NextResponse.json({ error: "Không tìm thấy tài liệu" }, { status: 404 });
+    const thumbnailKey = getZaloMediaThumbnailKey(asset.id);
+    await setMediaRetained(thumbnailKey, false).catch(() => undefined);
+    await deleteMediaObject(thumbnailKey).catch(() => undefined);
     // Tài liệu chưa từng dùng có thể xóa vật lý. Tài liệu đã gửi vẫn được giữ
     // để lịch sử hội thoại không xuất hiện liên kết hỏng.
     if (asset.usageCount === 0) {

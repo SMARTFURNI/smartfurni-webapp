@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check, File as FileIcon, FileText, Folder, FolderOpen, Image as ImageIcon,
+  Check, FileText, Folder, FolderOpen, Image as ImageIcon,
   Loader2, MoreHorizontal, Plus, Search, Send, Trash2, Upload, Video, X,
 } from "lucide-react";
 import styles from "./ZaloMediaLibraryPanel.module.css";
@@ -35,6 +35,19 @@ interface Props {
 }
 
 const ACCEPTED_FILES = "image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar";
+const LIBRARY_CACHE_TTL = 5 * 60 * 1000;
+
+interface LibraryPayload {
+  folders: MediaFolder[];
+  assets: MediaAsset[];
+  counts: { total: number; unfiled: number };
+}
+
+const libraryCache = new Map<string, { payload: LibraryPayload; savedAt: number }>();
+
+function invalidateLibraryCache() {
+  libraryCache.clear();
+}
 
 function formatBytes(bytes: number) {
   if (!bytes) return "0 B";
@@ -45,13 +58,20 @@ function formatBytes(bytes: number) {
 
 function AssetPreview({ asset }: { asset: MediaAsset }) {
   if (asset.mediaKind === "image") {
-    return <img src={asset.url} alt={asset.name} loading="lazy" />;
+    return (
+      <img
+        src={`/api/crm/zalo-inbox/media-library/thumbnail?id=${encodeURIComponent(asset.id)}`}
+        alt={asset.name}
+        loading="lazy"
+        decoding="async"
+      />
+    );
   }
   if (asset.mediaKind === "video") {
     return (
       <div className={styles.videoPreview}>
-        <video src={asset.url} muted preload="metadata" />
-        <span><Video size={22} /></span>
+        <Video size={30} />
+        <span>VIDEO</span>
       </div>
     );
   }
@@ -76,6 +96,7 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [working, setWorking] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,21 +104,40 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  const loadLibrary = useCallback(async () => {
-    setLoading(true);
+  const loadLibrary = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
+    const params = new URLSearchParams();
+    if (folderFilter !== "all") params.set("folder", folderFilter);
+    if (kindFilter !== "all") params.set("kind", kindFilter);
+    if (debouncedQuery) params.set("q", debouncedQuery);
+    const cacheKey = params.toString();
+    const cached = libraryCache.get(cacheKey);
+    if (!force && cached && Date.now() - cached.savedAt < LIBRARY_CACHE_TTL) {
+      setFolders(cached.payload.folders);
+      setAssets(cached.payload.assets);
+      setCounts(cached.payload.counts);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(!cached);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (folderFilter !== "all") params.set("folder", folderFilter);
-      if (kindFilter !== "all") params.set("kind", kindFilter);
-      if (debouncedQuery) params.set("q", debouncedQuery);
-      const response = await fetch(`/api/crm/zalo-inbox/media-library?${params}`, { credentials: "include" });
+      const response = await fetch(`/api/crm/zalo-inbox/media-library?${params}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Không tải được thư viện");
-      setFolders(data.folders || []);
-      setAssets(data.assets || []);
-      setCounts(data.counts || { total: 0, unfiled: 0 });
-      setSelected(previous => new Set([...previous].filter(id => (data.assets || []).some((asset: MediaAsset) => asset.id === id))));
+      const payload: LibraryPayload = {
+        folders: data.folders || [],
+        assets: data.assets || [],
+        counts: data.counts || { total: 0, unfiled: 0 },
+      };
+      libraryCache.set(cacheKey, { payload, savedAt: Date.now() });
+      setFolders(payload.folders);
+      setAssets(payload.assets);
+      setCounts(payload.counts);
+      setSelected(previous => new Set([...previous].filter(id => payload.assets.some(asset => asset.id === id))));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không tải được thư viện");
     } finally {
@@ -137,7 +177,8 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || `Không tải được ${file.name}`);
       }
-      await loadLibrary();
+      invalidateLibraryCache();
+      await loadLibrary({ force: true });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không tải được tài liệu");
     } finally {
@@ -156,7 +197,8 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Không tạo được thư mục");
-      await loadLibrary();
+      invalidateLibraryCache();
+      await loadLibrary({ force: true });
       setFolderFilter(data.folder?.id || "all");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không tạo được thư mục");
@@ -171,7 +213,8 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
       body: JSON.stringify({ id: folder.id, name: name.trim() }),
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) setError(data.error || "Không đổi được tên thư mục"); else await loadLibrary();
+    if (!response.ok) setError(data.error || "Không đổi được tên thư mục");
+    else { invalidateLibraryCache(); await loadLibrary({ force: true }); }
   };
 
   const removeFolder = async (folder: MediaFolder) => {
@@ -181,7 +224,11 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) setError(data.error || "Không xóa được thư mục");
-    else { if (folderFilter === folder.id) setFolderFilter("all"); await loadLibrary(); }
+    else {
+      invalidateLibraryCache();
+      if (folderFilter === folder.id) setFolderFilter("all");
+      else await loadLibrary({ force: true });
+    }
   };
 
   const moveSelected = async (folderId: string) => {
@@ -196,7 +243,8 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
         if (!response.ok) throw new Error("Không di chuyển được tài liệu");
       }));
       setSelected(new Set());
-      await loadLibrary();
+      invalidateLibraryCache();
+      await loadLibrary({ force: true });
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không di chuyển được tài liệu"); }
     finally { setWorking(false); }
   };
@@ -212,9 +260,45 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
         if (!response.ok) throw new Error(`Không xóa được ${asset.name}`);
       }
       setSelected(new Set());
-      await loadLibrary();
+      invalidateLibraryCache();
+      await loadLibrary({ force: true });
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Không xóa được tài liệu"); }
     finally { setWorking(false); }
+  };
+
+  const removeAsset = async (asset: MediaAsset) => {
+    const retainedNotice = asset.usageCount > 0
+      ? " Tệp gốc vẫn được giữ cho các tin nhắn đã gửi trước đây."
+      : "";
+    if (!window.confirm(`Xóa “${asset.name}” khỏi thư viện?${retainedNotice}`)) return;
+    setDeletingId(asset.id);
+    setError(null);
+    try {
+      const response = await fetch(`/api/crm/zalo-inbox/media-library?id=${encodeURIComponent(asset.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Không xóa được ${asset.name}`);
+      invalidateLibraryCache();
+      setAssets(previous => previous.filter(item => item.id !== asset.id));
+      setFolders(previous => previous.map(folder => folder.id === asset.folderId
+        ? { ...folder, assetCount: Math.max(0, folder.assetCount - 1) }
+        : folder));
+      setCounts(previous => ({
+        total: Math.max(0, previous.total - 1),
+        unfiled: Math.max(0, previous.unfiled - (asset.folderId ? 0 : 1)),
+      }));
+      setSelected(previous => {
+        const next = new Set(previous);
+        next.delete(asset.id);
+        return next;
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không xóa được tài liệu");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const content = (
@@ -291,12 +375,23 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
             ) : (
               <div className={styles.grid}>
                 {assets.map(asset => (
-                  <button key={asset.id} className={styles.assetCard} data-selected={String(selected.has(asset.id))} onClick={() => toggleAsset(asset.id)} title={asset.name}>
-                    <span className={styles.check}>{selected.has(asset.id) ? <Check size={14} /> : null}</span>
-                    <span className={styles.preview}><AssetPreview asset={asset} /></span>
-                    <span className={styles.assetName}>{asset.name}</span>
-                    <span className={styles.assetMeta}>{formatBytes(asset.sizeBytes)} · Đã gửi {asset.usageCount} lần</span>
-                  </button>
+                  <article key={asset.id} className={styles.assetCard} data-selected={String(selected.has(asset.id))}>
+                    <button className={styles.assetSelect} onClick={() => toggleAsset(asset.id)} title={asset.name}>
+                      <span className={styles.check}>{selected.has(asset.id) ? <Check size={14} /> : null}</span>
+                      <span className={styles.preview}><AssetPreview asset={asset} /></span>
+                      <span className={styles.assetName}>{asset.name}</span>
+                      <span className={styles.assetMeta}>{formatBytes(asset.sizeBytes)} · Đã gửi {asset.usageCount} lần</span>
+                    </button>
+                    <button
+                      className={styles.deleteAsset}
+                      onClick={() => void removeAsset(asset)}
+                      disabled={deletingId === asset.id}
+                      title="Xóa khỏi thư viện"
+                      aria-label={`Xóa ${asset.name}`}
+                    >
+                      {deletingId === asset.id ? <Loader2 className={styles.spin} size={14} /> : <Trash2 size={14} />}
+                    </button>
+                  </article>
                 ))}
               </div>
             )}

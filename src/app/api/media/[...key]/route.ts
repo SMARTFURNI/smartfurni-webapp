@@ -31,7 +31,7 @@ export async function HEAD(
       "Accept-Ranges": "bytes",
       "Cache-Control": readable.isPublic
         ? object.CacheControl || "public, max-age=86400"
-        : "private, no-store",
+        : object.CacheControl || "private, no-store",
       "X-Content-Type-Options": "nosniff",
     });
     if (object.ETag) headers.set("ETag", object.ETag);
@@ -67,7 +67,7 @@ export async function GET(
       "Accept-Ranges": object.AcceptRanges || "bytes",
       "Cache-Control": readable.isPublic
         ? object.CacheControl || "public, max-age=31536000, immutable"
-        : "private, no-store",
+        : object.CacheControl || "private, no-store",
       "X-Content-Type-Options": "nosniff",
     });
     if (object.ETag) headers.set("ETag", object.ETag);
