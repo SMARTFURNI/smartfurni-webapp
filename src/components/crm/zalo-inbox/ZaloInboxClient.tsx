@@ -432,6 +432,7 @@ function Avatar({ name, avatarUrl, size = 40, online = false }: { name: string; 
   const initials = (name || "?").split(" ").slice(-2).map(w => w[0]).join("").toUpperCase().slice(0, 2);
   const proxyUrl = avatarUrl ? getZaloImageUrl(avatarUrl) : null;
   const [imgError, setImgError] = useState(false);
+  useEffect(() => setImgError(false), [proxyUrl]);
   return (
     <div style={{ position: "relative", flexShrink: 0 }}>
       <div style={{

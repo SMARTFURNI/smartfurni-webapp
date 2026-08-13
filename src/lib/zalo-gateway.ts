@@ -2627,6 +2627,39 @@ export async function getZaloUserInfo(userId: string): Promise<{ success: boolea
   }
 }
 
+/** Lấy hồ sơ nhiều user trong một request để đồng bộ avatar hội thoại. */
+export async function getZaloUserProfiles(userIds: string[]): Promise<{
+  success: boolean;
+  users?: Map<string, { userId: string; displayName: string; zaloName: string; avatar: string }>;
+  error?: string;
+}> {
+  const ids = Array.from(new Set(userIds.map(id => String(id || "").trim()).filter(Boolean)));
+  if (ids.length === 0) return { success: true, users: new Map() };
+  await ensureZaloConnected();
+  if (!isConnected || !zaloApi) return { success: false, error: "Chưa kết nối Zalo." };
+  try {
+    const api = zaloApi as { getUserInfo: (userId: string[], avatarSize?: number) => Promise<any> };
+    const result = await api.getUserInfo(ids, 240);
+    const profiles = result?.changed_profiles ?? {};
+    const users = new Map<string, { userId: string; displayName: string; zaloName: string; avatar: string }>();
+    for (const [rawId, rawProfile] of Object.entries(profiles)) {
+      const info = rawProfile as Record<string, unknown>;
+      const profileId = String(info.userId || info.uid || rawId).replace(/_\d+$/, "");
+      users.set(profileId, {
+        userId: profileId,
+        displayName: String(info.displayName || info.display_name || ""),
+        zaloName: String(info.zaloName || info.zalo_name || ""),
+        avatar: String(info.avatar || ""),
+      });
+    }
+    return { success: true, users };
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("[ZaloGateway] getZaloUserProfiles error:", error);
+    return { success: false, error: error.message || "Không tải được hồ sơ Zalo." };
+  }
+}
+
 /** Gửi tin nhắn đến người lạ (chưa kết bạn) */
 export async function sendZaloMessageToStranger(params: {
   userId: string;

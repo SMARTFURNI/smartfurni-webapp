@@ -6,8 +6,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getConversationCount, getConversations, linkConversationToLead, upsertConversation } from "@/lib/zalo-inbox-store";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
-import { getGatewayStatus, ensureZaloConnected, getZaloUserInfo } from "@/lib/zalo-gateway";
+import { getGatewayStatus, ensureZaloConnected, getZaloUserProfiles } from "@/lib/zalo-gateway";
 import { getDb } from "@/lib/db";
+
+const avatarEnrichmentAttempts = new Map<string, number>();
+const AVATAR_RETRY_MS = 6 * 60 * 60 * 1000;
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
@@ -114,33 +117,41 @@ export async function GET(req: NextRequest) {
         };
       });
 
-    // Fire-and-forget: enrich avatar cho conversations chưa có avatar
-    const missingAvatarConvs = enriched.filter(c => !c.avatarUrl && c.id);
+    // Đồng bộ theo lô thay vì chỉ thử 5 hồ sơ đầu tiên. Cách cũ bị kẹt vĩnh
+    // viễn nếu 5 tài khoản đầu không đặt avatar, khiến các liên hệ sau không
+    // bao giờ được hỏi Zalo. Kết quả được trả ngay trong response hiện tại.
+    const now = Date.now();
+    const missingAvatarConvs = enriched.filter(c =>
+      !c.avatarUrl
+      && c.id
+      && now - (avatarEnrichmentAttempts.get(c.id) || 0) >= AVATAR_RETRY_MS,
+    );
     if (missingAvatarConvs.length > 0 && gatewayStatus.isConnected) {
-      Promise.all(
-        missingAvatarConvs.slice(0, 5).map(async (conv) => { // limit 5 per request
-          try {
-            const info = await getZaloUserInfo(conv.id);
-            if (info.success && info.user) {
-              // getZaloUserInfo đã parse đúng cấu trúc zalo-personal: { displayName, zaloName, avatar }
-              const avatar = info.user?.avatar || null;
-              const name = info.user?.displayName || info.user?.zaloName || null;
-              if (avatar || name) {
-                await upsertConversation({
-                  id: conv.id,
-                  zaloUserId: conv.id,
-                  displayName: name || conv.displayName,
-                  avatarUrl: avatar,
-                  lastMessage: conv.lastMessage,
-                });
-                // Update in response
-                if (avatar) conv.avatarUrl = avatar;
-                if (name && /^\d{8,}$/.test(conv.displayName)) conv.displayName = name;
-              }
-            }
-          } catch { /* ignore */ }
-        })
-      ).catch(() => {});
+      const batch = missingAvatarConvs.slice(0, 50);
+      batch.forEach(conv => avatarEnrichmentAttempts.set(conv.id, now));
+      const result = await getZaloUserProfiles(batch.map(conv => conv.id));
+      if (result.success && result.users) {
+        await Promise.all(batch.map(async (conv) => {
+          const info = result.users?.get(conv.id);
+          if (!info) return;
+          const avatar = info.avatar || null;
+          const name = info.displayName || info.zaloName || null;
+          if (!avatar && !name) return;
+          await upsertConversation({
+            id: conv.id,
+            zaloUserId: conv.zaloUserId || conv.id,
+            displayName: name || conv.displayName,
+            avatarUrl: avatar,
+            lastMessage: conv.lastMessage,
+            lastMessageAt: conv.lastMessageAt,
+          });
+          if (avatar) conv.avatarUrl = avatar;
+          if (name && /^\d{8,}$/.test(conv.displayName)) conv.displayName = name;
+        }));
+      } else {
+        // Cho phép thử lại sớm nếu cả request đồng bộ thất bại.
+        batch.forEach(conv => avatarEnrichmentAttempts.delete(conv.id));
+      }
     }
 
     return NextResponse.json({
