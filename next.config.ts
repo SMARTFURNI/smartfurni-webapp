@@ -61,6 +61,10 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    // Middleware bao phủ toàn bộ CRM và mặc định chỉ giữ 10MB request body.
+    // Giới hạn ứng dụng cho video/file là 40MB, nên cần chừa thêm biên để
+    // request raw binary không bị cắt mất phần cuối của MP4/MOV.
+    middlewareClientMaxBodySize: "50mb",
     // Bật Client Router Cache: dynamic 30s giúp sidebar chuyển trang nhanh
     // Trang auth dùng middleware redirect nên không bị ảnh hưởng bởi cache
     staleTimes: {

@@ -44,6 +44,11 @@ function safeHeaderFileName(req: NextRequest): string {
   }
 }
 
+function positiveNumberHeader(req: NextRequest, name: string): number | undefined {
+  const value = Number(req.headers.get(name) || "");
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 async function authorized() {
   const session = await getCrmSession();
   return { session, allowed: await canAccessZaloInbox(session) };
@@ -86,6 +91,13 @@ export async function POST(req: NextRequest) {
     const folderId = (req.headers.get("x-media-folder-id") || "").trim() || null;
     const body = Buffer.from(await req.arrayBuffer());
     if (!name || !body.byteLength) return NextResponse.json({ error: "Thiếu file tải lên" }, { status: 400 });
+    const expectedSize = positiveNumberHeader(req, "x-media-file-size")
+      || positiveNumberHeader(req, "content-length");
+    if (expectedSize && body.byteLength !== expectedSize) {
+      return NextResponse.json({
+        error: `Upload chưa hoàn tất (đã nhận ${(body.byteLength / 1024 / 1024).toFixed(1)}MB / ${(expectedSize / 1024 / 1024).toFixed(1)}MB). Vui lòng tải lại.`,
+      }, { status: 413 });
+    }
 
     const mediaKind = getZaloMediaKind(contentType, name);
     if (body.byteLength > getZaloMediaMaxBytes(mediaKind)) {

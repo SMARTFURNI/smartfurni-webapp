@@ -56,6 +56,9 @@ async function runMediaCommand(binary: "ffmpeg" | "ffprobe", args: string[]): Pr
       throw new Error("Video mất quá nhiều thời gian xử lý. Vui lòng rút ngắn hoặc giảm dung lượng video.");
     }
     const detail = String(commandError.stderr || commandError.message || "").trim().slice(-500);
+    if (/moov atom not found|invalid data found when processing input/i.test(detail)) {
+      throw new Error("Video không đầy đủ hoặc đã bị hỏng. Nếu video lấy từ Thư viện Media, vui lòng xóa bản cũ và tải lại tệp gốc.");
+    }
     throw new Error(`Không thể chuyển video sang định dạng Zalo hỗ trợ${detail ? `: ${detail}` : "."}`);
   }
 }

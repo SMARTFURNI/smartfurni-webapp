@@ -62,6 +62,13 @@ export async function POST(req: NextRequest) {
       }
       fileBuffer = Buffer.from(await req.arrayBuffer());
       fileSize = fileBuffer.byteLength;
+      const expectedSize = positiveNumberHeader(req, "x-zalo-file-size")
+        || positiveNumberHeader(req, "content-length");
+      if (expectedSize && fileSize !== expectedSize) {
+        return NextResponse.json({
+          error: `Upload video/file chưa hoàn tất (đã nhận ${(fileSize / 1024 / 1024).toFixed(1)}MB / ${(expectedSize / 1024 / 1024).toFixed(1)}MB). Vui lòng thử gửi lại.`,
+        }, { status: 413 });
+      }
     }
 
     if (!conversationId || !fileName || fileSize <= 0) {

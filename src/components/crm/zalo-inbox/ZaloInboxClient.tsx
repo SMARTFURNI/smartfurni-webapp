@@ -176,6 +176,7 @@ async function sendAttachmentBinary(conversationId: string, file: File): Promise
       "Content-Type": file.type || "application/octet-stream",
       "X-Zalo-Conversation-Id": conversationId,
       "X-Zalo-File-Name": encodeURIComponent(file.name),
+      "X-Zalo-File-Size": String(file.size),
       ...(videoMetadata.duration ? { "X-Zalo-Video-Duration": String(videoMetadata.duration) } : {}),
       ...(videoMetadata.width ? { "X-Zalo-Video-Width": String(videoMetadata.width) } : {}),
       ...(videoMetadata.height ? { "X-Zalo-Video-Height": String(videoMetadata.height) } : {}),
@@ -1497,7 +1498,7 @@ export default function ZaloInboxClient() {
       if (!response.ok) throw new Error(data.error || "Không gửi được tài liệu từ thư viện");
 
       const sentMessages = Array.isArray(data.messages) ? data.messages as ZaloMessage[] : [];
-      const failures = Array.isArray(data.failures) ? data.failures as Array<{ name?: string }> : [];
+      const failures = Array.isArray(data.failures) ? data.failures as Array<{ name?: string; error?: string }> : [];
       sentMessages.forEach(message => mergeSentMessage(message));
       if (sentMessages.length) {
         const latest = sentMessages[sentMessages.length - 1];
@@ -1510,7 +1511,8 @@ export default function ZaloInboxClient() {
       }
       if (failures.length) {
         const failedNames = failures.map(failure => failure.name).filter(Boolean).join(", ");
-        setUploadError(`Đã gửi ${sentMessages.length}/${assetIds.length} tài liệu. Chưa gửi được: ${failedNames || "một số tài liệu"}.`);
+        const reason = failures.find(failure => failure.error)?.error;
+        setUploadError(`Đã gửi ${sentMessages.length}/${assetIds.length} tài liệu. Chưa gửi được: ${failedNames || "một số tài liệu"}.${reason ? ` ${reason}` : ""}`);
       }
     } catch (cause) {
       setUploadError(cause instanceof Error ? cause.message : "Không gửi được tài liệu từ thư viện");

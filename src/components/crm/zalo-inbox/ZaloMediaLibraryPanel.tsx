@@ -83,17 +83,10 @@ function AssetPreview({ asset }: { asset: MediaAsset }) {
           />
         )}
         {thumbnailFailed && (
-          <video
-            src={asset.url}
-            muted
-            playsInline
-            preload="metadata"
-            aria-label={`Ảnh bìa ${asset.name}`}
-            onLoadedMetadata={event => {
-              const video = event.currentTarget;
-              if (Number.isFinite(video.duration) && video.duration > 0.1) video.currentTime = 0.1;
-            }}
-          />
+          <div className={styles.videoFallback} role="img" aria-label={`Video ${asset.name}`}>
+            <Video size={38} />
+            <span>{asset.name}</span>
+          </div>
         )}
         <span className={styles.videoBadge}><Video size={14} /> VIDEO</span>
       </div>
@@ -194,6 +187,7 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
           headers: {
             "Content-Type": file.type || "application/octet-stream",
             "X-Media-File-Name": encodeURIComponent(file.name),
+            "X-Media-File-Size": String(file.size),
             ...(currentFolderId ? { "X-Media-Folder-Id": currentFolderId } : {}),
           },
           body: file,
