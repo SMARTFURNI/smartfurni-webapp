@@ -1239,7 +1239,9 @@ export async function sendZaloAttachment(params: {
       persistentThumb = thumbnailUrl;
       const result = await api.sendVideo(
         {
-          msg: sentFileName,
+          // `msg` được zca-js ánh xạ thành title hiển thị bên dưới video.
+          // Chỉ gửi nội dung video, không gửi kèm tên tệp cho khách hàng.
+          msg: "",
           videoUrl: uploadedVideo.fileUrl,
           thumbnailUrl: persistentThumb,
           duration: normalized.duration,

@@ -727,7 +727,17 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvat
   const videoAttachments = attachments.filter(a => a.type === "video");
   const fileAttachments = attachments.filter(a => a.type === "others" || a.type === "file");
   const allPhotoUrls = photoAttachments.map(a => a.url || a.thumb || "").filter(Boolean);
-  const hasTextContent = !!message.content?.trim();
+  // Zalo trả title của video về như content trên một số message echo cũ.
+  // Không dựng title trùng tên tệp thành một bong bóng chữ riêng.
+  const normalizedContent = message.content?.normalize("NFC").trim() || "";
+  const isRedundantVideoTitle = videoAttachments.length > 0 && (
+    /\.(mp4|mov|m4v|3gp|webm)$/i.test(normalizedContent)
+    || videoAttachments.some(attachment =>
+      Boolean(attachment.fileName)
+      && attachment.fileName!.normalize("NFC").trim() === normalizedContent
+    )
+  );
+  const hasTextContent = Boolean(normalizedContent) && !isRedundantVideoTitle;
 
   // Parse reply quote
   const replyMatch = message.content?.match(/^\[Trả lời (.+?): "(.+?)"\]\n([\s\S]*)/);
@@ -1703,7 +1713,7 @@ export default function ZaloInboxClient() {
     (message.attachments || [])
       .filter(attachment => (attachment.type === "image" || attachment.type === "video") && (attachment.url || attachment.thumb))
       .map(attachment => ({ ...attachment, msgId: message.id, createdAt: message.createdAt })),
-  ), [messages]);
+  ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), [messages]);
   const conversationFiles = useMemo(() => messages.flatMap(message =>
     (message.attachments || [])
       .filter(attachment => (attachment.type === "others" || attachment.type === "file") && attachment.fileName)
