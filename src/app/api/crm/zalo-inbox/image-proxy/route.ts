@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   }
 
   const allowedHosts = [
-    "zalo.me", "zadn.vn", "chat.zalo.me", "stc-zaloprofile.zdn.vn",
+    "zalo.me", "zadn.vn", "zdn.vn", "chat.zalo.me", "stc-zaloprofile.zdn.vn",
     "s240-ava.zadn.vn", "s120-ava.zadn.vn", "s480-ava.zadn.vn",
     "imga.zadn.vn", "imgb.zadn.vn", "imgc.zadn.vn", "imgd.zadn.vn",
     "imge.zadn.vn", "imgf.zadn.vn", "imgg.zadn.vn",
