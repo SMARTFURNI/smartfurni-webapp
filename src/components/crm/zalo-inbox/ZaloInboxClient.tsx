@@ -120,6 +120,21 @@ interface PendingFile {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+async function sendAttachmentBinary(conversationId: string, file: File): Promise<Response> {
+  return fetch("/api/crm/zalo-inbox/send-attachment", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-Zalo-Conversation-Id": conversationId,
+      "X-Zalo-File-Name": encodeURIComponent(file.name),
+    },
+    // Gửi thẳng Blob/File, không bọc multipart. Điều này tránh lỗi parser
+    // FormData khi video lớn đi qua Next.js/undici trên Railway.
+    body: file,
+  });
+}
+
 function mergeRemoteWithRecentSent(
   remoteMessages: ZaloMessage[],
   previousMessages: ZaloMessage[],
@@ -429,8 +444,8 @@ function ReplyBar({ reply, onCancel }: { reply: ReplyContext; onCancel: () => vo
   );
 }
 
-// ─── ImagePreviewBar ──────────────────────────────────────────────────────────
-function ImagePreviewBar({ files, onRemove, onSend, sending }: {
+// ─── MediaPreviewBar ──────────────────────────────────────────────────────────
+function MediaPreviewBar({ files, onRemove, onSend, sending }: {
   files: PendingFile[]; onRemove: (idx: number) => void; onSend: () => void; sending: boolean;
 }) {
   return (
@@ -439,8 +454,24 @@ function ImagePreviewBar({ files, onRemove, onSend, sending }: {
       display: "flex", alignItems: "center", gap: 8, overflowX: "auto",
     }}>
       {files.map((f, i) => (
-        <div key={i} style={{ position: "relative", flexShrink: 0 }}>
-          <img src={f.previewUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: `2px solid ${T.accent}` }} />
+        <div key={`${f.file.name}-${f.file.lastModified}-${i}`} style={{ position: "relative", flexShrink: 0 }}>
+          {f.file.type.startsWith("video/") ? (
+            <video
+              src={f.previewUrl}
+              muted
+              playsInline
+              preload="metadata"
+              aria-label={`Video ${f.file.name}`}
+              style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: `2px solid ${T.accent}`, background: "#0f172a" }}
+            />
+          ) : (
+            <img src={f.previewUrl} alt={f.file.name} style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: `2px solid ${T.accent}` }} />
+          )}
+          {f.file.type.startsWith("video/") && (
+            <span style={{ position: "absolute", left: 5, bottom: 5, padding: "2px 5px", borderRadius: 5, background: "rgba(15,23,42,.72)", color: "#fff", fontSize: 9, fontWeight: 700 }}>
+              VIDEO
+            </span>
+          )}
           <button onClick={() => onRemove(i)}
             style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: T.error, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
             <X size={10} />
@@ -449,7 +480,7 @@ function ImagePreviewBar({ files, onRemove, onSend, sending }: {
       ))}
       <button onClick={onSend} disabled={sending}
         style={{ flexShrink: 0, padding: "8px 16px", background: T.accent, color: "#fff", border: "none", borderRadius: 8, cursor: sending ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, opacity: sending ? 0.6 : 1 }}>
-        {sending ? "Đang gửi..." : `Gửi ${files.length} ảnh`}
+        {sending ? "Đang gửi..." : `Gửi ${files.length} ảnh/video`}
       </button>
     </div>
   );
@@ -937,8 +968,8 @@ export default function ZaloInboxClient() {
   const [showLeadLink, setShowLeadLink] = useState(false);
   const [convFilter, setConvFilter] = useState<"all" | "unread" | "crm" | "unlinked">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const multiFileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
@@ -1314,7 +1345,7 @@ export default function ZaloInboxClient() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedConv) return;
     e.target.value = "";
@@ -1322,10 +1353,8 @@ export default function ZaloInboxClient() {
     const previewUrl = URL.createObjectURL(file);
     setUploadError(null); setUploadingFile(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file); formData.append("conversationId", conversationId);
-      const res = await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: formData });
-      const data = await res.json();
+      const res = await sendAttachmentBinary(conversationId, file);
+      const data = await res.json().catch(() => ({ error: "Phản hồi gửi tài liệu không hợp lệ" }));
       if (!res.ok) {
         URL.revokeObjectURL(previewUrl);
         setUploadError(data.error || "Lỗi gửi file");
@@ -1342,34 +1371,32 @@ export default function ZaloInboxClient() {
     finally { setUploadingFile(false); }
   };
 
-  const handleMultiImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultiMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     e.target.value = "";
     setPendingFiles(prev => [...prev, ...files.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))]);
   };
 
-  const handleSendPendingImages = async () => {
+  const handleSendPendingMedia = async () => {
     if (!selectedConv || !pendingFiles.length || uploadingFile) return;
     setUploadingFile(true); setUploadError(null);
     const toSend = [...pendingFiles];
     try {
-      for (const pf of toSend) {
-        const fd = new FormData();
-        fd.append("file", pf.file); fd.append("conversationId", selectedConv.id);
-        const response = await fetch("/api/crm/zalo-inbox/send-attachment", { method: "POST", credentials: "include", body: fd });
-        const data = await response.json();
+      for (let index = 0; index < toSend.length; index += 1) {
+        const pf = toSend[index];
+        const response = await sendAttachmentBinary(selectedConv.id, pf.file);
+        const data = await response.json().catch(() => ({ error: "Phản hồi gửi media không hợp lệ" }));
         if (!response.ok) throw new Error(data.error || `Không gửi được ${pf.file.name}`);
         mergeSentMessage(withLocalAttachmentPreview(data.message, pf.file, pf.previewUrl));
+        releaseLocalPreviewLater(pf.previewUrl, () => loadMessages(selectedConv.id));
+        // Chỉ giữ các tệp chưa gửi để thao tác thử lại không gửi trùng media.
+        setPendingFiles(toSend.slice(index + 1));
       }
-      setPendingFiles([]);
       const conversationId = selectedConv.id;
       setTimeout(() => loadMessages(conversationId, true), 800);
-      toSend.forEach(file => {
-        releaseLocalPreviewLater(file.previewUrl, () => loadMessages(conversationId));
-      });
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Lỗi gửi ảnh");
+      setUploadError(error instanceof Error ? error.message : "Lỗi gửi ảnh/video");
     } finally {
       // Blob preview được giải phóng sau khi URL bền vững đã đồng bộ.
       setUploadingFile(false);
@@ -1719,9 +1746,9 @@ export default function ZaloInboxClient() {
           <div style={{ flexShrink: 0, background: T.headerBg, borderTop: `1px solid ${T.headerBorder}`, backdropFilter: "blur(12px)" }}>
             {replyContext && <ReplyBar reply={replyContext} onCancel={() => setReplyContext(null)} />}
             {pendingFiles.length > 0 && (
-              <ImagePreviewBar files={pendingFiles}
+              <MediaPreviewBar files={pendingFiles}
                 onRemove={idx => { URL.revokeObjectURL(pendingFiles[idx].previewUrl); setPendingFiles(prev => prev.filter((_, i) => i !== idx)); }}
-                onSend={handleSendPendingImages} sending={uploadingFile}
+                onSend={handleSendPendingMedia} sending={uploadingFile}
               />
             )}
             {uploadError && (
@@ -1737,8 +1764,21 @@ export default function ZaloInboxClient() {
             )}
 
             <div style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end" }}>
-              <input ref={fileInputRef} type="file" accept="video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" style={{ display: "none" }} onChange={handleFileUpload} />
-              <input ref={multiFileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleMultiImageSelect} />
+              <input
+                ref={documentInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar"
+                style={{ display: "none" }}
+                onChange={handleDocumentUpload}
+              />
+              <input
+                ref={mediaInputRef}
+                type="file"
+                accept="image/*,video/mp4,video/quicktime,video/x-m4v,.mp4,.mov,.m4v"
+                multiple
+                style={{ display: "none" }}
+                onChange={handleMultiMediaSelect}
+              />
 
               {/* Emoji */}
               <div ref={emojiRef} style={{ position: "relative" }}>
@@ -1762,14 +1802,14 @@ export default function ZaloInboxClient() {
                 )}
               </div>
 
-              {/* Image */}
-              <button onClick={() => multiFileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh"
+              {/* Image / video */}
+              <button onClick={() => mediaInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh/video"
                 style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.accent, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
                 <ImageIcon size={16} />
               </button>
 
-              {/* File */}
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi file, video"
+              {/* Document */}
+              <button onClick={() => documentInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi tài liệu"
                 style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.textMuted, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
                 <Paperclip size={16} />
               </button>

@@ -2,9 +2,12 @@
  * POST /api/crm/zalo-inbox/send-attachment
  * Gửi ảnh/video/file qua Zalo cá nhân
  * 
- * Body: multipart/form-data
- * - conversationId: string
- * - file: File (ảnh, video, hoặc file khác)
+ * Body ưu tiên: raw binary (ổn định hơn multipart với video lớn trên Railway)
+ * - x-zalo-conversation-id: string
+ * - x-zalo-file-name: encodeURIComponent(file.name)
+ * - content-type: MIME của file
+ *
+ * Multipart cũ vẫn được hỗ trợ để không làm hỏng client đang mở trước deploy.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
@@ -26,36 +29,57 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const formData = await req.formData();
-    const conversationId = formData.get("conversationId") as string;
-    const file = formData.get("file") as File | null;
+    const contentType = req.headers.get("content-type") || "application/octet-stream";
+    let conversationId = "";
+    let fileName = "";
+    let mimeType = contentType.split(";", 1)[0].trim() || "application/octet-stream";
+    let fileBuffer: Buffer;
+    let fileSize = 0;
 
-    if (!conversationId || !file) {
+    if (contentType.toLowerCase().startsWith("multipart/form-data")) {
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      conversationId = String(formData.get("conversationId") || "").trim();
+      if (!file) {
+        return NextResponse.json({ error: "Thiếu file" }, { status: 400 });
+      }
+      fileName = file.name;
+      mimeType = file.type || "application/octet-stream";
+      fileSize = file.size;
+      fileBuffer = Buffer.from(await file.arrayBuffer());
+    } else {
+      conversationId = (req.headers.get("x-zalo-conversation-id") || "").trim();
+      const encodedFileName = req.headers.get("x-zalo-file-name") || "";
+      try {
+        fileName = decodeURIComponent(encodedFileName).trim();
+      } catch {
+        return NextResponse.json({ error: "Tên file không hợp lệ" }, { status: 400 });
+      }
+      fileBuffer = Buffer.from(await req.arrayBuffer());
+      fileSize = fileBuffer.byteLength;
+    }
+
+    if (!conversationId || !fileName || fileSize <= 0) {
       return NextResponse.json(
         { error: "Thiếu conversationId hoặc file" },
         { status: 400 }
       );
     }
 
-    const mimeType = file.type || "application/octet-stream";
-    const mediaKind = getZaloMediaKind(mimeType, file.name);
-    if (file.size > getZaloMediaMaxBytes(mediaKind)) {
+    const mediaKind = getZaloMediaKind(mimeType, fileName);
+    if (fileSize > getZaloMediaMaxBytes(mediaKind)) {
       return NextResponse.json(
         { error: `File quá lớn. ${mediaKind === "image" ? "Ảnh" : mediaKind === "video" ? "Video" : "File"} tối đa ${formatZaloMediaLimit(mediaKind)}.` },
         { status: 400 }
       );
     }
 
-    // Đọc file thành Buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(arrayBuffer);
-
     const result = await sendZaloAttachment({
       conversationId,
       fileBuffer,
-      fileName: file.name,
+      fileName,
       mimeType,
-      fileSize: file.size,
+      fileSize,
     });
 
     if (!result.success) {
