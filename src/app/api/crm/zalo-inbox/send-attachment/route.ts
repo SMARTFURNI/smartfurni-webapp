@@ -22,6 +22,11 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+function positiveNumberHeader(req: NextRequest, name: string): number | undefined {
+  const value = Number(req.headers.get(name) || "");
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 export async function POST(req: NextRequest) {
   const session = await getCrmSession();
   if (!await canAccessZaloInbox(session)) {
@@ -80,6 +85,9 @@ export async function POST(req: NextRequest) {
       fileName,
       mimeType,
       fileSize,
+      width: positiveNumberHeader(req, "x-zalo-video-width"),
+      height: positiveNumberHeader(req, "x-zalo-video-height"),
+      duration: positiveNumberHeader(req, "x-zalo-video-duration"),
     });
 
     if (!result.success) {

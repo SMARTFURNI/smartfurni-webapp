@@ -27,6 +27,7 @@ import {
   getZaloNativeUploadFileName,
 } from "./zalo-media-policy";
 import { notifyInboundZaloMessage } from "./zalo-inbox-push";
+import { absoluteUrl } from "./site-url";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1108,6 +1109,7 @@ export async function sendZaloAttachment(params: {
   fileSize: number;
   width?: number;
   height?: number;
+  duration?: number;
 }): Promise<{ success: boolean; messageId?: string; message?: ZaloInboxMessageDto; error?: string }> {
   // Tự động kết nối lại nếu server vừa restart
   await ensureZaloConnected();
@@ -1120,12 +1122,30 @@ export async function sendZaloAttachment(params: {
     if (params.fileSize > getZaloMediaMaxBytes(mediaKind)) {
       return { success: false, error: `File ${mediaKind} vượt giới hạn lưu trữ cho phép.` };
     }
-    // zca-js tự upload attachment bên trong sendMessage.
+    // Ảnh/file được sendMessage tự upload; video dùng hai bước uploadAttachment
+    // + sendVideo để phía nhận có trình phát native.
     const api = zaloApi as {
       sendMessage: (msg: unknown, threadId: string, type: unknown) => Promise<{
         message?: { msgId?: string | number } | null;
         attachment?: Array<{ msgId?: string | number }>;
       }>;
+      sendVideo: (options: {
+        msg?: string;
+        videoUrl: string;
+        thumbnailUrl: string;
+        duration?: number;
+        width?: number;
+        height?: number;
+      }, threadId: string, type: unknown) => Promise<{ msgId?: string | number }>;
+      uploadAttachment: (sources: Array<{
+        data: Buffer;
+        filename: `${string}.${string}`;
+        metadata: { totalSize: number; width?: number; height?: number };
+      }>, threadId: string, type: unknown) => Promise<Array<{
+        fileType: "image" | "video" | "others";
+        fileUrl?: string;
+        fileName?: string;
+      }>>;
     };
 
     let width = params.width;
@@ -1139,47 +1159,81 @@ export async function sendZaloAttachment(params: {
       } catch { /* zca-js vẫn có thể gửi ảnh không có metadata kích thước */ }
     }
 
-    // zca-js chỉ nhận diện `.mp4` là video. Chuẩn hóa MOV/M4V (thường từ
-    // iPhone) để thư viện gọi endpoint video native thay vì gửi như tài liệu.
-    const nativeUploadFileName = getZaloNativeUploadFileName(params.fileName, params.mimeType);
-    const attachmentSource = {
-      data: params.fileBuffer,
-      filename: nativeUploadFileName as `${string}.${string}`,
-      metadata: {
-        totalSize: params.fileSize,
-        width,
-        height,
-      },
-    };
-
-    const sendResult = await api.sendMessage(
-      {
-        msg: "",
-        attachments: [attachmentSource],
-      },
-      params.conversationId,
-      ThreadType?.User ?? 0
-    );
-
     // Xác định type dựa trên mimeType
-    let attachType: "image" | "video" | "file" = "file";
-    if (params.mimeType.startsWith("image/")) attachType = "image";
-    else if (params.mimeType.startsWith("video/")) attachType = "video";
+    const attachType: "image" | "video" | "file" = mediaKind;
 
     const sentAt = Date.now();
-    const msgId = String(
-      sendResult?.attachment?.[0]?.msgId
-      || sendResult?.message?.msgId
-      || `sent_att_${sentAt}`
-    );
+    let persistentUrl = "";
+    let persistentThumb = "";
+    let nativeMessageId: string | number | undefined;
+
+    if (attachType === "video") {
+      // sendMessage({ attachments }) của zca-js gửi video như một tài liệu.
+      // Luồng đúng là upload lên CDN của Zalo trước, sau đó gửi msgType=5 trỏ
+      // tới chính URL CDN đó. Dùng URL Railway trực tiếp có thể hiển thị trong
+      // CRM nhưng ứng dụng Zalo người nhận không luôn phát được.
+      const nativeUploadFileName = getZaloNativeUploadFileName(params.fileName, params.mimeType);
+      const uploaded = await api.uploadAttachment(
+        [{
+          data: params.fileBuffer,
+          filename: nativeUploadFileName as `${string}.${string}`,
+          metadata: {
+            totalSize: params.fileSize,
+            width,
+            height,
+          },
+        }],
+        params.conversationId,
+        ThreadType?.User ?? 0,
+      );
+      const uploadedVideo = uploaded.find(item => item.fileType === "video" && item.fileUrl);
+      if (!uploadedVideo?.fileUrl) {
+        throw new Error("Zalo không trả về URL video sau khi tải lên. Vui lòng thử lại.");
+      }
+      persistentUrl = uploadedVideo.fileUrl;
+      // Zalo bắt buộc thumbnailUrl. Dùng ảnh thương hiệu công khai ổn định;
+      // video thật được phát từ CDN Zalo, không phụ thuộc Railway.
+      persistentThumb = absoluteUrl("/smartfurni-icon-v2.png");
+      const result = await api.sendVideo(
+        {
+          msg: params.fileName,
+          videoUrl: uploadedVideo.fileUrl,
+          thumbnailUrl: persistentThumb,
+          duration: params.duration && params.duration > 0 ? Math.round(params.duration) : 0,
+          width: width || 1280,
+          height: height || 720,
+        },
+        params.conversationId,
+        ThreadType?.User ?? 0,
+      );
+      nativeMessageId = result?.msgId;
+    } else {
+      const attachmentSource = {
+        data: params.fileBuffer,
+        filename: params.fileName as `${string}.${string}`,
+        metadata: {
+          totalSize: params.fileSize,
+          width,
+          height,
+        },
+      };
+      const result = await api.sendMessage(
+        { msg: "", attachments: [attachmentSource] },
+        params.conversationId,
+        ThreadType?.User ?? 0,
+      );
+      nativeMessageId = result?.attachment?.[0]?.msgId || result?.message?.msgId;
+    }
+
+    const msgId = String(nativeMessageId || `sent_att_${sentAt}`);
 
     const senderName = currentUserDisplayName || currentUserId || "Tôi";
     const attachment: ZaloAttachment = {
       type: attachType,
-      // UI giữ blob preview cục bộ cho tới khi bản sao Bucket hoặc listener
-      // Zalo cập nhật URL ổn định vào đúng msgId.
-      url: "",
-      thumb: "",
+      // Video native đã có URL bền vững trước khi gửi; ảnh/file tiếp tục dùng
+      // blob preview trong lúc tác vụ mirror chạy nền.
+      url: persistentUrl,
+      thumb: persistentThumb,
       width,
       height,
       fileName: params.fileName,

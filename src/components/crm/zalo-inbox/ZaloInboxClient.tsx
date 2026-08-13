@@ -120,7 +120,39 @@ interface PendingFile {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+async function readVideoMetadata(file: File): Promise<{
+  duration?: number;
+  width?: number;
+  height?: number;
+}> {
+  if (!file.type.startsWith("video/")) return {};
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    return await new Promise(resolve => {
+      const video = document.createElement("video");
+      let settled = false;
+      const finish = (metadata: { duration?: number; width?: number; height?: number }) => {
+        if (settled) return;
+        settled = true;
+        resolve(metadata);
+      };
+      video.preload = "metadata";
+      video.onloadedmetadata = () => finish({
+        duration: Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : undefined,
+        width: video.videoWidth || undefined,
+        height: video.videoHeight || undefined,
+      });
+      video.onerror = () => finish({});
+      video.src = objectUrl;
+      window.setTimeout(() => finish({}), 3000);
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 async function sendAttachmentBinary(conversationId: string, file: File): Promise<Response> {
+  const videoMetadata = await readVideoMetadata(file);
   return fetch("/api/crm/zalo-inbox/send-attachment", {
     method: "POST",
     credentials: "include",
@@ -128,6 +160,9 @@ async function sendAttachmentBinary(conversationId: string, file: File): Promise
       "Content-Type": file.type || "application/octet-stream",
       "X-Zalo-Conversation-Id": conversationId,
       "X-Zalo-File-Name": encodeURIComponent(file.name),
+      ...(videoMetadata.duration ? { "X-Zalo-Video-Duration": String(videoMetadata.duration) } : {}),
+      ...(videoMetadata.width ? { "X-Zalo-Video-Width": String(videoMetadata.width) } : {}),
+      ...(videoMetadata.height ? { "X-Zalo-Video-Height": String(videoMetadata.height) } : {}),
     },
     // Gửi thẳng Blob/File, không bọc multipart. Điều này tránh lỗi parser
     // FormData khi video lớn đi qua Next.js/undici trên Railway.
