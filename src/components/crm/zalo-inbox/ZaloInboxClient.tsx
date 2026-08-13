@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } fro
 import {
   MessageCircle, Search, Send, Wifi, WifiOff, User, Phone, ShoppingBag,
   ChevronRight, Settings, RefreshCw, X, Paperclip, FileText, Video,
-  Download, ZoomIn, Reply, ChevronLeft,
+  Download, ZoomIn, Reply, ChevronLeft, Play,
   Image as ImageIcon, Bell, BellOff, Volume2, VolumeX, Smile,
   ChevronDown, CheckCheck, MoreVertical, Hash, Info,
   File as FileIcon, Users, UserPlus, Bot, ShoppingBag as CatalogIcon, FolderOpen,
@@ -64,6 +64,8 @@ interface ZaloAttachment {
   thumb?: string;
   fileName?: string;
   fileSize?: number;
+  width?: number;
+  height?: number;
 }
 interface ZaloMessage {
   id: string;
@@ -617,6 +619,97 @@ function ConversationItem({ conv, isSelected, onClick }: {
   );
 }
 
+function InlineZaloVideo({ attachment }: { attachment: ZaloAttachment }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const primedRef = useRef(false);
+  const coverUrl = getZaloImageUrl(attachment.thumb);
+  const [showCover, setShowCover] = useState(Boolean(coverUrl));
+  const [aspectRatio, setAspectRatio] = useState(
+    attachment.width && attachment.height
+      ? `${attachment.width} / ${attachment.height}`
+      : "16 / 9",
+  );
+
+  useEffect(() => {
+    primedRef.current = false;
+    setShowCover(Boolean(coverUrl));
+    setAspectRatio(
+      attachment.width && attachment.height
+        ? `${attachment.width} / ${attachment.height}`
+        : "16 / 9",
+    );
+  }, [attachment.url, attachment.width, attachment.height, coverUrl]);
+
+  const primeFirstFrame = useCallback((video: HTMLVideoElement) => {
+    if (video.videoWidth > 0 && video.videoHeight > 0) {
+      setAspectRatio(`${video.videoWidth} / ${video.videoHeight}`);
+    }
+    // Không phát tự động. Seek rất nhẹ để Chrome vẽ sẵn khung hình đầu thay
+    // vì giữ canvas đen cho tới lần nhấp đầu tiên.
+    if (!primedRef.current && video.duration > 0 && video.currentTime === 0) {
+      primedRef.current = true;
+      try {
+        video.currentTime = Math.min(0.05, video.duration / 1000);
+      } catch { /* Trình duyệt sẽ tự vẽ frame khi đủ dữ liệu */ }
+    }
+  }, []);
+
+  const playVideo = useCallback(() => {
+    setShowCover(false);
+    const playback = videoRef.current?.play();
+    playback?.catch(() => undefined);
+  }, []);
+
+  return (
+    <div style={{
+      position: "relative",
+      width: "min(300px, 100%)",
+      aspectRatio,
+      overflow: "hidden",
+      borderRadius: 12,
+      background: "#000",
+    }}>
+      <video
+        ref={videoRef}
+        src={getZaloVideoUrl(attachment.url)}
+        controls
+        playsInline
+        preload="auto"
+        onLoadedMetadata={(event) => primeFirstFrame(event.currentTarget)}
+        onLoadedData={(event) => primeFirstFrame(event.currentTarget)}
+        onPlay={() => setShowCover(false)}
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", background: "#000" }}
+      />
+      {showCover && coverUrl && (
+        <button
+          type="button"
+          aria-label={`Phát ${attachment.fileName || "video"}`}
+          onClick={playVideo}
+          style={{
+            position: "absolute", inset: 0, padding: 0, border: 0,
+            cursor: "pointer", background: "#000", overflow: "hidden",
+          }}
+        >
+          <img
+            src={coverUrl}
+            alt={attachment.fileName ? `Ảnh bìa ${attachment.fileName}` : "Ảnh bìa video"}
+            onError={() => setShowCover(false)}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+          <span style={{
+            position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)",
+            width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#fff", background: "rgba(15,23,42,0.72)", border: "1px solid rgba(255,255,255,0.65)",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.3)", pointerEvents: "none",
+          }}>
+            <Play size={23} fill="currentColor" style={{ marginLeft: 3 }} />
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── MessageBubble ────────────────────────────────────────────────────────────
 function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvatarUrl }: {
   message: ZaloMessage;
@@ -724,7 +817,7 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvat
         {videoAttachments.map((att, idx) => (
           <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0, borderRadius: 12, overflow: "hidden" }}>
             {att.url
-              ? <video src={getZaloVideoUrl(att.url)} poster={getZaloImageUrl(att.thumb)} controls playsInline preload="metadata" style={{ maxWidth: 300, width: "100%", display: "block", background: "#000" }} />
+              ? <InlineZaloVideo attachment={att} />
               : <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 12, background: isSelf ? "rgba(255,255,255,0.15)" : T.bubbleOther, color: isSelf ? "#fff" : T.bubbleOtherText, fontSize: 13 }}>
                   <Video size={18} /><span>{(att as any).fileName || "Video"}</span>
                 </div>
