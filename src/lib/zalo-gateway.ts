@@ -26,7 +26,7 @@ import {
   getZaloMediaMaxBytes,
 } from "./zalo-media-policy";
 import { notifyInboundZaloMessage } from "./zalo-inbox-push";
-import { normalizeVideoForZalo } from "./zalo-video-normalizer";
+import { normalizeVideoForZalo, type NormalizedZaloVideo } from "./zalo-video-normalizer";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1177,6 +1177,7 @@ export async function sendZaloAttachment(params: {
     let sentFileName = params.fileName;
     let sentMimeType = params.mimeType;
     let sentFileSize = params.fileSize;
+    let normalizedVideo: NormalizedZaloVideo | null = null;
 
     if (attachType === "video") {
       // sendMessage({ attachments }) của zca-js gửi video như một tài liệu.
@@ -1188,6 +1189,7 @@ export async function sendZaloAttachment(params: {
         fileName: params.fileName,
         mimeType: params.mimeType,
       });
+      normalizedVideo = normalized;
       sentFileBuffer = normalized.buffer;
       sentFileName = normalized.fileName;
       sentMimeType = normalized.mimeType;
@@ -1268,13 +1270,54 @@ export async function sendZaloAttachment(params: {
 
     const msgId = String(nativeMessageId || `sent_att_${sentAt}`);
 
+    // URL download của Zalo có Content-Disposition: attachment nên một số
+    // trình duyệt không phát được trong <video>. Giữ bản MP4 H.264/AAC đã
+    // chuẩn hóa và thumbnail JPEG riêng trong Bucket để CRM phát ổn định.
+    if (attachType === "video" && normalizedVideo && isRailwayBucketConfigured()) {
+      try {
+        const baseKey = `zalo-inbox/${sanitizeMediaSegment(params.conversationId)}/${sentAt}-${sanitizeMediaSegment(msgId)}`;
+        const [storedVideo, storedThumbnail] = await Promise.all([
+          storeMediaObject({
+            body: normalizedVideo.buffer,
+            key: `${baseKey}-${sanitizeMediaSegment(normalizedVideo.fileName)}`,
+            contentType: normalizedVideo.mimeType,
+            visibility: "private",
+            cacheControl: "private, max-age=31536000, immutable",
+            originalName: normalizedVideo.fileName,
+            entityType: "zalo_inbox_message",
+            entityId: msgId,
+            createdBy: currentUserId || undefined,
+            expiresAt: getZaloMediaExpiresAt("video", sentAt),
+          }),
+          storeMediaObject({
+            body: normalizedVideo.thumbnailBuffer,
+            key: `${baseKey}-thumbnail.jpg`,
+            contentType: "image/jpeg",
+            visibility: "private",
+            cacheControl: "private, max-age=31536000, immutable",
+            originalName: `${normalizedVideo.fileName.replace(/\.mp4$/i, "")}-thumbnail.jpg`,
+            entityType: "zalo_inbox_message_thumbnail",
+            entityId: msgId,
+            createdBy: currentUserId || undefined,
+            expiresAt: getZaloMediaExpiresAt("image", sentAt),
+          }),
+        ]);
+        persistentUrl = storedVideo.url;
+        persistentThumb = storedThumbnail.url;
+      } catch (error) {
+        // Video đã gửi thành công cho khách; URL CDN vẫn được proxy trong CRM
+        // nếu Bucket tạm thời không khả dụng.
+        console.error("[ZaloGateway] Không lưu được video gửi đi vào Railway Bucket:", error);
+      }
+    }
+
     const senderName = currentUserDisplayName || currentUserId || "Tôi";
     const attachment: ZaloAttachment = {
       type: attachType,
       // Video native đã có URL bền vững trước khi gửi; ảnh/file tiếp tục dùng
       // blob preview trong lúc tác vụ mirror chạy nền.
-      url: params.stableUrl || persistentUrl,
-      thumb: params.stableThumb ?? persistentThumb,
+      url: attachType === "video" ? persistentUrl : params.stableUrl || persistentUrl,
+      thumb: attachType === "video" ? persistentThumb : params.stableThumb ?? persistentThumb,
       width,
       height,
       fileName: sentFileName,
@@ -1306,7 +1349,7 @@ export async function sendZaloAttachment(params: {
     // Không upload Zalo lần hai và không bắt response chờ Railway Bucket.
     // Buffer được giữ trong closure; bản sao ổn định sẽ upsert cùng msgId và
     // phát SSE khi hoàn tất.
-    if (!params.skipMirror) {
+    if (!params.skipMirror && attachType !== "video") {
       scheduleOutgoingAttachmentMirror({
         conversationId: params.conversationId,
         fileBuffer: sentFileBuffer,

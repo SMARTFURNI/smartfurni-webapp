@@ -312,6 +312,19 @@ function getZaloImageUrl(url: string | undefined): string {
   }
   return `/api/crm/zalo-inbox/image-proxy?url=${encodeURIComponent(url)}`;
 }
+function getZaloVideoUrl(url: string | undefined): string {
+  if (!url) return '';
+  if (url.startsWith("/") || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  if (typeof window !== "undefined") {
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.origin === window.location.origin) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch { /* URL Zalo không hợp lệ sẽ được xử lý bởi proxy */ }
+  }
+  return `/api/crm/zalo-inbox/video-proxy?url=${encodeURIComponent(url)}`;
+}
 function getAvatarColor(name: string): string {
   const colors = [
     "linear-gradient(135deg,#667eea,#764ba2)",
@@ -711,7 +724,7 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvat
         {videoAttachments.map((att, idx) => (
           <div key={idx} style={{ marginBottom: hasTextContent ? 4 : 0, borderRadius: 12, overflow: "hidden" }}>
             {att.url
-              ? <video src={att.url} controls style={{ maxWidth: 300, width: "100%", display: "block", background: "#000" }} />
+              ? <video src={getZaloVideoUrl(att.url)} poster={getZaloImageUrl(att.thumb)} controls playsInline preload="metadata" style={{ maxWidth: 300, width: "100%", display: "block", background: "#000" }} />
               : <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 12, background: isSelf ? "rgba(255,255,255,0.15)" : T.bubbleOther, color: isSelf ? "#fff" : T.bubbleOtherText, fontSize: 13 }}>
                   <Video size={18} /><span>{(att as any).fileName || "Video"}</span>
                 </div>
@@ -1783,7 +1796,7 @@ export default function ZaloInboxClient() {
         <InfoDialog title={`Ảnh/Video (${conversationMedia.length})`} onClose={() => setShowAllConversationMedia(false)}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 10 }}>
             {conversationMedia.map((attachment, index) => attachment.type === "video" ? (
-              <video key={`${attachment.msgId}-${index}`} src={attachment.url} poster={getZaloImageUrl(attachment.thumb)} controls preload="metadata" style={{ width: "100%", aspectRatio: "1", objectFit: "contain", borderRadius: 10, background: "#0f172a" }} />
+              <video key={`${attachment.msgId}-${index}`} src={getZaloVideoUrl(attachment.url)} poster={getZaloImageUrl(attachment.thumb)} controls playsInline preload="metadata" style={{ width: "100%", aspectRatio: "1", objectFit: "contain", borderRadius: 10, background: "#0f172a" }} />
             ) : (
               <button key={`${attachment.msgId}-${index}`} onClick={() => {
                 const imageIndex = conversationImageUrls.indexOf(attachment.url || attachment.thumb || "");
