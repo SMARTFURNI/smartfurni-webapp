@@ -11,7 +11,6 @@ function positiveIntegerEnv(name: string, fallback: number): number {
 }
 
 const VIDEO_FILE_EXTENSIONS = new Set(["mp4", "mov", "m4v", "webm", "mkv", "avi"]);
-const ZALO_INLINE_VIDEO_EXTENSIONS = new Set(["mp4", "mov", "m4v"]);
 
 function fileExtension(fileName = ""): string {
   const match = fileName.trim().toLowerCase().match(/\.([a-z0-9]+)$/);
@@ -25,25 +24,9 @@ export function getZaloMediaKind(mimeType: string, fileName = ""): ZaloMediaKind
   return "file";
 }
 
-/**
- * zca-js 2.x chỉ đi qua API video native khi tên upload kết thúc bằng `.mp4`.
- * Video do iPhone/Safari chọn thường mang đuôi MOV/M4V nên trước đây bị thư viện
- * xếp vào nhánh file và phía người nhận phải tải xuống. MOV/M4V dùng cùng họ
- * container ISO Base Media nên Zalo có thể xử lý qua luồng MP4 native.
- */
+/** zca-js 2.x chỉ đi qua API video native khi tên upload kết thúc bằng `.mp4`. */
 export function getZaloNativeUploadFileName(fileName: string, mimeType: string): string {
   if (getZaloMediaKind(mimeType, fileName) !== "video") return fileName;
-
-  const extension = fileExtension(fileName);
-  const mime = mimeType.toLowerCase();
-  const isInlineCompatible = ZALO_INLINE_VIDEO_EXTENSIONS.has(extension)
-    || mime === "video/mp4"
-    || mime === "video/quicktime"
-    || mime === "video/x-m4v";
-
-  if (!isInlineCompatible) {
-    throw new Error("Zalo chỉ phát trực tiếp video MP4, MOV hoặc M4V. Vui lòng chuyển video sang MP4 rồi gửi lại.");
-  }
 
   const baseName = fileName
     .trim()

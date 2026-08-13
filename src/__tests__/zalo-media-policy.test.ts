@@ -44,17 +44,12 @@ describe("Zalo media policy", () => {
     );
   });
 
-  it("routes iPhone MOV/M4V files through Zalo's native MP4 video path", () => {
+  it("uses an MP4 upload name after server-side video normalization", () => {
     expect(getZaloMediaKind("application/octet-stream", "IMG_4957.MOV")).toBe("video");
     expect(getZaloNativeUploadFileName("IMG_4957.MOV", "video/quicktime")).toBe("IMG_4957.mp4");
     expect(getZaloNativeUploadFileName("demo.M4V", "video/x-m4v")).toBe("demo.mp4");
     expect(getZaloNativeUploadFileName("demo.mp4", "video/mp4")).toBe("demo.mp4");
-  });
-
-  it("does not silently send unsupported videos as downloadable files", () => {
-    expect(() => getZaloNativeUploadFileName("demo.webm", "video/webm")).toThrow(
-      "Zalo chỉ phát trực tiếp video MP4, MOV hoặc M4V",
-    );
+    expect(getZaloNativeUploadFileName("demo.webm", "video/webm")).toBe("demo.mp4");
     expect(getZaloNativeUploadFileName("bao-gia.pdf", "application/pdf")).toBe("bao-gia.pdf");
   });
 });

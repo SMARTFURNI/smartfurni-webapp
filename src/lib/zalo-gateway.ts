@@ -24,10 +24,9 @@ import {
   getZaloMediaExpiresAt,
   getZaloMediaKind,
   getZaloMediaMaxBytes,
-  getZaloNativeUploadFileName,
 } from "./zalo-media-policy";
 import { notifyInboundZaloMessage } from "./zalo-inbox-push";
-import { absoluteUrl } from "./site-url";
+import { normalizeVideoForZalo } from "./zalo-video-normalizer";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1145,6 +1144,9 @@ export async function sendZaloAttachment(params: {
         fileType: "image" | "video" | "others";
         fileUrl?: string;
         fileName?: string;
+        normalUrl?: string;
+        hdUrl?: string;
+        thumbUrl?: string;
       }>>;
     };
 
@@ -1166,42 +1168,76 @@ export async function sendZaloAttachment(params: {
     let persistentUrl = "";
     let persistentThumb = "";
     let nativeMessageId: string | number | undefined;
+    let sentFileBuffer = params.fileBuffer;
+    let sentFileName = params.fileName;
+    let sentMimeType = params.mimeType;
+    let sentFileSize = params.fileSize;
 
     if (attachType === "video") {
       // sendMessage({ attachments }) của zca-js gửi video như một tài liệu.
       // Luồng đúng là upload lên CDN của Zalo trước, sau đó gửi msgType=5 trỏ
       // tới chính URL CDN đó. Dùng URL Railway trực tiếp có thể hiển thị trong
       // CRM nhưng ứng dụng Zalo người nhận không luôn phát được.
-      const nativeUploadFileName = getZaloNativeUploadFileName(params.fileName, params.mimeType);
+      const normalized = await normalizeVideoForZalo({
+        buffer: params.fileBuffer,
+        fileName: params.fileName,
+        mimeType: params.mimeType,
+      });
+      sentFileBuffer = normalized.buffer;
+      sentFileName = normalized.fileName;
+      sentMimeType = normalized.mimeType;
+      sentFileSize = normalized.fileSize;
+      width = normalized.width;
+      height = normalized.height;
+
+      // Upload cả video đã chuyển mã và frame đại diện lên CDN Zalo. Điều này
+      // tránh việc ứng dụng di động phải tải thumbnail từ domain bên ngoài và
+      // đảm bảo thẻ video tham chiếu hoàn toàn tới tài nguyên Zalo.
       const uploaded = await api.uploadAttachment(
-        [{
-          data: params.fileBuffer,
-          filename: nativeUploadFileName as `${string}.${string}`,
-          metadata: {
-            totalSize: params.fileSize,
-            width,
-            height,
+        [
+          {
+            data: normalized.buffer,
+            filename: normalized.fileName as `${string}.${string}`,
+            metadata: {
+              totalSize: normalized.fileSize,
+              width: normalized.width,
+              height: normalized.height,
+            },
           },
-        }],
+          {
+            data: normalized.thumbnailBuffer,
+            filename: `${normalized.fileName.replace(/\.mp4$/i, "")}-thumbnail.jpg` as `${string}.${string}`,
+            metadata: {
+              totalSize: normalized.thumbnailBuffer.byteLength,
+              width: normalized.thumbnailWidth,
+              height: normalized.thumbnailHeight,
+            },
+          },
+        ],
         params.conversationId,
         ThreadType?.User ?? 0,
       );
       const uploadedVideo = uploaded.find(item => item.fileType === "video" && item.fileUrl);
+      const uploadedThumbnail = uploaded.find(item => item.fileType === "image");
       if (!uploadedVideo?.fileUrl) {
         throw new Error("Zalo không trả về URL video sau khi tải lên. Vui lòng thử lại.");
       }
+      const thumbnailUrl = uploadedThumbnail?.hdUrl
+        || uploadedThumbnail?.normalUrl
+        || uploadedThumbnail?.thumbUrl;
+      if (!thumbnailUrl) {
+        throw new Error("Zalo không trả về ảnh đại diện video sau khi tải lên. Vui lòng thử lại.");
+      }
       persistentUrl = uploadedVideo.fileUrl;
-      // Zalo bắt buộc thumbnailUrl. Dùng ảnh thương hiệu công khai ổn định;
-      // video thật được phát từ CDN Zalo, không phụ thuộc Railway.
-      persistentThumb = absoluteUrl("/smartfurni-icon-v2.png");
+      persistentThumb = thumbnailUrl;
       const result = await api.sendVideo(
         {
-          msg: params.fileName,
+          msg: sentFileName,
           videoUrl: uploadedVideo.fileUrl,
           thumbnailUrl: persistentThumb,
-          duration: params.duration && params.duration > 0 ? Math.round(params.duration) : 0,
-          width: width || 1280,
-          height: height || 720,
+          duration: normalized.duration,
+          width: normalized.width,
+          height: normalized.height,
         },
         params.conversationId,
         ThreadType?.User ?? 0,
@@ -1236,8 +1272,8 @@ export async function sendZaloAttachment(params: {
       thumb: persistentThumb,
       width,
       height,
-      fileName: params.fileName,
-      fileSize: params.fileSize,
+      fileName: sentFileName,
+      fileSize: sentFileSize,
     };
 
     const lastMsgLabel = attachType === "image" ? "[Hình ảnh]" : attachType === "video" ? "[Video]" : `[File: ${params.fileName}]`;
@@ -1266,7 +1302,11 @@ export async function sendZaloAttachment(params: {
     // Buffer được giữ trong closure; bản sao ổn định sẽ upsert cùng msgId và
     // phát SSE khi hoàn tất.
     scheduleOutgoingAttachmentMirror({
-      ...params,
+      conversationId: params.conversationId,
+      fileBuffer: sentFileBuffer,
+      fileName: sentFileName,
+      mimeType: sentMimeType,
+      fileSize: sentFileSize,
       msgId,
       sentAt,
       senderName,
