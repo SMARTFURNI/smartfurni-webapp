@@ -5,12 +5,15 @@ import { query, queryOne } from "@/lib/db";
 import { createTask } from "@/lib/crm-store";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { listZaloAccounts } from "@/lib/zalo-account-store";
-import { findZaloUserByPhone, initZaloGateway, sendZaloMessage } from "@/lib/zalo-gateway";
-import { getZaloConversation, initZaloOASchema, sendZaloConsultation } from "@/lib/zalo-oa-store";
+import { findZaloUserByPhone, initZaloGateway, sendZaloAttachment as sendPersonalAttachment, sendZaloMessage } from "@/lib/zalo-gateway";
+import { getZaloConversation, initZaloOASchema, sendZaloAttachment as sendOaAttachment, sendZaloConsultation } from "@/lib/zalo-oa-store";
+import { getMediaObject } from "@/lib/media-storage";
+import { getZaloMediaAssets, incrementZaloMediaUsage, type ZaloMediaAsset } from "@/lib/zalo-media-library-store";
 import {
   B2B_SOFA_JOURNEY,
   buildJourneyContext,
   channelSequence,
+  journeyDefinitionWithOverrides,
   missingRequiredContext,
   nextJourneyBusinessWindow,
   renderJourneyTemplate,
@@ -42,6 +45,11 @@ interface SendAttemptResult {
   providerMessageId?: string;
   recipient: string;
   preview: string;
+}
+
+interface PreparedMedia {
+  asset: ZaloMediaAsset;
+  buffer: Buffer;
 }
 
 export interface B2BSofaJourneyRunResult {
@@ -96,6 +104,59 @@ function nonEmptyContext(values: Record<string, string>): Record<string, string>
   return Object.fromEntries(Object.entries(values).filter(([, value]) => String(value || "").trim()));
 }
 
+async function prepareMedia(assetIds: string[]): Promise<PreparedMedia[]> {
+  const requestedIds = [...new Set(assetIds)].slice(0, 10);
+  const assets = await getZaloMediaAssets(requestedIds);
+  if (assets.length !== requestedIds.length) throw new Error("Một hoặc nhiều media của mẫu không còn trong thư viện.");
+  return Promise.all(assets.map(async asset => {
+    const object = await getMediaObject(asset.objectKey);
+    if (!object.Body) throw new Error(`File ${asset.name} không còn trong thư viện.`);
+    return { asset, buffer: Buffer.from(await object.Body.transformToByteArray()) };
+  }));
+}
+
+async function sendPersonalMedia(accountId: string, conversationId: string, media: PreparedMedia[]): Promise<string[]> {
+  const sentIds: string[] = [];
+  for (const item of media) {
+    const result = await sendPersonalAttachment({
+      accountId,
+      conversationId,
+      fileBuffer: item.buffer,
+      fileName: item.asset.name,
+      mimeType: item.asset.contentType,
+      fileSize: item.asset.sizeBytes || item.buffer.byteLength,
+      width: item.asset.width || undefined,
+      height: item.asset.height || undefined,
+      duration: item.asset.durationMs ? item.asset.durationMs / 1000 : undefined,
+      stableUrl: item.asset.url,
+      stableThumb: item.asset.url,
+      skipMirror: true,
+    });
+    if (!result.success) throw new Error(result.error || `Không gửi được ${item.asset.name}`);
+    sentIds.push(item.asset.id);
+  }
+  await incrementZaloMediaUsage(sentIds);
+  return sentIds;
+}
+
+async function sendOaMedia(userId: string, media: PreparedMedia[]): Promise<string[]> {
+  const sentIds: string[] = [];
+  for (const item of media) {
+    const result = await sendOaAttachment({
+      userId,
+      file: new Blob([Uint8Array.from(item.buffer)], { type: item.asset.contentType }),
+      filename: item.asset.name,
+      mimeType: item.asset.contentType,
+      kind: item.asset.mediaKind === "image" ? "image" : "file",
+      source: "automation",
+    });
+    if (!result.ok) throw new Error(result.error || `Không gửi được ${item.asset.name}`);
+    sentIds.push(item.asset.id);
+  }
+  await incrementZaloMediaUsage(sentIds);
+  return sentIds;
+}
+
 async function resolveAutomationAccountId(
   settings: B2BSofaJourneySettings,
   enrollment: JourneyEnrollmentRecord,
@@ -131,6 +192,7 @@ async function sendPersonalZalo(
   lead: Lead,
   content: string,
   accountId: string,
+  media: PreparedMedia[],
 ): Promise<SendAttemptResult> {
   if (!accountId) {
     return { outcome: "definitive_failure", error: "Không có tài khoản Zalo Personal SmartFurni đang hoạt động.", recipient: lead.phone || "", preview: content };
@@ -156,19 +218,37 @@ async function sendPersonalZalo(
   }
   const result = await sendZaloMessage({ accountId, conversationId: userId, content });
   if (result.success) {
+    try {
+      await sendPersonalMedia(accountId, userId, media);
+    } catch (error) {
+      return {
+        outcome: "delivery_unknown",
+        error: `Tin chữ đã gửi nhưng media chưa gửi đủ: ${error instanceof Error ? error.message : "unknown"}`,
+        providerMessageId: result.messageId,
+        recipient: userId,
+        preview: content,
+      };
+    }
     return { outcome: "sent", providerMessageId: result.messageId, recipient: userId, preview: content };
   }
   const error = result.error || "unknown";
   return { outcome: looksAmbiguous(error) ? "delivery_unknown" : "definitive_failure", error, recipient: userId, preview: content };
 }
 
-async function sendOaZalo(lead: Lead, content: string): Promise<SendAttemptResult> {
+async function sendOaZalo(lead: Lead, content: string, media: PreparedMedia[]): Promise<SendAttemptResult> {
   const userId = await findOaUserId(lead);
   if (!userId) {
     return { outcome: "definitive_failure", error: "Không tìm thấy hội thoại Zalo OA khớp với lead.", recipient: lead.phone || "", preview: content };
   }
   const result = await sendZaloConsultation({ userId, content, source: "automation" });
-  if (result.ok) return { outcome: "sent", recipient: userId, preview: content };
+  if (result.ok) {
+    try {
+      await sendOaMedia(userId, media);
+    } catch (error) {
+      return { outcome: "delivery_unknown", error: `Tin chữ đã gửi nhưng media chưa gửi đủ: ${error instanceof Error ? error.message : "unknown"}`, recipient: userId, preview: content };
+    }
+    return { outcome: "sent", recipient: userId, preview: content };
+  }
   const error = result.error || "unknown";
   return { outcome: looksAmbiguous(error) ? "delivery_unknown" : "definitive_failure", error, recipient: userId, preview: content };
 }
@@ -177,6 +257,7 @@ async function sendEmail(
   lead: Lead,
   subject: string,
   body: string,
+  media: PreparedMedia[],
 ): Promise<SendAttemptResult> {
   const recipient = lead.email?.trim() || "";
   if (!recipient || !/^\S+@\S+\.\S+$/.test(recipient)) {
@@ -195,10 +276,12 @@ async function sendEmail(
       subject,
       text: body,
       html: plainTextToHtml(body),
+      attachments: media.map(item => ({ filename: item.asset.name, content: item.buffer })),
     });
     if (result.error) {
       return { outcome: "definitive_failure", error: result.error.message || "Resend từ chối email.", recipient, preview: subject };
     }
+    await incrementZaloMediaUsage(media.map(item => item.asset.id));
     return { outcome: "sent", providerMessageId: result.data?.id, recipient, preview: subject };
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown";
@@ -213,10 +296,11 @@ async function executeChannel(
   subject: string,
   emailBody: string,
   zaloBody: string,
+  media: PreparedMedia[],
 ): Promise<SendAttemptResult> {
-  if (channel === "zalo_personal") return sendPersonalZalo(lead, zaloBody, accountId);
-  if (channel === "zalo_oa") return sendOaZalo(lead, zaloBody);
-  return sendEmail(lead, subject, emailBody);
+  if (channel === "zalo_personal") return sendPersonalZalo(lead, zaloBody, accountId, media);
+  if (channel === "zalo_oa") return sendOaZalo(lead, zaloBody, media);
+  return sendEmail(lead, subject, emailBody, media);
 }
 
 async function logChannelAttempt(
@@ -342,7 +426,7 @@ async function processAction(
     return { status: "deferred", message: `Hoãn đến ${until.toISOString()} theo giới hạn tần suất.` };
   }
 
-  const step = B2B_SOFA_JOURNEY.steps.find(item => item.id === action.stepId);
+  const step = journeyDefinitionWithOverrides(settings).steps.find(item => item.id === action.stepId);
   if (!step) {
     await markJourneyActionOutcome(action, "skipped", action.attempts, "Không tìm thấy định nghĩa bước journey.");
     return { status: "skipped", message: "Không tìm thấy định nghĩa bước journey." };
@@ -378,12 +462,19 @@ async function processAction(
   const subject = renderJourneyTemplate(step.emailSubject, context);
   const emailBody = renderJourneyTemplate(step.emailBody, context);
   const zaloBody = renderJourneyTemplate(step.zaloBody, context);
+  let media: PreparedMedia[] = [];
+  try {
+    media = await prepareMedia(step.mediaAssetIds || []);
+  } catch (error) {
+    await markJourneyActionWaitingContent(action, ["media_library"]);
+    return { status: "waiting_content", message: error instanceof Error ? error.message : "Không tải được media từ thư viện." };
+  }
   const accountId = await resolveAutomationAccountId(settings, enrollment);
   await initZaloGateway().catch(() => undefined);
 
   const attempts = [...action.attempts];
   for (const channel of channelSequence(step)) {
-    const result = await executeChannel(channel, lead, accountId, subject, emailBody, zaloBody);
+    const result = await executeChannel(channel, lead, accountId, subject, emailBody, zaloBody, media);
     attempts.push({
       channel,
       at: new Date().toISOString(),

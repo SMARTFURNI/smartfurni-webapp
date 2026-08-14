@@ -6,6 +6,7 @@ import {
   buildJourneyContext,
   channelSequence,
   isEligibleForB2BSofaJourney,
+  journeyDefinitionWithOverrides,
   missingRequiredContext,
   nextJourneyBusinessWindow,
   renderJourneyTemplate,
@@ -59,6 +60,23 @@ describe("B2B sofa journey definition", () => {
     expect(B2B_SOFA_JOURNEY.officialContact.zalo).toBe("0918.326.552");
     expect(B2B_SOFA_JOURNEY.officialContact.email).toBe("b2b@smartfurni.com.vn");
     expect(B2B_SOFA_JOURNEY.steps[0].zaloBody).toContain("028.7122.0818");
+  });
+
+  it("applies editable copy and shared media to an individual step", () => {
+    const definition = journeyDefinitionWithOverrides({
+      stepOverrides: {
+        D0_QUALIFY: {
+          zaloBody: "Nội dung Zalo đã sửa",
+          emailSubject: "Tiêu đề đã sửa",
+          mediaAssetIds: ["image-1", "video-1", "image-1"],
+        },
+      },
+    });
+    const step = definition.steps.find(item => item.id === "D0_QUALIFY")!;
+    expect(step.zaloBody).toBe("Nội dung Zalo đã sửa");
+    expect(step.emailSubject).toBe("Tiêu đề đã sửa");
+    expect(step.mediaAssetIds).toEqual(["image-1", "video-1"]);
+    expect(step.emailBody).toBe(B2B_SOFA_JOURNEY.steps[0].emailBody);
   });
 });
 

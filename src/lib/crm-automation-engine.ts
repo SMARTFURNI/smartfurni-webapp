@@ -12,7 +12,9 @@ import { getAutomationRules, getAutoAssignConfig, getSlaConfig, saveAutomationRu
 import { getNotificationRules, logNotification } from "./crm-notifications-store";
 import type { Lead } from "./crm-types";
 import type { AutomationRule, AutomationAction } from "./crm-automation-store";
-import { findZaloUserByPhone, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
+import { findZaloUserByPhone, sendZaloAttachment, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
+import { getMediaObject } from "./media-storage";
+import { getZaloMediaAssets, incrementZaloMediaUsage } from "./zalo-media-library-store";
 import { Resend } from "resend";
 
 // Module-level init flag cho Zalo gateway
@@ -78,6 +80,17 @@ function addDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().split("T")[0];
+}
+
+async function loadAutomationMedia(assetIds: string[]) {
+  const requestedIds = [...new Set(assetIds)].slice(0, 10);
+  const assets = await getZaloMediaAssets(requestedIds);
+  if (assets.length !== requestedIds.length) throw new Error("Một hoặc nhiều media của mẫu không còn trong thư viện");
+  return Promise.all(assets.map(async asset => {
+    const object = await getMediaObject(asset.objectKey);
+    if (!object.Body) throw new Error(`File ${asset.name} không còn trong thư viện`);
+    return { asset, buffer: Buffer.from(await object.Body.transformToByteArray()) };
+  }));
 }
 
 // ─── Check if a rule's trigger matches a lead ─────────────────────────────────
@@ -264,6 +277,26 @@ async function executeAction(
       const { uid } = findResult.user;
       const sendResult = await sendZaloMessage({ conversationId: uid, content: message });
       if (sendResult.success) {
+        const media = await loadAutomationMedia(action.mediaAssetIds || []);
+        const sentMediaIds: string[] = [];
+        for (const item of media) {
+          const attachment = await sendZaloAttachment({
+            conversationId: uid,
+            fileBuffer: item.buffer,
+            fileName: item.asset.name,
+            mimeType: item.asset.contentType,
+            fileSize: item.asset.sizeBytes || item.buffer.byteLength,
+            width: item.asset.width || undefined,
+            height: item.asset.height || undefined,
+            duration: item.asset.durationMs ? item.asset.durationMs / 1000 : undefined,
+            stableUrl: item.asset.url,
+            stableThumb: item.asset.url,
+            skipMirror: true,
+          });
+          if (!attachment.success) throw new Error(`Tin chữ đã gửi nhưng không gửi được ${item.asset.name}: ${attachment.error || "unknown"}`);
+          sentMediaIds.push(item.asset.id);
+        }
+        await incrementZaloMediaUsage(sentMediaIds);
         await logNotification({
           ruleId,
           ruleName,
@@ -327,6 +360,7 @@ async function executeAction(
           .replace(/\{\{value\}\}/g, lead.expectedValue?.toLocaleString("vi-VN") ?? "0");
         const subject = replaceVars(rawSubject);
         const body = replaceVars(rawBody);
+        const media = await loadAutomationMedia(action.mediaAssetIds || []);
         const delayMs = (action.emailDelayMinutes ?? 0) * 60 * 1000;
         if (delayMs > 0) {
           await logNotification({
@@ -347,10 +381,12 @@ async function executeAction(
           subject,
           html: body.replace(/\n/g, "<br>"),
           text: body,
+          attachments: media.map(item => ({ filename: item.asset.name, content: item.buffer })),
         });
         if (resendError) {
           throw new Error(resendError.message ?? "Resend API error");
         }
+        await incrementZaloMediaUsage(media.map(item => item.asset.id));
         await logNotification({
           ruleId, ruleName, channel: "email",
           recipient: lead.email ?? "",

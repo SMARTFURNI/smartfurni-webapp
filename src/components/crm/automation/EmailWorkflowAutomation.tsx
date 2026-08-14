@@ -5,6 +5,8 @@ import {
   Mail, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2,
   AlertCircle, RefreshCw, ExternalLink, Zap,
 } from "lucide-react";
+import AutomationMediaField from "./AutomationMediaField";
+import AutomationTemplateTest from "./AutomationTemplateTest";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +19,7 @@ interface EmailRule {
   body: string;
   delayMinutes: number;
   fromName: string;
+  mediaAssetIds: string[];
 }
 
 interface SmtpStatusInfo {
@@ -240,6 +243,18 @@ function RuleCard({
               className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none font-mono"
               style={{ background: "#f9fafb", border: "1px solid #e5e7eb", color: "#111827", lineHeight: "1.6" }} />
           </div>
+
+          <AutomationMediaField
+            assetIds={rule.mediaAssetIds}
+            onChange={mediaAssetIds => onChange({ ...rule, mediaAssetIds })}
+          />
+
+          <AutomationTemplateTest
+            channel="email"
+            subject={rule.subject}
+            body={rule.body}
+            mediaAssetIds={rule.mediaAssetIds}
+          />
         </div>
       )}
     </div>
@@ -315,7 +330,7 @@ export default function EmailWorkflowAutomation() {
     // Load ALL automation rules from shared table (same as Zalo Workflow)
     fetch("/api/crm/automation?type=rules")
       .then(r => r.json())
-      .then((allData: { id: string; name: string; description: string; enabled: boolean; trigger: { type: string; toStage?: string }; actions: { type: string; emailSubject?: string; emailBody?: string; emailFromName?: string; emailDelayMinutes?: number }[]; runCount: number; lastRunAt: string | null; createdAt: string; updatedAt: string }[]) => {
+      .then((allData: { id: string; name: string; description: string; enabled: boolean; trigger: { type: string; toStage?: string }; actions: { type: string; emailSubject?: string; emailBody?: string; emailFromName?: string; emailDelayMinutes?: number; mediaAssetIds?: string[] }[]; runCount: number; lastRunAt: string | null; createdAt: string; updatedAt: string }[]) => {
         if (!Array.isArray(allData)) return;
         setAllRules(allData);
         // Filter only email workflow rules
@@ -332,6 +347,7 @@ export default function EmailWorkflowAutomation() {
               body: action.emailBody ?? "",
               delayMinutes: action.emailDelayMinutes ?? 0,
               fromName: action.emailFromName ?? "SmartFurni",
+              mediaAssetIds: action.mediaAssetIds ?? [],
             } as EmailRule;
           });
         setRules(emailRules);
@@ -369,6 +385,7 @@ export default function EmailWorkflowAutomation() {
       body: tpl?.body ?? "",
       delayMinutes: 0,
       fromName: "SmartFurni",
+      mediaAssetIds: [],
     };
     setRules(prev => [...prev, newRule]);
   };
@@ -389,6 +406,7 @@ export default function EmailWorkflowAutomation() {
           emailBody: rule.body,
           emailFromName: rule.fromName,
           emailDelayMinutes: rule.delayMinutes,
+          mediaAssetIds: rule.mediaAssetIds,
         }],
         runCount: 0,
         lastRunAt: null,

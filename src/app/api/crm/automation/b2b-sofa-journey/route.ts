@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getLead } from "@/lib/crm-store";
-import { B2B_SOFA_JOURNEY } from "@/lib/crm-b2b-sofa-journey";
+import { journeyDefinitionWithOverrides } from "@/lib/crm-b2b-sofa-journey";
 import {
   cancelJourneyEnrollment,
   enrollLeadInB2BSofaJourney,
@@ -25,7 +25,10 @@ export async function GET() {
   try {
     await requireAdmin();
     const dashboard = await getB2BSofaJourneyDashboard();
-    return NextResponse.json({ definition: B2B_SOFA_JOURNEY, ...dashboard });
+    return NextResponse.json({
+      definition: journeyDefinitionWithOverrides(dashboard.settings),
+      ...dashboard,
+    });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

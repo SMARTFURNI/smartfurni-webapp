@@ -7,6 +7,8 @@ import {
   ArrowRight, Edit3, Copy,
 } from "lucide-react";
 import type { AutomationRule, AutomationTrigger } from "@/lib/crm-automation-store";
+import AutomationMediaField from "./AutomationMediaField";
+import AutomationTemplateTest from "./AutomationTemplateTest";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const STAGES = [
@@ -264,6 +266,17 @@ function RuleEditor({
               ))}
             </div>
           </div>
+
+          <AutomationMediaField
+            assetIds={zaloAction?.mediaAssetIds ?? []}
+            onChange={mediaAssetIds => updateZaloAction({ mediaAssetIds })}
+          />
+
+          <AutomationTemplateTest
+            channel="zalo"
+            body={zaloAction?.zaloMessage ?? ""}
+            mediaAssetIds={zaloAction?.mediaAssetIds ?? []}
+          />
 
           {/* Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -4,6 +4,8 @@ import { logNotification } from "@/lib/crm-notifications-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAutomationRules } from "@/lib/crm-automation-store";
 import { getLead } from "@/lib/crm-store";
+import { getMediaObject } from "@/lib/media-storage";
+import { getZaloMediaAssets, incrementZaloMediaUsage } from "@/lib/zalo-media-library-store";
 
 function replaceVars(template: string, lead: Record<string, string>): string {
   return template
@@ -37,6 +39,7 @@ export async function POST(req: NextRequest) {
       body: string;
       fromName: string;
       delayMinutes: number;
+      mediaAssetIds: string[];
     }> = [];
 
     try {
@@ -57,6 +60,7 @@ export async function POST(req: NextRequest) {
             body: action.emailBody ?? "",
             fromName: action.emailFromName ?? "SmartFurni",
             delayMinutes: action.emailDelayMinutes ?? 0,
+            mediaAssetIds: action.mediaAssetIds ?? [],
           };
         });
     } catch {
@@ -75,6 +79,7 @@ export async function POST(req: NextRequest) {
           body: r.body ?? "",
           fromName: r.fromName ?? "SmartFurni",
           delayMinutes: r.delayMinutes ?? 0,
+          mediaAssetIds: [],
         }));
     }
 
@@ -126,6 +131,16 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
+        const assets = await getZaloMediaAssets([...new Set(rule.mediaAssetIds || [])].slice(0, 10));
+        if (assets.length !== new Set(rule.mediaAssetIds || []).size) {
+          throw new Error("Một hoặc nhiều media của mẫu không còn trong thư viện");
+        }
+        const attachments = await Promise.all(assets.map(async asset => {
+          const object = await getMediaObject(asset.objectKey);
+          if (!object.Body) throw new Error(`File ${asset.name} không còn trong thư viện`);
+          return { filename: asset.name, content: Buffer.from(await object.Body.transformToByteArray()) };
+        }));
+
         // Send via Resend HTTP API (HTTPS port 443 — not blocked by Railway)
         const { error: resendError } = await resend.emails.send({
           from: `${ruleFromName} <${fromEmail}>`,
@@ -133,11 +148,13 @@ export async function POST(req: NextRequest) {
           subject,
           html: body.replace(/\n/g, "<br>"),
           text: body,
+          attachments,
         });
 
         if (resendError) {
           throw new Error(resendError.message ?? "Resend API error");
         }
+        await incrementZaloMediaUsage(assets.map(asset => asset.id));
 
         await logNotification({
           ruleId: rule.id ?? "",

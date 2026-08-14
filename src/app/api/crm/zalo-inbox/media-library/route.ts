@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
         unfiled: folder === "unfiled",
         kind: (["image", "video", "file"] as string[]).includes(kind) ? kind as ZaloMediaKind : "all",
         search: params.get("q") || "",
+        limit: Number(params.get("limit") || 200),
       }),
       getZaloMediaLibraryCounts(),
     ]);

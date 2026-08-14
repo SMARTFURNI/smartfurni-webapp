@@ -18,7 +18,15 @@ export interface JourneyStepDefinition {
   emailSubject: string;
   emailBody: string;
   zaloBody: string;
+  mediaAssetIds?: string[];
   requiredContext?: string[];
+}
+
+export interface JourneyStepOverride {
+  emailSubject?: string;
+  emailBody?: string;
+  zaloBody?: string;
+  mediaAssetIds?: string[];
 }
 
 export interface B2BSofaJourneyDefinition {
@@ -53,6 +61,7 @@ export interface B2BSofaJourneySettings {
   approvedDemoVideoUrl: string;
   projectBriefUrl: string;
   comparisonPackUrl: string;
+  stepOverrides: Record<string, JourneyStepOverride>;
   doNotContactTags: string[];
 }
 
@@ -71,6 +80,7 @@ export const DEFAULT_B2B_SOFA_JOURNEY_SETTINGS: B2BSofaJourneySettings = {
   approvedDemoVideoUrl: "",
   projectBriefUrl: "",
   comparisonPackUrl: "",
+  stepOverrides: {},
   doNotContactTags: [
     "DNC",
     "Do not contact",
@@ -80,6 +90,24 @@ export const DEFAULT_B2B_SOFA_JOURNEY_SETTINGS: B2BSofaJourneySettings = {
     "Unsubscribe",
   ],
 };
+
+export function journeyDefinitionWithOverrides(
+  settings: Pick<B2BSofaJourneySettings, "stepOverrides">,
+): B2BSofaJourneyDefinition {
+  return {
+    ...B2B_SOFA_JOURNEY,
+    steps: B2B_SOFA_JOURNEY.steps.map(step => {
+      const override = settings.stepOverrides?.[step.id] || {};
+      return {
+        ...step,
+        emailSubject: override.emailSubject ?? step.emailSubject,
+        emailBody: override.emailBody ?? step.emailBody,
+        zaloBody: override.zaloBody ?? step.zaloBody,
+        mediaAssetIds: [...new Set(override.mediaAssetIds || step.mediaAssetIds || [])].slice(0, 10),
+      };
+    }),
+  };
+}
 
 const ZALO_SIGNATURE = [
   "",

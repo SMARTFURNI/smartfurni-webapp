@@ -63,6 +63,7 @@ export interface AutomationAction {
   zaloMessage?: string;              // Nội dung tin nhắn (hỗ trợ {{name}}, {{stage}}, {{phone}}, {{assignedTo}})
   zaloDelayMinutes?: number;         // Trì hoãn N phút trước khi gửi (0 = gửi ngay)
   zaloFallbackToAddFriend?: boolean; // Nếu chưa là bạn bè → tự động gửi lời mời kết bạn
+  mediaAssetIds?: string[];          // Ảnh/video lấy từ thư viện dùng chung của Zalo Inbox
 }
 
 export interface AutomationRule {

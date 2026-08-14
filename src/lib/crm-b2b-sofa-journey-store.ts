@@ -240,6 +240,19 @@ export async function saveB2BSofaJourneySettings(
     timezone: "Asia/Ho_Chi_Minh",
     activationAt: enablingNow ? new Date().toISOString() : (input.activationAt ?? current.activationAt),
     maxMessagesPerSevenDays: Math.max(1, Math.min(7, Number(input.maxMessagesPerSevenDays ?? current.maxMessagesPerSevenDays))),
+    stepOverrides: Object.fromEntries(
+      Object.entries(input.stepOverrides ?? current.stepOverrides ?? {}).map(([stepId, override]) => {
+        const value = override && typeof override === "object" ? override : {};
+        return [stepId, {
+          emailSubject: String(value.emailSubject ?? ""),
+          emailBody: String(value.emailBody ?? ""),
+          zaloBody: String(value.zaloBody ?? ""),
+          mediaAssetIds: [...new Set(Array.isArray(value.mediaAssetIds)
+            ? value.mediaAssetIds.map(String).filter(Boolean)
+            : [])].slice(0, 10),
+        }];
+      }),
+    ),
   };
   await query(
     `INSERT INTO crm_journey_settings (journey_code,settings,updated_at)
