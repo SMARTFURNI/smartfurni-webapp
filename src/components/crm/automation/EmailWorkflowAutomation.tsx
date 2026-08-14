@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   Mail, Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2,
-  AlertCircle, RefreshCw, ExternalLink, Zap,
+  AlertCircle, RefreshCw, Zap,
 } from "lucide-react";
 import AutomationMediaField from "./AutomationMediaField";
 import AutomationTemplateTest from "./AutomationTemplateTest";
@@ -24,6 +24,7 @@ interface EmailRule {
 
 interface SmtpStatusInfo {
   configured: boolean;
+  provider?: string;
   host: string;
   user: string;
   fromName: string;
@@ -270,7 +271,7 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
       <div className="flex items-center gap-2 p-3 rounded-xl"
         style={{ background: "rgba(156,163,175,0.08)", border: "1px solid rgba(156,163,175,0.2)" }}>
         <RefreshCw size={13} className="animate-spin" style={{ color: "#9ca3af" }} />
-        <span className="text-xs" style={{ color: "#6b7280" }}>Đang kiểm tra cấu hình SMTP...</span>
+        <span className="text-xs" style={{ color: "#6b7280" }}>Đang kiểm tra nhà cung cấp Email Automation...</span>
       </div>
     );
   }
@@ -282,14 +283,13 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
         <div className="flex items-center gap-2">
           <AlertCircle size={14} style={{ color: "#f59e0b" }} />
           <span className="text-xs" style={{ color: "#92400e" }}>
-            Chưa cấu hình SMTP — Email sẽ không được gửi cho đến khi cài đặt xong.
+            Chưa cấu hình Resend — cần bổ sung RESEND_API_KEY và RESEND_FROM_EMAIL trên Railway.
           </span>
         </div>
-        <a href="/crm/settings?tab=email" target="_blank"
-          className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg font-medium hover:opacity-80 flex-shrink-0 ml-3"
+        <span className="text-[11px] px-3 py-1 rounded-lg font-medium flex-shrink-0 ml-3"
           style={{ background: "rgba(245,158,11,0.12)", color: "#b45309", border: "1px solid rgba(245,158,11,0.2)" }}>
-          Cài đặt SMTP <ExternalLink size={10} />
-        </a>
+          Railway Variables
+        </span>
       </div>
     );
   }
@@ -301,7 +301,7 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
         <CheckCircle2 size={14} style={{ color: "#22c55e" }} />
         <div className="min-w-0">
           <span className="text-xs font-medium" style={{ color: "#15803d" }}>
-            SMTP đã cấu hình — Email Automation sẵn sàng hoạt động
+            {status.provider || "Email"} đã cấu hình — Email Automation sẵn sàng hoạt động
           </span>
           <p className="text-xs mt-0.5 truncate" style={{ color: "#6b7280" }}>
             {status.host} · {status.user}
@@ -309,11 +309,10 @@ function SmtpStatusBanner({ status }: { status: SmtpStatusInfo | null }) {
           </p>
         </div>
       </div>
-      <a href="/crm/settings?tab=email" target="_blank"
-        className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg font-medium hover:opacity-80 flex-shrink-0 ml-3"
+      <span className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg font-medium flex-shrink-0 ml-3"
         style={{ background: "rgba(34,197,94,0.08)", color: "#15803d", border: "1px solid rgba(34,197,94,0.2)" }}>
-        Chỉnh sửa <ExternalLink size={10} />
-      </a>
+        Cấu hình đồng bộ với engine
+      </span>
     </div>
   );
 }
@@ -355,17 +354,17 @@ export default function EmailWorkflowAutomation() {
       })
       .catch(() => {});
 
-    // Load SMTP status from Email Marketing settings (crm_settings key "email")
-    fetch("/api/crm/settings")
+    // Đọc đúng nhà cung cấp mà engine Automation thực sự sử dụng.
+    fetch("/api/crm/automation/email-config")
       .then(r => r.json())
       .then(d => {
-        const emailCfg = d?.email;
-        if (emailCfg?.smtpHost && emailCfg?.smtpUser) {
+        if (d?.configured) {
           setSmtpStatus({
             configured: true,
-            host: emailCfg.smtpHost,
-            user: emailCfg.smtpUser,
-            fromName: emailCfg.senderName ?? emailCfg.fromName ?? "",
+            provider: d.provider,
+            host: d.host,
+            user: d.user,
+            fromName: d.fromName ?? "",
           });
         } else {
           setSmtpStatus({ configured: false, host: "", user: "", fromName: "" });

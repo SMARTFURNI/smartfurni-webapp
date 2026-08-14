@@ -227,8 +227,11 @@ export default function B2BSofaJourneyAutomation() {
     return <div className="p-4 rounded-xl text-sm text-red-600 bg-red-50 border border-red-200">{error || "Không tải được journey."}</div>;
   }
 
+  const demoStepHasAttachedMedia = Boolean(
+    data.definition.steps.find(step => step.id === "D5_DEMO")?.mediaAssetIds?.length,
+  );
   const missingAssets = [
-    !settings.approvedDemoVideoUrl && "video demo đã duyệt",
+    !settings.approvedDemoVideoUrl && !demoStepHasAttachedMedia && "video demo đã duyệt",
     !settings.projectBriefUrl && "mẫu hồ sơ dự án",
     !settings.comparisonPackUrl && "bộ so sánh cấu hình",
   ].filter(Boolean);

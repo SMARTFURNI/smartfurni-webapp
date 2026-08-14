@@ -1,6 +1,5 @@
 import "server-only";
 
-import { Resend } from "resend";
 import { query, queryOne } from "@/lib/db";
 import { createTask } from "@/lib/crm-store";
 import { logNotification } from "@/lib/crm-notifications-store";
@@ -44,7 +43,7 @@ import {
   missingRequiredAutomationTestVariables,
   renderAutomationTestTemplate,
 } from "@/lib/crm-automation-test";
-import { buildEmailAttachments } from "@/lib/crm-email-media";
+import { sendAutomationEmail } from "@/lib/crm-automation-email";
 
 export interface SendAttemptResult {
   outcome: "sent" | "definitive_failure" | "delivery_unknown";
@@ -84,19 +83,6 @@ function normalizePhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.startsWith("84")) return `0${digits.slice(2)}`;
   return digits;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function plainTextToHtml(value: string): string {
-  return escapeHtml(value).replace(/\n/g, "<br>");
 }
 
 function looksAmbiguous(error: string): boolean {
@@ -201,6 +187,9 @@ export async function sendAutomationTemplateToLead(input: {
   const hasAttachedVideo = media.some(item =>
     item.asset.mediaKind === "video" || item.asset.contentType.startsWith("video/"),
   );
+  if (hasAttachedVideo && !context.approved_demo_video_url) {
+    context.approved_demo_video_url = "xem video đính kèm trong tin nhắn này";
+  }
   const requiredVariables = (input.requiredVariables || []).filter(variable =>
     !(variable === "approved_demo_video_url" && hasAttachedVideo),
   );
@@ -339,31 +328,12 @@ async function sendEmail(
   if (!recipient || !/^\S+@\S+\.\S+$/.test(recipient)) {
     return { outcome: "definitive_failure", error: "Lead chưa có email hợp lệ.", recipient, preview: subject };
   }
-  const apiKey = process.env.RESEND_API_KEY || "";
-  if (!apiKey) {
-    return { outcome: "definitive_failure", error: "RESEND_API_KEY chưa được cấu hình.", recipient, preview: subject };
-  }
-  try {
-    const resend = new Resend(apiKey);
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "b2b@smartfurni.com.vn";
-    const attachments = await buildEmailAttachments(media);
-    const result = await resend.emails.send({
-      from: `${fromName.trim() || "SmartFurni B2B"} <${fromEmail}>`,
-      to: [recipient],
-      subject,
-      text: body,
-      html: plainTextToHtml(body),
-      attachments,
-    });
-    if (result.error) {
-      return { outcome: "definitive_failure", error: result.error.message || "Resend từ chối email.", recipient, preview: subject };
-    }
+  const result = await sendAutomationEmail({ to: recipient, subject, body, media, fromName });
+  if (result.outcome === "sent") {
     await incrementZaloMediaUsage(media.map(item => item.asset.id));
-    return { outcome: "sent", providerMessageId: result.data?.id, recipient, preview: subject };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown";
-    return { outcome: "delivery_unknown", error: message, recipient, preview: subject };
+    return { outcome: "sent", providerMessageId: result.providerMessageId, recipient, preview: subject };
   }
+  return { outcome: result.outcome, error: result.error, recipient, preview: subject };
 }
 
 async function executeChannel(
@@ -519,7 +489,22 @@ async function processAction(
   if (settings.projectBriefUrl) context.project_brief_url = settings.projectBriefUrl;
   if (settings.comparisonPackUrl) context.comparison_pack_url = settings.comparisonPackUrl;
 
-  const missing = missingRequiredContext(step, context);
+  let media: PreparedMedia[] = [];
+  try {
+    media = await prepareMedia(step.mediaAssetIds || []);
+  } catch (error) {
+    await markJourneyActionWaitingContent(action, ["media_library"]);
+    return { status: "waiting_content", message: error instanceof Error ? error.message : "Không tải được media từ thư viện." };
+  }
+  const hasAttachedVideo = media.some(item =>
+    item.asset.mediaKind === "video" || item.asset.contentType.startsWith("video/"),
+  );
+  if (hasAttachedVideo && !context.approved_demo_video_url) {
+    context.approved_demo_video_url = "xem video đính kèm trong tin nhắn này";
+  }
+  const missing = missingRequiredContext(step, context).filter(variable =>
+    !(variable === "approved_demo_video_url" && hasAttachedVideo),
+  );
   if (missing.length) {
     const alreadyCreatedTask = action.attempts.some(item => item.channel === "system" && item.outcome === "blocked");
     if (!alreadyCreatedTask) {
@@ -540,13 +525,6 @@ async function processAction(
   const subject = renderJourneyTemplate(step.emailSubject, context);
   const emailBody = renderJourneyTemplate(step.emailBody, context);
   const zaloBody = renderJourneyTemplate(step.zaloBody, context);
-  let media: PreparedMedia[] = [];
-  try {
-    media = await prepareMedia(step.mediaAssetIds || []);
-  } catch (error) {
-    await markJourneyActionWaitingContent(action, ["media_library"]);
-    return { status: "waiting_content", message: error instanceof Error ? error.message : "Không tải được media từ thư viện." };
-  }
   const accountId = await resolveAutomationAccountId(settings, enrollment);
   await initZaloGateway().catch(() => undefined);
 

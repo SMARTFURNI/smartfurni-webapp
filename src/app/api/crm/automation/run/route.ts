@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { runAutomationEngine } from "@/lib/crm-automation-engine";
+import { claimAutomationSchedulerRun, releaseAutomationSchedulerRun } from "@/lib/crm-automation-execution-store";
 
 /**
  * POST /api/crm/automation/run
@@ -10,6 +11,10 @@ export async function POST(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const claimed = await claimAutomationSchedulerRun();
+  if (!claimed) {
+    return NextResponse.json({ error: "Automation đang chạy ở tiến trình khác." }, { status: 409 });
+  }
   try {
     const result = await runAutomationEngine();
     return NextResponse.json(result);
@@ -19,6 +24,8 @@ export async function POST(req: NextRequest) {
       { error: e instanceof Error ? e.message : "Unknown error" },
       { status: 500 }
     );
+  } finally {
+    await releaseAutomationSchedulerRun().catch(() => undefined);
   }
 }
 

@@ -28,10 +28,19 @@ const cronUrl = `http://127.0.0.1:${port}/api/crm/facebook-group-marketing/cron`
 const fanpageCareCronUrl = `http://127.0.0.1:${port}/api/crm/conversation-learning/cron`;
 const mediaCleanupUrl = `http://127.0.0.1:${port}/api/internal/media-cleanup`;
 const zaloGmfCronUrl = `http://127.0.0.1:${port}/api/crm/zalo/gmf/cron`;
+const crmAutomationCronUrl = `http://127.0.0.1:${port}/api/crm/automation/cron`;
 const fanpageCareIntervalMs = Math.max(
   5 * 60_000,
   Number(process.env.FANPAGE_AI_CRON_INTERVAL_MS || 15 * 60_000),
 );
+const crmAutomationIntervalMs = Math.max(
+  5 * 60_000,
+  Number(process.env.CRM_AUTOMATION_CRON_INTERVAL_MS || 30 * 60_000),
+);
+
+if (!process.env.CRON_SECRET) {
+  console.warn("[Production Scheduler] CRON_SECRET chưa cấu hình; đang dùng secret tạm cho scheduler nội bộ của tiến trình này.");
+}
 
 const nextProcess = spawn(process.execPath, [nextBin, "start", "-p", port], {
   env: { ...process.env, CRON_SECRET: cronSecret },
@@ -43,6 +52,7 @@ let cronTimer;
 let fanpageCareTimer;
 let mediaCleanupTimer;
 let zaloGmfTimer;
+let crmAutomationTimer;
 
 async function runFacebookGroupCron() {
   if (stopping) return;
@@ -146,6 +156,34 @@ async function runZaloGmfCron() {
 
 zaloGmfTimer = setTimeout(runZaloGmfCron, 35_000);
 
+async function runCrmAutomationCron() {
+  if (stopping) return;
+  try {
+    const response = await fetch(crmAutomationCronUrl, {
+      headers: { authorization: `Bearer ${cronSecret}` },
+      signal: AbortSignal.timeout(5 * 60_000),
+      cache: "no-store",
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("[Production Scheduler] CRM Automation cron lỗi:", response.status, result);
+    } else if (result.totalTriggered > 0 || result.b2bSofaJourney?.claimed > 0) {
+      console.log("[Production Scheduler] CRM Automation cron:", {
+        totalTriggered: result.totalTriggered,
+        totalLeads: result.totalLeads,
+        journeyClaimed: result.b2bSofaJourney?.claimed || 0,
+        journeySent: result.b2bSofaJourney?.sent || 0,
+      });
+    }
+  } catch (error) {
+    console.error("[Production Scheduler] Chưa gọi được CRM Automation cron:", error instanceof Error ? error.message : error);
+  } finally {
+    if (!stopping) crmAutomationTimer = setTimeout(runCrmAutomationCron, crmAutomationIntervalMs);
+  }
+}
+
+crmAutomationTimer = setTimeout(runCrmAutomationCron, 75_000);
+
 function stop(signal) {
   if (stopping) return;
   stopping = true;
@@ -153,6 +191,7 @@ function stop(signal) {
   if (fanpageCareTimer) clearTimeout(fanpageCareTimer);
   if (mediaCleanupTimer) clearTimeout(mediaCleanupTimer);
   if (zaloGmfTimer) clearTimeout(zaloGmfTimer);
+  if (crmAutomationTimer) clearTimeout(crmAutomationTimer);
   if (!nextProcess.killed) nextProcess.kill(signal);
 }
 
@@ -165,5 +204,6 @@ nextProcess.on("exit", (code, signal) => {
   if (fanpageCareTimer) clearTimeout(fanpageCareTimer);
   if (mediaCleanupTimer) clearTimeout(mediaCleanupTimer);
   if (zaloGmfTimer) clearTimeout(zaloGmfTimer);
+  if (crmAutomationTimer) clearTimeout(crmAutomationTimer);
   process.exit(code ?? (signal ? 0 : 1));
 });

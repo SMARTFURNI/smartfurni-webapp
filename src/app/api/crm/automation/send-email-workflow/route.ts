@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAutomationRules } from "@/lib/crm-automation-store";
 import { getLead } from "@/lib/crm-store";
 import { getMediaObject } from "@/lib/media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage } from "@/lib/zalo-media-library-store";
+import { sendAutomationEmail } from "@/lib/crm-automation-email";
+import { enqueueAutomationEmail } from "@/lib/crm-automation-execution-store";
 
 function replaceVars(template: string, lead: Record<string, string>): string {
   return template
@@ -87,16 +88,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ skipped: true, reason: "No matching email workflow rules" });
     }
 
-    // ── Use Resend HTTP API (not SMTP) to avoid Railway TCP/SMTP blocking ──
-    const resendApiKey = process.env.RESEND_API_KEY ?? "";
-    if (!resendApiKey) {
-      return NextResponse.json({ skipped: true, reason: "RESEND_API_KEY not configured" });
-    }
-
-    const resend = new Resend(resendApiKey);
-    // Use verified sender domain from env, fallback to smartfurni.vn
-    const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@smartfurni.vn";
-
     const leadVars = {
       name: lead.name ?? "",
       stage: toStage,
@@ -114,20 +105,30 @@ export async function POST(req: NextRequest) {
       const ruleFromName = rule.fromName ?? "SmartFurni";
 
       try {
-        // Handle delay — log as pending and skip actual send for now
+        // Email trì hoãn được lưu vào hàng đợi PostgreSQL và do CRM cron xử lý.
         if (rule.delayMinutes && rule.delayMinutes > 0) {
-          await logNotification({
-            ruleId: rule.id ?? "",
-            ruleName: rule.name ?? "",
-            channel: "email",
-            recipient: lead.email ?? "",
-            leadId: leadId,
-            leadName: lead.name ?? "",
-            message: subject,
-            status: "pending",
-            actionType: "send_email",
+          const scheduledAt = new Date(Date.now() + rule.delayMinutes * 60_000);
+          const queued = await enqueueAutomationEmail({
+            dedupeKey: `stage-email:${rule.id}:${lead.id}:${toStage}:${lead.updatedAt || "unknown"}`,
+            ruleId: rule.id,
+            ruleName: rule.name,
+            leadId: lead.id,
+            leadName: lead.name,
+            recipient: lead.email,
+            subject,
+            body,
+            fromName: ruleFromName,
+            mediaAssetIds: rule.mediaAssetIds,
+            scheduledAt,
           });
-          results.push({ ruleId: rule.id, status: "pending_delay" });
+          if (queued.queued) {
+            await logNotification({
+              ruleId: rule.id, ruleName: rule.name, channel: "email",
+              recipient: lead.email, leadId, leadName: lead.name,
+              message: subject, status: "pending", actionType: "send_email",
+            });
+          }
+          results.push({ ruleId: rule.id, status: queued.queued ? "queued" : "deduplicated", scheduledAt });
           continue;
         }
 
@@ -135,25 +136,20 @@ export async function POST(req: NextRequest) {
         if (assets.length !== new Set(rule.mediaAssetIds || []).size) {
           throw new Error("Một hoặc nhiều media của mẫu không còn trong thư viện");
         }
-        const attachments = await Promise.all(assets.map(async asset => {
+        const media = await Promise.all(assets.map(async asset => {
           const object = await getMediaObject(asset.objectKey);
           if (!object.Body) throw new Error(`File ${asset.name} không còn trong thư viện`);
-          return { filename: asset.name, content: Buffer.from(await object.Body.transformToByteArray()) };
+          return { asset, buffer: Buffer.from(await object.Body.transformToByteArray()) };
         }));
 
-        // Send via Resend HTTP API (HTTPS port 443 — not blocked by Railway)
-        const { error: resendError } = await resend.emails.send({
-          from: `${ruleFromName} <${fromEmail}>`,
-          to: [lead.email!],
+        const delivery = await sendAutomationEmail({
+          to: lead.email,
           subject,
-          html: body.replace(/\n/g, "<br>"),
-          text: body,
-          attachments,
+          body,
+          fromName: ruleFromName,
+          media,
         });
-
-        if (resendError) {
-          throw new Error(resendError.message ?? "Resend API error");
-        }
+        if (delivery.outcome !== "sent") throw new Error(delivery.error || "Không gửi được email.");
         await incrementZaloMediaUsage(assets.map(asset => asset.id));
 
         await logNotification({

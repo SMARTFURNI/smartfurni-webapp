@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAutomationEngine } from "@/lib/crm-automation-engine";
-import { runFacebookGroupMarketingCron } from "@/lib/facebook-group-marketing-cron";
 import { runB2BSofaJourney } from "@/lib/crm-b2b-sofa-journey-engine";
+import { claimAutomationSchedulerRun, releaseAutomationSchedulerRun } from "@/lib/crm-automation-execution-store";
 
 /**
  * GET /api/crm/automation/cron
@@ -24,19 +24,19 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const claimed = await claimAutomationSchedulerRun();
+  if (!claimed) {
+    return NextResponse.json({ ok: true, skipped: true, reason: "Automation cron đang chạy ở tiến trình khác." });
+  }
   try {
     console.log("[CRM Cron] Starting automation engine run...");
-    const [result, facebookGroupMarketing] = await Promise.all([
-      runAutomationEngine(),
-      runFacebookGroupMarketingCron(),
-    ]);
+    const result = await runAutomationEngine();
     // Chạy journey sau engine chung để hai luồng không tranh chấp cùng kết nối Zalo.
     const b2bSofaJourney = await runB2BSofaJourney();
     console.log(`[CRM Cron] Done. Triggered: ${result.totalTriggered}/${result.totalLeads} leads`);
     return NextResponse.json({
       ok: true,
       ...result,
-      facebookGroupMarketing,
       b2bSofaJourney,
     });
   } catch (e) {
@@ -45,5 +45,7 @@ export async function GET(req: NextRequest) {
       { error: e instanceof Error ? e.message : "Unknown error" },
       { status: 500 }
     );
+  } finally {
+    await releaseAutomationSchedulerRun().catch(() => undefined);
   }
 }

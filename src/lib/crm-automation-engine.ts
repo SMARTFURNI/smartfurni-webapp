@@ -15,8 +15,17 @@ import type { AutomationRule, AutomationAction } from "./crm-automation-store";
 import { findZaloUserByPhone, sendZaloAttachment, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
 import { getMediaObject } from "./media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage } from "./zalo-media-library-store";
-import { Resend } from "resend";
-import { buildEmailAttachments } from "./crm-email-media";
+import { sendAutomationEmail } from "./crm-automation-email";
+import {
+  claimAutomationExecution,
+  claimDueAutomationEmails,
+  completeAutomationExecution,
+  enqueueAutomationEmail,
+  failAutomationExecution,
+  markAutomationEmailFailed,
+  markAutomationEmailSent,
+} from "./crm-automation-execution-store";
+import { automationTriggerKey, isAutomationTriggerStageAllowed } from "./crm-automation-trigger";
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
@@ -83,6 +92,17 @@ function addDays(days: number): string {
   return d.toISOString().split("T")[0];
 }
 
+function renderActionTemplate(template: string, lead: Lead): string {
+  return template
+    .replace(/\{\{name\}\}/g, lead.name)
+    .replace(/\{\{company\}\}/g, lead.company ?? "")
+    .replace(/\{\{stage\}\}/g, STAGE_LABELS_VI[lead.stage] ?? lead.stage)
+    .replace(/\{\{phone\}\}/g, lead.phone ?? "")
+    .replace(/\{\{email\}\}/g, lead.email ?? "")
+    .replace(/\{\{assignedTo\}\}/g, lead.assignedTo ?? "")
+    .replace(/\{\{value\}\}/g, lead.expectedValue?.toLocaleString("vi-VN") ?? "0");
+}
+
 async function loadAutomationMedia(assetIds: string[]) {
   const requestedIds = [...new Set(assetIds)].slice(0, 10);
   const assets = await getZaloMediaAssets(requestedIds);
@@ -100,6 +120,7 @@ function checkTrigger(rule: AutomationRule, lead: Lead): boolean {
   // Chỉ xử lý leads đang active (không phải won/lost)
   const activeStages = ["new", "profile_sent", "surveyed", "quoted", "negotiating"];
   if (!activeStages.includes(lead.stage)) return false;
+  if (!isAutomationTriggerStageAllowed(trigger, lead.stage)) return false;
 
   switch (trigger.type) {
     case "no_activity_days": {
@@ -116,7 +137,8 @@ function checkTrigger(rule: AutomationRule, lead: Lead): boolean {
     }
     case "stage_duration": {
       const hours = trigger.hours ?? 24;
-      return hoursSince(lead.updatedAt) >= hours;
+      return (!trigger.fromStage || trigger.fromStage === lead.stage)
+        && hoursSince(lead.updatedAt) >= hours;
     }
     case "lead_type_match": {
       return !trigger.leadType || lead.type === trigger.leadType;
@@ -136,6 +158,7 @@ async function executeAction(
   lead: Lead,
   staffList: string[],
   rule?: AutomationRule,
+  execution?: { triggerKey: string; actionIndex: number },
 ): Promise<string> {
   const ruleId = rule?.id ?? "manual";
   const ruleName = rule?.name ?? "Manual";
@@ -205,20 +228,6 @@ async function executeAction(
         status: "sent",
       });
       return `Thong bao quan ly: "${msg}"`;
-    }
-
-    case "send_email": {
-      await logNotification({
-        ruleId,
-        ruleName,
-        channel: "email",
-        recipient: lead.email ?? "",
-        leadId: lead.id,
-        leadName: lead.name,
-        message: action.emailSubject ?? "Thong bao tu SmartFurni CRM",
-        status: "pending",
-      });
-      return `Xep hang gui email: "${action.emailSubject}"`;
     }
 
     case "send_webhook": {
@@ -334,86 +343,133 @@ async function executeAction(
       return `Loi gui Zalo: ${sendResult.error ?? "unknown"}`;
     }
 
+    case "send_email":
     case "send_email_workflow": {
-      if (!lead.email) return "Bo qua email workflow: khong co email khach hang";
-      try {
-        // Use Resend HTTP API (HTTPS port 443) — avoids Railway SMTP/TCP blocking
-        const resendApiKey = process.env.RESEND_API_KEY ?? "";
-        if (!resendApiKey) {
-          await logNotification({
-            ruleId, ruleName, channel: "email",
-            recipient: lead.email ?? "",
-            leadId: lead.id, leadName: lead.name,
-            message: action.emailSubject ?? "Email tu dong",
-            status: "pending",
-            actionType: "send_email",
-          });
-          return "RESEND_API_KEY chua cau hinh, xep hang gui email";
-        }
-        const rawSubject = action.emailSubject ?? "Thong bao tu SmartFurni";
-        const rawBody = action.emailBody ?? "Xin chao {{name}}!";
-        const replaceVars = (t: string) => t
-          .replace(/\{\{name\}\}/g, lead.name)
-          .replace(/\{\{stage\}\}/g, STAGE_LABELS_VI[lead.stage] ?? lead.stage)
-          .replace(/\{\{phone\}\}/g, lead.phone ?? "")
-          .replace(/\{\{email\}\}/g, lead.email ?? "")
-          .replace(/\{\{assignedTo\}\}/g, lead.assignedTo ?? "")
-          .replace(/\{\{value\}\}/g, lead.expectedValue?.toLocaleString("vi-VN") ?? "0");
-        const subject = replaceVars(rawSubject);
-        const body = replaceVars(rawBody);
-        const media = await loadAutomationMedia(action.mediaAssetIds || []);
-        const delayMs = (action.emailDelayMinutes ?? 0) * 60 * 1000;
-        if (delayMs > 0) {
-          await logNotification({
-            ruleId, ruleName, channel: "email",
-            recipient: lead.email ?? "",
-            leadId: lead.id, leadName: lead.name,
-            message: subject, status: "pending",
-            actionType: "send_email",
-          });
-          return `Xep hang gui email (delay ${action.emailDelayMinutes} phut): "${subject}"`;
-        }
-        const resend = new Resend(resendApiKey);
-        const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@smartfurni.vn";
-        const fromName = action.emailFromName ?? "SmartFurni";
-        const attachments = await buildEmailAttachments(media);
-        const { error: resendError } = await resend.emails.send({
-          from: `${fromName} <${fromEmail}>`,
-          to: [lead.email!],
+      const recipient = lead.email?.trim() || "";
+      if (!/^\S+@\S+\.\S+$/.test(recipient)) return "Bỏ qua email: khách hàng chưa có email hợp lệ";
+
+      const subject = renderActionTemplate(
+        action.emailSubject ?? "Thông báo từ SmartFurni CRM",
+        lead,
+      );
+      const body = renderActionTemplate(
+        action.emailBody ?? `Chào {{name}},\n\nSmartFurni gửi anh/chị thông tin cập nhật từ bộ phận chăm sóc khách hàng.\n\nTrân trọng,\nĐội ngũ SmartFurni`,
+        lead,
+      );
+      const fromName = action.emailFromName ?? "SmartFurni";
+      const delayMinutes = Math.max(0, action.emailDelayMinutes ?? 0);
+
+      if (delayMinutes > 0) {
+        const scheduledAt = new Date(Date.now() + delayMinutes * 60_000);
+        const dedupeKey = `${ruleId}:${lead.id}:${execution?.triggerKey || "manual"}:${execution?.actionIndex ?? 0}`;
+        const queued = await enqueueAutomationEmail({
+          dedupeKey,
+          ruleId,
+          ruleName,
+          leadId: lead.id,
+          leadName: lead.name,
+          recipient,
           subject,
-          html: body.replace(/\n/g, "<br>"),
-          text: body,
-          attachments,
+          body,
+          fromName,
+          mediaAssetIds: action.mediaAssetIds || [],
+          scheduledAt,
         });
-        if (resendError) {
-          throw new Error(resendError.message ?? "Resend API error");
+        if (queued.queued) {
+          await logNotification({
+            ruleId, ruleName, channel: "email", recipient,
+            leadId: lead.id, leadName: lead.name, message: subject,
+            status: "pending", actionType: "send_email",
+          });
         }
-        await incrementZaloMediaUsage(media.map(item => item.asset.id));
-        await logNotification({
-          ruleId, ruleName, channel: "email",
-          recipient: lead.email ?? "",
-          leadId: lead.id, leadName: lead.name,
-          message: subject, status: "sent",
-          actionType: "send_email",
-        });
-        return `Gui email thanh cong: "${subject}" den ${lead.email}`;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : "unknown";
-        await logNotification({
-          ruleId, ruleName, channel: "email",
-          recipient: lead.email ?? "",
-          leadId: lead.id, leadName: lead.name,
-          message: action.emailSubject ?? "Email tu dong",
-          status: "failed", error: errMsg,
-          actionType: "send_email",
-        });
-        return `Loi gui email: ${errMsg}`;
+        return queued.queued
+          ? `Đã lên lịch email lúc ${scheduledAt.toISOString()}: "${subject}"`
+          : `Email đã có trong hàng đợi, không tạo lặp: "${subject}"`;
       }
+
+      const media = await loadAutomationMedia(action.mediaAssetIds || []);
+      const result = await sendAutomationEmail({ to: recipient, subject, body, fromName, media });
+      if (result.outcome === "sent") await incrementZaloMediaUsage(media.map(item => item.asset.id));
+      await logNotification({
+        ruleId, ruleName, channel: "email", recipient,
+        leadId: lead.id, leadName: lead.name, message: subject,
+        status: result.outcome === "sent" ? "sent" : "failed",
+        error: result.error, actionType: "send_email",
+      });
+      if (result.outcome === "sent") return `Đã gửi email: "${subject}" đến ${recipient}`;
+      if (result.outcome === "delivery_unknown") {
+        return `Kết quả gửi email chưa rõ, đã dừng tự động gửi lại: ${result.error || "unknown"}`;
+      }
+      return `Không gửi được email: ${result.error || "unknown"}`;
     }
 
     default:
       return `Bo qua action khong xac dinh`;
   }
+}
+
+async function processDueAutomationEmails(): Promise<AutomationRunLog[]> {
+  const logs: AutomationRunLog[] = [];
+  const jobs = await claimDueAutomationEmails(20);
+  for (const job of jobs) {
+    let media: Awaited<ReturnType<typeof loadAutomationMedia>> = [];
+    try {
+      media = await loadAutomationMedia(job.mediaAssetIds);
+      const result = await sendAutomationEmail({
+        to: job.recipient,
+        subject: job.subject,
+        body: job.body,
+        fromName: job.fromName,
+        media,
+      });
+      if (result.outcome === "sent") {
+        await incrementZaloMediaUsage(media.map(item => item.asset.id));
+        await markAutomationEmailSent(job.id);
+        await logNotification({
+          ruleId: job.ruleId, ruleName: job.ruleName, channel: "email",
+          recipient: job.recipient, leadId: job.leadId, leadName: job.leadName,
+          message: job.subject, status: "sent", actionType: "send_email",
+        });
+        logs.push({
+          ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+          actionsExecuted: [`Đã gửi email theo lịch: "${job.subject}"`],
+          triggeredAt: new Date().toISOString(), success: true,
+        });
+        continue;
+      }
+
+      const error = result.error || "Không gửi được email trong hàng đợi.";
+      // delivery_unknown không được tự gửi lại để tránh khách nhận trùng. Chỉ lỗi
+      // cấu hình tạm thời mới được thử lại với backoff.
+      const retry = result.outcome === "definitive_failure"
+        && /RESEND_API_KEY|chưa được cấu hình/i.test(error);
+      await markAutomationEmailFailed({ id: job.id, error, retry, attempts: job.attempts });
+      await logNotification({
+        ruleId: job.ruleId, ruleName: job.ruleName, channel: "email",
+        recipient: job.recipient, leadId: job.leadId, leadName: job.leadName,
+        message: job.subject, status: "failed", error, actionType: "send_email",
+      });
+      logs.push({
+        ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+        actionsExecuted: [`Email theo lịch chưa gửi: ${error}`],
+        triggeredAt: new Date().toISOString(), success: false, error,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không xử lý được email trong hàng đợi.";
+      await markAutomationEmailFailed({ id: job.id, error: message, retry: false, attempts: job.attempts });
+      await logNotification({
+        ruleId: job.ruleId, ruleName: job.ruleName, channel: "email",
+        recipient: job.recipient, leadId: job.leadId, leadName: job.leadName,
+        message: job.subject, status: "failed", error: message, actionType: "send_email",
+      });
+      logs.push({
+        ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+        actionsExecuted: [`Email theo lịch lỗi: ${message}`],
+        triggeredAt: new Date().toISOString(), success: false, error: message,
+      });
+    }
+  }
+  return logs;
 }
 
 // ─── Nhóm 3: Smart tagging & Hot lead detection ────────────────────────────────
@@ -553,16 +609,20 @@ async function runAutomationRules(leads: Lead[]): Promise<AutomationRunLog[]> {
   for (const rule of enabledRules) {
     for (const lead of leads) {
       if (!checkTrigger(rule, lead)) continue;
+      const triggerKey = automationTriggerKey(rule, lead);
+      const claimed = await claimAutomationExecution({ ruleId: rule.id, leadId: lead.id, triggerKey });
+      if (!claimed) continue;
 
       const actionsExecuted: string[] = [];
       let success = true;
       let error: string | undefined;
 
       try {
-        for (const action of rule.actions) {
-          const result = await executeAction(action, lead, staffList);
+        for (const [actionIndex, action] of rule.actions.entries()) {
+          const result = await executeAction(action, lead, staffList, rule, { triggerKey, actionIndex });
           actionsExecuted.push(result);
         }
+        await completeAutomationExecution({ ruleId: rule.id, leadId: lead.id, triggerKey, actions: actionsExecuted });
         // Cap nhat runCount
         const ruleIdx = updatedRules.findIndex((r) => r.id === rule.id);
         if (ruleIdx >= 0) {
@@ -575,6 +635,13 @@ async function runAutomationRules(leads: Lead[]): Promise<AutomationRunLog[]> {
       } catch (e) {
         success = false;
         error = e instanceof Error ? e.message : "unknown";
+        await failAutomationExecution({
+          ruleId: rule.id,
+          leadId: lead.id,
+          triggerKey,
+          actions: actionsExecuted,
+          error,
+        }).catch(() => undefined);
       }
 
       logs.push({
@@ -638,6 +705,13 @@ async function runNotificationRules(leads: Lead[]): Promise<AutomationRunLog[]> 
       }
 
       if (!shouldTrigger) continue;
+      const triggerKey = `notification:${rule.trigger}:${lead.stage}:${lead.lastContactAt || lead.createdAt || "never"}`;
+      const claimed = await claimAutomationExecution({
+        ruleId: `notification:${rule.id}`,
+        leadId: lead.id,
+        triggerKey,
+      });
+      if (!claimed) continue;
 
       const message = (rule.config.messageTemplate ?? "")
         .replace(/\{\{name\}\}/g, lead.name)
@@ -676,6 +750,12 @@ async function runNotificationRules(leads: Lead[]): Promise<AutomationRunLog[]> 
       }
 
       if (actionsExecuted.length > 0) {
+        await completeAutomationExecution({
+          ruleId: `notification:${rule.id}`,
+          leadId: lead.id,
+          triggerKey,
+          actions: actionsExecuted,
+        });
         logs.push({
           ruleId: rule.id,
           ruleName: rule.name,
@@ -705,6 +785,9 @@ async function runSlaCheck(leads: Lead[]): Promise<AutomationRunLog[]> {
     const hoursInStage = hoursSince(lead.updatedAt);
 
     if (hoursInStage >= stageConfig.maxHours) {
+      const triggerKey = `sla:${lead.stage}:${stageConfig.maxHours}:${lead.updatedAt || "unknown"}`;
+      const claimed = await claimAutomationExecution({ ruleId: "sla_check", leadId: lead.id, triggerKey });
+      if (!claimed) continue;
       const actions: string[] = [];
 
       // Tao task canh bao
@@ -739,6 +822,12 @@ async function runSlaCheck(leads: Lead[]): Promise<AutomationRunLog[]> {
       }
 
       if (actions.length > 0) {
+        await completeAutomationExecution({
+          ruleId: "sla_check",
+          leadId: lead.id,
+          triggerKey,
+          actions,
+        });
         logs.push({
           ruleId: "sla_check",
           ruleName: "Kiem tra SLA",
@@ -763,6 +852,11 @@ export async function runAutomationEngine(): Promise<AutomationRunResult> {
   // Lay tat ca leads active
   const leads = await getLeads();
   const totalLeads = leads.length;
+
+  // Gửi các email đã đến hạn trước khi đánh giá quy tắc mới. Hàng đợi có khóa
+  // nhận việc và dedupe riêng nên an toàn khi cron vô tình chạy song song.
+  const queuedEmailLogs = await processDueAutomationEmails();
+  allLogs.push(...queuedEmailLogs);
 
   // Nhom 1 & 2: Automation rules (follow-up, stage-based)
   const ruleLogs = await runAutomationRules(leads);
@@ -813,18 +907,25 @@ export async function triggerStageChangeAutomation(
   );
 
   for (const rule of stageRules) {
+    const triggerKey = `stage-event:${fromStage}->${lead.stage}:${lead.updatedAt || "unknown"}`;
+    const claimed = await claimAutomationExecution({ ruleId: rule.id, leadId: lead.id, triggerKey });
+    if (!claimed) continue;
     const actionsExecuted: string[] = [];
     let success = true;
     let error: string | undefined;
 
     try {
-      for (const action of rule.actions) {
-        const result = await executeAction(action, lead, staffList);
+      for (const [actionIndex, action] of rule.actions.entries()) {
+        const result = await executeAction(action, lead, staffList, rule, { triggerKey, actionIndex });
         actionsExecuted.push(result);
       }
+      await completeAutomationExecution({ ruleId: rule.id, leadId: lead.id, triggerKey, actions: actionsExecuted });
     } catch (e) {
       success = false;
       error = e instanceof Error ? e.message : "unknown";
+      await failAutomationExecution({
+        ruleId: rule.id, leadId: lead.id, triggerKey, actions: actionsExecuted, error,
+      }).catch(() => undefined);
     }
 
     logs.push({
@@ -848,6 +949,10 @@ export async function triggerStageChangeAutomation(
     );
 
     for (const rule of stageNotifRules) {
+      const triggerKey = `stage-notification:${fromStage}->${lead.stage}:${lead.updatedAt || "unknown"}`;
+      const ruleId = `notification:${rule.id}`;
+      const claimed = await claimAutomationExecution({ ruleId, leadId: lead.id, triggerKey });
+      if (!claimed) continue;
       const message = (rule.config.messageTemplate ?? "")
         .replace(/\{\{name\}\}/g, lead.name)
         .replace(/\{\{stage\}\}/g, lead.stage)
@@ -866,6 +971,13 @@ export async function triggerStageChangeAutomation(
           status: channel === "in_app" ? "sent" : "pending",
         });
       }
+
+      await completeAutomationExecution({
+        ruleId,
+        leadId: lead.id,
+        triggerKey,
+        actions: rule.channels.map((channel) => `Thông báo ${channel}`),
+      });
 
       logs.push({
         ruleId: rule.id,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCrmAccess } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { getAutomationEmailProviderStatus } from "@/lib/crm-automation-email";
 
 async function initEmailConfigTable() {
   await query(`
@@ -26,26 +27,10 @@ async function initEmailConfigTable() {
 export async function GET() {
   try {
     await requireCrmAccess();
-    await initEmailConfigTable();
-    const rows = await query<Record<string, unknown>>(
-      "SELECT * FROM crm_email_smtp_config WHERE id='default'"
-    );
-    const r = rows[0];
-    if (!r) return NextResponse.json({ host: "" });
-
-    return NextResponse.json({
-      host: r.host ?? "",
-      port: r.port ?? 587,
-      user: r.smtp_user ?? "",
-      // Don't expose password — just indicate if set
-      pass: r.smtp_pass ? "••••••••" : "",
-      fromName: r.from_name ?? "SmartFurni",
-      fromEmail: r.from_email ?? "",
-      secure: r.secure ?? false,
-    });
+    return NextResponse.json(getAutomationEmailProviderStatus());
   } catch (err) {
     console.error("[Email Config GET]", err);
-    return NextResponse.json({ host: "" });
+    return NextResponse.json({ configured: false, provider: "Resend HTTP API", host: "api.resend.com", user: "" });
   }
 }
 

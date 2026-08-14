@@ -220,16 +220,31 @@ function RuleEditor({
             )}
 
             {rule.trigger.type === "no_activity_days" && (
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Sau N ngày không tương tác</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={30}
-                  value={rule.trigger.days ?? 3}
-                  onChange={(e) => updateTrigger({ days: Number(e.target.value) })}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Sau N ngày không tương tác</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={rule.trigger.days ?? 3}
+                    onChange={(e) => updateTrigger({ days: Number(e.target.value) })}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Giai đoạn áp dụng</label>
+                  <select
+                    value={rule.trigger.stages?.[0] ?? ""}
+                    onChange={(e) => updateTrigger({ stages: e.target.value ? [e.target.value] : undefined })}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tất cả đang hoạt động</option>
+                    {STAGES.filter((s) => !["won", "lost"].includes(s.id)).map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             )}
 

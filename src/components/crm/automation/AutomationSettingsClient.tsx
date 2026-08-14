@@ -100,12 +100,26 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
       )}
 
       {(trigger.type === "no_activity_days") && (
-        <div>
-          <label className="block text-xs mb-1" style={{ color: "#374151" }}>Số ngày không tương tác</label>
-          <input type="number" min={1} max={30} value={trigger.days ?? 3}
-            onChange={e => onChange({ ...trigger, days: parseInt(e.target.value) })}
-            className="w-32 px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs mb-1" style={{ color: "#374151" }}>Số ngày không tương tác</label>
+            <input type="number" min={1} max={90} value={trigger.days ?? 3}
+              onChange={e => onChange({ ...trigger, days: parseInt(e.target.value) })}
+              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }} />
+          </div>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: "#374151" }}>Chỉ áp dụng giai đoạn</label>
+            <select value={trigger.stages?.[0] ?? ""}
+              onChange={e => onChange({ ...trigger, stages: e.target.value ? [e.target.value] : undefined })}
+              className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+              style={{ background: "#ffffff", border: "1px solid #d1d5db", color: "#374151" }}>
+              <option value="">Tất cả giai đoạn đang hoạt động</option>
+              {STAGES.filter(s => !["won", "lost"].includes(s.id)).map(s => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 
@@ -197,9 +211,22 @@ function ActionEditor({ action, onChange, onRemove }: {
       )}
 
       {action.type === "send_email" && (
-        <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
-          className="w-full px-2 py-1.5 rounded text-xs outline-none"
-          style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+        <div className="space-y-2">
+          <input placeholder="Tiêu đề email" value={action.emailSubject ?? ""} onChange={e => onChange({ ...action, emailSubject: e.target.value })}
+            className="w-full px-2 py-1.5 rounded text-xs outline-none"
+            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+          <textarea placeholder="Nội dung email (hỗ trợ {{name}}, {{company}}, {{stage}}, {{assignedTo}}...)"
+            value={action.emailBody ?? ""} onChange={e => onChange({ ...action, emailBody: e.target.value })}
+            rows={4} className="w-full px-2 py-1.5 rounded text-xs outline-none resize-y"
+            style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+          <div className="flex items-center gap-2">
+            <input type="number" min={0} max={10080} value={action.emailDelayMinutes ?? 0}
+              onChange={e => onChange({ ...action, emailDelayMinutes: Number(e.target.value) })}
+              className="w-24 px-2 py-1.5 rounded text-xs outline-none"
+              style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+            <span className="text-xs text-gray-500">phút trì hoãn (0 = gửi ngay)</span>
+          </div>
+        </div>
       )}
 
       {action.type === "send_email_workflow" && (

@@ -29,6 +29,7 @@ export interface AutomationTrigger {
   // no_activity_days / stage_duration
   days?: number;
   hours?: number;
+  stages?: string[];       // Chỉ áp dụng tại các giai đoạn đã chọn (rỗng = tất cả)
   // value_threshold
   minValue?: number;
   // lead_type_match
@@ -143,6 +144,7 @@ export const DEFAULT_AUTOMATION_RULES: AutomationRule[] = [
     actions: [{
       type: "send_email",
       emailSubject: "Cảm ơn quý khách đã tin tưởng SmartFurni",
+      emailBody: "Chào {{name}},\n\nCảm ơn anh/chị đã tin tưởng lựa chọn SmartFurni. Bộ phận phụ trách {{assignedTo}} sẽ tiếp tục cập nhật tiến độ triển khai và hỗ trợ anh/chị trong các bước tiếp theo.\n\nTrân trọng,\nĐội ngũ SmartFurni",
     }],
     runCount: 0,
     lastRunAt: null,
@@ -206,7 +208,17 @@ export async function getAutomationRules(): Promise<AutomationRule[]> {
     await ensureTable(db);
     const res = await db.query(`SELECT value FROM crm_automation WHERE key = 'rules'`);
     if (res.rows.length === 0) return DEFAULT_AUTOMATION_RULES;
-    return res.rows[0].value as AutomationRule[];
+    const rules = res.rows[0].value as AutomationRule[];
+    // Dữ liệu cũ của quy tắc thương thảo chưa lưu điều kiện giai đoạn. Chuẩn hóa
+    // lúc đọc để tránh áp dụng nhầm cho mọi lead sau khi scheduler được bật.
+    return rules.map(rule => {
+      const isNegotiatingRule = rule.trigger.type === "no_activity_days"
+        && /thương\s*thảo/i.test(`${rule.name} ${rule.description}`)
+        && !rule.trigger.stages?.length;
+      return isNegotiatingRule
+        ? { ...rule, trigger: { ...rule.trigger, stages: ["negotiating"] } }
+        : rule;
+    });
   } catch {
     return DEFAULT_AUTOMATION_RULES;
   }
