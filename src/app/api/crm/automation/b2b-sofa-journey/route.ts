@@ -1,0 +1,86 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminSession } from "@/lib/admin-auth";
+import { getLead } from "@/lib/crm-store";
+import { B2B_SOFA_JOURNEY } from "@/lib/crm-b2b-sofa-journey";
+import {
+  cancelJourneyEnrollment,
+  enrollLeadInB2BSofaJourney,
+  getB2BSofaJourneyDashboard,
+  getB2BSofaJourneySettings,
+  resumeJourneyEnrollment,
+  saveB2BSofaJourneySettings,
+  updateJourneyContext,
+} from "@/lib/crm-b2b-sofa-journey-store";
+import { runB2BSofaJourney } from "@/lib/crm-b2b-sofa-journey-engine";
+
+export const dynamic = "force-dynamic";
+
+async function requireAdmin() {
+  const session = await getAdminSession();
+  if (!session) throw new Error("UNAUTHORIZED");
+  return session;
+}
+
+export async function GET() {
+  try {
+    await requireAdmin();
+    const dashboard = await getB2BSofaJourneyDashboard();
+    return NextResponse.json({ definition: B2B_SOFA_JOURNEY, ...dashboard });
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin();
+    const body = await req.json() as {
+      action?: "save_settings" | "run" | "enroll" | "resume" | "cancel" | "update_context";
+      settings?: Record<string, unknown>;
+      leadId?: string;
+      enrollmentId?: string;
+      context?: Record<string, string>;
+      limit?: number;
+    };
+
+    if (body.action === "save_settings") {
+      const settings = await saveB2BSofaJourneySettings(body.settings || {});
+      return NextResponse.json({ ok: true, settings });
+    }
+    if (body.action === "run") {
+      return NextResponse.json({ ok: true, result: await runB2BSofaJourney(body.limit || 20) });
+    }
+    if (body.action === "enroll") {
+      if (!body.leadId) return NextResponse.json({ error: "Thiếu leadId" }, { status: 400 });
+      const lead = await getLead(body.leadId);
+      if (!lead) return NextResponse.json({ error: "Không tìm thấy lead" }, { status: 404 });
+      const settings = await getB2BSofaJourneySettings();
+      const result = await enrollLeadInB2BSofaJourney(lead, settings, { context: body.context, force: true });
+      return NextResponse.json({ ok: true, ...result });
+    }
+    if (body.action === "resume") {
+      if (!body.enrollmentId) return NextResponse.json({ error: "Thiếu enrollmentId" }, { status: 400 });
+      await resumeJourneyEnrollment(body.enrollmentId);
+      return NextResponse.json({ ok: true });
+    }
+    if (body.action === "cancel") {
+      if (!body.enrollmentId) return NextResponse.json({ error: "Thiếu enrollmentId" }, { status: 400 });
+      await cancelJourneyEnrollment(body.enrollmentId, "Dừng thủ công từ màn hình quản trị.");
+      return NextResponse.json({ ok: true });
+    }
+    if (body.action === "update_context") {
+      if (!body.enrollmentId) return NextResponse.json({ error: "Thiếu enrollmentId" }, { status: 400 });
+      const enrollment = await updateJourneyContext(body.enrollmentId, body.context || {});
+      return NextResponse.json({ ok: true, enrollment });
+    }
+    return NextResponse.json({ error: "Hành động không hợp lệ" }, { status: 400 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+  }
+}

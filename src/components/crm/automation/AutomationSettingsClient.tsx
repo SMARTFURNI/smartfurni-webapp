@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import {
   Zap, Plus, Trash2, Save, RefreshCw, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Clock, GitBranch, Users, ArrowRight,
-  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle, Mail,
+  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle, Mail, Building2,
 } from "lucide-react";
 import ZaloWorkflowAutomation from "./ZaloWorkflowAutomation";
 import EmailWorkflowAutomation from "./EmailWorkflowAutomation";
 import AutomationHistoryPanel from "./AutomationHistoryPanel";
+import B2BSofaJourneyAutomation from "./B2BSofaJourneyAutomation";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
   SlaConfig, SlaStageConfig, AutoAssignConfig,
@@ -564,7 +565,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "rules" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
+type TabId = "rules" | "b2b_sofa_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("rules");
@@ -646,6 +647,7 @@ export default function AutomationSettingsClient() {
 
   const TABS = [
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
+    { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2, count: null },
     { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle, count: null },
     { id: "email_workflow" as TabId, label: "Email Workflow", icon: Mail, count: null },
     { id: "history" as TabId, label: "Lịch sử gửi", icon: Clock, count: null },
@@ -677,20 +679,20 @@ export default function AutomationSettingsClient() {
               <CheckCircle2 size={12} /> Đã lưu
             </div>
           )}
-          <button onClick={save} disabled={saving}
+          {activeTab !== "b2b_sofa_journey" && <button onClick={save} disabled={saving}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
             style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
             Lưu cài đặt
-          </button>
+          </button>}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
+            className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
             style={{
               background: activeTab === tab.id ? "rgba(201,168,76,0.12)" : "transparent",
               color: activeTab === tab.id ? "#C9A84C" : "#374151",
@@ -735,6 +737,10 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "zalo_workflow" && (
         <ZaloWorkflowAutomation />
+      )}
+
+      {activeTab === "b2b_sofa_journey" && (
+        <B2BSofaJourneyAutomation />
       )}
 
       {activeTab === "email_workflow" && (

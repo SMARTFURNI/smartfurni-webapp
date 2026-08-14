@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAutomationEngine } from "@/lib/crm-automation-engine";
 import { runFacebookGroupMarketingCron } from "@/lib/facebook-group-marketing-cron";
+import { runB2BSofaJourney } from "@/lib/crm-b2b-sofa-journey-engine";
 
 /**
  * GET /api/crm/automation/cron
@@ -29,11 +30,14 @@ export async function GET(req: NextRequest) {
       runAutomationEngine(),
       runFacebookGroupMarketingCron(),
     ]);
+    // Chạy journey sau engine chung để hai luồng không tranh chấp cùng kết nối Zalo.
+    const b2bSofaJourney = await runB2BSofaJourney();
     console.log(`[CRM Cron] Done. Triggered: ${result.totalTriggered}/${result.totalLeads} leads`);
     return NextResponse.json({
       ok: true,
       ...result,
       facebookGroupMarketing,
+      b2bSofaJourney,
     });
   } catch (e) {
     console.error("[CRM Cron] Error:", e);
