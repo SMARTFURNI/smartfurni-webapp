@@ -113,7 +113,7 @@ function RuleCard({
   };
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
+    <div className="automation-rule-card rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb", background: "#fff" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         {/* Toggle */}
@@ -418,7 +418,7 @@ export default function EmailWorkflowAutomation() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="automation-channel-header flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.2)" }}>
@@ -431,7 +431,7 @@ export default function EmailWorkflowAutomation() {
         </div>
         <button onClick={save} disabled={saving}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
+          style={{ background: "linear-gradient(135deg, #0877ff, #0060e8)", color: "#fff" }}>
           {saving ? <RefreshCw size={13} className="animate-spin" /> : saved ? <CheckCircle2 size={13} /> : null}
           {saved ? "Đã lưu!" : "Lưu thay đổi"}
         </button>

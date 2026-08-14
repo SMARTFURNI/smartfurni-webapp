@@ -20,7 +20,6 @@ const REFRESHED_ROUTE_PREFIXES = [
   "/crm/daily-report",
   "/crm/staff",
   "/crm/quotes",
-  "/crm/automation",
   "/crm/plans-management",
   "/crm/settings",
   "/crm/roles",

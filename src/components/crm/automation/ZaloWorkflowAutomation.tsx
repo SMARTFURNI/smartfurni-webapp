@@ -110,7 +110,7 @@ function RuleEditor({
 
   return (
     <div
-      className="rounded-xl border transition-all"
+      className="automation-rule-card rounded-xl border transition-all"
       style={{
         background: rule.enabled ? "#fff" : "#fafafa",
         borderColor: rule.enabled ? "#e5e7eb" : "#f3f4f6",
@@ -401,7 +401,7 @@ export default function ZaloWorkflowAutomation() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="automation-channel-header flex items-start justify-between gap-4">
         <div>
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
             <MessageCircle size={18} className="text-blue-500" />

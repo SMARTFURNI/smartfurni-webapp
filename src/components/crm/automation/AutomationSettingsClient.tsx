@@ -10,6 +10,7 @@ import ZaloWorkflowAutomation from "./ZaloWorkflowAutomation";
 import EmailWorkflowAutomation from "./EmailWorkflowAutomation";
 import AutomationHistoryPanel from "./AutomationHistoryPanel";
 import B2BSofaJourneyAutomation from "./B2BSofaJourneyAutomation";
+import styles from "./AutomationSettingsClient.module.css";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
   SlaConfig, SlaStageConfig, AutoAssignConfig,
@@ -27,7 +28,7 @@ const TRIGGER_ICONS: Record<TriggerType, React.ElementType> = {
 
 const ACTION_COLORS: Record<ActionType, string> = {
   create_task: "#60a5fa", send_email: "#a78bfa", assign_staff: "#22c55e",
-  add_tag: "#C9A84C", notify_manager: "#f97316", move_stage: "#06b6d4",
+  add_tag: "#0068ff", notify_manager: "#f97316", move_stage: "#06b6d4",
   send_webhook: "#f87171",
   send_zalo_personal: "#0ea5e9",
   send_email_workflow: "#a78bfa",
@@ -37,7 +38,7 @@ const STAGES = CRM_LEAD_STAGE_OPTIONS;
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl p-5 ${className}`}
+    <div className={`automation-card rounded-2xl p-5 ${className}`}
       style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
       {children}
     </div>
@@ -48,8 +49,8 @@ function SectionTitle({ icon: Icon, title, subtitle }: { icon: React.ElementType
   return (
     <div className="flex items-center gap-3 mb-5">
       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.2)" }}>
-        <Icon size={16} style={{ color: "#C9A84C" }} />
+        style={{ background: "rgba(0,104,255,0.10)", border: "1px solid rgba(0,104,255,0.18)" }}>
+        <Icon size={16} style={{ color: "#0068ff" }} />
       </div>
       <div>
         <h2 className="text-sm font-bold text-gray-900">{title}</h2>
@@ -234,7 +235,7 @@ function ActionEditor({ action, onChange, onRemove }: {
       {action.type === "send_webhook" && (
         <input placeholder="Webhook URL" value={action.webhookUrl ?? ""} onChange={e => onChange({ ...action, webhookUrl: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none font-mono"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#C9A84C" }} />
+          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#0068ff" }} />
       )}
     </div>
   );
@@ -251,16 +252,16 @@ function RuleCard({ rule, onChange, onDelete }: {
   const TriggerIcon = TRIGGER_ICONS[rule.trigger.type];
 
   return (
-    <div className="rounded-2xl overflow-hidden transition-all"
+    <div className="automation-rule-card rounded-2xl overflow-hidden transition-all"
       style={{
-        border: `1px solid ${rule.enabled ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
-        background: rule.enabled ? "rgba(201,168,76,0.03)" : "#f9fafb",
+        border: `1px solid ${rule.enabled ? "rgba(0,104,255,0.24)" : "#e5e7eb"}`,
+        background: rule.enabled ? "rgba(0,104,255,0.025)" : "#f9fafb",
       }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: rule.enabled ? "rgba(201,168,76,0.12)" : "#f3f4f6" }}>
-          <TriggerIcon size={15} style={{ color: rule.enabled ? "#C9A84C" : "#9ca3af" }} />
+          style={{ background: rule.enabled ? "rgba(0,104,255,0.10)" : "#f3f4f6" }}>
+          <TriggerIcon size={15} style={{ color: rule.enabled ? "#0068ff" : "#9ca3af" }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -330,7 +331,7 @@ function RuleCard({ rule, onChange, onDelete }: {
               <button
                 onClick={() => onChange({ ...rule, actions: [...rule.actions, { type: "create_task" }] })}
                 className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-all hover:opacity-80"
-                style={{ background: "rgba(201,168,76,0.1)", color: "#C9A84C" }}>
+                style={{ background: "rgba(0,104,255,0.08)", color: "#0068ff" }}>
                 <Plus size={11} /> Thêm hành động
               </button>
             </div>
@@ -384,7 +385,7 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
           </div>
           <button onClick={() => onChange({ ...config, enabled: !config.enabled })}
             className="relative w-11 h-6 rounded-full transition-all"
-            style={{ background: config.enabled ? "#C9A84C" : "#e5e7eb" }}>
+            style={{ background: config.enabled ? "#0068ff" : "#e5e7eb" }}>
             <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
               style={{ left: config.enabled ? "calc(100% - 22px)" : "2px" }} />
           </button>
@@ -394,7 +395,7 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
           <input type="number" min={1} max={72} value={config.firstResponseHours}
             onChange={e => onChange({ ...config, firstResponseHours: parseInt(e.target.value) })}
             className="w-20 px-2 py-1.5 rounded text-sm text-center outline-none"
-            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#C9A84C" }} />
+            style={{ background: "#f3f4f6", border: "1px solid #d1d5db", color: "#0068ff" }} />
           <label className="text-xs" style={{ color: "#6b7280" }}>giờ kể từ khi tạo lead</label>
         </div>
       </Card>
@@ -430,7 +431,7 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
                 <td className="px-4 py-3">
                   <button onClick={() => updateStage(idx, "escalateToManager", !stage.escalateToManager)}
                     className="relative w-9 h-5 rounded-full transition-all"
-                    style={{ background: stage.escalateToManager ? "#C9A84C" : "#e5e7eb" }}>
+                    style={{ background: stage.escalateToManager ? "#0068ff" : "#e5e7eb" }}>
                     <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow-sm"
                       style={{ left: stage.escalateToManager ? "calc(100% - 18px)" : "2px" }} />
                   </button>
@@ -459,7 +460,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
           </div>
           <button onClick={() => onChange({ ...config, enabled: !config.enabled })}
             className="relative w-11 h-6 rounded-full transition-all"
-            style={{ background: config.enabled ? "#C9A84C" : "#e5e7eb" }}>
+            style={{ background: config.enabled ? "#0068ff" : "#e5e7eb" }}>
             <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow-sm"
               style={{ left: config.enabled ? "calc(100% - 22px)" : "2px" }} />
           </button>
@@ -475,9 +476,9 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
               <button key={m.id} onClick={() => onChange({ ...config, defaultMode: m.id as AutoAssignConfig["defaultMode"] })}
                 className="px-4 py-2 rounded-lg text-xs font-medium transition-all"
                 style={{
-                  background: config.defaultMode === m.id ? "rgba(201,168,76,0.15)" : "#f9fafb",
-                  color: config.defaultMode === m.id ? "#C9A84C" : "#6b7280",
-                  border: `1px solid ${config.defaultMode === m.id ? "rgba(201,168,76,0.3)" : "#e5e7eb"}`,
+                  background: config.defaultMode === m.id ? "rgba(0,104,255,0.10)" : "#f9fafb",
+                  color: config.defaultMode === m.id ? "#0068ff" : "#6b7280",
+                  border: `1px solid ${config.defaultMode === m.id ? "rgba(0,104,255,0.25)" : "#e5e7eb"}`,
                 }}>
                 {m.label}
               </button>
@@ -500,7 +501,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
             }],
           })}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-          style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.25)" }}>
+          style={{ background: "rgba(0,104,255,0.08)", color: "#0068ff", border: "1px solid rgba(0,104,255,0.20)" }}>
           <Plus size={12} /> Thêm quy tắc
         </button>
       </div>
@@ -657,68 +658,79 @@ export default function AutomationSettingsClient() {
   ];
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64" style={{ color: "#9ca3af" }}>
-      <RefreshCw size={20} className="animate-spin mr-2" /> Đang tải...
+    <div className={`${styles.workspace} flex items-center justify-center min-h-[420px]`}>
+      <div className="flex items-center gap-3 rounded-2xl border border-[#d9e5f2] bg-white px-5 py-4 text-sm font-medium text-[#526173] shadow-sm">
+        <RefreshCw size={19} className="animate-spin text-[#0068ff]" /> Đang tải trung tâm tự động hóa...
+      </div>
     </div>
   );
 
   return (
-    <div className="space-y-5" style={{ color: "#111827" }}>
-      {/* Header */}
-      <div className="crm-admin-page-header flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900">Tự động hóa CRM</h1>
-          <p className="text-xs mt-0.5" style={{ color: "#4b5563" }}>
-            Cấu hình quy tắc tự động, SLA và phân công nhân viên
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {saved && (
-            <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
-              style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}>
-              <CheckCircle2 size={12} /> Đã lưu
+    <div className={styles.workspace}>
+      <section className={styles.hero}>
+        <div className={styles.heroMain}>
+          <div className={styles.heroIdentity}>
+            <div className={styles.heroIcon}><Zap size={24} /></div>
+            <div>
+              <div className={styles.eyebrow}>SMARTFURNI AUTOMATION CENTER</div>
+              <h1>Trung tâm tự động hóa</h1>
+              <p>Điều phối Zalo, email, SLA và hành trình chăm sóc khách hàng trên một không gian vận hành.</p>
             </div>
-          )}
-          {activeTab !== "b2b_sofa_journey" && <button onClick={save} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-            Lưu cài đặt
-          </button>}
+          </div>
+          <div className={styles.heroActions}>
+            <div className={styles.systemStatus}><span /> Hệ thống sẵn sàng</div>
+            {saved && (
+              <div className={styles.savedBadge}>
+                <CheckCircle2 size={14} /> Đã lưu
+              </div>
+            )}
+            {activeTab !== "b2b_sofa_journey" && <button onClick={save} disabled={saving}
+              className={styles.primaryButton}>
+              {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
+              Lưu cài đặt
+            </button>}
+          </div>
         </div>
-      </div>
+        <div className={styles.heroStats}>
+          {[
+            { icon: Zap, value: `${rules.filter(rule => rule.enabled).length}/${rules.length}`, label: "Quy tắc đang bật" },
+            { icon: Building2, value: "90 ngày", label: "Journey B2B Sofa" },
+            { icon: MessageCircle, value: "3 kênh", label: "Zalo · OA · Email" },
+            { icon: Clock, value: "30 phút", label: "Chu kỳ xử lý" },
+          ].map(({ icon: Icon, value, label }) => (
+            <div key={label} className={styles.heroStat}>
+              <div className={styles.heroStatIcon}><Icon size={16} /></div>
+              <div><strong>{value}</strong><span>{label}</span></div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-        {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className="flex-1 min-w-[150px] flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: activeTab === tab.id ? "rgba(201,168,76,0.12)" : "transparent",
-              color: activeTab === tab.id ? "#C9A84C" : "#374151",
-            }}>
-            <tab.icon size={14} />
-            {tab.label}
-            {tab.count !== null && tab.count > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full"
-                style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>
-                {tab.count} bật
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <nav className={styles.tabShell} aria-label="Các khu vực tự động hóa">
+        <div className={styles.tabTrack}>
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={styles.tabButton} data-active={activeTab === tab.id ? "true" : "false"}>
+              <span className={styles.tabIcon}><tab.icon size={16} /></span>
+              <span>{tab.label}</span>
+              {tab.count !== null && tab.count > 0 && <span className={styles.tabCount}>{tab.count}</span>}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* Content */}
+      <main className={styles.content}>
       {activeTab === "rules" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm" style={{ color: "#374151" }}>
-              {rules.filter(r => r.enabled).length}/{rules.length} quy tắc đang hoạt động
-            </p>
+          <div className={styles.sectionToolbar}>
+            <div>
+              <h2>Quy tắc tự động</h2>
+              <p>{rules.filter(r => r.enabled).length}/{rules.length} quy tắc đang hoạt động</p>
+            </div>
             <button onClick={addRule}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-80"
-              style={{ background: "rgba(201,168,76,0.12)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.25)" }}>
+              className={styles.secondaryButton}>
               <Plus size={14} /> Thêm quy tắc
             </button>
           </div>
@@ -766,7 +778,7 @@ export default function AutomationSettingsClient() {
             {[
               { icon: Clock, color: "#60a5fa", title: "Nhóm 1: Nhắc nhở & Follow-up", desc: "Tự động tạo task khi KH không tương tác quá N ngày" },
               { icon: GitBranch, color: "#a78bfa", title: "Nhóm 2: Automation theo giai đoạn", desc: "Trigger action khi KH chuyển giai đoạn hoặc ở quá lâu" },
-              { icon: Tag, color: "#C9A84C", title: "Nhóm 3: Phân loại thông minh", desc: "Tự gắn tag Hot Lead, VIP, phân công nhân viên tự động" },
+              { icon: Tag, color: "#0068ff", title: "Nhóm 3: Phân loại thông minh", desc: "Tự gắn tag Hot Lead, VIP, phân công nhân viên tự động" },
               { icon: Bell, color: "#22c55e", title: "Nhóm 4: Thông báo đa kênh", desc: "Gửi Zalo/Email/SMS theo template khi có sự kiện" },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className="p-4 rounded-xl flex items-start gap-3"
@@ -785,7 +797,7 @@ export default function AutomationSettingsClient() {
 
           {/* Nút chạy */}
           <div className="p-5 rounded-2xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-            <Activity size={28} className="mx-auto mb-3" style={{ color: "#C9A84C" }} />
+            <Activity size={28} className="mx-auto mb-3" style={{ color: "#0068ff" }} />
             <h3 className="text-sm font-bold text-gray-900 mb-1">Chạy engine tự động hóa</h3>
             <p className="text-xs mb-4" style={{ color: "#6b7280" }}>
               Kiểm tra tất cả khách hàng và thực thi các quy tắc đang bật.
@@ -793,7 +805,7 @@ export default function AutomationSettingsClient() {
             </p>
             <button onClick={runEngine} disabled={running}
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)", color: "#000" }}>
+              style={{ background: "linear-gradient(135deg, #0877ff, #0060e8)", color: "#fff" }}>
               {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
               {running ? "Đang chạy..." : "Chạy ngay"}
             </button>
@@ -815,7 +827,7 @@ export default function AutomationSettingsClient() {
                 {[
                   { label: "Tổng KH kiểm tra", value: runResult.totalLeads, color: "#60a5fa" },
                   { label: "Triggers thực thi", value: runResult.totalTriggered, color: "#22c55e" },
-                  { label: "Thời gian chạy", value: `${Math.round((new Date(runResult.finishedAt).getTime() - new Date(runResult.startedAt).getTime()) / 1000)}s`, color: "#C9A84C" },
+                  { label: "Thời gian chạy", value: `${Math.round((new Date(runResult.finishedAt).getTime() - new Date(runResult.startedAt).getTime()) / 1000)}s`, color: "#0068ff" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="p-3 rounded-xl text-center" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
                     <p className="text-xl font-bold" style={{ color }}>{value}</p>
@@ -863,6 +875,7 @@ export default function AutomationSettingsClient() {
           )}
         </div>
       )}
+      </main>
     </div>
   );
 }

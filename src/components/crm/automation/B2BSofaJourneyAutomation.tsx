@@ -210,12 +210,12 @@ export default function B2BSofaJourneyAutomation() {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-5">
-      <div className="p-5 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+    <div className="automation-b2b space-y-5">
+      <div className="p-5 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-1">
-              <ShieldCheck size={20} className="text-amber-600" />
+              <ShieldCheck size={20} className="text-[#0068ff]" />
               <h2 className="font-bold text-gray-900">{data.definition.name}</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-900 text-white">V{data.definition.version}</span>
             </div>
@@ -274,7 +274,7 @@ export default function B2BSofaJourneyAutomation() {
               <span>{item.label}</span>
               <input type="checkbox" checked={settings[item.key]}
                 onChange={event => setSettings({ ...settings, [item.key]: event.target.checked })}
-                className="w-4 h-4 accent-amber-600" />
+                className="w-4 h-4 accent-[#0068ff]" />
             </label>
           ))}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -315,7 +315,7 @@ export default function B2BSofaJourneyAutomation() {
 
       <div className="flex flex-wrap items-center gap-3">
         <button onClick={save} disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-gray-950 text-sm font-semibold disabled:opacity-50">
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0068ff] hover:bg-[#0056d6] text-white text-sm font-semibold shadow-sm disabled:opacity-50">
           {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} Lưu cài đặt
         </button>
         <button onClick={runNow} disabled={running || !settings.enabled}

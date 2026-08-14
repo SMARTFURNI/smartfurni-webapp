@@ -203,9 +203,9 @@ export default function AutomationHistoryPanel() {
   const totalEmail = logs.filter(l => l.channel === "email").length;
 
   return (
-    <div style={{ padding: "24px 0" }}>
+    <div className="automation-history-panel" style={{ padding: "0" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+      <div className="automation-channel-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1e293b", margin: 0 }}>Lịch sử gửi tự động</h3>
           <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0" }}>Theo dõi trạng thái gửi Zalo Personal và Email từ automation</p>
@@ -219,14 +219,14 @@ export default function AutomationHistoryPanel() {
       </div>
 
       {/* Stats cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+      <div className="automation-history-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
         {[
           { label: "Tổng đã gửi", value: totalSent, color: "#16a34a", bg: "#dcfce7", icon: <CheckCircle2 size={18} /> },
           { label: "Thất bại", value: totalFailed, color: "#dc2626", bg: "#fee2e2", icon: <XCircle size={18} /> },
           { label: "Zalo Personal", value: totalZaloPersonal, color: "#0ea5e9", bg: "#e0f2fe", icon: <MessageCircle size={18} /> },
           { label: "Email", value: totalEmail, color: "#8b5cf6", bg: "#ede9fe", icon: <Mail size={18} /> },
         ].map(s => (
-          <div key={s.label} style={{ background: s.bg, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="automation-history-stat" key={s.label} style={{ background: s.bg, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ color: s.color }}>{s.icon}</div>
             <div>
               <div style={{ fontSize: 22, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -300,7 +300,7 @@ export default function AutomationHistoryPanel() {
       </div>
 
       {/* Table */}
-      <div style={{ background: "white", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+      <div className="automation-data-card" style={{ background: "white", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
             <RefreshCw size={24} style={{ margin: "0 auto 8px", display: "block" }} />
