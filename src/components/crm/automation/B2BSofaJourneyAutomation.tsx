@@ -376,8 +376,10 @@ export default function B2BSofaJourneyAutomation() {
               zaloBody: override.zaloBody ?? step.zaloBody,
               mediaAssetIds: override.mediaAssetIds ?? step.mediaAssetIds ?? [],
             };
-            const zaloTestChannel = [step.primaryChannel, ...step.fallbackChannels]
-              .find(channel => channel !== "email") as Exclude<JourneyChannel, "email"> | undefined;
+            const stepChannels = [step.primaryChannel, ...step.fallbackChannels];
+            const zaloTestChannel = stepChannels.includes("zalo_personal")
+              ? "zalo_personal"
+              : stepChannels.find(channel => channel !== "email") as Exclude<JourneyChannel, "email"> | undefined;
             return (
             <details key={step.id} className="group rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
               <summary className="cursor-pointer list-none p-3 flex items-center gap-3">
@@ -412,6 +414,7 @@ export default function B2BSofaJourneyAutomation() {
                     actualChannel={zaloTestChannel || "zalo_personal"}
                     body={editableStep.zaloBody}
                     mediaAssetIds={editableStep.mediaAssetIds}
+                    requiredVariables={step.requiredContext}
                   />
                 </div>
                 <div className="min-w-0">
@@ -429,7 +432,7 @@ export default function B2BSofaJourneyAutomation() {
                     rows={10}
                     className="w-full resize-y rounded-xl border border-violet-200 bg-violet-50/40 p-3 font-sans text-xs leading-5 text-gray-700 outline-none focus:ring-2 focus:ring-violet-200"
                   />
-                  <AutomationTemplateTest channel="email" subject={editableStep.emailSubject} body={editableStep.emailBody} mediaAssetIds={editableStep.mediaAssetIds} />
+                  <AutomationTemplateTest channel="email" subject={editableStep.emailSubject} body={editableStep.emailBody} mediaAssetIds={editableStep.mediaAssetIds} requiredVariables={step.requiredContext} />
                 </div>
                 <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <AutomationMediaField

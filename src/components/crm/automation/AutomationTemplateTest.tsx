@@ -14,6 +14,7 @@ interface Props {
   mediaAssetIds?: string[];
   actualChannel?: JourneyChannel;
   emailFromName?: string;
+  requiredVariables?: string[];
 }
 
 interface TestLead {
@@ -76,6 +77,7 @@ export default function AutomationTemplateTest({
   mediaAssetIds = [],
   actualChannel,
   emailFromName,
+  requiredVariables = [],
 }: Props) {
   const [open, setOpen] = useState(false);
   const [realOpen, setRealOpen] = useState(false);
@@ -148,6 +150,7 @@ export default function AutomationTemplateTest({
           body,
           mediaAssetIds,
           emailFromName,
+          requiredVariables,
         }),
       });
       const payload = await response.json();
@@ -204,6 +207,11 @@ export default function AutomationTemplateTest({
                   </div>
                 ))}
               </div>
+            )}
+            {channel === "email" && mediaAssetIds.length > 0 && (
+              <p className="mt-2 text-[10px] text-slate-500">
+                Ảnh được gửi dưới dạng tệp đính kèm; video được chuẩn hóa MP4 trước khi đính kèm.
+              </p>
             )}
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500"><Play size={10} /> Dữ liệu mẫu: Anh Minh · An Nhiên Homestay · 12 sản phẩm</div>

@@ -41,9 +41,10 @@ import {
 import type { Lead } from "@/lib/crm-types";
 import {
   buildAutomationTestContext,
-  missingAutomationTestVariables,
+  missingRequiredAutomationTestVariables,
   renderAutomationTestTemplate,
 } from "@/lib/crm-automation-test";
+import { buildEmailAttachments } from "@/lib/crm-email-media";
 
 export interface SendAttemptResult {
   outcome: "sent" | "definitive_failure" | "delivery_unknown";
@@ -183,6 +184,7 @@ export async function sendAutomationTemplateToLead(input: {
   body: string;
   mediaAssetIds?: string[];
   emailFromName?: string;
+  requiredVariables?: string[];
 }): Promise<SendAttemptResult & { renderedSubject: string; renderedBody: string }> {
   const settings = await getB2BSofaJourneySettings();
   const enrollment = await getJourneyEnrollment(input.lead.id).catch(() => null);
@@ -195,13 +197,19 @@ export async function sendAutomationTemplateToLead(input: {
   if (settings.approvedDemoVideoUrl) context.approved_demo_video_url = settings.approvedDemoVideoUrl;
   if (settings.projectBriefUrl) context.project_brief_url = settings.projectBriefUrl;
   if (settings.comparisonPackUrl) context.comparison_pack_url = settings.comparisonPackUrl;
-  const missingVariables = missingAutomationTestVariables([input.subject || "", input.body], context);
+  const media = await prepareMedia(input.mediaAssetIds || []);
+  const hasAttachedVideo = media.some(item =>
+    item.asset.mediaKind === "video" || item.asset.contentType.startsWith("video/"),
+  );
+  const requiredVariables = (input.requiredVariables || []).filter(variable =>
+    !(variable === "approved_demo_video_url" && hasAttachedVideo),
+  );
+  const missingVariables = missingRequiredAutomationTestVariables(requiredVariables, context);
   if (missingVariables.length > 0) {
     throw new Error(`Thiếu dữ liệu CRM để thay biến: ${missingVariables.join(", ")}.`);
   }
   const renderedSubject = renderAutomationTestTemplate(input.subject || "", context);
   const renderedBody = renderAutomationTestTemplate(input.body, context);
-  const media = await prepareMedia(input.mediaAssetIds || []);
   const accountId = input.channel === "zalo_personal"
     ? await resolveAutomationAccountId(settings)
     : "";
@@ -338,13 +346,14 @@ async function sendEmail(
   try {
     const resend = new Resend(apiKey);
     const fromEmail = process.env.RESEND_FROM_EMAIL || "b2b@smartfurni.com.vn";
+    const attachments = await buildEmailAttachments(media);
     const result = await resend.emails.send({
       from: `${fromName.trim() || "SmartFurni B2B"} <${fromEmail}>`,
       to: [recipient],
       subject,
       text: body,
       html: plainTextToHtml(body),
-      attachments: media.map(item => ({ filename: item.asset.name, content: item.buffer })),
+      attachments,
     });
     if (result.error) {
       return { outcome: "definitive_failure", error: result.error.message || "Resend từ chối email.", recipient, preview: subject };

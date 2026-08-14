@@ -4,6 +4,7 @@ import {
   buildAutomationTestContext,
   isDoNotContactLead,
   missingAutomationTestVariables,
+  missingRequiredAutomationTestVariables,
   renderAutomationTestTemplate,
 } from "./crm-automation-test";
 
@@ -59,5 +60,15 @@ describe("CRM automation real test helpers", () => {
       "Chào {{name}} từ {{company}}",
       "Phương án: {{option_a_model}}",
     ], context)).toEqual(["company", "option_a_model"]);
+  });
+
+  it("only blocks variables explicitly required by the journey step", () => {
+    const context = buildAutomationTestContext(lead);
+
+    expect(missingRequiredAutomationTestVariables([], context)).toEqual([]);
+    expect(missingRequiredAutomationTestVariables(
+      ["survey_form_line", "quantity", "survey_form_line", "invalid-variable"],
+      context,
+    )).toEqual(["survey_form_line"]);
   });
 });

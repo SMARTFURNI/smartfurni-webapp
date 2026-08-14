@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       body?: string;
       mediaAssetIds?: string[];
       emailFromName?: string;
+      requiredVariables?: string[];
     };
 
     requestId = String(body.requestId || "");
@@ -98,6 +99,9 @@ export async function POST(req: NextRequest) {
     const mediaAssetIds = [...new Set(Array.isArray(body.mediaAssetIds)
       ? body.mediaAssetIds.map(String).filter(Boolean)
       : [])].slice(0, 10);
+    const requiredVariables = [...new Set(Array.isArray(body.requiredVariables)
+      ? body.requiredVariables.map(String).filter(value => /^[a-zA-Z0-9_]+$/.test(value))
+      : [])].slice(0, 20);
 
     if (body.confirmed !== true) {
       return NextResponse.json({ error: "Bạn chưa xác nhận gửi thật tới khách hàng." }, { status: 400 });
@@ -139,6 +143,7 @@ export async function POST(req: NextRequest) {
       body: messageBody,
       mediaAssetIds,
       emailFromName,
+      requiredVariables,
     });
     const status = result.outcome === "sent" ? "sent" : result.outcome;
     await query(

@@ -75,3 +75,12 @@ export function missingAutomationTestVariables(
   );
   return [...new Set(keys)].filter(key => !context[key]?.trim());
 }
+
+export function missingRequiredAutomationTestVariables(
+  requiredVariables: string[],
+  context: Record<string, string>,
+): string[] {
+  return [...new Set(requiredVariables)]
+    .filter(key => /^[a-zA-Z0-9_]+$/.test(key))
+    .filter(key => !context[key]?.trim());
+}

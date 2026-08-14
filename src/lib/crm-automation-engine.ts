@@ -16,6 +16,7 @@ import { findZaloUserByPhone, sendZaloAttachment, sendZaloMessage, isZaloConnect
 import { getMediaObject } from "./media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage } from "./zalo-media-library-store";
 import { Resend } from "resend";
+import { buildEmailAttachments } from "./crm-email-media";
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
@@ -375,13 +376,14 @@ async function executeAction(
         const resend = new Resend(resendApiKey);
         const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@smartfurni.vn";
         const fromName = action.emailFromName ?? "SmartFurni";
+        const attachments = await buildEmailAttachments(media);
         const { error: resendError } = await resend.emails.send({
           from: `${fromName} <${fromEmail}>`,
           to: [lead.email!],
           subject,
           html: body.replace(/\n/g, "<br>"),
           text: body,
-          attachments: media.map(item => ({ filename: item.asset.name, content: item.buffer })),
+          attachments,
         });
         if (resendError) {
           throw new Error(resendError.message ?? "Resend API error");
