@@ -27,6 +27,7 @@ import {
   countJourneyMessagesInLastSevenDays,
   deferJourneyAction,
   getB2BSofaJourneySettings,
+  getJourneyEnrollment,
   getEnrollmentById,
   getLeadForJourneyAction,
   markJourneyActionOutcome,
@@ -38,8 +39,13 @@ import {
   type JourneyEnrollmentRecord,
 } from "@/lib/crm-b2b-sofa-journey-store";
 import type { Lead } from "@/lib/crm-types";
+import {
+  buildAutomationTestContext,
+  missingAutomationTestVariables,
+  renderAutomationTestTemplate,
+} from "@/lib/crm-automation-test";
 
-interface SendAttemptResult {
+export interface SendAttemptResult {
   outcome: "sent" | "definitive_failure" | "delivery_unknown";
   error?: string;
   providerMessageId?: string;
@@ -159,15 +165,76 @@ async function sendOaMedia(userId: string, media: PreparedMedia[]): Promise<stri
 
 async function resolveAutomationAccountId(
   settings: B2BSofaJourneySettings,
-  enrollment: JourneyEnrollmentRecord,
+  enrollment?: Pick<JourneyEnrollmentRecord, "automationAccountId">,
 ): Promise<string> {
-  const requested = enrollment.automationAccountId || settings.automationAccountId;
+  const requested = enrollment?.automationAccountId || settings.automationAccountId;
   const accounts = (await listZaloAccounts()).filter(account => account.isActive);
   if (requested && accounts.some(account => account.id === requested)) return requested;
   const smartFurni = accounts.find(account =>
     `${account.label} ${account.displayName}`.toLocaleLowerCase("vi").includes("smartfurni"),
   );
   return smartFurni?.id || accounts[0]?.id || "";
+}
+
+export async function sendAutomationTemplateToLead(input: {
+  lead: Lead;
+  channel: JourneyChannel;
+  subject?: string;
+  body: string;
+  mediaAssetIds?: string[];
+  emailFromName?: string;
+}): Promise<SendAttemptResult & { renderedSubject: string; renderedBody: string }> {
+  const settings = await getB2BSofaJourneySettings();
+  const enrollment = await getJourneyEnrollment(input.lead.id).catch(() => null);
+  const context = {
+    ...buildAutomationTestContext(input.lead, settings),
+    ...nonEmptyContext(enrollment?.context || {}),
+  };
+  if (settings.surveyFormUrl) context.survey_form_url = settings.surveyFormUrl;
+  if (settings.surveyFormUrl) context.survey_form_line = `Điền nhanh tại: ${settings.surveyFormUrl}`;
+  if (settings.approvedDemoVideoUrl) context.approved_demo_video_url = settings.approvedDemoVideoUrl;
+  if (settings.projectBriefUrl) context.project_brief_url = settings.projectBriefUrl;
+  if (settings.comparisonPackUrl) context.comparison_pack_url = settings.comparisonPackUrl;
+  const missingVariables = missingAutomationTestVariables([input.subject || "", input.body], context);
+  if (missingVariables.length > 0) {
+    throw new Error(`Thiếu dữ liệu CRM để thay biến: ${missingVariables.join(", ")}.`);
+  }
+  const renderedSubject = renderAutomationTestTemplate(input.subject || "", context);
+  const renderedBody = renderAutomationTestTemplate(input.body, context);
+  const media = await prepareMedia(input.mediaAssetIds || []);
+  const accountId = input.channel === "zalo_personal"
+    ? await resolveAutomationAccountId(settings)
+    : "";
+
+  if (input.channel === "zalo_personal") {
+    await initZaloGateway().catch(() => undefined);
+  }
+
+  const result = await executeChannel(
+    input.channel,
+    input.lead,
+    accountId,
+    renderedSubject,
+    renderedBody,
+    renderedBody,
+    media,
+    input.emailFromName,
+  );
+
+  await logNotification({
+    ruleId: "automation_real_test",
+    ruleName: "Gửi test thật từ CRM Automation",
+    channel: input.channel === "email" ? "email" : "zalo",
+    actionType: `automation_test_${input.channel}`,
+    recipient: result.recipient,
+    leadId: input.lead.id,
+    leadName: input.lead.name,
+    message: (input.channel === "email" ? renderedSubject : renderedBody).slice(0, 500),
+    status: result.outcome === "sent" ? "sent" : "failed",
+    error: result.error,
+  });
+
+  return { ...result, renderedSubject, renderedBody };
 }
 
 async function findOaUserId(lead: Lead): Promise<string> {
@@ -258,6 +325,7 @@ async function sendEmail(
   subject: string,
   body: string,
   media: PreparedMedia[],
+  fromName = "SmartFurni B2B",
 ): Promise<SendAttemptResult> {
   const recipient = lead.email?.trim() || "";
   if (!recipient || !/^\S+@\S+\.\S+$/.test(recipient)) {
@@ -271,7 +339,7 @@ async function sendEmail(
     const resend = new Resend(apiKey);
     const fromEmail = process.env.RESEND_FROM_EMAIL || "b2b@smartfurni.com.vn";
     const result = await resend.emails.send({
-      from: `SmartFurni B2B <${fromEmail}>`,
+      from: `${fromName.trim() || "SmartFurni B2B"} <${fromEmail}>`,
       to: [recipient],
       subject,
       text: body,
@@ -297,10 +365,11 @@ async function executeChannel(
   emailBody: string,
   zaloBody: string,
   media: PreparedMedia[],
+  emailFromName?: string,
 ): Promise<SendAttemptResult> {
   if (channel === "zalo_personal") return sendPersonalZalo(lead, zaloBody, accountId, media);
   if (channel === "zalo_oa") return sendOaZalo(lead, zaloBody, media);
-  return sendEmail(lead, subject, emailBody, media);
+  return sendEmail(lead, subject, emailBody, media, emailFromName);
 }
 
 async function logChannelAttempt(

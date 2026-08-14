@@ -254,6 +254,7 @@ function RuleCard({
             subject={rule.subject}
             body={rule.body}
             mediaAssetIds={rule.mediaAssetIds}
+            emailFromName={rule.fromName}
           />
         </div>
       )}

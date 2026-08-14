@@ -376,6 +376,8 @@ export default function B2BSofaJourneyAutomation() {
               zaloBody: override.zaloBody ?? step.zaloBody,
               mediaAssetIds: override.mediaAssetIds ?? step.mediaAssetIds ?? [],
             };
+            const zaloTestChannel = [step.primaryChannel, ...step.fallbackChannels]
+              .find(channel => channel !== "email") as Exclude<JourneyChannel, "email"> | undefined;
             return (
             <details key={step.id} className="group rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
               <summary className="cursor-pointer list-none p-3 flex items-center gap-3">
@@ -405,7 +407,12 @@ export default function B2BSofaJourneyAutomation() {
                     rows={12}
                     className="w-full resize-y rounded-xl border border-blue-200 bg-blue-50/40 p-3 font-sans text-xs leading-5 text-gray-700 outline-none focus:ring-2 focus:ring-blue-200"
                   />
-                  <AutomationTemplateTest channel="zalo" body={editableStep.zaloBody} mediaAssetIds={editableStep.mediaAssetIds} />
+                  <AutomationTemplateTest
+                    channel="zalo"
+                    actualChannel={zaloTestChannel || "zalo_personal"}
+                    body={editableStep.zaloBody}
+                    mediaAssetIds={editableStep.mediaAssetIds}
+                  />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-xs font-semibold text-violet-700 mb-2"><Mail size={13} /> Nội dung Email · có thể chỉnh sửa</div>
