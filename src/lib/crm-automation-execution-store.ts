@@ -18,6 +18,21 @@ export interface AutomationEmailQueueJob {
   attempts: number;
 }
 
+export interface AutomationZaloQueueJob {
+  id: string;
+  dedupeKey: string;
+  ruleId: string;
+  ruleName: string;
+  leadId: string;
+  leadName: string;
+  recipient: string;
+  message: string;
+  fallbackToAddFriend: boolean;
+  mediaAssetIds: string[];
+  scheduledAt: string;
+  attempts: number;
+}
+
 let schemaReady = false;
 
 export async function initAutomationExecutionSchema(): Promise<void> {
@@ -61,6 +76,29 @@ export async function initAutomationExecutionSchema(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_crm_automation_email_queue_due
       ON crm_automation_email_queue(status, scheduled_at);
+
+    CREATE TABLE IF NOT EXISTS crm_automation_zalo_queue (
+      id TEXT PRIMARY KEY,
+      dedupe_key TEXT NOT NULL UNIQUE,
+      rule_id TEXT NOT NULL,
+      rule_name TEXT NOT NULL,
+      lead_id TEXT NOT NULL,
+      lead_name TEXT NOT NULL,
+      recipient TEXT NOT NULL,
+      message TEXT NOT NULL,
+      fallback_to_add_friend BOOLEAN NOT NULL DEFAULT FALSE,
+      media_asset_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+      scheduled_at TIMESTAMPTZ NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      attempts INTEGER NOT NULL DEFAULT 0,
+      claimed_at TIMESTAMPTZ,
+      sent_at TIMESTAMPTZ,
+      last_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_crm_automation_zalo_queue_due
+      ON crm_automation_zalo_queue(status, scheduled_at);
 
     CREATE TABLE IF NOT EXISTS crm_automation_scheduler_locks (
       key TEXT PRIMARY KEY,
@@ -268,4 +306,119 @@ export async function markAutomationEmailFailed(input: {
      WHERE id=$1`,
     [input.id, terminal ? "failed" : "pending", retryMinutes, input.error.slice(0, 2_000)],
   );
+}
+
+export async function enqueueAutomationZalo(input: {
+  dedupeKey: string;
+  ruleId: string;
+  ruleName: string;
+  leadId: string;
+  leadName: string;
+  recipient: string;
+  message: string;
+  fallbackToAddFriend: boolean;
+  mediaAssetIds: string[];
+  scheduledAt: Date;
+}): Promise<{ queued: boolean; id: string }> {
+  await initAutomationExecutionSchema();
+  const id = `azalo-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const row = await queryOne<{ id: string }>(
+    `INSERT INTO crm_automation_zalo_queue
+       (id,dedupe_key,rule_id,rule_name,lead_id,lead_name,recipient,message,
+        fallback_to_add_friend,media_asset_ids,scheduled_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11)
+     ON CONFLICT (dedupe_key) DO NOTHING RETURNING id`,
+    [
+      id, input.dedupeKey, input.ruleId, input.ruleName, input.leadId, input.leadName,
+      input.recipient, input.message, input.fallbackToAddFriend,
+      JSON.stringify([...new Set(input.mediaAssetIds)].slice(0, 10)), input.scheduledAt.toISOString(),
+    ],
+  );
+  return { queued: Boolean(row), id: row?.id || id };
+}
+
+export async function claimDueAutomationZalo(limit = 20): Promise<AutomationZaloQueueJob[]> {
+  await initAutomationExecutionSchema();
+  const rows = await query<Record<string, unknown>>(
+    `WITH due AS (
+       SELECT id FROM crm_automation_zalo_queue
+       WHERE (status='pending' AND scheduled_at<=NOW())
+          OR (status='processing' AND claimed_at<NOW()-INTERVAL '30 minutes')
+       ORDER BY scheduled_at ASC LIMIT $1 FOR UPDATE SKIP LOCKED
+     )
+     UPDATE crm_automation_zalo_queue q
+     SET status='processing',claimed_at=NOW(),attempts=q.attempts+1,updated_at=NOW()
+     FROM due WHERE q.id=due.id RETURNING q.*`,
+    [Math.max(1, Math.min(limit, 100))],
+  );
+  return rows.map(row => ({
+    id: String(row.id), dedupeKey: String(row.dedupe_key), ruleId: String(row.rule_id),
+    ruleName: String(row.rule_name), leadId: String(row.lead_id), leadName: String(row.lead_name),
+    recipient: String(row.recipient), message: String(row.message),
+    fallbackToAddFriend: Boolean(row.fallback_to_add_friend),
+    mediaAssetIds: (typeof row.media_asset_ids === "string" ? JSON.parse(row.media_asset_ids) : row.media_asset_ids || []) as string[],
+    scheduledAt: String(row.scheduled_at), attempts: Number(row.attempts || 0),
+  }));
+}
+
+export async function markAutomationZaloSent(id: string): Promise<void> {
+  await query(
+    `UPDATE crm_automation_zalo_queue SET status='sent',sent_at=NOW(),claimed_at=NULL,last_error=NULL,updated_at=NOW() WHERE id=$1`,
+    [id],
+  );
+}
+
+export async function markAutomationZaloFailed(input: { id: string; error: string; retry: boolean; attempts: number; retryAt?: string }): Promise<void> {
+  const terminal = !input.retry || input.attempts >= 5;
+  const retryMinutes = Math.min(15 * Math.pow(2, Math.max(0, input.attempts - 1)), 12 * 60);
+  await query(
+    `UPDATE crm_automation_zalo_queue
+     SET status=$2,scheduled_at=CASE WHEN $2='pending' THEN COALESCE($5::timestamptz,NOW()+($3::text||' minutes')::interval) ELSE scheduled_at END,
+       claimed_at=NULL,last_error=$4,updated_at=NOW() WHERE id=$1`,
+    [input.id, terminal ? "failed" : "pending", retryMinutes, input.error.slice(0, 2_000), input.retryAt || null],
+  );
+}
+
+export interface AutomationQueueOverview {
+  channel: "email" | "zalo_personal";
+  pending: number;
+  processing: number;
+  failed: number;
+  sent24h: number;
+  oldestPendingAt: string | null;
+}
+
+export async function getAutomationQueueOverview(): Promise<AutomationQueueOverview[]> {
+  await initAutomationExecutionSchema();
+  const rows = await query<{ channel: "email" | "zalo_personal"; pending: string; processing: string; failed: string; sent_24h: string; oldest_pending_at: string | null }>(
+    `SELECT 'email'::text AS channel,
+       COUNT(*) FILTER (WHERE status='pending')::text AS pending,
+       COUNT(*) FILTER (WHERE status='processing')::text AS processing,
+       COUNT(*) FILTER (WHERE status='failed')::text AS failed,
+       COUNT(*) FILTER (WHERE status='sent' AND sent_at>=NOW()-INTERVAL '24 hours')::text AS sent_24h,
+       MIN(scheduled_at) FILTER (WHERE status='pending')::text AS oldest_pending_at
+     FROM crm_automation_email_queue
+     UNION ALL
+     SELECT 'zalo_personal'::text AS channel,
+       COUNT(*) FILTER (WHERE status='pending')::text,
+       COUNT(*) FILTER (WHERE status='processing')::text,
+       COUNT(*) FILTER (WHERE status='failed')::text,
+       COUNT(*) FILTER (WHERE status='sent' AND sent_at>=NOW()-INTERVAL '24 hours')::text,
+       MIN(scheduled_at) FILTER (WHERE status='pending')::text
+     FROM crm_automation_zalo_queue`,
+  );
+  return rows.map(row => ({
+    channel: row.channel, pending: Number(row.pending), processing: Number(row.processing),
+    failed: Number(row.failed), sent24h: Number(row.sent_24h), oldestPendingAt: row.oldest_pending_at,
+  }));
+}
+
+export async function retryFailedAutomationJobs(channel: "email" | "zalo_personal"): Promise<number> {
+  await initAutomationExecutionSchema();
+  const table = channel === "email" ? "crm_automation_email_queue" : "crm_automation_zalo_queue";
+  const rows = await query<{ id: string }>(
+    `UPDATE ${table} SET status='pending',scheduled_at=NOW(),claimed_at=NULL,last_error=NULL,updated_at=NOW()
+     WHERE status='failed' RETURNING id`,
+  );
+  return rows.length;
 }

@@ -7,6 +7,7 @@ import { getMediaObject } from "@/lib/media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage } from "@/lib/zalo-media-library-store";
 import { sendAutomationEmail } from "@/lib/crm-automation-email";
 import { enqueueAutomationEmail } from "@/lib/crm-automation-execution-store";
+import { getAdminSession } from "@/lib/admin-auth";
 
 function replaceVars(template: string, lead: Record<string, string>): string {
   return template
@@ -21,6 +22,9 @@ function replaceVars(template: string, lead: Record<string, string>): string {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!await getAdminSession()) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { leadId, toStage } = await req.json();
     if (!leadId || !toStage) {
       return NextResponse.json({ error: "Missing leadId or toStage" }, { status: 400 });

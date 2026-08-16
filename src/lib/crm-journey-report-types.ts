@@ -52,12 +52,16 @@ export interface JourneyReportSummary {
   deliveredEmails: number;
   bouncedEmails: number;
   complainedEmails: number;
+  openedMessages: number;
+  clickedMessages: number;
   fallbackActions: number;
   sendSuccessRate: number;
   responseRate: number;
   quoteRate: number;
   winRate: number;
   fallbackRate: number;
+  openRate: number;
+  clickRate: number;
   averageResponseHours: number | null;
   assistedRevenue: number;
   pipelineValue: number;
@@ -140,6 +144,14 @@ export interface JourneyReportFailureRow {
   lastOccurredAt: string;
 }
 
+export interface JourneyReportLinkRow {
+  channel: string;
+  url: string;
+  clicks: number;
+  uniqueActions: number;
+  lastClickedAt: string;
+}
+
 export interface JourneyReportLeadRow {
   enrollmentId: string;
   journeyCode: string;
@@ -174,6 +186,14 @@ export interface JourneyWorkflowReport {
     lastEventAt: string | null;
     note: string;
   };
+  operations: {
+    genericExecutions: number;
+    genericFailed: number;
+    slaAlerts: number;
+    queuedPending: number;
+    notificationSent: number;
+    notificationFailed: number;
+  };
   options: {
     workflows: JourneyReportOption[];
     sources: JourneyReportOption[];
@@ -187,6 +207,7 @@ export interface JourneyWorkflowReport {
   channels: JourneyReportChannelRow[];
   steps: JourneyReportStepRow[];
   failures: JourneyReportFailureRow[];
+  links: JourneyReportLinkRow[];
   leads: JourneyReportLeadRow[];
 }
 

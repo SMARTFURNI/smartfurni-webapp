@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeJourneyReportFilters } from "./crm-journey-reporting";
+import { normalizeJourneyReportFilters, rewriteJourneyTrackedLinks } from "./crm-journey-reporting";
 import { B2B_SOFA_JOURNEY_CODE } from "./crm-b2b-sofa-journey";
 
 describe("journey report filters", () => {
@@ -27,5 +27,10 @@ describe("journey report filters", () => {
     const normalized = normalizeJourneyReportFilters({ from: "2020-01-01", to: "2026-08-16" });
     expect(normalized.from).toBe("2026-07-18");
     expect(normalizeJourneyReportFilters({ from: "2026-09-01", to: "2026-08-16" }).from).toBe("2026-07-18");
+  });
+
+  it("bọc link Zalo bằng URL theo dõi nhưng giữ nguyên dấu câu", () => {
+    expect(rewriteJourneyTrackedLinks("Xem https://smartfurni.com.vn/demo, rồi phản hồi.", "https://crm.test/click?u="))
+      .toBe("Xem https://crm.test/click?u=https%3A%2F%2Fsmartfurni.com.vn%2Fdemo, rồi phản hồi.");
   });
 });

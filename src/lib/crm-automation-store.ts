@@ -115,6 +115,23 @@ export interface AutoAssignConfig {
   fallbackStaffId: string;    // if no rule matches
 }
 
+// ─── Global contact policy ───────────────────────────────────────────────────
+
+export interface AutomationContactPolicy {
+  enabled: boolean;
+  timezone: "Asia/Ho_Chi_Minh";
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  maxMessagesPerSevenDays: number;
+  dedupeWindowMinutes: number;
+  maxRetryAttempts: number;
+  autoPauseFailureRate: number;
+  autoPauseMinimumAttempts: number;
+  doNotContactTags: string[];
+  suppressBouncedEmails: boolean;
+  suppressComplainedEmails: boolean;
+}
+
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
 export const DEFAULT_AUTOMATION_RULES: AutomationRule[] = [
@@ -188,6 +205,24 @@ export const DEFAULT_AUTO_ASSIGN: AutoAssignConfig = {
   defaultMode: "round_robin",
   rules: [],
   fallbackStaffId: "",
+};
+
+export const DEFAULT_CONTACT_POLICY: AutomationContactPolicy = {
+  enabled: true,
+  timezone: "Asia/Ho_Chi_Minh",
+  quietHoursStart: "20:00",
+  quietHoursEnd: "08:00",
+  maxMessagesPerSevenDays: 4,
+  dedupeWindowMinutes: 120,
+  maxRetryAttempts: 5,
+  autoPauseFailureRate: 35,
+  autoPauseMinimumAttempts: 10,
+  doNotContactTags: [
+    "DNC", "Do not contact", "Không liên hệ", "Không làm phiền",
+    "Dừng chăm sóc", "Unsubscribe",
+  ],
+  suppressBouncedEmails: true,
+  suppressComplainedEmails: true,
 };
 
 // ─── Store Functions ──────────────────────────────────────────────────────────
@@ -275,6 +310,40 @@ export async function saveAutoAssignConfig(config: AutoAssignConfig): Promise<vo
     `INSERT INTO crm_automation (key, value, updated_at) VALUES ('auto_assign', $1, NOW())
      ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
     [JSON.stringify(config)]
+  );
+}
+
+export async function getAutomationContactPolicy(): Promise<AutomationContactPolicy> {
+  try {
+    const db = await getDb();
+    await ensureTable(db);
+    const res = await db.query(`SELECT value FROM crm_automation WHERE key = 'contact_policy'`);
+    if (res.rows.length === 0) return DEFAULT_CONTACT_POLICY;
+    const stored = res.rows[0].value as Partial<AutomationContactPolicy>;
+    return { ...DEFAULT_CONTACT_POLICY, ...stored, timezone: "Asia/Ho_Chi_Minh" };
+  } catch {
+    return DEFAULT_CONTACT_POLICY;
+  }
+}
+
+export async function saveAutomationContactPolicy(input: AutomationContactPolicy): Promise<void> {
+  const db = await getDb();
+  await ensureTable(db);
+  const policy: AutomationContactPolicy = {
+    ...DEFAULT_CONTACT_POLICY,
+    ...input,
+    timezone: "Asia/Ho_Chi_Minh",
+    maxMessagesPerSevenDays: Math.max(1, Math.min(20, Number(input.maxMessagesPerSevenDays || 4))),
+    dedupeWindowMinutes: Math.max(5, Math.min(1440, Number(input.dedupeWindowMinutes || 120))),
+    maxRetryAttempts: Math.max(1, Math.min(10, Number(input.maxRetryAttempts || 5))),
+    autoPauseFailureRate: Math.max(1, Math.min(100, Number(input.autoPauseFailureRate || 35))),
+    autoPauseMinimumAttempts: Math.max(3, Math.min(1000, Number(input.autoPauseMinimumAttempts || 10))),
+    doNotContactTags: [...new Set((input.doNotContactTags || []).map(String).map(tag => tag.trim()).filter(Boolean))],
+  };
+  await db.query(
+    `INSERT INTO crm_automation (key, value, updated_at) VALUES ('contact_policy', $1, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
+    [JSON.stringify(policy)],
   );
 }
 

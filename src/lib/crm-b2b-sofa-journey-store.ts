@@ -10,6 +10,7 @@ import {
   DEFAULT_B2B_SOFA_JOURNEY_SETTINGS,
   buildJourneyContext,
   isEligibleForB2BSofaJourney,
+  journeyDefinitionWithOverrides,
   scheduleJourneyStep,
   type B2BSofaJourneySettings,
   type JourneyChannel,
@@ -34,6 +35,12 @@ export interface JourneySettingsBase {
   maxMessagesPerSevenDays: number;
   automationAccountId: string;
   stepOverrides: Record<string, {
+    enabled?: boolean;
+    day?: number;
+    sendHour?: number;
+    sendMinute?: number;
+    primaryChannel?: JourneyChannel;
+    fallbackChannels?: JourneyChannel[];
     emailSubject?: string;
     emailBody?: string;
     zaloBody?: string;
@@ -378,16 +385,28 @@ export async function saveJourneySettings<T extends JourneySettingsBase>(
     ...current,
     ...input,
     timezone: "Asia/Ho_Chi_Minh",
+    businessHoursStart: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(input.businessHoursStart ?? current.businessHoursStart)) ? String(input.businessHoursStart ?? current.businessHoursStart) : current.businessHoursStart,
+    businessHoursEnd: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(input.businessHoursEnd ?? current.businessHoursEnd)) ? String(input.businessHoursEnd ?? current.businessHoursEnd) : current.businessHoursEnd,
     activationAt: enablingNow ? new Date().toISOString() : (input.activationAt ?? current.activationAt),
     maxMessagesPerSevenDays: Math.max(1, Math.min(7, Number(input.maxMessagesPerSevenDays ?? current.maxMessagesPerSevenDays))),
     canaryMode: Boolean(input.canaryMode ?? current.canaryMode),
     canaryLeadIds: [...new Set(Array.isArray(input.canaryLeadIds)
       ? input.canaryLeadIds.map(String).filter(Boolean)
       : current.canaryLeadIds || [])].slice(0, 3),
+    doNotContactTags: [...new Set(Array.isArray(input.doNotContactTags)
+      ? input.doNotContactTags.map(String).map(value => value.trim()).filter(Boolean)
+      : current.doNotContactTags || [])],
     stepOverrides: Object.fromEntries(
       Object.entries(input.stepOverrides ?? current.stepOverrides ?? {}).map(([stepId, override]) => {
         const value = override && typeof override === "object" ? override : {};
         return [stepId, {
+          enabled: value.enabled === undefined ? undefined : value.enabled !== false,
+          day: value.day === undefined ? undefined : Math.max(0, Math.min(365, Number(value.day))),
+          sendHour: value.sendHour === undefined ? undefined : Math.max(0, Math.min(23, Number(value.sendHour))),
+          sendMinute: value.sendMinute === undefined ? undefined : Math.max(0, Math.min(59, Number(value.sendMinute))),
+          primaryChannel: (["zalo_personal", "zalo_oa", "email"].includes(String(value.primaryChannel)) ? value.primaryChannel : undefined) as JourneyChannel | undefined,
+          fallbackChannels: value.fallbackChannels === undefined ? undefined : [...new Set(Array.isArray(value.fallbackChannels) ? value.fallbackChannels : [])]
+            .filter(channel => ["zalo_personal", "zalo_oa", "email"].includes(String(channel))) as JourneyChannel[] | undefined,
           emailSubject: String(value.emailSubject ?? ""),
           emailBody: String(value.emailBody ?? ""),
           zaloBody: String(value.zaloBody ?? ""),
@@ -410,7 +429,43 @@ export async function saveJourneySettings<T extends JourneySettingsBase>(
 export async function saveB2BSofaJourneySettings(
   input: Partial<B2BSofaJourneySettings>,
 ): Promise<B2BSofaJourneySettings> {
-  return saveJourneySettings(B2B_SOFA_JOURNEY_CODE, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS, input);
+  const settings = await saveJourneySettings(B2B_SOFA_JOURNEY_CODE, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS, input);
+  await syncPendingJourneyActions(B2B_SOFA_JOURNEY_CODE, journeyDefinitionWithOverrides(settings));
+  return settings;
+}
+
+export async function syncPendingJourneyActions(journeyCode: string, definition: JourneyDefinitionBase): Promise<void> {
+  await initB2BSofaJourneySchema();
+  const enrollments = await query<{ id: string; lead_id: string; enrolled_at: string }>(
+    `SELECT id,lead_id,enrolled_at FROM crm_journey_enrollments WHERE journey_code=$1 AND status IN ('active','paused')`,
+    [journeyCode],
+  );
+  const enabledIds = definition.steps.filter(step => step.enabled !== false).map(step => step.id);
+  await query(
+    `UPDATE crm_journey_actions a SET status='skipped',error='Bước đã bị tắt trong cấu hình workflow.',updated_at=NOW()
+     FROM crm_journey_enrollments e WHERE e.id=a.enrollment_id AND e.journey_code=$1
+       AND a.status IN ('pending','waiting_content') AND NOT (a.step_id=ANY($2::text[]))`,
+    [journeyCode, enabledIds],
+  );
+  for (const enrollment of enrollments) {
+    for (const step of definition.steps.filter(item => item.enabled !== false)) {
+      const scheduledAt = scheduleJourneyStep(new Date(enrollment.enrolled_at), step).toISOString();
+      await query(
+        `INSERT INTO crm_journey_actions
+          (id,enrollment_id,lead_id,step_id,day_offset,scheduled_at,status,primary_channel,fallback_channels,content_version)
+         VALUES ($1,$2,$3,$4,$5,$6,'pending',$7,$8::jsonb,$9)
+         ON CONFLICT (enrollment_id,step_id) DO UPDATE SET
+           day_offset=EXCLUDED.day_offset,scheduled_at=EXCLUDED.scheduled_at,
+           primary_channel=EXCLUDED.primary_channel,fallback_channels=EXCLUDED.fallback_channels,
+           content_version=EXCLUDED.content_version,
+           status=CASE WHEN crm_journey_actions.status='skipped' AND crm_journey_actions.error='Bước đã bị tắt trong cấu hình workflow.' THEN 'pending' ELSE crm_journey_actions.status END,
+           error=CASE WHEN crm_journey_actions.status='skipped' AND crm_journey_actions.error='Bước đã bị tắt trong cấu hình workflow.' THEN '' ELSE crm_journey_actions.error END,
+           updated_at=NOW()
+         WHERE crm_journey_actions.status IN ('pending','waiting_content','skipped')`,
+        [`jac-${randomUUID()}`, enrollment.id, enrollment.lead_id, step.id, step.day, scheduledAt, step.primaryChannel, JSON.stringify(step.fallbackChannels), definition.version],
+      );
+    }
+  }
 }
 
 export async function getJourneyEnrollmentForCode(
@@ -468,7 +523,7 @@ export async function enrollLeadInJourney<T extends JourneySettingsBase>(
       if (!raced) throw new Error("Không thể tạo journey cho lead.");
       return { enrollment: raced, created: false };
     }
-    for (const step of definition.steps) {
+    for (const step of definition.steps.filter(item => item.enabled !== false)) {
       await client.query(
         `INSERT INTO crm_journey_actions
           (id,enrollment_id,lead_id,step_id,day_offset,scheduled_at,status,primary_channel,fallback_channels,content_version)
@@ -515,7 +570,7 @@ export async function enrollLeadInB2BSofaJourney(
   return enrollLeadInJourney(
     lead,
     settings,
-    B2B_SOFA_JOURNEY,
+    journeyDefinitionWithOverrides(settings),
     isEligibleForB2BSofaJourney,
     buildJourneyContext,
     input,

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { runAutomationEngine } from "@/lib/crm-automation-engine";
+import { previewAutomationEngine, runAutomationEngine } from "@/lib/crm-automation-engine";
 import { claimAutomationSchedulerRun, releaseAutomationSchedulerRun } from "@/lib/crm-automation-execution-store";
+import { getClientIp, logAudit } from "@/lib/audit-helper";
 
 /**
  * POST /api/crm/automation/run
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
   }
   try {
     const result = await runAutomationEngine();
+    await logAudit({ action: "automation.engine_run", entityType: "automation", entityId: "manual", entityName: "Automation engine",
+      actorId: "admin", actorName: "Admin", ipAddress: getClientIp(req), metadata: { totalLeads: result.totalLeads, totalTriggered: result.totalTriggered } });
     return NextResponse.json(result);
   } catch (e) {
     console.error("[Automation Engine] Error:", e);
@@ -36,5 +39,5 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json({ message: "POST to this endpoint to run the automation engine" });
+  return NextResponse.json(await previewAutomationEngine());
 }

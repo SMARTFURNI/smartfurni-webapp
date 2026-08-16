@@ -49,6 +49,7 @@ import {
   renderAutomationTestTemplate,
 } from "@/lib/crm-automation-test";
 import { sendAutomationEmail } from "@/lib/crm-automation-email";
+import { evaluateAutomationContact } from "@/lib/crm-automation-policy";
 import {
   B2C_ERGONOMIC_BED_JOURNEY_CODE,
   buildB2CErgonomicJourneyContext,
@@ -63,6 +64,7 @@ import {
   createJourneyEmailTracking,
   recordJourneyEvent,
   recordJourneyReply,
+  rewriteJourneyTrackedLinks,
   type JourneyEmailTrackingLinks,
 } from "@/lib/crm-journey-reporting";
 
@@ -391,8 +393,9 @@ async function executeChannel(
   emailFromName?: string,
   emailTracking?: JourneyEmailTrackingLinks,
 ): Promise<SendAttemptResult> {
-  if (channel === "zalo_personal") return sendPersonalZalo(lead, zaloBody, accountId, media);
-  if (channel === "zalo_oa") return sendOaZalo(lead, zaloBody, media);
+  const trackedZaloBody = emailTracking ? rewriteJourneyTrackedLinks(zaloBody, emailTracking.clickBaseUrl) : zaloBody;
+  if (channel === "zalo_personal") return sendPersonalZalo(lead, trackedZaloBody, accountId, media);
+  if (channel === "zalo_oa") return sendOaZalo(lead, trackedZaloBody, media);
   return sendEmail(lead, subject, emailBody, media, emailFromName, emailTracking);
 }
 
@@ -609,6 +612,10 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
     await markJourneyActionOutcome(action, "skipped", action.attempts, "Không tìm thấy định nghĩa bước journey.");
     return { status: "skipped", message: "Không tìm thấy định nghĩa bước journey." };
   }
+  if (step.enabled === false) {
+    await markJourneyActionOutcome(action, "skipped", action.attempts, "Bước đã được tắt trong cấu hình workflow.");
+    return { status: "skipped", message: "Bước đã được tắt trong cấu hình workflow." };
+  }
 
   const latestBase = runtime.buildContext(lead, settings);
   const context = { ...latestBase, ...nonEmptyContext(enrollment.context) };
@@ -670,18 +677,35 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
 
   const attempts = [...action.attempts];
   for (const channel of channelSequence(step)) {
-    const emailTracking = channel === "email"
-      ? await createJourneyEmailTracking({
+    const policy = await evaluateAutomationContact({ lead, channel, message: channel === "email" ? subject : zaloBody });
+    if (!policy.allowed) {
+      attempts.push({ channel, at: new Date().toISOString(), outcome: "blocked", error: policy.reason });
+      await recordJourneyEvent({ journeyCode: enrollment.journeyCode, enrollmentId: enrollment.id, actionId: action.id,
+        leadId: lead.id, stepId: action.stepId, eventType: "send_attempted", channel,
+        metadata: { outcome: "blocked", policyCode: policy.code, error: policy.reason },
+        idempotencyKey: `attempt:${action.id}:${channel}:policy:${policy.code}` }).catch(() => undefined);
+      if (policy.code === "do_not_contact") {
+        await cancelJourneyEnrollment(enrollment.id, policy.reason);
+        return { status: "cancelled", message: policy.reason };
+      }
+      if (policy.code === "quiet_hours" || policy.code === "frequency_cap") {
+        const retryAt = policy.retryAt ? new Date(policy.retryAt) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await deferJourneyAction(action.id, retryAt, policy.reason);
+        return { status: "deferred", message: policy.reason };
+      }
+      continue;
+    }
+    const emailTracking = await createJourneyEmailTracking({
         journeyCode: enrollment.journeyCode,
         enrollmentId: enrollment.id,
         actionId: action.id,
         leadId: lead.id,
         stepId: action.stepId,
+        channel,
       }).catch(error => {
-        console.error("[Journey report] Không tạo được email tracking, vẫn tiếp tục gửi:", error);
+        console.error("[Journey report] Không tạo được tracking link, vẫn tiếp tục gửi:", error);
         return undefined;
-      })
-      : undefined;
+      });
     const result = await executeChannel(
       channel,
       lead,

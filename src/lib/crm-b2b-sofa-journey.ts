@@ -7,6 +7,7 @@ export type JourneyChannel = "zalo_personal" | "zalo_oa" | "email";
 
 export interface JourneyStepDefinition {
   id: string;
+  enabled?: boolean;
   day: number;
   sendHour: number;
   sendMinute: number;
@@ -23,6 +24,12 @@ export interface JourneyStepDefinition {
 }
 
 export interface JourneyStepOverride {
+  enabled?: boolean;
+  day?: number;
+  sendHour?: number;
+  sendMinute?: number;
+  primaryChannel?: JourneyChannel;
+  fallbackChannels?: JourneyChannel[];
   emailSubject?: string;
   emailBody?: string;
   zaloBody?: string;
@@ -105,6 +112,12 @@ export function journeyDefinitionWithOverrides(
       const override = settings.stepOverrides?.[step.id] || {};
       return {
         ...step,
+        enabled: override.enabled ?? true,
+        day: Math.max(0, Math.min(365, Number(override.day ?? step.day))),
+        sendHour: Math.max(0, Math.min(23, Number(override.sendHour ?? step.sendHour))),
+        sendMinute: Math.max(0, Math.min(59, Number(override.sendMinute ?? step.sendMinute))),
+        primaryChannel: override.primaryChannel ?? step.primaryChannel,
+        fallbackChannels: [...new Set(override.fallbackChannels || step.fallbackChannels)].filter(channel => channel !== (override.primaryChannel ?? step.primaryChannel)),
         emailSubject: override.emailSubject ?? step.emailSubject,
         emailBody: override.emailBody ?? step.emailBody,
         zaloBody: override.zaloBody ?? step.zaloBody,

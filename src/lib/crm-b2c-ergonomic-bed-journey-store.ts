@@ -5,6 +5,7 @@ import {
   B2C_ERGONOMIC_BED_JOURNEY,
   B2C_ERGONOMIC_BED_JOURNEY_CODE,
   DEFAULT_B2C_ERGONOMIC_BED_JOURNEY_SETTINGS,
+  b2cErgonomicJourneyDefinitionWithOverrides,
   buildB2CErgonomicJourneyContext,
   isEligibleForB2CErgonomicBedJourney,
   type B2CErgonomicBedJourneySettings,
@@ -17,6 +18,7 @@ import {
   getJourneyEnrollmentForCode,
   getJourneySettings,
   saveJourneySettings,
+  syncPendingJourneyActions,
   type JourneyActionRecord,
   type JourneyEnrollmentRecord,
 } from "@/lib/crm-b2b-sofa-journey-store";
@@ -31,11 +33,13 @@ export async function getB2CErgonomicBedJourneySettings(): Promise<B2CErgonomicB
 export async function saveB2CErgonomicBedJourneySettings(
   input: Partial<B2CErgonomicBedJourneySettings>,
 ): Promise<B2CErgonomicBedJourneySettings> {
-  return saveJourneySettings(
+  const settings = await saveJourneySettings(
     B2C_ERGONOMIC_BED_JOURNEY_CODE,
     DEFAULT_B2C_ERGONOMIC_BED_JOURNEY_SETTINGS,
     input,
   );
+  await syncPendingJourneyActions(B2C_ERGONOMIC_BED_JOURNEY_CODE, b2cErgonomicJourneyDefinitionWithOverrides(settings));
+  return settings;
 }
 
 export async function getB2CErgonomicBedJourneyEnrollment(
@@ -52,7 +56,7 @@ export async function enrollLeadInB2CErgonomicBedJourney(
   return enrollLeadInJourney(
     lead,
     settings,
-    B2C_ERGONOMIC_BED_JOURNEY,
+    b2cErgonomicJourneyDefinitionWithOverrides(settings),
     isEligibleForB2CErgonomicBedJourney,
     buildB2CErgonomicJourneyContext,
     input,

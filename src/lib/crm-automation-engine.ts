@@ -7,7 +7,7 @@
  * Nhóm 3: Phân loại & ưu tiên thông minh (Hot lead, auto-assign)
  * Nhóm 4: Thông báo đa kênh (Zalo/Email theo template)
  */
-import { getLeads, createTask, updateLead } from "./crm-store";
+import { getLead, getLeads, createTask, updateLead } from "./crm-store";
 import { getAutomationRules, getAutoAssignConfig, getSlaConfig, saveAutomationRules } from "./crm-automation-store";
 import { getNotificationRules, logNotification } from "./crm-notifications-store";
 import type { Lead } from "./crm-types";
@@ -19,13 +19,20 @@ import { sendAutomationEmail } from "./crm-automation-email";
 import {
   claimAutomationExecution,
   claimDueAutomationEmails,
+  claimDueAutomationZalo,
   completeAutomationExecution,
   enqueueAutomationEmail,
+  enqueueAutomationZalo,
   failAutomationExecution,
   markAutomationEmailFailed,
   markAutomationEmailSent,
+  markAutomationZaloFailed,
+  markAutomationZaloSent,
 } from "./crm-automation-execution-store";
 import { automationTriggerKey, isAutomationTriggerStageAllowed } from "./crm-automation-trigger";
+import { evaluateAutomationContact } from "./crm-automation-policy";
+import { getAllStaff } from "./crm-staff-store";
+import { queryOne } from "./db";
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
@@ -73,11 +80,28 @@ export interface AutomationRunResult {
   logs: AutomationRunLog[];
 }
 
+export interface AutomationPreviewResult {
+  totalLeads: number;
+  enabledRules: number;
+  matchedActions: number;
+  matches: Array<{ leadId: string; leadName: string; ruleId: string; ruleName: string; actionCount: number }>;
+  generatedAt: string;
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function daysSince(dateStr: string | null | undefined): number {
-  if (!dateStr) return 9999;
+  if (!dateStr) return 0;
   const diff = Date.now() - new Date(dateStr).getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+async function getStageEnteredAt(lead: Lead): Promise<string> {
+  const row = await queryOne<{ occurred_at: string }>(
+    `SELECT occurred_at FROM crm_lead_stage_history
+     WHERE lead_id=$1 AND to_stage=$2 ORDER BY occurred_at DESC LIMIT 1`,
+    [lead.id, lead.stage],
+  ).catch(() => null);
+  return row?.occurred_at ? new Date(row.occurred_at).toISOString() : lead.createdAt;
 }
 
 function hoursSince(dateStr: string | null | undefined): number {
@@ -114,6 +138,65 @@ async function loadAutomationMedia(assetIds: string[]) {
   }));
 }
 
+async function sendAutomationZaloNow(input: {
+  lead: Lead;
+  ruleId: string;
+  ruleName: string;
+  recipient: string;
+  message: string;
+  fallbackToAddFriend: boolean;
+  mediaAssetIds: string[];
+}): Promise<string> {
+  const connected = await ensureZaloGateway();
+  if (!connected) throw new Error("Zalo Personal chưa kết nối.");
+  const normalizedPhone = input.recipient.replace(/\s+/g, "").replace(/^\+84/, "0").replace(/^84/, "0");
+  const findResult = await findZaloUserByPhone(normalizedPhone);
+  if (!findResult.success || !findResult.user?.uid) {
+    if (input.fallbackToAddFriend) {
+      const request = await sendZaloFriendRequest({
+        userId: normalizedPhone,
+        message: `Xin chào ${input.lead.name}! Tôi là nhân viên SmartFurni.`,
+      }).catch(error => ({ success: false, error: error instanceof Error ? error.message : "unknown" }));
+      if (request.success) return `Đã gửi lời mời kết bạn Zalo đến ${normalizedPhone}`;
+      throw new Error(`Không tìm thấy tài khoản Zalo và không gửi được lời mời kết bạn: ${request.error || "unknown"}`);
+    }
+    throw new Error(`Không tìm thấy tài khoản Zalo với số ${normalizedPhone}.`);
+  }
+
+  const { uid } = findResult.user;
+  const sendResult = await sendZaloMessage({ conversationId: uid, content: input.message });
+  if (!sendResult.success) {
+    throw new Error(`Không gửi được Zalo: ${sendResult.error || "unknown"}`);
+  }
+
+  const media = await loadAutomationMedia(input.mediaAssetIds);
+  const sentMediaIds: string[] = [];
+  for (const item of media) {
+    const attachment = await sendZaloAttachment({
+      conversationId: uid,
+      fileBuffer: item.buffer,
+      fileName: item.asset.name,
+      mimeType: item.asset.contentType,
+      fileSize: item.asset.sizeBytes || item.buffer.byteLength,
+      width: item.asset.width || undefined,
+      height: item.asset.height || undefined,
+      duration: item.asset.durationMs ? item.asset.durationMs / 1000 : undefined,
+      stableUrl: item.asset.url,
+      stableThumb: item.asset.url,
+      skipMirror: true,
+    });
+    if (!attachment.success) throw new Error(`Tin chữ đã gửi nhưng không gửi được ${item.asset.name}: ${attachment.error || "unknown"}`);
+    sentMediaIds.push(item.asset.id);
+  }
+  await incrementZaloMediaUsage(sentMediaIds);
+  await logNotification({
+    ruleId: input.ruleId, ruleName: input.ruleName, channel: "zalo", actionType: "zalo_personal",
+    recipient: normalizedPhone, leadId: input.lead.id, leadName: input.lead.name,
+    message: input.message.slice(0, 500), status: "sent",
+  });
+  return `Đã gửi Zalo đến ${input.lead.name} (${normalizedPhone})`;
+}
+
 // ─── Check if a rule's trigger matches a lead ─────────────────────────────────
 function checkTrigger(rule: AutomationRule, lead: Lead): boolean {
   const { trigger } = rule;
@@ -125,20 +208,19 @@ function checkTrigger(rule: AutomationRule, lead: Lead): boolean {
   switch (trigger.type) {
     case "no_activity_days": {
       const days = trigger.days ?? 3;
-      return daysSince(lead.lastContactAt) >= days;
+      return daysSince(lead.lastContactAt || lead.createdAt) >= days;
     }
     case "lead_created": {
-      // Trigger trong vòng 1 giờ đầu sau khi tạo
-      return hoursSince(lead.createdAt) < 1;
+      // Cho phép scheduler bắt bù trong 7 ngày; execution claim vẫn đảm bảo chỉ chạy một lần.
+      return hoursSince(lead.createdAt) < 24 * 7;
     }
     case "value_threshold": {
       const min = trigger.minValue ?? 0;
       return lead.expectedValue >= min;
     }
     case "stage_duration": {
-      const hours = trigger.hours ?? 24;
-      return (!trigger.fromStage || trigger.fromStage === lead.stage)
-        && hoursSince(lead.updatedAt) >= hours;
+      // Mốc vào stage được kiểm tra bất đồng bộ trước khi chạy rule.
+      return !trigger.fromStage || trigger.fromStage === lead.stage;
     }
     case "lead_type_match": {
       return !trigger.leadType || lead.type === trigger.leadType;
@@ -188,13 +270,17 @@ async function executeAction(
     }
 
     case "assign_staff": {
-      if (!staffList.length) return "Khong co nhan vien de phan cong";
-      let targetStaff = action.assignStaffId ?? "";
-      if (action.assignMode === "round_robin" && staffList.length > 0) {
+      const activeStaff = (await getAllStaff()).filter(member => member.status === "active" && member.role !== "intern");
+      const availableNames = activeStaff.length ? activeStaff.map(member => member.fullName) : staffList;
+      if (!availableNames.length) return "Không có nhân viên đang hoạt động để phân công";
+      let targetStaff = action.assignStaffId ? activeStaff.find(member => member.id === action.assignStaffId)?.fullName || "" : "";
+      if (action.assignMode === "round_robin" && availableNames.length > 0) {
         const hash = lead.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-        targetStaff = staffList[hash % staffList.length];
+        targetStaff = availableNames[hash % availableNames.length];
       } else if (action.assignMode === "least_loaded") {
-        targetStaff = staffList[0];
+        const load = new Map<string, number>();
+        (await getLeads()).forEach(item => { if (item.assignedTo) load.set(item.assignedTo, (load.get(item.assignedTo) || 0) + 1); });
+        targetStaff = [...availableNames].sort((a, b) => (load.get(a) || 0) - (load.get(b) || 0))[0];
       }
       if (targetStaff) {
         await updateLead(lead.id, { assignedTo: targetStaff });
@@ -231,40 +317,23 @@ async function executeAction(
     }
 
     case "send_webhook": {
-      if (!action.webhookUrl) return "Bo qua webhook (khong co URL)";
-      try {
-        const payload = (action.webhookPayload ?? JSON.stringify({ leadId: lead.id, leadName: lead.name }))
-          .replace(/\{\{leadId\}\}/g, lead.id)
-          .replace(/\{\{leadName\}\}/g, lead.name)
-          .replace(/\{\{stage\}\}/g, lead.stage);
-        await fetch(action.webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
-          signal: AbortSignal.timeout(5000),
-        });
-        return `Gui webhook den ${action.webhookUrl}`;
-      } catch (e) {
-        return `Loi webhook: ${e instanceof Error ? e.message : "unknown"}`;
-      }
+      if (!action.webhookUrl) throw new Error("Webhook chưa có URL.");
+      const payload = (action.webhookPayload ?? JSON.stringify({ leadId: lead.id, leadName: lead.name }))
+        .replace(/\{\{leadId\}\}/g, lead.id)
+        .replace(/\{\{leadName\}\}/g, lead.name)
+        .replace(/\{\{stage\}\}/g, lead.stage);
+      const response = await fetch(action.webhookUrl, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: payload,
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error(`Webhook trả HTTP ${response.status}.`);
+      return `Gửi webhook đến ${action.webhookUrl}`;
     }
 
     case "send_zalo_personal": {
       const phone = lead.zaloPhone || lead.phone;
-      if (!phone) return "Bo qua Zalo: khong co so dien thoai";
-
-      // Delay neu can
-      const delayMs = (action.zaloDelayMinutes ?? 0) * 60 * 1000;
-      if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
-
-      // Kiem tra Zalo connected
-      const connected = await ensureZaloGateway();
-      if (!connected) return "Bo qua Zalo: chua ket noi Zalo Personal";
-
-      // Chuan hoa so dien thoai
+      if (!phone) throw new Error("Khách hàng chưa có số điện thoại Zalo.");
       const normalizedPhone = phone.replace(/\s+/g, "").replace(/^\+84/, "0").replace(/^84/, "0");
-
-      // Noi dung tin nhan (thay the bien)
       const rawMsg = action.zaloMessage || "Xin ch\u00e0o {{name}}! SmartFurni xin c\u1ea3m \u01a1n b\u1ea1n \u0111\u00e3 quan t\u00e2m.";
       const message = rawMsg
         .replace(/\{\{name\}\}/g, lead.name)
@@ -272,75 +341,33 @@ async function executeAction(
         .replace(/\{\{phone\}\}/g, normalizedPhone)
         .replace(/\{\{assignedTo\}\}/g, lead.assignedTo ?? "")
         .replace(/\{\{value\}\}/g, lead.expectedValue?.toLocaleString("vi-VN") ?? "0");
+      const policy = await evaluateAutomationContact({ lead, channel: "zalo_personal", message });
+      if (!policy.allowed && policy.code !== "quiet_hours") return `Chặn gửi Zalo: ${policy.reason}`;
 
-      // Tim userId Zalo tu S\u0110T
-      const findResult = await findZaloUserByPhone(normalizedPhone);
-      if (!findResult.success || !findResult.user?.uid) {
-        if (action.zaloFallbackToAddFriend) {
-          const friendMsg = `Xin ch\u00e0o ${lead.name}! T\u00f4i l\u00e0 nh\u00e2n vi\u00ean SmartFurni.`;
-          await sendZaloFriendRequest({ userId: normalizedPhone, message: friendMsg }).catch(() => {});
-          return `Khong tim thay Zalo, da gui loi moi ket ban den ${normalizedPhone}`;
-        }
-        return `Khong tim thay tai khoan Zalo voi so ${normalizedPhone}`;
-      }
-
-      const { uid } = findResult.user;
-      const sendResult = await sendZaloMessage({ conversationId: uid, content: message });
-      if (sendResult.success) {
-        const media = await loadAutomationMedia(action.mediaAssetIds || []);
-        const sentMediaIds: string[] = [];
-        for (const item of media) {
-          const attachment = await sendZaloAttachment({
-            conversationId: uid,
-            fileBuffer: item.buffer,
-            fileName: item.asset.name,
-            mimeType: item.asset.contentType,
-            fileSize: item.asset.sizeBytes || item.buffer.byteLength,
-            width: item.asset.width || undefined,
-            height: item.asset.height || undefined,
-            duration: item.asset.durationMs ? item.asset.durationMs / 1000 : undefined,
-            stableUrl: item.asset.url,
-            stableThumb: item.asset.url,
-            skipMirror: true,
-          });
-          if (!attachment.success) throw new Error(`Tin chữ đã gửi nhưng không gửi được ${item.asset.name}: ${attachment.error || "unknown"}`);
-          sentMediaIds.push(item.asset.id);
-        }
-        await incrementZaloMediaUsage(sentMediaIds);
-        await logNotification({
-          ruleId,
-          ruleName,
-          channel: "zalo",
-          actionType: "zalo_personal",
-          recipient: normalizedPhone,
-          leadId: lead.id,
-          leadName: lead.name,
-          message: message.slice(0, 500),
-          status: "sent",
+      const delayMinutes = Math.max(0, action.zaloDelayMinutes ?? 0);
+      if (delayMinutes > 0 || policy.code === "quiet_hours") {
+        const scheduledAt = policy.retryAt ? new Date(policy.retryAt) : new Date(Date.now() + delayMinutes * 60_000);
+        const queued = await enqueueAutomationZalo({
+          dedupeKey: `${ruleId}:${lead.id}:${execution?.triggerKey || "manual"}:${execution?.actionIndex ?? 0}`,
+          ruleId, ruleName, leadId: lead.id, leadName: lead.name, recipient: normalizedPhone, message,
+          fallbackToAddFriend: Boolean(action.zaloFallbackToAddFriend), mediaAssetIds: action.mediaAssetIds || [], scheduledAt,
         });
-        return `Da gui Zalo den ${lead.name} (${normalizedPhone}): "${message.slice(0, 50)}..."` ;
+        if (queued.queued) await logNotification({
+          ruleId, ruleName, channel: "zalo", actionType: "zalo_personal", recipient: normalizedPhone,
+          leadId: lead.id, leadName: lead.name, message: message.slice(0, 500), status: "pending",
+        });
+        return queued.queued ? `Đã xếp lịch Zalo lúc ${scheduledAt.toISOString()}` : "Zalo đã có trong hàng đợi, không tạo lặp";
       }
 
-      await logNotification({
-        ruleId,
-        ruleName,
-        channel: "zalo",
-        actionType: "zalo_personal",
-        recipient: normalizedPhone,
-        leadId: lead.id,
-        leadName: lead.name,
-        message: message.slice(0, 500),
-        status: "failed",
-        error: sendResult.error ?? "unknown",
-      });
-
-      if (action.zaloFallbackToAddFriend) {
-        const friendMsg = `Xin ch\u00e0o ${lead.name}! T\u00f4i l\u00e0 nh\u00e2n vi\u00ean SmartFurni.`;
-        await sendZaloFriendRequest({ userId: uid, message: friendMsg }).catch(() => {});
-        return `Gui tin nhan that bai, da gui loi moi ket ban den ${lead.name}`;
+      try {
+        return await sendAutomationZaloNow({ lead, ruleId, ruleName, recipient: normalizedPhone, message,
+          fallbackToAddFriend: Boolean(action.zaloFallbackToAddFriend), mediaAssetIds: action.mediaAssetIds || [] });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "unknown";
+        await logNotification({ ruleId, ruleName, channel: "zalo", actionType: "zalo_personal", recipient: normalizedPhone,
+          leadId: lead.id, leadName: lead.name, message: message.slice(0, 500), status: "failed", error: reason });
+        throw error;
       }
-
-      return `Loi gui Zalo: ${sendResult.error ?? "unknown"}`;
     }
 
     case "send_email":
@@ -358,9 +385,11 @@ async function executeAction(
       );
       const fromName = action.emailFromName ?? "SmartFurni";
       const delayMinutes = Math.max(0, action.emailDelayMinutes ?? 0);
+      const policy = await evaluateAutomationContact({ lead, channel: "email", message: subject });
+      if (!policy.allowed && policy.code !== "quiet_hours") return `Chặn gửi email: ${policy.reason}`;
 
-      if (delayMinutes > 0) {
-        const scheduledAt = new Date(Date.now() + delayMinutes * 60_000);
+      if (delayMinutes > 0 || policy.code === "quiet_hours") {
+        const scheduledAt = policy.retryAt ? new Date(policy.retryAt) : new Date(Date.now() + delayMinutes * 60_000);
         const dedupeKey = `${ruleId}:${lead.id}:${execution?.triggerKey || "manual"}:${execution?.actionIndex ?? 0}`;
         const queued = await enqueueAutomationEmail({
           dedupeKey,
@@ -398,9 +427,9 @@ async function executeAction(
       });
       if (result.outcome === "sent") return `Đã gửi email: "${subject}" đến ${recipient}`;
       if (result.outcome === "delivery_unknown") {
-        return `Kết quả gửi email chưa rõ, đã dừng tự động gửi lại: ${result.error || "unknown"}`;
+        throw new Error(`Kết quả gửi email chưa rõ, không tự gửi lại: ${result.error || "unknown"}`);
       }
-      return `Không gửi được email: ${result.error || "unknown"}`;
+      throw new Error(`Không gửi được email: ${result.error || "unknown"}`);
     }
 
     default:
@@ -414,6 +443,19 @@ async function processDueAutomationEmails(): Promise<AutomationRunLog[]> {
   for (const job of jobs) {
     let media: Awaited<ReturnType<typeof loadAutomationMedia>> = [];
     try {
+      const lead = await getLead(job.leadId);
+      if (!lead) throw new Error("Lead không còn tồn tại.");
+      const policy = await evaluateAutomationContact({ lead, channel: "email", message: job.subject });
+      if (!policy.allowed) {
+        const retry = policy.code === "quiet_hours" || policy.code === "frequency_cap";
+        await markAutomationEmailFailed({ id: job.id, error: policy.reason, retry, attempts: job.attempts });
+        logs.push({
+          ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+          actionsExecuted: [`Email bị chính sách liên hệ chặn: ${policy.reason}`],
+          triggeredAt: new Date().toISOString(), success: false, error: policy.reason,
+        });
+        continue;
+      }
       media = await loadAutomationMedia(job.mediaAssetIds);
       const result = await sendAutomationEmail({
         to: job.recipient,
@@ -467,6 +509,41 @@ async function processDueAutomationEmails(): Promise<AutomationRunLog[]> {
         actionsExecuted: [`Email theo lịch lỗi: ${message}`],
         triggeredAt: new Date().toISOString(), success: false, error: message,
       });
+    }
+  }
+  return logs;
+}
+
+async function processDueAutomationZalo(): Promise<AutomationRunLog[]> {
+  const logs: AutomationRunLog[] = [];
+  const jobs = await claimDueAutomationZalo(20);
+  for (const job of jobs) {
+    try {
+      const lead = await getLead(job.leadId);
+      if (!lead) throw new Error("Lead không còn tồn tại.");
+      const policy = await evaluateAutomationContact({ lead, channel: "zalo_personal", message: job.message });
+      if (!policy.allowed) {
+        const retry = policy.code === "quiet_hours" || policy.code === "frequency_cap";
+        await markAutomationZaloFailed({ id: job.id, error: policy.reason, retry, attempts: job.attempts, retryAt: policy.retryAt });
+        logs.push({ ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+          actionsExecuted: [`Zalo bị chính sách liên hệ chặn: ${policy.reason}`], triggeredAt: new Date().toISOString(), success: false, error: policy.reason });
+        continue;
+      }
+      const result = await sendAutomationZaloNow({
+        lead, ruleId: job.ruleId, ruleName: job.ruleName, recipient: job.recipient, message: job.message,
+        fallbackToAddFriend: job.fallbackToAddFriend, mediaAssetIds: job.mediaAssetIds,
+      });
+      await markAutomationZaloSent(job.id);
+      logs.push({ ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+        actionsExecuted: [result], triggeredAt: new Date().toISOString(), success: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không xử lý được Zalo trong hàng đợi.";
+      const retry = /chưa kết nối|timeout|temporar|ECONN|gateway/i.test(message);
+      await markAutomationZaloFailed({ id: job.id, error: message, retry, attempts: job.attempts });
+      await logNotification({ ruleId: job.ruleId, ruleName: job.ruleName, channel: "zalo", actionType: "zalo_personal",
+        recipient: job.recipient, leadId: job.leadId, leadName: job.leadName, message: job.message.slice(0, 500), status: "failed", error: message });
+      logs.push({ ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,
+        actionsExecuted: [`Zalo theo lịch lỗi: ${message}`], triggeredAt: new Date().toISOString(), success: false, error: message });
     }
   }
   return logs;
@@ -554,27 +631,44 @@ async function runAutoAssign(leads: Lead[]): Promise<AutomationRunLog[]> {
   );
   if (!unassigned.length) return logs;
 
+  const staff = (await getAllStaff()).filter(member => member.status === "active" && member.role !== "intern");
+  const staffById = new Map(staff.map(member => [member.id, member]));
+  const loadByName = new Map<string, number>();
+  for (const lead of leads) {
+    if (lead.assignedTo) loadByName.set(lead.assignedTo, (loadByName.get(lead.assignedTo) || 0) + 1);
+  }
+  let roundRobinCursor = 0;
+
   for (const lead of unassigned) {
     // Tim rule phu hop theo tinh/thanh pho
-    const matchingRule = config.rules
+    const matchingRule = [...config.rules]
       .sort((a, b) => a.priority - b.priority)
       .find((rule) => {
-        const provinceMatch = !rule.province || lead.district?.includes(rule.province);
+        const location = (lead.district || "").toLowerCase();
+        const provinceMatch = !rule.province || location.includes(rule.province.toLowerCase())
+          || rule.districts.some(district => location.includes(district.toLowerCase()));
         const typeMatch = !rule.leadTypes.length || rule.leadTypes.includes(lead.type);
-        return provinceMatch && typeMatch;
+        return Boolean(rule.staffId) && provinceMatch && typeMatch;
       });
 
-    const targetStaff = matchingRule?.staffId || config.fallbackStaffId;
-    if (!targetStaff) continue;
+    let target = matchingRule?.staffId ? staffById.get(matchingRule.staffId) : undefined;
+    if (!target && config.fallbackStaffId) target = staffById.get(config.fallbackStaffId);
+    if (!target && config.defaultMode === "least_loaded") {
+      target = [...staff].sort((a, b) => (loadByName.get(a.fullName) || 0) - (loadByName.get(b.fullName) || 0))[0];
+    } else if (!target && config.defaultMode === "round_robin" && staff.length) {
+      target = staff[roundRobinCursor++ % staff.length];
+    }
+    if (!target) continue;
 
     try {
-      await updateLead(lead.id, { assignedTo: targetStaff });
+      await updateLead(lead.id, { assignedTo: target.fullName });
+      loadByName.set(target.fullName, (loadByName.get(target.fullName) || 0) + 1);
       logs.push({
         ruleId: "auto_assign",
         ruleName: "Tu dong phan cong",
         leadId: lead.id,
         leadName: lead.name,
-        actionsExecuted: [`Phan cong cho "${targetStaff}" (rule: ${matchingRule?.id ?? "fallback"})`],
+        actionsExecuted: [`Phân công cho "${target.fullName}" (rule: ${matchingRule?.id ?? config.defaultMode})`],
         triggeredAt: new Date().toISOString(),
         success: true,
       });
@@ -609,6 +703,10 @@ async function runAutomationRules(leads: Lead[]): Promise<AutomationRunLog[]> {
   for (const rule of enabledRules) {
     for (const lead of leads) {
       if (!checkTrigger(rule, lead)) continue;
+      if (rule.trigger.type === "stage_duration") {
+        const enteredAt = await getStageEnteredAt(lead);
+        if (hoursSince(enteredAt) < (rule.trigger.hours ?? 24)) continue;
+      }
       const triggerKey = automationTriggerKey(rule, lead);
       const claimed = await claimAutomationExecution({ ruleId: rule.id, leadId: lead.id, triggerKey });
       if (!claimed) continue;
@@ -667,6 +765,29 @@ async function runAutomationRules(leads: Lead[]): Promise<AutomationRunLog[]> {
   return logs;
 }
 
+export async function previewAutomationEngine(): Promise<AutomationPreviewResult> {
+  const [leads, rules] = await Promise.all([getLeads(), getAutomationRules()]);
+  const enabledRules = rules.filter(rule => rule.enabled);
+  const matches: AutomationPreviewResult["matches"] = [];
+  for (const rule of enabledRules) {
+    for (const lead of leads) {
+      if (!checkTrigger(rule, lead)) continue;
+      if (rule.trigger.type === "stage_duration") {
+        const enteredAt = await getStageEnteredAt(lead);
+        if (hoursSince(enteredAt) < (rule.trigger.hours ?? 24)) continue;
+      }
+      matches.push({ leadId: lead.id, leadName: lead.name, ruleId: rule.id, ruleName: rule.name, actionCount: rule.actions.length });
+    }
+  }
+  return {
+    totalLeads: leads.length,
+    enabledRules: enabledRules.length,
+    matchedActions: matches.reduce((sum, item) => sum + item.actionCount, 0),
+    matches: matches.slice(0, 200),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 // ─── Nhóm 4: Notification rules (Zalo/Email/SMS/In-app) ───────────────────────
 async function runNotificationRules(leads: Lead[]): Promise<AutomationRunLog[]> {
   const logs: AutomationRunLog[] = [];
@@ -720,42 +841,41 @@ async function runNotificationRules(leads: Lead[]): Promise<AutomationRunLog[]> 
         .replace(/\{\{phone\}\}/g, lead.phone ?? "");
 
       const actionsExecuted: string[] = [];
+      let failed = false;
 
       for (const channel of rule.channels) {
         try {
-          await logNotification({
-            ruleId: rule.id,
-            ruleName: rule.name,
-            channel,
-            recipient: channel === "email" ? (lead.email ?? "") : (lead.phone ?? ""),
-            leadId: lead.id,
-            leadName: lead.name,
-            message,
-            status: channel === "in_app" ? "sent" : "pending",
-          });
-
-          // Gui Zalo thuc su neu co config
           if (channel === "zalo") {
-            actionsExecuted.push(`Xep hang gui Zalo: "${message.slice(0, 50)}..."`);
+            const phone = lead.zaloPhone || lead.phone;
+            if (!phone) throw new Error("Lead chưa có số Zalo.");
+            const policy = await evaluateAutomationContact({ lead, channel: "zalo_personal", message });
+            if (!policy.allowed) throw new Error(policy.reason);
+            actionsExecuted.push(await sendAutomationZaloNow({ lead, ruleId: rule.id, ruleName: rule.name, recipient: phone, message, fallbackToAddFriend: false, mediaAssetIds: [] }));
           } else if (channel === "email") {
-            actionsExecuted.push(`Xep hang gui Email: "${message.slice(0, 50)}..."`);
+            const recipient = lead.email?.trim() || "";
+            const policy = await evaluateAutomationContact({ lead, channel: "email", message: rule.name });
+            if (!policy.allowed) throw new Error(policy.reason);
+            const result = await sendAutomationEmail({ to: recipient, subject: rule.name, body: message, fromName: "SmartFurni" });
+            if (result.outcome !== "sent") throw new Error(result.error || `Email ${result.outcome}`);
+            await logNotification({ ruleId: rule.id, ruleName: rule.name, channel: "email", recipient, leadId: lead.id, leadName: lead.name, message, status: "sent", actionType: "notification_rule" });
+            actionsExecuted.push(`Đã gửi Email đến ${recipient}`);
           } else if (channel === "sms") {
-            actionsExecuted.push(`Xep hang gui SMS: "${message.slice(0, 50)}..."`);
+            throw new Error("Kênh SMS chưa có nhà cung cấp gửi thật; hệ thống không ghi nhận giả thành công.");
           } else {
-            actionsExecuted.push(`Gui thong bao in-app`);
+            await logNotification({ ruleId: rule.id, ruleName: rule.name, channel: "in_app", recipient: lead.assignedTo || "Quản lý CRM", leadId: lead.id, leadName: lead.name, message, status: "sent", actionType: "notification_rule" });
+            actionsExecuted.push("Đã gửi thông báo in-app");
           }
         } catch (e) {
-          actionsExecuted.push(`Loi ${channel}: ${e instanceof Error ? e.message : "unknown"}`);
+          failed = true;
+          const reason = e instanceof Error ? e.message : "unknown";
+          await logNotification({ ruleId: rule.id, ruleName: rule.name, channel, recipient: channel === "email" ? (lead.email ?? "") : (lead.phone ?? ""), leadId: lead.id, leadName: lead.name, message, status: "failed", error: reason, actionType: "notification_rule" }).catch(() => undefined);
+          actionsExecuted.push(`Lỗi ${channel}: ${reason}`);
         }
       }
 
       if (actionsExecuted.length > 0) {
-        await completeAutomationExecution({
-          ruleId: `notification:${rule.id}`,
-          leadId: lead.id,
-          triggerKey,
-          actions: actionsExecuted,
-        });
+        if (failed) await failAutomationExecution({ ruleId: `notification:${rule.id}`, leadId: lead.id, triggerKey, actions: actionsExecuted, error: "Một hoặc nhiều kênh gửi thất bại." });
+        else await completeAutomationExecution({ ruleId: `notification:${rule.id}`, leadId: lead.id, triggerKey, actions: actionsExecuted });
         logs.push({
           ruleId: rule.id,
           ruleName: rule.name,
@@ -763,7 +883,8 @@ async function runNotificationRules(leads: Lead[]): Promise<AutomationRunLog[]> 
           leadName: lead.name,
           actionsExecuted,
           triggeredAt: new Date().toISOString(),
-          success: true,
+          success: !failed,
+          error: failed ? "Một hoặc nhiều kênh gửi thất bại." : undefined,
         });
       }
     }
@@ -778,66 +899,63 @@ async function runSlaCheck(leads: Lead[]): Promise<AutomationRunLog[]> {
   const sla = await getSlaConfig();
   if (!sla.enabled) return logs;
 
+  const managers = (await getAllStaff()).filter(member => member.status === "active" && ["manager", "super_admin"].includes(member.role));
+
+  const emitSla = async (lead: Lead, input: { key: string; title: string; message: string; priority: "medium" | "high"; escalate: boolean }) => {
+    const claimed = await claimAutomationExecution({ ruleId: "sla_check", leadId: lead.id, triggerKey: input.key });
+    if (!claimed) return;
+    const actions: string[] = [];
+    try {
+      await createTask({ leadId: lead.id, leadName: lead.name, title: input.title, dueDate: addDays(0),
+        priority: input.priority, done: false, assignedTo: lead.assignedTo ?? "" });
+      actions.push(`Tạo task SLA ${input.priority === "high" ? "vi phạm" : "cảnh báo"}`);
+      if (input.escalate) {
+        const recipients = managers.length ? managers.map(manager => manager.fullName) : ["Quản lý CRM"];
+        for (const recipient of recipients) {
+          await logNotification({ ruleId: "sla_check", ruleName: "Kiểm tra SLA", channel: "in_app", recipient,
+            leadId: lead.id, leadName: lead.name, message: input.message, status: "sent", actionType: "sla" });
+        }
+        actions.push(`Thông báo ${recipients.length} quản lý`);
+      }
+      await completeAutomationExecution({ ruleId: "sla_check", leadId: lead.id, triggerKey: input.key, actions });
+      logs.push({ ruleId: "sla_check", ruleName: "Kiểm tra SLA", leadId: lead.id, leadName: lead.name,
+        actionsExecuted: actions, triggeredAt: new Date().toISOString(), success: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không xử lý được SLA";
+      await failAutomationExecution({ ruleId: "sla_check", leadId: lead.id, triggerKey: input.key, actions, error: message });
+      logs.push({ ruleId: "sla_check", ruleName: "Kiểm tra SLA", leadId: lead.id, leadName: lead.name,
+        actionsExecuted: actions, triggeredAt: new Date().toISOString(), success: false, error: message });
+    }
+  };
+
   for (const lead of leads) {
     const stageConfig = sla.stages.find((s) => s.stageId === lead.stage);
     if (!stageConfig) continue;
+    const enteredAt = await getStageEnteredAt(lead);
+    const hoursInStage = hoursSince(enteredAt);
+    const firstResponseHours = hoursSince(lead.createdAt);
 
-    const hoursInStage = hoursSince(lead.updatedAt);
-
-    if (hoursInStage >= stageConfig.maxHours) {
-      const triggerKey = `sla:${lead.stage}:${stageConfig.maxHours}:${lead.updatedAt || "unknown"}`;
-      const claimed = await claimAutomationExecution({ ruleId: "sla_check", leadId: lead.id, triggerKey });
-      if (!claimed) continue;
-      const actions: string[] = [];
-
-      // Tao task canh bao
-      try {
-        await createTask({
-          leadId: lead.id,
-          leadName: lead.name,
-          title: `[SLA] ${lead.name} da o giai doan "${stageConfig.stageLabel}" qua ${Math.floor(hoursInStage / 24)} ngay`,
-          dueDate: addDays(0),
-          priority: "high",
-          done: false,
-          assignedTo: lead.assignedTo ?? "",
-        });
-        actions.push(`Tao task SLA canh bao (${Math.floor(hoursInStage / 24)} ngay)`);
-      } catch {
-        // ignore duplicate
-      }
-
-      // Thong bao quan ly neu can
-      if (stageConfig.escalateToManager) {
-      await logNotification({
-        ruleId: "sla_check",
-        ruleName: "Kiem tra SLA",
-        channel: "in_app",
-        recipient: lead.phone ?? "",
-        leadId: lead.id,
-        leadName: lead.name,
-        message: `[SLA] ${lead.name} da o giai doan "${stageConfig.stageLabel}" qua ${stageConfig.maxHours}h (hien tai: ${hoursInStage}h)`,
-        status: "sent",
+    if (!lead.lastContactAt && firstResponseHours >= sla.firstResponseHours) {
+      await emitSla(lead, {
+        key: `sla:first-response:breach:${lead.createdAt}:${sla.firstResponseHours}`,
+        title: `[SLA] ${lead.name} chưa được liên hệ lần đầu sau ${sla.firstResponseHours} giờ`,
+        message: `[SLA] ${lead.name} chưa được liên hệ lần đầu sau ${firstResponseHours} giờ.`, priority: "high", escalate: true,
       });
-        actions.push("Thong bao quan ly qua SLA");
-      }
-
-      if (actions.length > 0) {
-        await completeAutomationExecution({
-          ruleId: "sla_check",
-          leadId: lead.id,
-          triggerKey,
-          actions,
-        });
-        logs.push({
-          ruleId: "sla_check",
-          ruleName: "Kiem tra SLA",
-          leadId: lead.id,
-          leadName: lead.name,
-          actionsExecuted: actions,
-          triggeredAt: new Date().toISOString(),
-          success: true,
-        });
-      }
+    }
+    if (hoursInStage >= stageConfig.maxHours) {
+      await emitSla(lead, {
+        key: `sla:${lead.stage}:breach:${enteredAt}:${stageConfig.maxHours}`,
+        title: `[SLA] ${lead.name} ở giai đoạn "${stageConfig.stageLabel}" quá ${stageConfig.maxHours} giờ`,
+        message: `[SLA] ${lead.name} đã ở giai đoạn "${stageConfig.stageLabel}" ${hoursInStage} giờ.`,
+        priority: "high", escalate: stageConfig.escalateToManager,
+      });
+    } else if (hoursInStage >= stageConfig.warningHours) {
+      await emitSla(lead, {
+        key: `sla:${lead.stage}:warning:${enteredAt}:${stageConfig.warningHours}`,
+        title: `[SLA] ${lead.name} sắp quá hạn giai đoạn "${stageConfig.stageLabel}"`,
+        message: `[SLA] ${lead.name} đã ở giai đoạn "${stageConfig.stageLabel}" ${hoursInStage}/${stageConfig.maxHours} giờ.`,
+        priority: "medium", escalate: false,
+      });
     }
   }
 
@@ -855,6 +973,8 @@ export async function runAutomationEngine(): Promise<AutomationRunResult> {
 
   // Gửi các email đã đến hạn trước khi đánh giá quy tắc mới. Hàng đợi có khóa
   // nhận việc và dedupe riêng nên an toàn khi cron vô tình chạy song song.
+  const queuedZaloLogs = await processDueAutomationZalo();
+  allLogs.push(...queuedZaloLogs);
   const queuedEmailLogs = await processDueAutomationEmails();
   allLogs.push(...queuedEmailLogs);
 
@@ -959,32 +1079,25 @@ export async function triggerStageChangeAutomation(
         .replace(/\{\{assignedTo\}\}/g, lead.assignedTo ?? "")
         .replace(/\{\{phone\}\}/g, lead.phone ?? "");
 
-      for (const channel of rule.channels) {
-        await logNotification({
-          ruleId: rule.id,
-          ruleName: rule.name,
-          channel,
-          recipient: channel === "email" ? (lead.email ?? "") : (lead.phone ?? ""),
-          leadId: lead.id,
-          leadName: lead.name,
-          message,
-          status: channel === "in_app" ? "sent" : "pending",
-        });
+      const executed: string[] = [];
+      for (const [index, channel] of rule.channels.entries()) {
+        if (channel === "sms") throw new Error("Kênh SMS chưa có nhà cung cấp gửi thật.");
+        const action: AutomationAction = channel === "zalo"
+          ? { type: "send_zalo_personal", zaloMessage: message }
+          : channel === "email"
+            ? { type: "send_email", emailSubject: rule.name, emailBody: message }
+            : { type: "notify_manager", notifyMessage: message };
+        executed.push(await executeAction(action, lead, staffList, { id: rule.id, name: rule.name } as AutomationRule, { triggerKey, actionIndex: index }));
       }
 
-      await completeAutomationExecution({
-        ruleId,
-        leadId: lead.id,
-        triggerKey,
-        actions: rule.channels.map((channel) => `Thông báo ${channel}`),
-      });
+      await completeAutomationExecution({ ruleId, leadId: lead.id, triggerKey, actions: executed });
 
       logs.push({
         ruleId: rule.id,
         ruleName: rule.name,
         leadId: lead.id,
         leadName: lead.name,
-        actionsExecuted: rule.channels.map((c) => `Gui thong bao ${c}`),
+        actionsExecuted: executed,
         triggeredAt: new Date().toISOString(),
         success: true,
       });

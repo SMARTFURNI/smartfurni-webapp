@@ -196,11 +196,13 @@ function Funnel({ report }: { report: JourneyWorkflowReport }) {
 
 function SummaryCards({ summary }: { summary: JourneyReportSummary }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-8">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 2xl:grid-cols-10">
       <KpiCard icon={Target} label="Đủ điều kiện hiện tại" value={formatNumber(summary.eligibleNow)} note="Theo dữ liệu lead hiện có" tone="slate" />
       <KpiCard icon={Users} label="Đã tham gia" value={formatNumber(summary.enrolled)} note={`${summary.active} đang chạy · ${summary.paused} tạm dừng`} />
       <KpiCard icon={Send} label="Tỷ lệ gửi" value={`${summary.sendSuccessRate}%`} note={`${summary.sentActions}/${summary.dueActions} action đến hạn`} tone="violet" />
       <KpiCard icon={MessageCircle} label="Tỷ lệ phản hồi" value={`${summary.responseRate}%`} note={`${summary.responded}/${summary.contacted} lead đã tiếp cận`} tone="green" />
+      <KpiCard icon={UserCheck} label="Tỷ lệ mở Email" value={`${summary.openRate}%`} note={`${summary.openedMessages} lượt mở ghi nhận`} tone="violet" />
+      <KpiCard icon={MousePointerClick} label="Tỷ lệ click link" value={`${summary.clickRate}%`} note={`${summary.clickedMessages} tin có click Email/Zalo`} tone="green" />
       <KpiCard icon={Clock3} label="Phản hồi trung bình" value={summary.averageResponseHours == null ? "Chưa đủ dữ liệu" : `${summary.averageResponseHours} giờ`} note="Từ lần gửi gần nhất" tone="slate" />
       <KpiCard icon={TrendingUp} label="Đã báo giá" value={`${summary.quoteRate}%`} note={`${summary.quoted} lead có báo giá`} tone="amber" />
       <KpiCard icon={CheckCircle2} label="Tỷ lệ chốt" value={`${summary.winRate}%`} note={`${summary.won} thắng · ${summary.lost} thất bại`} tone="green" />
@@ -355,6 +357,8 @@ export default function WorkflowReportsDashboard() {
           </div>
           <SummaryCards summary={report.summary} />
 
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3"><h3 className="text-sm font-bold text-slate-900">Vận hành hợp nhất ngoài Journey</h3><p className="mt-1 text-xs text-slate-500">Gộp quy tắc CRM, SLA, hàng đợi Zalo/Email và nhật ký gửi trong cùng khoảng báo cáo.</p></div><div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">{[["Rule đã chạy",report.operations.genericExecutions],["Rule lỗi",report.operations.genericFailed],["Cảnh báo SLA",report.operations.slaAlerts],["Đang chờ queue",report.operations.queuedPending],["Thông báo gửi",report.operations.notificationSent],["Thông báo lỗi",report.operations.notificationFailed]].map(([label,value]) => <div key={String(label)} className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500"><strong className="block text-lg text-slate-900">{String(value)}</strong>{String(label)}</div>)}</div></section>
+
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-3">
               <div className="mb-4"><h3 className="flex items-center gap-2 text-sm font-bold text-slate-900"><Activity size={16} className="text-[#0068ff]" />Xu hướng theo ngày</h3><p className="mt-1 text-xs text-slate-500">Lead tham gia, action gửi thành công, phản hồi và chốt trong cohort đã chọn.</p></div>
@@ -365,6 +369,8 @@ export default function WorkflowReportsDashboard() {
               <Funnel report={report} />
             </section>
           </div>
+
+          {report.links.length > 0 && <section className="rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-200 p-5"><h3 className="flex items-center gap-2 text-sm font-bold text-slate-900"><MousePointerClick size={16} className="text-emerald-600" />Link được khách hàng quan tâm</h3><p className="mt-1 text-xs text-slate-500">Theo dõi click từ cả Email và Zalo; link Zalo được rút gọn qua bộ chuyển hướng của CRM.</p></div><div className="max-h-72 overflow-auto divide-y divide-slate-100">{report.links.map((row,index) => <div key={`${row.channel}:${row.url}:${index}`} className="grid gap-2 p-4 text-xs md:grid-cols-[110px_1fr_100px_120px_160px]"><span className="font-semibold text-blue-700">{CHANNEL_LABELS[row.channel] || row.channel}</span><a href={row.url} target="_blank" rel="noreferrer" className="truncate text-slate-700 hover:text-blue-700 hover:underline">{row.url}</a><span><strong>{row.clicks}</strong> click</span><span>{row.uniqueActions} tin</span><span className="text-slate-400">{formatDate(row.lastClickedAt, true)}</span></div>)}</div></section>}
 
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 p-5"><h3 className="text-sm font-bold text-slate-900">So sánh workflow</h3><p className="mt-1 text-xs text-slate-500">Hiệu quả tổng hợp theo từng hành trình và phiên bản đang có dữ liệu.</p></div>

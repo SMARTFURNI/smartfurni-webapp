@@ -17,6 +17,10 @@ import { claimAutomationSchedulerRun, releaseAutomationSchedulerRun } from "@/li
 export async function GET(req: NextRequest) {
   // Xác thực bằng CRON_SECRET
   const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret && process.env.NODE_ENV === "production") {
+    console.error("[CRM Cron] CRON_SECRET is missing; refusing to run in production.");
+    return NextResponse.json({ error: "Cron secret is not configured" }, { status: 503 });
+  }
   if (cronSecret) {
     const authHeader = req.headers.get("authorization");
     const querySecret = new URL(req.url).searchParams.get("secret");

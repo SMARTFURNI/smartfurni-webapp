@@ -18,6 +18,8 @@ import {
   resumeJourneyEnrollment,
   updateJourneyContext,
 } from "@/lib/crm-b2b-sofa-journey-store";
+import { saveAutomationConfigVersion } from "@/lib/crm-automation-governance";
+import { logAudit, getClientIp } from "@/lib/audit-helper";
 import {
   enrollLeadInB2BSofaJourney,
   getB2BSofaJourneySettings,
@@ -50,7 +52,7 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
     const body = await req.json() as {
-      action?: "save_settings" | "run" | "enroll" | "pause" | "resume" | "cancel" | "complete" | "review_reply" | "update_context";
+      action?: "save_settings" | "save_draft" | "run" | "enroll" | "pause" | "resume" | "cancel" | "complete" | "review_reply" | "update_context";
       settings?: Record<string, unknown>;
       leadId?: string;
       enrollmentId?: string;
@@ -62,9 +64,15 @@ export async function POST(req: NextRequest) {
       pauseUntil?: string;
     };
 
+    if (body.action === "save_draft") {
+      const version = await saveAutomationConfigVersion({ scope: "b2c_ergonomic", snapshot: body.settings || {}, status: "draft", note: "Bản nháp workflow Giường công thái học", actorId: "admin", actorName: "Admin" });
+      return NextResponse.json({ ok: true, applied: false, version });
+    }
     if (body.action === "save_settings") {
       const settings = await saveB2CErgonomicBedJourneySettings(body.settings || {});
-      return NextResponse.json({ ok: true, settings });
+      const version = await saveAutomationConfigVersion({ scope: "b2c_ergonomic", snapshot: settings, status: "published", note: "Lưu workflow Giường công thái học", actorId: "admin", actorName: "Admin" });
+      await logAudit({ action: "automation.config_saved", entityType: "automation", entityId: "b2c_ergonomic", entityName: "Khách lẻ Giường 90 ngày", actorId: "admin", actorName: "Admin", ipAddress: getClientIp(req), metadata: { version: version.version } });
+      return NextResponse.json({ ok: true, settings, version });
     }
     if (body.action === "run") {
       return NextResponse.json({ ok: true, result: await runB2CErgonomicBedJourney(body.limit || 20) });

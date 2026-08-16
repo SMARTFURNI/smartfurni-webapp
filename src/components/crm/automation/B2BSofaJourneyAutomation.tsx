@@ -113,6 +113,8 @@ interface JourneyAutomationProps {
   variant?: "b2b" | "b2c_ergonomic";
 }
 
+interface LeadOption { id: string; name: string; company?: string; phone?: string; email?: string; blocked?: boolean }
+
 function formatDate(value: string): string {
   if (!value) return "—";
   return new Intl.DateTimeFormat("vi-VN", {
@@ -145,6 +147,9 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [manualLeadId, setManualLeadId] = useState("");
+  const [leadSearch, setLeadSearch] = useState("");
+  const [leadOptions, setLeadOptions] = useState<LeadOption[]>([]);
+  const [selectedEnrollments, setSelectedEnrollments] = useState<string[]>([]);
   const [contextDrafts, setContextDrafts] = useState<Record<string, Record<string, string>>>({});
 
   const load = useCallback(async () => {
@@ -164,6 +169,17 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
   }, [endpoint]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/crm/automation/test-send?search=${encodeURIComponent(leadSearch)}`, { cache: "no-store" });
+        const payload = await response.json();
+        setLeadOptions(response.ok && Array.isArray(payload.leads) ? payload.leads : []);
+      } catch { setLeadOptions([]); }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [leadSearch]);
 
   const post = async (body: Record<string, unknown>) => {
     const response = await fetch(endpoint, {
@@ -189,6 +205,16 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
     } finally {
       setSaving(false);
     }
+  };
+
+  const saveDraft = async () => {
+    if (!settings) return;
+    setSaving(true); setError("");
+    try {
+      const payload = await post({ action: "save_draft", settings });
+      setMessage(`Đã lưu bản nháp v${payload.version?.version || "mới"}; workflow đang chạy chưa bị thay đổi.`);
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Không lưu được bản nháp."); }
+    finally { setSaving(false); }
   };
 
   const runNow = async () => {
@@ -237,6 +263,16 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
     }
   };
 
+  const bulkEnrollmentAction = async (action: "pause" | "resume" | "cancel") => {
+    if (!selectedEnrollments.length) return;
+    if (!window.confirm(`Áp dụng "${action}" cho ${selectedEnrollments.length} workflow đã chọn?`)) return;
+    setError("");
+    try {
+      await Promise.all(selectedEnrollments.map(enrollmentId => post(action === "pause" ? { action, enrollmentId, pauseHours: 24 } : { action, enrollmentId })));
+      setMessage(`Đã cập nhật ${selectedEnrollments.length} workflow.`); setSelectedEnrollments([]); await load();
+    } catch (bulkError) { setError(bulkError instanceof Error ? bulkError.message : "Không cập nhật được danh sách workflow."); }
+  };
+
   const reviewReply = async (
     reviewId: string,
     decision: "continue" | "pause" | "switch" | "stop" | "complete",
@@ -276,6 +312,12 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
         stepOverrides: {
           ...current.stepOverrides,
           [step.id]: {
+            enabled: existing.enabled ?? step.enabled ?? true,
+            day: existing.day ?? step.day,
+            sendHour: existing.sendHour ?? step.sendHour,
+            sendMinute: existing.sendMinute ?? step.sendMinute,
+            primaryChannel: existing.primaryChannel ?? step.primaryChannel,
+            fallbackChannels: existing.fallbackChannels ?? step.fallbackChannels,
             emailSubject: existing.emailSubject ?? step.emailSubject,
             emailBody: existing.emailBody ?? step.emailBody,
             zaloBody: existing.zaloBody ?? step.zaloBody,
@@ -386,6 +428,21 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
                 placeholder="Để trống để tự nhận diện SmartFurni"
                 className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" />
             </label>
+            <label className="text-xs text-gray-600">Bắt đầu giờ gửi
+              <input type="time" value={settings.businessHoursStart}
+                onChange={event => setSettings({ ...settings, businessHoursStart: event.target.value })}
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" />
+            </label>
+            <label className="text-xs text-gray-600">Kết thúc giờ gửi
+              <input type="time" value={settings.businessHoursEnd}
+                onChange={event => setSettings({ ...settings, businessHoursEnd: event.target.value })}
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" />
+            </label>
+            <label className="md:col-span-2 text-xs text-gray-600">Nhãn không được liên hệ (phân cách bằng dấu phẩy)
+              <input value={settings.doNotContactTags.join(", ")}
+                onChange={event => setSettings({ ...settings, doNotContactTags: event.target.value.split(",").map(value => value.trim()).filter(Boolean) })}
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 text-sm" />
+            </label>
           </div>
         </div>
 
@@ -415,18 +472,30 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        <button onClick={saveDraft} disabled={saving}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-200 bg-white text-blue-700 text-sm font-semibold disabled:opacity-50">
+          <Save size={14} /> Lưu bản nháp
+        </button>
         <button onClick={save} disabled={saving}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0068ff] hover:bg-[#0056d6] text-white text-sm font-semibold shadow-sm disabled:opacity-50">
-          {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} Lưu cài đặt
+          {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} Lưu & xuất bản
         </button>
         <button onClick={runNow} disabled={running || !settings.enabled}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-40">
           {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />} Chạy các bước đến hạn
         </button>
-        <div className="flex items-center gap-2 ml-auto">
-          <input value={manualLeadId} onChange={event => setManualLeadId(event.target.value)}
-            placeholder="Lead ID để thêm thủ công"
-            className="px-3 py-2 rounded-xl border border-gray-300 text-sm min-w-[230px]" />
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
+          <input value={leadSearch} onChange={event => setLeadSearch(event.target.value)} list={`journey-leads-${variant || "b2b"}`}
+            placeholder="Tìm tên, công ty, SĐT..."
+            className="px-3 py-2 rounded-xl border border-gray-300 text-sm min-w-[260px]" />
+          <datalist id={`journey-leads-${variant || "b2b"}`}>
+            {leadOptions.map(lead => <option key={lead.id} value={`${lead.name}${lead.company ? ` · ${lead.company}` : ""}`}>{lead.phone || lead.email || lead.id}</option>)}
+          </datalist>
+          <select value={manualLeadId} onChange={event => setManualLeadId(event.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-300 bg-white text-sm min-w-[260px]">
+            <option value="">Chọn khách hàng CRM ({leadOptions.length})</option>
+            {leadOptions.map(lead => <option key={lead.id} value={lead.id} disabled={lead.blocked}>{lead.name}{lead.company ? ` · ${lead.company}` : ""}{lead.blocked ? " · Không liên hệ" : ""}</option>)}
+          </select>
           <button onClick={enrollLead} disabled={!manualLeadId.trim()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 bg-white text-sm font-medium disabled:opacity-40">
             <UserPlus size={14} /> Thêm lead
@@ -448,12 +517,18 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
             const override = settings.stepOverrides?.[step.id] || {};
             const editableStep = {
               ...step,
+              enabled: override.enabled ?? step.enabled ?? true,
+              day: override.day ?? step.day,
+              sendHour: override.sendHour ?? step.sendHour,
+              sendMinute: override.sendMinute ?? step.sendMinute,
+              primaryChannel: override.primaryChannel ?? step.primaryChannel,
+              fallbackChannels: override.fallbackChannels ?? step.fallbackChannels,
               emailSubject: override.emailSubject ?? step.emailSubject,
               emailBody: override.emailBody ?? step.emailBody,
               zaloBody: override.zaloBody ?? step.zaloBody,
               mediaAssetIds: override.mediaAssetIds ?? step.mediaAssetIds ?? [],
             };
-            const stepChannels = [step.primaryChannel, ...step.fallbackChannels];
+            const stepChannels = [editableStep.primaryChannel, ...editableStep.fallbackChannels];
             const zaloTestChannel = stepChannels.includes("zalo_personal")
               ? "zalo_personal"
               : stepChannels.find(channel => channel !== "email") as Exclude<JourneyChannel, "email"> | undefined;
@@ -461,15 +536,15 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
             <details key={step.id} className="group rounded-xl border border-gray-200 bg-gray-50 overflow-hidden">
               <summary className="cursor-pointer list-none p-3 flex items-center gap-3">
                 <div className="w-12 text-center flex-shrink-0">
-                  <div className="text-xs font-bold text-gray-900">Ngày {step.day}</div>
-                  <div className="text-[10px] text-gray-500">{String(step.sendHour).padStart(2, "0")}:{String(step.sendMinute).padStart(2, "0")}</div>
+                  <div className="text-xs font-bold text-gray-900">Ngày {editableStep.day}</div>
+                  <div className="text-[10px] text-gray-500">{String(editableStep.sendHour).padStart(2, "0")}:{String(editableStep.sendMinute).padStart(2, "0")}</div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-gray-900">{step.title}</div>
                   <div className="text-xs text-gray-500 truncate">{step.objective}</div>
                 </div>
                 <div className="hidden md:flex items-center gap-1.5">
-                  {[step.primaryChannel, ...step.fallbackChannels].map((channel, index) => (
+                  {[editableStep.primaryChannel, ...editableStep.fallbackChannels].map((channel, index) => (
                     <span key={channel} className="text-[10px] px-2 py-1 rounded-full border"
                       style={{ color: CHANNEL_COLORS[channel], borderColor: `${CHANNEL_COLORS[channel]}55`, background: `${CHANNEL_COLORS[channel]}0d` }}>
                       {index > 0 ? "→ " : ""}{CHANNEL_LABELS[channel]}
@@ -478,6 +553,15 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
                 </div>
               </summary>
               <div className="border-t border-gray-200 p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 bg-white">
+                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-7 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={editableStep.enabled} onChange={event => updateStep(step, { enabled: event.target.checked })} className="accent-[#0068ff]" />Bật bước</label>
+                  <label className="text-[10px] text-gray-500">Ngày<input type="number" min={0} max={365} value={editableStep.day} onChange={event => updateStep(step, { day: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs" /></label>
+                  <label className="text-[10px] text-gray-500">Giờ<input type="number" min={0} max={23} value={editableStep.sendHour} onChange={event => updateStep(step, { sendHour: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs" /></label>
+                  <label className="text-[10px] text-gray-500">Phút<input type="number" min={0} max={59} value={editableStep.sendMinute} onChange={event => updateStep(step, { sendMinute: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs" /></label>
+                  <label className="text-[10px] text-gray-500">Kênh chính<select value={editableStep.primaryChannel} onChange={event => updateStep(step, { primaryChannel: event.target.value as JourneyChannel })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs">{Object.entries(CHANNEL_LABELS).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  <label className="text-[10px] text-gray-500">Dự phòng 1<select value={editableStep.fallbackChannels[0] || ""} onChange={event => updateStep(step, { fallbackChannels: event.target.value ? [event.target.value as JourneyChannel, ...editableStep.fallbackChannels.slice(1)] : editableStep.fallbackChannels.slice(1) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs"><option value="">Không dùng</option>{Object.entries(CHANNEL_LABELS).filter(([value]) => value !== editableStep.primaryChannel).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  <label className="text-[10px] text-gray-500">Dự phòng 2<select value={editableStep.fallbackChannels[1] || ""} onChange={event => updateStep(step, { fallbackChannels: event.target.value ? [editableStep.fallbackChannels[0], event.target.value as JourneyChannel].filter(Boolean) as JourneyChannel[] : editableStep.fallbackChannels.slice(0, 1) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs"><option value="">Không dùng</option>{Object.entries(CHANNEL_LABELS).filter(([value]) => value !== editableStep.primaryChannel && value !== editableStep.fallbackChannels[0]).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 mb-2"><MessageCircle size={13} /> Nội dung Zalo · có thể chỉnh sửa</div>
                   <textarea
@@ -532,12 +616,13 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-gray-200">
-          <h3 className="text-sm font-bold text-gray-900 mb-3">Lead trong journey</h3>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-bold text-gray-900">Lead trong journey</h3><div className="flex items-center gap-1"><button onClick={() => setSelectedEnrollments(data.recentEnrollments.filter(item => ["active","paused"].includes(item.status)).map(item => item.id))} className="rounded-lg border border-gray-200 px-2 py-1 text-[10px] text-gray-600">Chọn tất cả</button><button onClick={() => bulkEnrollmentAction("pause")} disabled={!selectedEnrollments.length} className="rounded-lg border border-amber-200 px-2 py-1 text-[10px] text-amber-700 disabled:opacity-40">Tạm dừng</button><button onClick={() => bulkEnrollmentAction("resume")} disabled={!selectedEnrollments.length} className="rounded-lg border border-green-200 px-2 py-1 text-[10px] text-green-700 disabled:opacity-40">Tiếp tục</button><button onClick={() => bulkEnrollmentAction("cancel")} disabled={!selectedEnrollments.length} className="rounded-lg border border-red-200 px-2 py-1 text-[10px] text-red-700 disabled:opacity-40">Dừng</button></div></div>
           <div className="space-y-2 max-h-96 overflow-auto">
             {data.recentEnrollments.length === 0 && <p className="text-xs text-gray-500 py-6 text-center">Chưa có lead nào.</p>}
             {data.recentEnrollments.map(item => (
               <div key={item.id} className="p-3 rounded-xl border border-gray-200 bg-gray-50">
                 <div className="flex items-start justify-between gap-2">
+                  <input type="checkbox" checked={selectedEnrollments.includes(item.id)} disabled={["completed","cancelled"].includes(item.status)} onChange={event => setSelectedEnrollments(current => event.target.checked ? [...new Set([...current,item.id])] : current.filter(id => id !== item.id))} className="mt-1 accent-[#0068ff]" />
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{item.leadName}</div>
                     <div className="text-[11px] text-gray-500">{statusLabel(item.status)} · {formatDate(item.updatedAt)}</div>

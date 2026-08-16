@@ -12,6 +12,7 @@ import AutomationHistoryPanel from "./AutomationHistoryPanel";
 import B2BSofaJourneyAutomation from "./B2BSofaJourneyAutomation";
 import WorkflowReportsDashboard from "./WorkflowReportsDashboard";
 import WorkflowValidationCenter from "./WorkflowValidationCenter";
+import AutomationOperationsCenter from "./AutomationOperationsCenter";
 import styles from "./AutomationSettingsClient.module.css";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
@@ -20,6 +21,8 @@ import type {
 } from "@/lib/crm-automation-store";
 import { TRIGGER_LABELS, ACTION_LABELS } from "@/lib/crm-automation-store";
 import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from "@/lib/crm-taxonomy";
+
+interface StaffOption { id: string; name: string; role: string }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -170,8 +173,8 @@ function TriggerEditor({ trigger, onChange }: { trigger: AutomationTrigger; onCh
 
 // ─── Action Editor ────────────────────────────────────────────────────────────
 
-function ActionEditor({ action, onChange, onRemove }: {
-  action: AutomationAction; onChange: (a: AutomationAction) => void; onRemove: () => void;
+function ActionEditor({ action, onChange, onRemove, staff }: {
+  action: AutomationAction; onChange: (a: AutomationAction) => void; onRemove: () => void; staff: StaffOption[];
 }) {
   return (
     <div className="p-3 rounded-xl space-y-3"
@@ -240,6 +243,36 @@ function ActionEditor({ action, onChange, onRemove }: {
         </div>
       )}
 
+      {action.type === "assign_staff" && (
+        <div className="grid grid-cols-2 gap-2">
+          <select value={action.assignMode ?? "specific"} onChange={e => onChange({ ...action, assignMode: e.target.value as AutomationAction["assignMode"] })}
+            className="rounded border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700">
+            <option value="specific">Nhân viên cụ thể</option>
+            <option value="round_robin">Luân phiên</option>
+            <option value="least_loaded">Ít lead nhất</option>
+          </select>
+          {(!action.assignMode || action.assignMode === "specific") && <select value={action.assignStaffId ?? ""} onChange={e => onChange({ ...action, assignStaffId: e.target.value })}
+            className="rounded border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700">
+            <option value="">Chọn nhân viên CRM</option>
+            {staff.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>}
+        </div>
+      )}
+
+      {action.type === "send_zalo_personal" && (
+        <div className="space-y-2">
+          <textarea rows={4} value={action.zaloMessage ?? ""} onChange={e => onChange({ ...action, zaloMessage: e.target.value })}
+            placeholder="Nội dung Zalo; hỗ trợ {{name}}, {{phone}}, {{stage}}, {{assignedTo}}"
+            className="w-full resize-y rounded border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700" />
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="text-xs text-gray-600">Trì hoãn <input type="number" min={0} max={10080} value={action.zaloDelayMinutes ?? 0}
+              onChange={e => onChange({ ...action, zaloDelayMinutes: Number(e.target.value) })} className="ml-1 w-20 rounded border border-gray-200 px-2 py-1" /> phút</label>
+            <label className="flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={action.zaloFallbackToAddFriend ?? true}
+              onChange={e => onChange({ ...action, zaloFallbackToAddFriend: e.target.checked })} />Gửi lời mời nếu chưa kết bạn</label>
+          </div>
+        </div>
+      )}
+
       {action.type === "add_tag" && (
         <input placeholder="Nhãn (VD: VIP, Hot, Tiềm năng)" value={action.tag ?? ""} onChange={e => onChange({ ...action, tag: e.target.value })}
           className="w-full px-2 py-1.5 rounded text-xs outline-none"
@@ -262,9 +295,14 @@ function ActionEditor({ action, onChange, onRemove }: {
       )}
 
       {action.type === "send_webhook" && (
-        <input placeholder="Webhook URL" value={action.webhookUrl ?? ""} onChange={e => onChange({ ...action, webhookUrl: e.target.value })}
-          className="w-full px-2 py-1.5 rounded text-xs outline-none font-mono"
-          style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#0068ff" }} />
+        <div className="space-y-2">
+          <input placeholder="Webhook URL HTTPS" value={action.webhookUrl ?? ""} onChange={e => onChange({ ...action, webhookUrl: e.target.value })}
+            className="w-full px-2 py-1.5 rounded text-xs outline-none font-mono"
+            style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", color: "#0068ff" }} />
+          <textarea rows={3} placeholder='Payload JSON, ví dụ {"leadId":"{{id}}"}' value={action.webhookPayload ?? ""}
+            onChange={e => onChange({ ...action, webhookPayload: e.target.value })}
+            className="w-full rounded border border-gray-200 bg-white px-2 py-1.5 font-mono text-xs text-gray-700" />
+        </div>
       )}
     </div>
   );
@@ -272,10 +310,11 @@ function ActionEditor({ action, onChange, onRemove }: {
 
 // ─── Rule Card ────────────────────────────────────────────────────────────────
 
-function RuleCard({ rule, onChange, onDelete }: {
+function RuleCard({ rule, onChange, onDelete, staff }: {
   rule: AutomationRule;
   onChange: (r: AutomationRule) => void;
   onDelete: () => void;
+  staff: StaffOption[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const TriggerIcon = TRIGGER_ICONS[rule.trigger.type];
@@ -375,6 +414,7 @@ function RuleCard({ rule, onChange, onDelete }: {
                   <div className="flex-1">
                     <ActionEditor
                       action={action}
+                      staff={staff}
                       onChange={a => {
                         const updated = [...rule.actions];
                         updated[idx] = a;
@@ -476,7 +516,7 @@ function SlaTab({ config, onChange }: { config: SlaConfig; onChange: (c: SlaConf
 
 // ─── Auto-assign Tab ──────────────────────────────────────────────────────────
 
-function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChange: (c: AutoAssignConfig) => void }) {
+function AutoAssignTab({ config, onChange, staff }: { config: AutoAssignConfig; onChange: (c: AutoAssignConfig) => void; staff: StaffOption[] }) {
   return (
     <div className="space-y-5">
       <Card>
@@ -513,6 +553,14 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
               </button>
             ))}
           </div>
+        </div>
+        <div className="mt-4">
+          <label className="block text-xs font-semibold mb-1.5 text-gray-600">Nhân viên dự phòng khi không khớp quy tắc</label>
+          <select value={config.fallbackStaffId} onChange={e => onChange({ ...config, fallbackStaffId: e.target.value })}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 md:w-80">
+            <option value="">Dùng phương thức mặc định</option>
+            {staff.map(item => <option key={item.id} value={item.id}>{item.name} · {item.role}</option>)}
+          </select>
         </div>
       </Card>
 
@@ -559,12 +607,16 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Nhân viên phụ trách</label>
-                <input value={rule.staffName} onChange={e => {
+                <select value={rule.staffId} onChange={e => {
                   const updated = [...config.rules];
-                  updated[idx] = { ...updated[idx], staffName: e.target.value };
+                  const selected = staff.find(item => item.id === e.target.value);
+                  updated[idx] = { ...updated[idx], staffId: e.target.value, staffName: selected?.name || "Chưa chọn" };
                   onChange({ ...config, rules: updated });
                 }} className="w-full px-2 py-1.5 rounded text-xs outline-none"
-                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }} />
+                  style={{ background: "#ffffff", border: "1px solid #e5e7eb", color: "#374151" }}>
+                  <option value="">Chọn nhân viên CRM</option>
+                  {staff.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-xs mb-1" style={{  }}>Loại KH</label>
@@ -595,17 +647,21 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "reports" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
+type TabId = "reports" | "operations" | "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("reports");
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [sla, setSla] = useState<SlaConfig | null>(null);
   const [autoAssign, setAutoAssign] = useState<AutoAssignConfig | null>(null);
+  const [staff, setStaff] = useState<StaffOption[]>([]);
+  const [systemReady, setSystemReady] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [running, setRunning] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [preview, setPreview] = useState<{ totalLeads: number; enabledRules: number; matchedActions: number; matches: Array<{ leadName: string; ruleName: string; actionCount: number }> } | null>(null);
   const [runResult, setRunResult] = useState<{
     totalLeads: number;
     totalTriggered: number;
@@ -617,14 +673,18 @@ export default function AutomationSettingsClient() {
 
   useEffect(() => {
     const load = async () => {
-      const [r, s, a] = await Promise.all([
+      const [r, s, a, people, operations] = await Promise.all([
         fetch("/api/crm/automation?type=rules").then(r => r.json()),
         fetch("/api/crm/automation?type=sla").then(r => r.json()),
         fetch("/api/crm/automation?type=auto_assign").then(r => r.json()),
+        fetch("/api/crm/automation?type=staff").then(r => r.json()),
+        fetch("/api/crm/automation/operations", { cache: "no-store" }).then(r => r.json()).catch(() => null),
       ]);
       setRules(r);
       setSla(s);
       setAutoAssign(a);
+      setStaff(Array.isArray(people) ? people : []);
+      setSystemReady(typeof operations?.ready === "boolean" ? operations.ready : null);
       setLoading(false);
     };
     load();
@@ -641,6 +701,18 @@ export default function AutomationSettingsClient() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const saveDraft = async () => {
+    const draft = activeTab === "rules" ? { type: "rules", data: rules } : activeTab === "sla" && sla ? { type: "sla", data: sla } : activeTab === "auto_assign" && autoAssign ? { type: "auto_assign", data: autoAssign } : null;
+    if (!draft) return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/crm/automation", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...draft, mode: "draft", note: "Bản nháp từ Automation Center" }) });
+      if (!response.ok) throw new Error((await response.json()).error || "Không lưu được bản nháp");
+      setSaved(true); setTimeout(() => setSaved(false), 2500);
+    } catch (error) { setRunError(error instanceof Error ? error.message : "Không lưu được bản nháp"); }
+    finally { setSaving(false); }
   };
 
   const addRule = () => {
@@ -660,6 +732,8 @@ export default function AutomationSettingsClient() {
   };
 
   const runEngine = async () => {
+    if (!preview) { setRunError("Hãy xem trước phạm vi chạy trước khi thực thi thật."); return; }
+    if (!window.confirm(`Chạy thật automation cho ${preview.totalLeads} khách hàng? Hiện có ${preview.matches.length} lượt khớp quy tắc và ${preview.matchedActions} hành động dự kiến.`)) return;
     setRunning(true);
     setRunError(null);
     setRunResult(null);
@@ -675,6 +749,17 @@ export default function AutomationSettingsClient() {
     }
   };
 
+  const previewEngine = async () => {
+    setPreviewing(true); setRunError(null);
+    try {
+      const response = await fetch("/api/crm/automation/run", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Không xem trước được engine");
+      setPreview(payload);
+    } catch (error) { setRunError(error instanceof Error ? error.message : "Không xem trước được engine"); }
+    finally { setPreviewing(false); }
+  };
+
   const WORKFLOW_TABS = [
     { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2 },
     { id: "b2c_ergonomic_journey" as TabId, label: "Khách lẻ · Giường 90 ngày", icon: BedDouble },
@@ -685,6 +770,7 @@ export default function AutomationSettingsClient() {
   const activeWorkflow = WORKFLOW_TABS.find(tab => tab.id === activeTab);
   const TABS = [
     { id: "reports" as TabId, label: "Báo cáo Workflow", icon: BarChart2, count: null },
+    { id: "operations" as TabId, label: "Vận hành & Chính sách", icon: Settings, count: null },
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
     { id: "history" as TabId, label: "Lịch sử gửi", icon: Clock, count: null },
     { id: "sla" as TabId, label: "SLA & Thời gian", icon: Clock, count: null },
@@ -713,17 +799,19 @@ export default function AutomationSettingsClient() {
             </div>
           </div>
           <div className={styles.heroActions}>
-            <div className={styles.systemStatus}><span /> Hệ thống sẵn sàng</div>
+            <div className={styles.systemStatus} title="Trạng thái lấy từ scheduler, hàng đợi và cấu hình bảo mật"><span /> {systemReady === true ? "Hệ thống sẵn sàng" : systemReady === false ? "Cần kiểm tra vận hành" : "Đang kiểm tra"}</div>
             {saved && (
               <div className={styles.savedBadge}>
                 <CheckCircle2 size={14} /> Đã lưu
               </div>
             )}
-            {!(WORKFLOW_TAB_IDS.includes(activeTab) || activeTab === "reports") && <button onClick={save} disabled={saving}
-              className={styles.primaryButton}>
-              {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-              Lưu cài đặt
-            </button>}
+            {![...WORKFLOW_TAB_IDS, "reports", "operations", "run", "history"].includes(activeTab) && <>
+              <button onClick={saveDraft} disabled={saving} className={styles.secondaryButton}>Lưu bản nháp</button>
+              <button onClick={save} disabled={saving} className={styles.primaryButton}>
+                {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
+                Lưu & xuất bản
+              </button>
+            </>}
           </div>
         </div>
         <div className={styles.heroStats}>
@@ -800,6 +888,7 @@ export default function AutomationSettingsClient() {
                 rule={rule}
                 onChange={r => setRules(prev => prev.map((x, i) => i === idx ? r : x))}
                 onDelete={() => setRules(prev => prev.filter((_, i) => i !== idx))}
+                staff={staff}
               />
             ))}
           </div>
@@ -822,6 +911,10 @@ export default function AutomationSettingsClient() {
         <WorkflowReportsDashboard />
       )}
 
+      {activeTab === "operations" && (
+        <AutomationOperationsCenter />
+      )}
+
       {activeTab === "email_workflow" && (
         <EmailWorkflowAutomation />
       )}
@@ -835,7 +928,7 @@ export default function AutomationSettingsClient() {
       )}
 
       {activeTab === "auto_assign" && autoAssign && (
-        <AutoAssignTab config={autoAssign} onChange={setAutoAssign} />
+        <AutoAssignTab config={autoAssign} onChange={setAutoAssign} staff={staff} />
       )}
 
       {activeTab === "run" && (
@@ -872,12 +965,22 @@ export default function AutomationSettingsClient() {
               Kiểm tra tất cả khách hàng và thực thi các quy tắc đang bật.
               Trên production, engine chạy tự động mỗi 30 phút qua cron job.
             </p>
-            <button onClick={runEngine} disabled={running}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #0877ff, #0060e8)", color: "#fff" }}>
-              {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
-              {running ? "Đang chạy..." : "Chạy ngay"}
-            </button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button onClick={previewEngine} disabled={previewing || running}
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-5 py-2.5 text-sm font-semibold text-blue-700 disabled:opacity-50">
+                {previewing ? <RefreshCw size={14} className="animate-spin" /> : <Activity size={14} />}Xem trước phạm vi
+              </button>
+              <button onClick={runEngine} disabled={running || !preview}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #0877ff, #0060e8)", color: "#fff" }}>
+                {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
+                {running ? "Đang chạy..." : "Xác nhận chạy thật"}
+              </button>
+            </div>
+            {preview && <div className="mx-auto mt-4 max-w-2xl rounded-xl border border-blue-200 bg-blue-50 p-3 text-left text-xs text-blue-900">
+              <strong>Kiểm tra trước:</strong> {preview.totalLeads} khách · {preview.enabledRules} quy tắc bật · {preview.matches.length} lượt khớp · {preview.matchedActions} hành động dự kiến.
+              {preview.matches.length > 0 && <div className="mt-2 max-h-28 overflow-auto text-[11px] text-blue-800">{preview.matches.slice(0, 20).map((item, index) => <div key={`${item.leadName}-${item.ruleName}-${index}`}>{item.leadName} → {item.ruleName} ({item.actionCount} hành động)</div>)}</div>}
+            </div>}
           </div>
 
           {/* Lỗi */}

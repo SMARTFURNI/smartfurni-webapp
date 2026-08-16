@@ -24,6 +24,7 @@ import type {
   JourneyReportFilters,
   JourneyReportFunnelRow,
   JourneyReportLeadRow,
+  JourneyReportLinkRow,
   JourneyReportStepRow,
   JourneyReportSummary,
   JourneyReportWorkflowRow,
@@ -84,6 +85,7 @@ export async function initJourneyReportingSchema(): Promise<void> {
         action_id TEXT NOT NULL UNIQUE,
         lead_id TEXT NOT NULL,
         step_id TEXT NOT NULL,
+        channel TEXT NOT NULL DEFAULT 'email',
         provider_message_id TEXT,
         delivered_at TIMESTAMPTZ,
         bounced_at TIMESTAMPTZ,
@@ -97,6 +99,7 @@ export async function initJourneyReportingSchema(): Promise<void> {
       ALTER TABLE crm_journey_email_tracking ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
       ALTER TABLE crm_journey_email_tracking ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ;
       ALTER TABLE crm_journey_email_tracking ADD COLUMN IF NOT EXISTS complained_at TIMESTAMPTZ;
+      ALTER TABLE crm_journey_email_tracking ADD COLUMN IF NOT EXISTS channel TEXT NOT NULL DEFAULT 'email';
 
       CREATE INDEX IF NOT EXISTS idx_crm_journey_events_report
         ON crm_journey_events(journey_code,event_type,occurred_at);
@@ -261,16 +264,17 @@ export async function createJourneyEmailTracking(input: {
   actionId: string;
   leadId: string;
   stepId: string;
+  channel?: string;
 }): Promise<JourneyEmailTrackingLinks> {
   await initJourneyReportingSchema();
   const token = randomUUID();
   const row = await queryOne<{ token: string }>(
     `INSERT INTO crm_journey_email_tracking
-      (token,journey_code,enrollment_id,action_id,lead_id,step_id)
-     VALUES ($1,$2,$3,$4,$5,$6)
-     ON CONFLICT (action_id) DO UPDATE SET updated_at=NOW()
+      (token,journey_code,enrollment_id,action_id,lead_id,step_id,channel)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     ON CONFLICT (action_id) DO UPDATE SET channel=EXCLUDED.channel,updated_at=NOW()
      RETURNING token`,
-    [token, input.journeyCode, input.enrollmentId, input.actionId, input.leadId, input.stepId],
+    [token, input.journeyCode, input.enrollmentId, input.actionId, input.leadId, input.stepId, input.channel || "email"],
   );
   const activeToken = row?.token || token;
   const origin = publicOrigin();
@@ -279,6 +283,14 @@ export async function createJourneyEmailTracking(input: {
     openUrl: `${origin}/api/crm/automation/reports/email-open?t=${encodeURIComponent(activeToken)}`,
     clickBaseUrl: `${origin}/api/crm/automation/reports/email-click?t=${encodeURIComponent(activeToken)}&u=`,
   };
+}
+
+export function rewriteJourneyTrackedLinks(body: string, clickBaseUrl: string): string {
+  return body.replace(/https?:\/\/[^\s]+/g, raw => {
+    const trailing = raw.match(/[),.;!?]+$/)?.[0] || "";
+    const destination = trailing ? raw.slice(0, -trailing.length) : raw;
+    return `${clickBaseUrl}${encodeURIComponent(destination)}${trailing}`;
+  });
 }
 
 export async function attachJourneyEmailProviderId(token: string, providerMessageId: string): Promise<void> {
@@ -303,6 +315,7 @@ export async function recordJourneyEmailTrackingEvent(
     lead_id: string;
     step_id: string;
     provider_message_id: string | null;
+    channel: string;
   }>(`SELECT * FROM crm_journey_email_tracking WHERE token=$1`, [token]);
   if (!tracking) return false;
   await query(
@@ -318,10 +331,10 @@ export async function recordJourneyEmailTrackingEvent(
     leadId: tracking.lead_id,
     stepId: tracking.step_id,
     eventType,
-    channel: "email",
+    channel: tracking.channel || "email",
     providerMessageId: tracking.provider_message_id || undefined,
     metadata,
-    idempotencyKey: `email:${eventType}:${token}`,
+    idempotencyKey: `${tracking.channel || "email"}:${eventType}:${token}`,
   });
   return true;
 }
@@ -515,12 +528,15 @@ export async function getJourneyWorkflowReport(
         COALESCE(SUM(CASE WHEN COALESCE(lead_data->>'stage','') NOT IN ('won','lost') THEN COALESCE(NULLIF(lead_data->>'expectedValue','')::numeric,0) ELSE 0 END),0)::numeric AS pipeline_value,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.scheduled_at<=NOW() AND ${actionChannel}) AS due_actions,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.status='sent' AND ${actionChannel}) AS sent_actions,
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.status='sent' AND a.sent_channel='email' AND ${actionChannel}) AS sent_emails,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.status='failed' AND ${actionChannel}) AS failed_actions,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.status='waiting_content' AND ${actionChannel}) AS waiting_content,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.status='delivery_unknown' AND ${actionChannel}) AS delivery_unknown,
         (SELECT COUNT(DISTINCT ev.action_id)::int FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id WHERE ev.event_type='delivered' AND ${eventChannel}) AS delivered_emails,
         (SELECT COUNT(DISTINCT ev.action_id)::int FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id WHERE ev.event_type='bounced' AND ${eventChannel}) AS bounced_emails,
         (SELECT COUNT(DISTINCT ev.action_id)::int FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id WHERE ev.event_type='complained' AND ${eventChannel}) AS complained_emails,
+        (SELECT COUNT(DISTINCT ev.action_id)::int FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id WHERE ev.event_type='opened' AND ${eventChannel}) AS opened_messages,
+        (SELECT COUNT(DISTINCT ev.action_id)::int FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id WHERE ev.event_type='clicked' AND ${eventChannel}) AS clicked_messages,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN scoped s ON s.id=a.enrollment_id WHERE a.status='sent' AND a.sent_channel<>a.primary_channel AND ${actionChannel}) AS fallback_actions,
         (SELECT AVG(EXTRACT(EPOCH FROM (ev.occurred_at-a.sent_at))/3600)
          FROM crm_journey_events ev JOIN crm_journey_actions a ON a.id=ev.action_id JOIN scoped s ON s.id=ev.enrollment_id
@@ -687,12 +703,16 @@ export async function getJourneyWorkflowReport(
     deliveredEmails: numberValue(raw.delivered_emails),
     bouncedEmails: numberValue(raw.bounced_emails),
     complainedEmails: numberValue(raw.complained_emails),
+    openedMessages: numberValue(raw.opened_messages),
+    clickedMessages: numberValue(raw.clicked_messages),
     fallbackActions: numberValue(raw.fallback_actions),
     sendSuccessRate: 0,
     responseRate: 0,
     quoteRate: 0,
     winRate: 0,
     fallbackRate: 0,
+    openRate: 0,
+    clickRate: 0,
     averageResponseHours: raw.average_response_hours == null ? null : Math.round(numberValue(raw.average_response_hours) * 10) / 10,
     assistedRevenue: numberValue(raw.assisted_revenue),
     pipelineValue: numberValue(raw.pipeline_value),
@@ -702,6 +722,8 @@ export async function getJourneyWorkflowReport(
   summary.quoteRate = percentage(summary.quoted, summary.enrolled);
   summary.winRate = percentage(summary.won, summary.enrolled);
   summary.fallbackRate = percentage(summary.fallbackActions, summary.sentActions);
+  summary.openRate = percentage(summary.openedMessages, numberValue(raw.sent_emails));
+  summary.clickRate = percentage(summary.clickedMessages, summary.sentActions);
 
   const funnelCounts = [
     ["enrolled", "Đã vào workflow", summary.enrolled],
@@ -816,6 +838,30 @@ export async function getJourneyWorkflowReport(
     pausedReason: String(row.paused_reason || ""),
   }));
 
+  const linkRowsRaw = await query<Record<string, unknown>>(
+    `WITH scoped AS (${scope.sql})
+     SELECT ev.channel,ev.metadata->>'url' AS url,COUNT(*)::int AS clicks,
+       COUNT(DISTINCT ev.action_id)::int AS unique_actions,MAX(ev.occurred_at) AS last_clicked_at
+     FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id
+     WHERE ev.event_type='clicked' AND COALESCE(ev.metadata->>'url','')<>'' AND ${eventChannel}
+     GROUP BY ev.channel,ev.metadata->>'url' ORDER BY clicks DESC,last_clicked_at DESC LIMIT 100`,
+    scope.params,
+  );
+  const links: JourneyReportLinkRow[] = linkRowsRaw.map(row => ({
+    channel: String(row.channel || ""), url: String(row.url || ""), clicks: numberValue(row.clicks),
+    uniqueActions: numberValue(row.unique_actions), lastClickedAt: isoValue(row.last_clicked_at),
+  }));
+  const operations: Record<string, unknown> = await queryOne<Record<string, unknown>>(
+    `SELECT
+      (SELECT COUNT(*) FROM crm_automation_rule_executions WHERE claimed_at::date BETWEEN $1::date AND $2::date)::int AS generic_executions,
+      (SELECT COUNT(*) FROM crm_automation_rule_executions WHERE status='failed' AND claimed_at::date BETWEEN $1::date AND $2::date)::int AS generic_failed,
+      (SELECT COUNT(*) FROM crm_notification_logs WHERE action_type='sla' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS sla_alerts,
+      ((SELECT COUNT(*) FROM crm_automation_email_queue WHERE status IN ('pending','processing'))+(SELECT COUNT(*) FROM crm_automation_zalo_queue WHERE status IN ('pending','processing')))::int AS queued_pending,
+      (SELECT COUNT(*) FROM crm_notification_logs WHERE status='sent' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS notification_sent,
+      (SELECT COUNT(*) FROM crm_notification_logs WHERE status='failed' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS notification_failed`,
+    [filters.from, filters.to],
+  ).catch(() => null) || {};
+
   const dailyMap = new Map<string, JourneyReportDailyRow>();
   for (let cursor = dateAtVietnamStart(filters.from); cursor <= dateAtVietnamStart(filters.to); cursor = addDays(cursor, 1)) {
     const date = dayString(cursor);
@@ -844,6 +890,11 @@ export async function getJourneyWorkflowReport(
       lastEventAt: freshness?.last_event_at ? isoValue(freshness.last_event_at) : null,
       note: "Phản hồi, delivered/bounce và open/click bắt đầu được ghi chi tiết từ khi mô-đun báo cáo được triển khai; dữ liệu gửi cũ vẫn được tổng hợp từ action hiện có.",
     },
+    operations: {
+      genericExecutions: numberValue(operations?.generic_executions), genericFailed: numberValue(operations?.generic_failed),
+      slaAlerts: numberValue(operations?.sla_alerts), queuedPending: numberValue(operations?.queued_pending),
+      notificationSent: numberValue(operations?.notification_sent), notificationFailed: numberValue(operations?.notification_failed),
+    },
     options: {
       workflows: workflowOptions.map(value => ({ value, label: JOURNEY_NAMES[value] || value })),
       sources: sourceOptions.map(value => ({ value, label: value })),
@@ -861,6 +912,7 @@ export async function getJourneyWorkflowReport(
     channels,
     steps,
     failures,
+    links,
     leads,
   };
 }

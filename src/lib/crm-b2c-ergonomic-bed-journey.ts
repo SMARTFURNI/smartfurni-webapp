@@ -416,6 +416,12 @@ export function b2cErgonomicJourneyDefinitionWithOverrides(
       const override: JourneyStepOverride = settings.stepOverrides?.[current.id] || {};
       return {
         ...current,
+        enabled: override.enabled ?? true,
+        day: Math.max(0, Math.min(365, Number(override.day ?? current.day))),
+        sendHour: Math.max(0, Math.min(23, Number(override.sendHour ?? current.sendHour))),
+        sendMinute: Math.max(0, Math.min(59, Number(override.sendMinute ?? current.sendMinute))),
+        primaryChannel: override.primaryChannel ?? current.primaryChannel,
+        fallbackChannels: [...new Set(override.fallbackChannels || current.fallbackChannels)].filter(channel => channel !== (override.primaryChannel ?? current.primaryChannel)),
         emailSubject: override.emailSubject ?? current.emailSubject,
         emailBody: override.emailBody ?? current.emailBody,
         zaloBody: override.zaloBody ?? current.zaloBody,
