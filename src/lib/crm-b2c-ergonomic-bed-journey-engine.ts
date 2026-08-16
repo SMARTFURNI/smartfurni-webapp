@@ -19,6 +19,7 @@ export async function runB2CErgonomicBedJourney(
   limit = 20,
 ): Promise<B2BSofaJourneyRunResult> {
   return runJourneyRuntime({
+    journeyCode: B2C_ERGONOMIC_BED_JOURNEY.code,
     journeyName: B2C_ERGONOMIC_BED_JOURNEY.name,
     getSettings: getB2CErgonomicBedJourneySettings,
     definitionWithOverrides: b2cErgonomicJourneyDefinitionWithOverrides,

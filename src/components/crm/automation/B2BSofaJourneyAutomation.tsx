@@ -22,9 +22,22 @@ interface EnrollmentItem {
   leadName: string;
   status: "active" | "paused" | "completed" | "cancelled";
   pausedReason: string;
+  pauseUntil: string | null;
   enrolledAt: string;
   updatedAt: string;
   context: Record<string, string>;
+  replyReview: {
+    id: string;
+    channel: string;
+    inboundAt: string;
+    message: string;
+    intent: string;
+    recommendation: "continue" | "pause" | "switch" | "stop" | "complete";
+    reason: string;
+    confidence: number;
+    suggestedPauseUntil: string | null;
+    status: "pending_review" | "accepted" | "dismissed";
+  } | null;
 }
 
 interface ActionItem {
@@ -57,6 +70,14 @@ const CHANNEL_COLORS: Record<JourneyChannel, string> = {
   zalo_oa: "#2563eb",
   email: "#8b5cf6",
 };
+
+const RECOMMENDATION_LABELS = {
+  continue: "Tiếp tục workflow",
+  pause: "Nên tạm dừng",
+  switch: "Nên chuyển workflow",
+  stop: "Nên dừng chăm sóc",
+  complete: "Đánh dấu hoàn tất",
+} as const;
 
 const PROJECT_CONTEXT_FIELDS = [
   ["available_dimensions", "Kích thước mặt bằng"],
@@ -180,8 +201,8 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
     setError("");
     try {
       const payload = await post({ action: "run", limit: 20 });
-      const result = payload.result as { sent: number; waitingContent: number; deliveryUnknown: number; autoEnrollment: { enrolled: number } };
-      setMessage(`Đã chạy: thêm ${result.autoEnrollment.enrolled} lead, gửi ${result.sent}, chờ dữ liệu ${result.waitingContent}, cần đối soát ${result.deliveryUnknown}.`);
+      const result = payload.result as { sent: number; waitingContent: number; deliveryUnknown: number; replyRecommendations: number; autoEnrollment: { enrolled: number } };
+      setMessage(`Đã chạy: thêm ${result.autoEnrollment.enrolled} lead, gửi ${result.sent}, tạo ${result.replyRecommendations || 0} đề xuất phản hồi, chờ dữ liệu ${result.waitingContent}, cần đối soát ${result.deliveryUnknown}.`);
       await load();
     } catch (runError) {
       setError(runError instanceof Error ? runError.message : "Không chạy được journey.");
@@ -204,14 +225,34 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
     }
   };
 
-  const changeEnrollment = async (action: "resume" | "cancel", enrollmentId: string) => {
+  const changeEnrollment = async (action: "pause" | "resume" | "cancel" | "complete", enrollmentId: string) => {
     if (action === "cancel" && !window.confirm("Dừng toàn bộ bước chưa gửi của lead này?")) return;
+    if (action === "complete" && !window.confirm("Đánh dấu workflow của khách này đã hoàn tất?")) return;
     try {
-      await post({ action, enrollmentId });
-      setMessage(action === "resume" ? "Đã tiếp tục journey." : "Đã dừng journey của lead.");
+      await post(action === "pause" ? { action, enrollmentId, pauseHours: 24 } : { action, enrollmentId });
+      setMessage(({ pause: "Đã tạm dừng workflow 24 giờ.", resume: "Đã tiếp tục workflow.", cancel: "Đã dừng workflow của lead.", complete: "Đã đánh dấu hoàn tất workflow." })[action]);
       await load();
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "Không cập nhật được journey.");
+    }
+  };
+
+  const reviewReply = async (
+    reviewId: string,
+    decision: "continue" | "pause" | "switch" | "stop" | "complete",
+    pauseHours?: number,
+  ) => {
+    const destructive = decision === "stop" || decision === "switch" || decision === "complete";
+    if (destructive && !window.confirm(`Xác nhận: ${RECOMMENDATION_LABELS[decision]}?`)) return;
+    setError("");
+    try {
+      await post({ action: "review_reply", reviewId, decision, pauseHours });
+      setMessage(decision === "continue"
+        ? "Đã bỏ qua đề xuất; workflow vẫn tiếp tục theo lịch."
+        : `Đã áp dụng: ${RECOMMENDATION_LABELS[decision]}.`);
+      await load();
+    } catch (reviewError) {
+      setError(reviewError instanceof Error ? reviewError.message : "Không xử lý được đề xuất AI.");
     }
   };
 
@@ -297,13 +338,14 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
       {message && <div className="p-3 rounded-xl flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm"><CheckCircle2 size={16} />{message}</div>}
       {error && <div className="p-3 rounded-xl flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm"><XCircle size={16} />{error}</div>}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {[
           ["Đang chạy", data.stats.active || 0, "#16a34a"],
           ["Đang chờ gửi", data.stats.pending || 0, "#2563eb"],
           ["Đã gửi", data.stats.sent || 0, "#7c3aed"],
           ["Chờ dữ liệu", data.stats.waiting_content || 0, "#d97706"],
           ["Cần đối soát", data.stats.delivery_unknown || 0, "#dc2626"],
+          ["AI chờ duyệt", data.stats.pending_review || 0, "#ea580c"],
         ].map(([label, value, color]) => (
           <div key={String(label)} className="p-3 rounded-xl bg-white border border-gray-200">
             <div className="text-xl font-bold" style={{ color: String(color) }}>{String(value)}</div>
@@ -499,13 +541,36 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{item.leadName}</div>
                     <div className="text-[11px] text-gray-500">{statusLabel(item.status)} · {formatDate(item.updatedAt)}</div>
-                    {item.pausedReason && <div className="text-[11px] text-amber-700 mt-1">{item.pausedReason}</div>}
+                    {item.pausedReason && <div className="text-[11px] text-amber-700 mt-1">{item.pausedReason}{item.pauseUntil ? ` · đến ${formatDate(item.pauseUntil)}` : ""}</div>}
                   </div>
                   <div className="flex gap-1">
                     {item.status === "paused" && <button title="Tiếp tục" onClick={() => changeEnrollment("resume", item.id)} className="p-1.5 rounded-lg border border-gray-200 bg-white"><Play size={12} /></button>}
-                    {["active", "paused"].includes(item.status) && <button title="Dừng" onClick={() => changeEnrollment("cancel", item.id)} className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600"><Pause size={12} /></button>}
+                    {item.status === "active" && <button title="Tạm dừng 24 giờ" onClick={() => changeEnrollment("pause", item.id)} className="p-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700"><Pause size={12} /></button>}
+                    {["active", "paused"].includes(item.status) && <button title="Hoàn tất" onClick={() => changeEnrollment("complete", item.id)} className="p-1.5 rounded-lg border border-green-200 bg-green-50 text-green-700"><CheckCircle2 size={12} /></button>}
+                    {["active", "paused"].includes(item.status) && <button title="Dừng hẳn" onClick={() => changeEnrollment("cancel", item.id)} className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600"><XCircle size={12} /></button>}
                   </div>
                 </div>
+                {item.replyReview && (
+                  <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-[11px] font-bold text-orange-900">AI đề xuất · {RECOMMENDATION_LABELS[item.replyReview.recommendation]}</div>
+                      <div className="text-[10px] text-orange-700">Tin đến {formatDate(item.replyReview.inboundAt)} · {Math.round(item.replyReview.confidence * 100)}%</div>
+                    </div>
+                    <blockquote className="mt-2 rounded-lg bg-white/80 px-2.5 py-2 text-[11px] text-gray-700 border-l-2 border-orange-300">
+                      “{item.replyReview.message}”
+                    </blockquote>
+                    <p className="mt-2 text-[11px] text-orange-800">{item.replyReview.reason}</p>
+                    <p className="mt-1 text-[10px] font-medium text-green-700">Workflow vẫn đang chạy cho đến khi nhân viên chọn một hành động.</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <button onClick={() => reviewReply(item.replyReview!.id, "continue")} className="px-2 py-1 rounded-lg border border-green-200 bg-white text-[10px] font-semibold text-green-700">Bỏ qua · tiếp tục</button>
+                      <button onClick={() => reviewReply(item.replyReview!.id, "pause", 24)} className="px-2 py-1 rounded-lg border border-amber-200 bg-white text-[10px] font-semibold text-amber-700">Dừng 24 giờ</button>
+                      <button onClick={() => reviewReply(item.replyReview!.id, "pause", 72)} className="px-2 py-1 rounded-lg border border-amber-200 bg-white text-[10px] font-semibold text-amber-700">Dừng 3 ngày</button>
+                      <button onClick={() => reviewReply(item.replyReview!.id, "switch")} className="px-2 py-1 rounded-lg border border-blue-200 bg-white text-[10px] font-semibold text-blue-700">Chuyển workflow</button>
+                      <button onClick={() => reviewReply(item.replyReview!.id, "complete")} className="px-2 py-1 rounded-lg border border-violet-200 bg-white text-[10px] font-semibold text-violet-700">Hoàn tất</button>
+                      <button onClick={() => reviewReply(item.replyReview!.id, "stop")} className="px-2 py-1 rounded-lg border border-red-200 bg-white text-[10px] font-semibold text-red-700">Dừng hẳn</button>
+                    </div>
+                  </div>
+                )}
                 {!["completed", "cancelled"].includes(item.status) && (
                   <details className="mt-2 border-t border-gray-200 pt-2">
                     <summary className="cursor-pointer text-[11px] font-semibold text-blue-600">Bổ sung dữ liệu cá nhân hóa</summary>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getLead } from "@/lib/crm-store";
-import { b2cErgonomicJourneyDefinitionWithOverrides } from "@/lib/crm-b2c-ergonomic-bed-journey";
+import { B2C_ERGONOMIC_BED_JOURNEY_CODE, b2cErgonomicJourneyDefinitionWithOverrides } from "@/lib/crm-b2c-ergonomic-bed-journey";
 import {
   enrollLeadInB2CErgonomicBedJourney,
   getB2CErgonomicBedJourneyDashboard,
@@ -11,8 +11,16 @@ import {
 import { runB2CErgonomicBedJourney } from "@/lib/crm-b2c-ergonomic-bed-journey-engine";
 import {
   cancelJourneyEnrollment,
+  completeJourneyEnrollment,
+  getJourneyReplyReview,
+  pauseJourneyEnrollment,
+  resolveJourneyReplyReview,
   resumeJourneyEnrollment,
   updateJourneyContext,
+} from "@/lib/crm-b2b-sofa-journey-store";
+import {
+  enrollLeadInB2BSofaJourney,
+  getB2BSofaJourneySettings,
 } from "@/lib/crm-b2b-sofa-journey-store";
 
 export const dynamic = "force-dynamic";
@@ -42,12 +50,16 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
     const body = await req.json() as {
-      action?: "save_settings" | "run" | "enroll" | "resume" | "cancel" | "update_context";
+      action?: "save_settings" | "run" | "enroll" | "pause" | "resume" | "cancel" | "complete" | "review_reply" | "update_context";
       settings?: Record<string, unknown>;
       leadId?: string;
       enrollmentId?: string;
       context?: Record<string, string>;
       limit?: number;
+      reviewId?: string;
+      decision?: "continue" | "pause" | "switch" | "stop" | "complete";
+      pauseHours?: number;
+      pauseUntil?: string;
     };
 
     if (body.action === "save_settings") {
@@ -73,9 +85,54 @@ export async function POST(req: NextRequest) {
       await resumeJourneyEnrollment(body.enrollmentId);
       return NextResponse.json({ ok: true });
     }
+    if (body.action === "pause") {
+      if (!body.enrollmentId) return NextResponse.json({ error: "Thiếu enrollmentId" }, { status: 400 });
+      const until = body.pauseUntil
+        ? new Date(body.pauseUntil)
+        : body.pauseHours ? new Date(Date.now() + Math.max(1, body.pauseHours) * 60 * 60 * 1000) : null;
+      await pauseJourneyEnrollment(body.enrollmentId, "Nhân viên chủ động tạm dừng workflow.", until);
+      return NextResponse.json({ ok: true });
+    }
     if (body.action === "cancel") {
       if (!body.enrollmentId) return NextResponse.json({ error: "Thiếu enrollmentId" }, { status: 400 });
       await cancelJourneyEnrollment(body.enrollmentId, "Dừng thủ công từ màn hình quản trị.");
+      return NextResponse.json({ ok: true });
+    }
+    if (body.action === "complete") {
+      if (!body.enrollmentId) return NextResponse.json({ error: "Thiếu enrollmentId" }, { status: 400 });
+      await completeJourneyEnrollment(body.enrollmentId, "Nhân viên đánh dấu hoàn tất từ màn hình quản trị.");
+      return NextResponse.json({ ok: true });
+    }
+    if (body.action === "review_reply") {
+      if (!body.reviewId || !body.decision) return NextResponse.json({ error: "Thiếu reviewId hoặc decision" }, { status: 400 });
+      const review = await getJourneyReplyReview(body.reviewId);
+      if (!review) return NextResponse.json({ error: "Không tìm thấy đề xuất phản hồi" }, { status: 404 });
+      if (review.journeyCode !== B2C_ERGONOMIC_BED_JOURNEY_CODE) return NextResponse.json({ error: "Đề xuất không thuộc workflow này" }, { status: 409 });
+      if (review.status !== "pending_review") return NextResponse.json({ error: "Đề xuất này đã được xử lý" }, { status: 409 });
+      if (body.decision === "continue") {
+        await resolveJourneyReplyReview(review.id, "dismissed", "admin");
+      } else if (body.decision === "pause") {
+        const until = body.pauseUntil
+          ? new Date(body.pauseUntil)
+          : new Date(Date.now() + Math.max(1, Math.min(720, body.pauseHours || 24)) * 60 * 60 * 1000);
+        await pauseJourneyEnrollment(review.enrollmentId, `Nhân viên duyệt đề xuất AI: ${review.reason}`, until);
+        await resolveJourneyReplyReview(review.id, "accepted", "admin");
+      } else if (body.decision === "stop") {
+        await cancelJourneyEnrollment(review.enrollmentId, `Nhân viên duyệt đề xuất AI: ${review.reason}`);
+        await resolveJourneyReplyReview(review.id, "accepted", "admin");
+      } else if (body.decision === "complete") {
+        await completeJourneyEnrollment(review.enrollmentId, `Nhân viên duyệt đề xuất AI: ${review.reason}`);
+        await resolveJourneyReplyReview(review.id, "accepted", "admin");
+      } else if (body.decision === "switch") {
+        const lead = await getLead(review.leadId);
+        if (!lead) return NextResponse.json({ error: "Không tìm thấy lead" }, { status: 404 });
+        const target = await enrollLeadInB2BSofaJourney(lead, await getB2BSofaJourneySettings(), { force: true });
+        if (!target.created && ["cancelled", "completed"].includes(target.enrollment.status)) {
+          return NextResponse.json({ error: "Workflow đích của khách đã kết thúc; hãy xử lý thủ công trước khi chuyển." }, { status: 409 });
+        }
+        await cancelJourneyEnrollment(review.enrollmentId, "Đã chuyển sang workflow Sofa giường B2B.");
+        await resolveJourneyReplyReview(review.id, "accepted", "admin");
+      }
       return NextResponse.json({ ok: true });
     }
     if (body.action === "update_context") {

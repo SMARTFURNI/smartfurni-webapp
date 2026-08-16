@@ -16,6 +16,10 @@ import {
   type JourneyStepDefinition,
 } from "@/lib/crm-b2b-sofa-journey";
 import { recordJourneyEvent } from "@/lib/crm-journey-reporting";
+import type {
+  JourneyReplyIntent,
+  JourneyReplyRecommendation,
+} from "@/lib/crm-journey-reply-ai";
 
 export interface JourneySettingsBase {
   enabled: boolean;
@@ -43,6 +47,7 @@ export interface JourneyDefinitionBase {
 }
 
 export type JourneyEnrollmentStatus = "active" | "paused" | "completed" | "cancelled";
+export type JourneyReplyReviewStatus = "pending_review" | "accepted" | "dismissed";
 export type JourneyActionStatus =
   | "pending"
   | "sending"
@@ -73,7 +78,29 @@ export interface JourneyEnrollmentRecord {
   baselineContactAt: string;
   lastOutboundAt: string | null;
   pausedReason: string;
+  pauseUntil: string | null;
   completedAt: string | null;
+  updatedAt: string;
+}
+
+export interface JourneyReplyReviewRecord {
+  id: string;
+  journeyCode: string;
+  enrollmentId: string;
+  leadId: string;
+  channel: string;
+  sourceId: string;
+  inboundAt: string;
+  message: string;
+  intent: JourneyReplyIntent;
+  recommendation: JourneyReplyRecommendation;
+  reason: string;
+  confidence: number;
+  suggestedPauseUntil: string | null;
+  status: JourneyReplyReviewStatus;
+  reviewedBy: string;
+  reviewedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -109,7 +136,29 @@ interface EnrollmentRow {
   baseline_contact_at: string;
   last_outbound_at: string | null;
   paused_reason: string;
+  pause_until: string | null;
   completed_at: string | null;
+  updated_at: string;
+}
+
+interface ReplyReviewRow {
+  id: string;
+  journey_code: string;
+  enrollment_id: string;
+  lead_id: string;
+  channel: string;
+  source_id: string;
+  inbound_at: string;
+  message: string;
+  intent: JourneyReplyIntent;
+  recommendation: JourneyReplyRecommendation;
+  reason: string;
+  confidence: number | string;
+  suggested_pause_until: string | null;
+  status: JourneyReplyReviewStatus;
+  reviewed_by: string;
+  reviewed_at: string | null;
+  created_at: string;
   updated_at: string;
 }
 
@@ -153,7 +202,31 @@ function mapEnrollment(row: EnrollmentRow): JourneyEnrollmentRecord {
     baselineContactAt: String(row.baseline_contact_at),
     lastOutboundAt: row.last_outbound_at ? String(row.last_outbound_at) : null,
     pausedReason: row.paused_reason || "",
+    pauseUntil: row.pause_until ? String(row.pause_until) : null,
     completedAt: row.completed_at ? String(row.completed_at) : null,
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapReplyReview(row: ReplyReviewRow): JourneyReplyReviewRecord {
+  return {
+    id: row.id,
+    journeyCode: row.journey_code,
+    enrollmentId: row.enrollment_id,
+    leadId: row.lead_id,
+    channel: row.channel,
+    sourceId: row.source_id,
+    inboundAt: String(row.inbound_at),
+    message: row.message || "",
+    intent: row.intent,
+    recommendation: row.recommendation,
+    reason: row.reason || "",
+    confidence: Number(row.confidence || 0),
+    suggestedPauseUntil: row.suggested_pause_until ? String(row.suggested_pause_until) : null,
+    status: row.status,
+    reviewedBy: row.reviewed_by || "",
+    reviewedAt: row.reviewed_at ? String(row.reviewed_at) : null,
+    createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
 }
@@ -200,6 +273,8 @@ async function createSchema(): Promise<void> {
       baseline_contact_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       last_outbound_at TIMESTAMPTZ,
       paused_reason TEXT NOT NULL DEFAULT '',
+      pause_until TIMESTAMPTZ,
+      reply_scanned_at TIMESTAMPTZ,
       completed_at TIMESTAMPTZ,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE (journey_code, lead_id)
@@ -226,12 +301,39 @@ async function createSchema(): Promise<void> {
       UNIQUE (enrollment_id, step_id)
     );
 
+    CREATE TABLE IF NOT EXISTS crm_journey_reply_reviews (
+      id TEXT PRIMARY KEY,
+      journey_code TEXT NOT NULL,
+      enrollment_id TEXT NOT NULL REFERENCES crm_journey_enrollments(id) ON DELETE CASCADE,
+      lead_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      inbound_at TIMESTAMPTZ NOT NULL,
+      message TEXT NOT NULL DEFAULT '',
+      intent TEXT NOT NULL DEFAULT 'neutral',
+      recommendation TEXT NOT NULL DEFAULT 'continue',
+      reason TEXT NOT NULL DEFAULT '',
+      confidence NUMERIC NOT NULL DEFAULT 0,
+      suggested_pause_until TIMESTAMPTZ,
+      status TEXT NOT NULL DEFAULT 'pending_review',
+      reviewed_by TEXT NOT NULL DEFAULT '',
+      reviewed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (enrollment_id, channel, source_id)
+    );
+
+    ALTER TABLE crm_journey_enrollments ADD COLUMN IF NOT EXISTS pause_until TIMESTAMPTZ;
+    ALTER TABLE crm_journey_enrollments ADD COLUMN IF NOT EXISTS reply_scanned_at TIMESTAMPTZ;
+
     CREATE INDEX IF NOT EXISTS idx_crm_journey_actions_due
       ON crm_journey_actions(status, COALESCE(next_attempt_at, scheduled_at));
     CREATE INDEX IF NOT EXISTS idx_crm_journey_actions_lead
       ON crm_journey_actions(lead_id, scheduled_at);
     CREATE INDEX IF NOT EXISTS idx_crm_journey_enrollments_status
       ON crm_journey_enrollments(journey_code, status, enrolled_at);
+    CREATE INDEX IF NOT EXISTS idx_crm_journey_reply_reviews_pending
+      ON crm_journey_reply_reviews(journey_code,status,created_at DESC);
   `);
 }
 
@@ -465,6 +567,13 @@ export async function claimDueJourneyActionsForCode(
   const client = await db.connect();
   try {
     await client.query("BEGIN");
+    // Các lần tạm dừng có thời hạn do nhân viên chọn sẽ tự tiếp tục đúng hạn.
+    await client.query(
+      `UPDATE crm_journey_enrollments
+       SET status='active',paused_reason='',pause_until=NULL,updated_at=NOW()
+       WHERE journey_code=$1 AND status='paused' AND pause_until IS NOT NULL AND pause_until<=NOW()`,
+      [journeyCode],
+    );
     // Không tự gửi lại một job đã mất kết nối sau khi bắt đầu gửi; cần đối soát thủ công.
     await client.query(
       `UPDATE crm_journey_actions a
@@ -509,6 +618,79 @@ export async function getEnrollmentById(id: string): Promise<JourneyEnrollmentRe
   return row ? mapEnrollment(row) : null;
 }
 
+export async function getJourneyEnrollmentsForReplyScan(
+  journeyCode: string,
+  limit = 100,
+): Promise<JourneyEnrollmentRecord[]> {
+  await initB2BSofaJourneySchema();
+  const rows = await query<EnrollmentRow>(
+    `SELECT * FROM crm_journey_enrollments
+     WHERE journey_code=$1 AND status IN ('active','paused')
+     ORDER BY reply_scanned_at ASC NULLS FIRST,enrolled_at ASC LIMIT $2`,
+    [journeyCode, Math.max(1, Math.min(500, Math.trunc(limit)))],
+  );
+  if (rows.length) {
+    await query(
+      `UPDATE crm_journey_enrollments SET reply_scanned_at=NOW() WHERE id=ANY($1::text[])`,
+      [rows.map(row => row.id)],
+    );
+  }
+  return rows.map(mapEnrollment);
+}
+
+export async function createJourneyReplyReview(input: {
+  journeyCode: string;
+  enrollmentId: string;
+  leadId: string;
+  channel: string;
+  sourceId: string;
+  inboundAt: string;
+  message: string;
+  intent: JourneyReplyIntent;
+  recommendation: JourneyReplyRecommendation;
+  reason: string;
+  confidence: number;
+  suggestedPauseUntil?: string | null;
+}): Promise<{ review: JourneyReplyReviewRecord | null; created: boolean }> {
+  await initB2BSofaJourneySchema();
+  const row = await queryOne<ReplyReviewRow>(
+    `INSERT INTO crm_journey_reply_reviews
+      (id,journey_code,enrollment_id,lead_id,channel,source_id,inbound_at,message,intent,
+       recommendation,reason,confidence,suggested_pause_until,status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending_review')
+     ON CONFLICT (enrollment_id,channel,source_id) DO NOTHING
+     RETURNING *`,
+    [
+      `jrr-${randomUUID()}`, input.journeyCode, input.enrollmentId, input.leadId,
+      input.channel, input.sourceId, input.inboundAt, input.message.slice(0, 5000), input.intent,
+      input.recommendation, input.reason.slice(0, 1000), Math.max(0, Math.min(1, input.confidence)),
+      input.suggestedPauseUntil || null,
+    ],
+  );
+  return { review: row ? mapReplyReview(row) : null, created: Boolean(row) };
+}
+
+export async function getJourneyReplyReview(id: string): Promise<JourneyReplyReviewRecord | null> {
+  await initB2BSofaJourneySchema();
+  const row = await queryOne<ReplyReviewRow>(`SELECT * FROM crm_journey_reply_reviews WHERE id=$1`, [id]);
+  return row ? mapReplyReview(row) : null;
+}
+
+export async function resolveJourneyReplyReview(
+  id: string,
+  status: Exclude<JourneyReplyReviewStatus, "pending_review">,
+  reviewedBy: string,
+): Promise<JourneyReplyReviewRecord | null> {
+  await initB2BSofaJourneySchema();
+  const row = await queryOne<ReplyReviewRow>(
+    `UPDATE crm_journey_reply_reviews
+     SET status=$2,reviewed_by=$3,reviewed_at=NOW(),updated_at=NOW()
+     WHERE id=$1 AND status='pending_review' RETURNING *`,
+    [id, status, reviewedBy.slice(0, 200)],
+  );
+  return row ? mapReplyReview(row) : getJourneyReplyReview(id);
+}
+
 export async function updateJourneyContext(
   enrollmentId: string,
   patch: Record<string, string>,
@@ -531,13 +713,14 @@ export async function updateJourneyContext(
   return row ? mapEnrollment(row) : null;
 }
 
-export async function pauseJourneyEnrollment(id: string, reason: string): Promise<void> {
+export async function pauseJourneyEnrollment(id: string, reason: string, until?: Date | null): Promise<void> {
   await initB2BSofaJourneySchema();
   const enrollment = await getEnrollmentById(id);
   await query(
-    `UPDATE crm_journey_enrollments SET status='paused',paused_reason=$2,updated_at=NOW()
-     WHERE id=$1 AND status='active'`,
-    [id, reason.slice(0, 1000)],
+    `UPDATE crm_journey_enrollments
+     SET status='paused',paused_reason=$2,pause_until=$3,updated_at=NOW()
+     WHERE id=$1 AND status IN ('active','paused')`,
+    [id, reason.slice(0, 1000), until?.toISOString() || null],
   );
   if (enrollment) {
     await recordJourneyEvent({
@@ -545,7 +728,7 @@ export async function pauseJourneyEnrollment(id: string, reason: string): Promis
       enrollmentId: enrollment.id,
       leadId: enrollment.leadId,
       eventType: "paused",
-      metadata: { reason },
+      metadata: { reason, pauseUntil: until?.toISOString() || null },
       idempotencyKey: `paused:${id}:${reason.slice(0, 120)}`,
     }).catch(error => console.error("[Journey report] Không ghi được pause:", error));
   }
@@ -555,7 +738,7 @@ export async function resumeJourneyEnrollment(id: string): Promise<void> {
   await initB2BSofaJourneySchema();
   const enrollment = await getEnrollmentById(id);
   await query(
-    `UPDATE crm_journey_enrollments SET status='active',paused_reason='',baseline_contact_at=NOW(),updated_at=NOW()
+    `UPDATE crm_journey_enrollments SET status='active',paused_reason='',pause_until=NULL,updated_at=NOW()
      WHERE id=$1 AND status='paused'`,
     [id],
   );
@@ -570,11 +753,37 @@ export async function resumeJourneyEnrollment(id: string): Promise<void> {
   }
 }
 
+export async function completeJourneyEnrollment(id: string, reason: string): Promise<void> {
+  await initB2BSofaJourneySchema();
+  const enrollment = await getEnrollmentById(id);
+  await query(
+    `UPDATE crm_journey_enrollments
+     SET status='completed',paused_reason=$2,pause_until=NULL,completed_at=NOW(),updated_at=NOW()
+     WHERE id=$1 AND status IN ('active','paused')`,
+    [id, reason.slice(0, 1000)],
+  );
+  await query(
+    `UPDATE crm_journey_actions SET status='cancelled',error=$2,claimed_at=NULL,updated_at=NOW()
+     WHERE enrollment_id=$1 AND status IN ('pending','waiting_content','sending')`,
+    [id, reason.slice(0, 1000)],
+  );
+  if (enrollment) {
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: enrollment.leadId,
+      eventType: "stage_changed",
+      metadata: { reason, journeyCompletedManually: true },
+      idempotencyKey: `completed-manually:${id}`,
+    }).catch(error => console.error("[Journey report] Không ghi được complete:", error));
+  }
+}
+
 export async function cancelJourneyEnrollment(id: string, reason: string): Promise<void> {
   await initB2BSofaJourneySchema();
   const enrollment = await getEnrollmentById(id);
   await query(
-    `UPDATE crm_journey_enrollments SET status='cancelled',paused_reason=$2,completed_at=NOW(),updated_at=NOW()
+    `UPDATE crm_journey_enrollments SET status='cancelled',paused_reason=$2,pause_until=NULL,completed_at=NOW(),updated_at=NOW()
      WHERE id=$1 AND status IN ('active','paused');
     `,
     [id, reason.slice(0, 1000)],
@@ -695,7 +904,7 @@ export async function deferJourneyAction(actionId: string, until: Date, reason: 
 export async function getB2BSofaJourneyDashboard(): Promise<{
   settings: B2BSofaJourneySettings;
   stats: Record<string, number>;
-  recentEnrollments: Array<JourneyEnrollmentRecord & { leadName: string }>;
+  recentEnrollments: Array<JourneyEnrollmentRecord & { leadName: string; replyReview: JourneyReplyReviewRecord | null }>;
   recentActions: JourneyActionRecord[];
 }> {
   return getJourneyDashboard(B2B_SOFA_JOURNEY_CODE, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS);
@@ -707,12 +916,12 @@ export async function getJourneyDashboard<T extends JourneySettingsBase>(
 ): Promise<{
   settings: T;
   stats: Record<string, number>;
-  recentEnrollments: Array<JourneyEnrollmentRecord & { leadName: string }>;
+  recentEnrollments: Array<JourneyEnrollmentRecord & { leadName: string; replyReview: JourneyReplyReviewRecord | null }>;
   recentActions: JourneyActionRecord[];
 }> {
   await initB2BSofaJourneySchema();
   const settings = await getJourneySettings(journeyCode, defaults);
-  const [statRow, enrollmentRows, actionRows] = await Promise.all([
+  const [statRow, enrollmentRows, actionRows, reviewRows] = await Promise.all([
     queryOne<Record<string, number>>(
       `SELECT
         COUNT(*) FILTER (WHERE status='active')::int AS active,
@@ -723,7 +932,8 @@ export async function getJourneyDashboard<T extends JourneySettingsBase>(
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='sent') AS sent,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='waiting_content') AS waiting_content,
         (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='delivery_unknown') AS delivery_unknown,
-        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='failed') AS failed
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='failed') AS failed,
+        (SELECT COUNT(*)::int FROM crm_journey_reply_reviews r WHERE r.journey_code=$1 AND r.status='pending_review') AS pending_review
        FROM crm_journey_enrollments WHERE journey_code=$1`,
       [journeyCode],
     ),
@@ -739,11 +949,24 @@ export async function getJourneyDashboard<T extends JourneySettingsBase>(
        WHERE e.journey_code=$1 ORDER BY a.updated_at DESC LIMIT 40`,
       [journeyCode],
     ),
+    query<ReplyReviewRow>(
+      `SELECT DISTINCT ON (enrollment_id) * FROM crm_journey_reply_reviews
+       WHERE journey_code=$1 AND status='pending_review'
+       ORDER BY enrollment_id,inbound_at DESC`,
+      [journeyCode],
+    ),
   ]);
+  const reviewsByEnrollment = new Map(
+    reviewRows.map(row => [row.enrollment_id, mapReplyReview(row)] as const),
+  );
   return {
     settings,
     stats: Object.fromEntries(Object.entries(statRow || {}).map(([key, value]) => [key, Number(value || 0)])),
-    recentEnrollments: enrollmentRows.map(row => ({ ...mapEnrollment(row), leadName: row.lead_name })),
+    recentEnrollments: enrollmentRows.map(row => ({
+      ...mapEnrollment(row),
+      leadName: row.lead_name,
+      replyReview: reviewsByEnrollment.get(row.id) || null,
+    })),
     recentActions: actionRows.map(mapAction),
   };
 }

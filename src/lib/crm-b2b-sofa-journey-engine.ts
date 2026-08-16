@@ -1,7 +1,7 @@
 import "server-only";
 
 import { query, queryOne } from "@/lib/db";
-import { createTask } from "@/lib/crm-store";
+import { createTask, getLead } from "@/lib/crm-store";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { listZaloAccounts } from "@/lib/zalo-account-store";
 import { findZaloUserByPhone, initZaloGateway, sendZaloAttachment as sendPersonalAttachment, sendZaloMessage } from "@/lib/zalo-gateway";
@@ -25,19 +25,23 @@ import {
   cancelJourneyEnrollment,
   claimDueJourneyActions,
   countJourneyMessagesInLastSevenDays,
+  createJourneyReplyReview,
   deferJourneyAction,
   getB2BSofaJourneySettings,
   getJourneyEnrollment,
   getEnrollmentById,
+  getJourneyEnrollmentsForReplyScan,
   getLeadForJourneyAction,
   markJourneyActionOutcome,
   markJourneyActionSent,
   markJourneyActionWaitingContent,
   pauseJourneyEnrollment,
+  resolveJourneyReplyReview,
   type JourneyActionRecord,
   type JourneyChannelAttempt,
   type JourneyEnrollmentRecord,
 } from "@/lib/crm-b2b-sofa-journey-store";
+import { analyzeJourneyReply } from "@/lib/crm-journey-reply-ai";
 import type { Lead } from "@/lib/crm-types";
 import {
   buildAutomationTestContext,
@@ -86,6 +90,7 @@ export interface B2BSofaJourneyRunResult {
   deliveryUnknown: number;
   waitingContent: number;
   paused: number;
+  replyRecommendations: number;
   logs: Array<{
     actionId: string;
     leadId: string;
@@ -97,6 +102,7 @@ export interface B2BSofaJourneyRunResult {
 }
 
 export interface JourneyRuntime<TSettings extends B2BSofaJourneySettings> {
+  journeyCode: string;
   journeyName: string;
   getSettings: () => Promise<TSettings>;
   definitionWithOverrides: (settings: TSettings) => B2BSofaJourneyDefinition;
@@ -416,70 +422,124 @@ interface InboundSignal {
   reason: string;
   channel: string;
   sourceId?: string;
-  customerReply: boolean;
+  message: string;
+  occurredAt: string;
 }
 
-async function hasInboundOrHumanActivity(
+async function findLatestUnreviewedInbound(
   lead: Lead,
   enrollment: JourneyEnrollmentRecord,
 ): Promise<InboundSignal | null> {
-  const baselineMs = Math.max(
+  const reviewed = await queryOne<{ last_inbound_at: string | null }>(
+    `SELECT MAX(inbound_at) AS last_inbound_at FROM crm_journey_reply_reviews WHERE enrollment_id=$1`,
+    [enrollment.id],
+  ).catch(() => null);
+  const baselineAt = new Date(Math.max(
     new Date(enrollment.enrolledAt).getTime(),
     new Date(enrollment.baselineContactAt).getTime(),
-  );
-  // Kiểm tra nguồn inbound trước các tín hiệu CRM tổng quát để phản hồi thật
-  // không bị che bởi lastContactAt hoặc activity do cùng webhook cập nhật.
-  const personalInbound = await queryOne<{ msg_id: string }>(
-    `SELECT m.msg_id
+    new Date(reviewed?.last_inbound_at || 0).getTime(),
+  ));
+  const baselineMs = baselineAt.getTime();
+  const personalInbound = await queryOne<{ msg_id: string; content: string; timestamp: string }>(
+    `SELECT m.msg_id,m.content,m.timestamp
      FROM zalo_inbox_messages_v2 m
      JOIN zalo_conversations_v2 c ON c.account_id=m.account_id AND c.thread_id=m.thread_id
      WHERE c.lead_id=$1 AND m.is_self=FALSE AND m.timestamp>$2
      ORDER BY m.timestamp DESC LIMIT 1`,
-    [lead.id, new Date(enrollment.enrolledAt).getTime()],
+    [lead.id, baselineMs],
   ).catch(() => null);
-  if (personalInbound) return {
-    reason: "Khách đã phản hồi qua Zalo cá nhân; chuyển nhân viên xử lý.",
-    channel: "zalo_personal",
-    sourceId: personalInbound.msg_id,
-    customerReply: true,
-  };
 
   const phone = normalizePhone(lead.zaloPhone || lead.phone || "");
+  let oaInbound: { id: string; content: string; created_at: string } | null = null;
   if (phone) {
     const phone84 = phone.startsWith("0") ? `84${phone.slice(1)}` : phone;
-    const oaInbound = await queryOne<{ id: string }>(
-      `SELECT m.id FROM crm_zalo_messages m
+    oaInbound = await queryOne<{ id: string; content: string; created_at: string }>(
+      `SELECT m.id,m.content,m.created_at FROM crm_zalo_messages m
        JOIN crm_zalo_conversations c ON c.user_id=m.conversation_user_id
        WHERE regexp_replace(COALESCE(c.phone,''),'[^0-9]','','g') IN ($1,$2)
          AND m.direction='inbound' AND m.created_at>$3
        ORDER BY m.created_at DESC LIMIT 1`,
-      [phone, phone84, enrollment.enrolledAt],
+      [phone, phone84, baselineAt.toISOString()],
     ).catch(() => null);
-    if (oaInbound) return {
-      reason: "Khách đã phản hồi qua Zalo OA; chuyển nhân viên xử lý.",
-      channel: "zalo_oa",
-      sourceId: oaInbound.id,
-      customerReply: true,
-    };
   }
-
-  const activity = await queryOne<{ id: string; activity_type: string }>(
-    `SELECT id,COALESCE(data->>'type','activity') AS activity_type
-     FROM crm_activities WHERE lead_id=$1 AND created_at>$2 ORDER BY created_at DESC LIMIT 1`,
-    [lead.id, enrollment.enrolledAt],
-  ).catch(() => null);
-  if (activity) return {
-    reason: `CRM đã ghi nhận hoạt động ${activity.activity_type}; chuyển nhân viên xử lý.`,
-    channel: "crm",
-    sourceId: activity.id,
-    customerReply: false,
+  const personalAt = personalInbound ? Number(personalInbound.timestamp) : 0;
+  const oaAt = oaInbound ? new Date(oaInbound.created_at).getTime() : 0;
+  if (!personalInbound && !oaInbound) return null;
+  if (personalInbound && personalAt >= oaAt) return {
+    reason: "Khách đã phản hồi qua Zalo cá nhân; AI đã tạo đề xuất để nhân viên duyệt.",
+    channel: "zalo_personal", sourceId: personalInbound.msg_id,
+    message: personalInbound.content || "[Tin nhắn không có nội dung chữ]",
+    occurredAt: new Date(personalAt).toISOString(),
   };
+  return {
+    reason: "Khách đã phản hồi qua Zalo OA; AI đã tạo đề xuất để nhân viên duyệt.",
+    channel: "zalo_oa", sourceId: oaInbound!.id,
+    message: oaInbound!.content || "[Tin nhắn không có nội dung chữ]",
+    occurredAt: new Date(oaAt).toISOString(),
+  };
+}
 
-  const lastContactMs = new Date(lead.lastContactAt || 0).getTime();
-  if (Number.isFinite(lastContactMs) && lastContactMs > baselineMs + 30_000) {
-    return { reason: "Lead đã có tương tác hoặc được nhân viên cập nhật trong CRM.", channel: "crm", customerReply: false };
+async function scanJourneyReplies<TSettings extends B2BSofaJourneySettings>(
+  runtime: JourneyRuntime<TSettings>,
+): Promise<number> {
+  const enrollments = await getJourneyEnrollmentsForReplyScan(runtime.journeyCode, 100);
+  let created = 0;
+  // Chỉ những enrollment thật sự có tin mới mới gọi AI; quét toàn bộ tập giới
+  // hạn để lead cũ không bị bỏ đói bởi các lead vừa cập nhật.
+  for (const enrollment of enrollments) {
+    const lead = await getLead(enrollment.leadId);
+    if (!lead) continue;
+    const inbound = await findLatestUnreviewedInbound(lead, enrollment);
+    if (!inbound?.sourceId) continue;
+    const analysis = await analyzeJourneyReply({
+      message: inbound.message,
+      leadName: lead.name,
+      journeyName: runtime.journeyName,
+    });
+    const suggestedPauseUntil = analysis.suggestedPauseHours
+      ? new Date(Date.now() + analysis.suggestedPauseHours * 60 * 60 * 1000).toISOString()
+      : null;
+    const result = await createJourneyReplyReview({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: lead.id,
+      channel: inbound.channel,
+      sourceId: inbound.sourceId,
+      inboundAt: inbound.occurredAt,
+      message: inbound.message,
+      intent: analysis.intent,
+      recommendation: analysis.recommendation,
+      reason: analysis.reason,
+      confidence: analysis.confidence,
+      suggestedPauseUntil,
+    });
+    if (!result.created) continue;
+    created += 1;
+    await recordJourneyReply({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: lead.id,
+      channel: inbound.channel,
+      sourceId: inbound.sourceId,
+      reason: inbound.reason,
+      occurredAt: inbound.occurredAt,
+    }).catch(error => console.error("[Journey report] Không ghi được phản hồi:", error));
+    await createTask({
+      leadId: lead.id,
+      leadName: lead.name,
+      title: `[AI đề xuất] ${analysis.reason}`.slice(0, 240),
+      dueDate: new Date().toISOString().slice(0, 10),
+      priority: analysis.recommendation === "continue" ? "medium" : "high",
+      done: false,
+      assignedTo: lead.assignedTo || "",
+    }).catch(() => undefined);
+    // Ngoại lệ tuân thủ duy nhất: yêu cầu không liên hệ rõ ràng được áp dụng ngay.
+    if (analysis.hardStop) {
+      await cancelJourneyEnrollment(enrollment.id, "Khách yêu cầu không liên hệ qua tin nhắn đến.");
+      if (result.review) await resolveJourneyReplyReview(result.review.id, "accepted", "system:dnc");
+    }
   }
-  return null;
+  return created;
 }
 
 function stopReason(lead: Lead, settings: B2BSofaJourneySettings): { cancel?: string; pause?: string } {
@@ -517,23 +577,6 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
     await pauseJourneyEnrollment(enrollment.id, stopping.pause);
     await deferJourneyAction(action.id, new Date(Date.now() + 24 * 60 * 60 * 1000), stopping.pause);
     return { status: "paused", message: stopping.pause };
-  }
-
-  const inboundSignal = await hasInboundOrHumanActivity(lead, enrollment);
-  if (inboundSignal) {
-    if (inboundSignal.customerReply) {
-      await recordJourneyReply({
-        journeyCode: enrollment.journeyCode,
-        enrollmentId: enrollment.id,
-        leadId: lead.id,
-        channel: inboundSignal.channel,
-        sourceId: inboundSignal.sourceId,
-        reason: inboundSignal.reason,
-      }).catch(error => console.error("[Journey report] Không ghi được phản hồi:", error));
-    }
-    await pauseJourneyEnrollment(enrollment.id, inboundSignal.reason);
-    await deferJourneyAction(action.id, new Date(Date.now() + 24 * 60 * 60 * 1000), inboundSignal.reason);
-    return { status: "paused", message: inboundSignal.reason };
   }
 
   const nextBusinessWindow = nextJourneyBusinessWindow(new Date(), settings);
@@ -750,10 +793,12 @@ export async function runJourneyRuntime<TSettings extends B2BSofaJourneySettings
       enabled: false,
       autoEnrollment: emptyEnrollment,
       claimed: 0, sent: 0, failed: 0, deliveryUnknown: 0, waitingContent: 0, paused: 0, logs: [],
+      replyRecommendations: 0,
     };
   }
 
   const autoEnrollment = await runtime.autoEnroll(settings);
+  const replyRecommendations = await scanJourneyReplies(runtime);
   const actions = await runtime.claimDueActions(limit);
   const result: B2BSofaJourneyRunResult = {
     startedAt,
@@ -766,6 +811,7 @@ export async function runJourneyRuntime<TSettings extends B2BSofaJourneySettings
     deliveryUnknown: 0,
     waitingContent: 0,
     paused: 0,
+    replyRecommendations,
     logs: [],
   };
 
@@ -792,6 +838,7 @@ export async function runJourneyRuntime<TSettings extends B2BSofaJourneySettings
 
 export async function runB2BSofaJourney(limit = 20): Promise<B2BSofaJourneyRunResult> {
   return runJourneyRuntime({
+    journeyCode: B2B_SOFA_JOURNEY.code,
     journeyName: B2B_SOFA_JOURNEY.name,
     getSettings: getB2BSofaJourneySettings,
     definitionWithOverrides: journeyDefinitionWithOverrides,
