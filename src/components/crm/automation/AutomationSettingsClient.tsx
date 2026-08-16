@@ -10,6 +10,7 @@ import ZaloWorkflowAutomation from "./ZaloWorkflowAutomation";
 import EmailWorkflowAutomation from "./EmailWorkflowAutomation";
 import AutomationHistoryPanel from "./AutomationHistoryPanel";
 import B2BSofaJourneyAutomation from "./B2BSofaJourneyAutomation";
+import WorkflowReportsDashboard from "./WorkflowReportsDashboard";
 import styles from "./AutomationSettingsClient.module.css";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
@@ -593,7 +594,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
+type TabId = "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "reports" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("rules");
@@ -677,6 +678,7 @@ export default function AutomationSettingsClient() {
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
     { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2, count: null },
     { id: "b2c_ergonomic_journey" as TabId, label: "Khách lẻ · Giường 90 ngày", icon: BedDouble, count: null },
+    { id: "reports" as TabId, label: "Báo cáo Workflow", icon: BarChart2, count: null },
     { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle, count: null },
     { id: "email_workflow" as TabId, label: "Email Workflow", icon: Mail, count: null },
     { id: "history" as TabId, label: "Lịch sử gửi", icon: Clock, count: null },
@@ -712,7 +714,7 @@ export default function AutomationSettingsClient() {
                 <CheckCircle2 size={14} /> Đã lưu
               </div>
             )}
-            {!(["b2b_sofa_journey", "b2c_ergonomic_journey"] as TabId[]).includes(activeTab) && <button onClick={save} disabled={saving}
+            {!(["b2b_sofa_journey", "b2c_ergonomic_journey", "reports"] as TabId[]).includes(activeTab) && <button onClick={save} disabled={saving}
               className={styles.primaryButton}>
               {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
               Lưu cài đặt
@@ -786,6 +788,10 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "b2c_ergonomic_journey" && (
         <B2BSofaJourneyAutomation variant="b2c_ergonomic" />
+      )}
+
+      {activeTab === "reports" && (
+        <WorkflowReportsDashboard />
       )}
 
       {activeTab === "email_workflow" && (

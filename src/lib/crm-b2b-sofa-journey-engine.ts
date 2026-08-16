@@ -48,11 +48,19 @@ import { sendAutomationEmail } from "@/lib/crm-automation-email";
 import {
   B2C_ERGONOMIC_BED_JOURNEY_CODE,
   buildB2CErgonomicJourneyContext,
+  type B2CErgonomicBedJourneySettings,
 } from "@/lib/crm-b2c-ergonomic-bed-journey";
 import {
   getB2CErgonomicBedJourneyEnrollment,
   getB2CErgonomicBedJourneySettings,
 } from "@/lib/crm-b2c-ergonomic-bed-journey-store";
+import {
+  attachJourneyEmailProviderId,
+  createJourneyEmailTracking,
+  recordJourneyEvent,
+  recordJourneyReply,
+  type JourneyEmailTrackingLinks,
+} from "@/lib/crm-journey-reporting";
 
 export interface SendAttemptResult {
   outcome: "sent" | "definitive_failure" | "delivery_unknown";
@@ -200,7 +208,7 @@ export async function sendAutomationTemplateToLead(input: {
     ? await getB2CErgonomicBedJourneyEnrollment(input.lead.id).catch(() => null)
     : await getJourneyEnrollment(input.lead.id).catch(() => null);
   const journeyContext = isB2C
-    ? buildB2CErgonomicJourneyContext(input.lead, settings)
+    ? buildB2CErgonomicJourneyContext(input.lead, settings as B2CErgonomicBedJourneySettings)
     : buildJourneyContext(input.lead, settings);
   const context = {
     ...buildAutomationTestContext(input.lead, settings),
@@ -352,12 +360,13 @@ async function sendEmail(
   body: string,
   media: PreparedMedia[],
   fromName = "SmartFurni B2B",
+  tracking?: JourneyEmailTrackingLinks,
 ): Promise<SendAttemptResult> {
   const recipient = lead.email?.trim() || "";
   if (!recipient || !/^\S+@\S+\.\S+$/.test(recipient)) {
     return { outcome: "definitive_failure", error: "Lead chưa có email hợp lệ.", recipient, preview: subject };
   }
-  const result = await sendAutomationEmail({ to: recipient, subject, body, media, fromName });
+  const result = await sendAutomationEmail({ to: recipient, subject, body, media, fromName, tracking });
   if (result.outcome === "sent") {
     await incrementZaloMediaUsage(media.map(item => item.asset.id));
     return { outcome: "sent", providerMessageId: result.providerMessageId, recipient, preview: subject };
@@ -374,10 +383,11 @@ async function executeChannel(
   zaloBody: string,
   media: PreparedMedia[],
   emailFromName?: string,
+  emailTracking?: JourneyEmailTrackingLinks,
 ): Promise<SendAttemptResult> {
   if (channel === "zalo_personal") return sendPersonalZalo(lead, zaloBody, accountId, media);
   if (channel === "zalo_oa") return sendOaZalo(lead, zaloBody, media);
-  return sendEmail(lead, subject, emailBody, media, emailFromName);
+  return sendEmail(lead, subject, emailBody, media, emailFromName, emailTracking);
 }
 
 async function logChannelAttempt(
@@ -402,26 +412,23 @@ async function logChannelAttempt(
   });
 }
 
+interface InboundSignal {
+  reason: string;
+  channel: string;
+  sourceId?: string;
+  customerReply: boolean;
+}
+
 async function hasInboundOrHumanActivity(
   lead: Lead,
   enrollment: JourneyEnrollmentRecord,
-): Promise<string | null> {
+): Promise<InboundSignal | null> {
   const baselineMs = Math.max(
     new Date(enrollment.enrolledAt).getTime(),
     new Date(enrollment.baselineContactAt).getTime(),
   );
-  const lastContactMs = new Date(lead.lastContactAt || 0).getTime();
-  if (Number.isFinite(lastContactMs) && lastContactMs > baselineMs + 30_000) {
-    return "Lead đã có tương tác hoặc được nhân viên cập nhật trong CRM.";
-  }
-
-  const activity = await queryOne<{ id: string; activity_type: string }>(
-    `SELECT id,COALESCE(data->>'type','activity') AS activity_type
-     FROM crm_activities WHERE lead_id=$1 AND created_at>$2 ORDER BY created_at DESC LIMIT 1`,
-    [lead.id, enrollment.enrolledAt],
-  ).catch(() => null);
-  if (activity) return `CRM đã ghi nhận hoạt động ${activity.activity_type}; chuyển nhân viên xử lý.`;
-
+  // Kiểm tra nguồn inbound trước các tín hiệu CRM tổng quát để phản hồi thật
+  // không bị che bởi lastContactAt hoặc activity do cùng webhook cập nhật.
   const personalInbound = await queryOne<{ msg_id: string }>(
     `SELECT m.msg_id
      FROM zalo_inbox_messages_v2 m
@@ -430,7 +437,12 @@ async function hasInboundOrHumanActivity(
      ORDER BY m.timestamp DESC LIMIT 1`,
     [lead.id, new Date(enrollment.enrolledAt).getTime()],
   ).catch(() => null);
-  if (personalInbound) return "Khách đã phản hồi qua Zalo cá nhân; chuyển nhân viên xử lý.";
+  if (personalInbound) return {
+    reason: "Khách đã phản hồi qua Zalo cá nhân; chuyển nhân viên xử lý.",
+    channel: "zalo_personal",
+    sourceId: personalInbound.msg_id,
+    customerReply: true,
+  };
 
   const phone = normalizePhone(lead.zaloPhone || lead.phone || "");
   if (phone) {
@@ -443,7 +455,29 @@ async function hasInboundOrHumanActivity(
        ORDER BY m.created_at DESC LIMIT 1`,
       [phone, phone84, enrollment.enrolledAt],
     ).catch(() => null);
-    if (oaInbound) return "Khách đã phản hồi qua Zalo OA; chuyển nhân viên xử lý.";
+    if (oaInbound) return {
+      reason: "Khách đã phản hồi qua Zalo OA; chuyển nhân viên xử lý.",
+      channel: "zalo_oa",
+      sourceId: oaInbound.id,
+      customerReply: true,
+    };
+  }
+
+  const activity = await queryOne<{ id: string; activity_type: string }>(
+    `SELECT id,COALESCE(data->>'type','activity') AS activity_type
+     FROM crm_activities WHERE lead_id=$1 AND created_at>$2 ORDER BY created_at DESC LIMIT 1`,
+    [lead.id, enrollment.enrolledAt],
+  ).catch(() => null);
+  if (activity) return {
+    reason: `CRM đã ghi nhận hoạt động ${activity.activity_type}; chuyển nhân viên xử lý.`,
+    channel: "crm",
+    sourceId: activity.id,
+    customerReply: false,
+  };
+
+  const lastContactMs = new Date(lead.lastContactAt || 0).getTime();
+  if (Number.isFinite(lastContactMs) && lastContactMs > baselineMs + 30_000) {
+    return { reason: "Lead đã có tương tác hoặc được nhân viên cập nhật trong CRM.", channel: "crm", customerReply: false };
   }
   return null;
 }
@@ -485,11 +519,21 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
     return { status: "paused", message: stopping.pause };
   }
 
-  const inboundReason = await hasInboundOrHumanActivity(lead, enrollment);
-  if (inboundReason) {
-    await pauseJourneyEnrollment(enrollment.id, inboundReason);
-    await deferJourneyAction(action.id, new Date(Date.now() + 24 * 60 * 60 * 1000), inboundReason);
-    return { status: "paused", message: inboundReason };
+  const inboundSignal = await hasInboundOrHumanActivity(lead, enrollment);
+  if (inboundSignal) {
+    if (inboundSignal.customerReply) {
+      await recordJourneyReply({
+        journeyCode: enrollment.journeyCode,
+        enrollmentId: enrollment.id,
+        leadId: lead.id,
+        channel: inboundSignal.channel,
+        sourceId: inboundSignal.sourceId,
+        reason: inboundSignal.reason,
+      }).catch(error => console.error("[Journey report] Không ghi được phản hồi:", error));
+    }
+    await pauseJourneyEnrollment(enrollment.id, inboundSignal.reason);
+    await deferJourneyAction(action.id, new Date(Date.now() + 24 * 60 * 60 * 1000), inboundSignal.reason);
+    return { status: "paused", message: inboundSignal.reason };
   }
 
   const nextBusinessWindow = nextJourneyBusinessWindow(new Date(), settings);
@@ -561,6 +605,16 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
         assignedTo: lead.assignedTo || "",
       }).catch(() => undefined);
     }
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      actionId: action.id,
+      leadId: lead.id,
+      stepId: action.stepId,
+      eventType: "waiting_content",
+      metadata: { missing },
+      idempotencyKey: `waiting:${action.id}:${missing.sort().join(",")}`,
+    }).catch(error => console.error("[Journey report] Không ghi được trạng thái chờ:", error));
     await markJourneyActionWaitingContent(action, missing);
     return { status: "waiting_content", message: `Chờ dữ liệu: ${missing.join(", ")}` };
   }
@@ -573,6 +627,18 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
 
   const attempts = [...action.attempts];
   for (const channel of channelSequence(step)) {
+    const emailTracking = channel === "email"
+      ? await createJourneyEmailTracking({
+        journeyCode: enrollment.journeyCode,
+        enrollmentId: enrollment.id,
+        actionId: action.id,
+        leadId: lead.id,
+        stepId: action.stepId,
+      }).catch(error => {
+        console.error("[Journey report] Không tạo được email tracking, vẫn tiếp tục gửi:", error);
+        return undefined;
+      })
+      : undefined;
     const result = await executeChannel(
       channel,
       lead,
@@ -582,6 +648,7 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
       zaloBody,
       media,
       runtime.emailFromName,
+      emailTracking,
     );
     attempts.push({
       channel,
@@ -591,18 +658,80 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
       providerMessageId: result.providerMessageId,
     });
     await logChannelAttempt(action, lead, channel, result, runtime.journeyName);
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      actionId: action.id,
+      leadId: lead.id,
+      stepId: action.stepId,
+      eventType: "send_attempted",
+      channel,
+      providerMessageId: result.providerMessageId,
+      metadata: { outcome: result.outcome, error: result.error || "" },
+      idempotencyKey: `attempt:${action.id}:${channel}`,
+    }).catch(error => console.error("[Journey report] Không ghi được lần thử gửi:", error));
 
     if (result.outcome === "sent") {
+      if (emailTracking?.token && result.providerMessageId) {
+        await attachJourneyEmailProviderId(emailTracking.token, result.providerMessageId)
+          .catch(error => console.error("[Journey report] Không gắn được provider email:", error));
+      }
+      await recordJourneyEvent({
+        journeyCode: enrollment.journeyCode,
+        enrollmentId: enrollment.id,
+        actionId: action.id,
+        leadId: lead.id,
+        stepId: action.stepId,
+        eventType: "sent",
+        channel,
+        providerMessageId: result.providerMessageId,
+        metadata: { fallback: channel !== step.primaryChannel },
+        idempotencyKey: `sent:${action.id}`,
+      }).catch(error => console.error("[Journey report] Không ghi được gửi thành công:", error));
+      if (channel !== step.primaryChannel) {
+        await recordJourneyEvent({
+          journeyCode: enrollment.journeyCode,
+          enrollmentId: enrollment.id,
+          actionId: action.id,
+          leadId: lead.id,
+          stepId: action.stepId,
+          eventType: "fallback_used",
+          channel,
+          metadata: { primaryChannel: step.primaryChannel },
+          idempotencyKey: `fallback:${action.id}`,
+        }).catch(error => console.error("[Journey report] Không ghi được fallback:", error));
+      }
       await markJourneyActionSent(action, channel, attempts);
       return { status: "sent", channel, message: `Đã gửi qua ${channel}.` };
     }
     if (result.outcome === "delivery_unknown") {
+      await recordJourneyEvent({
+        journeyCode: enrollment.journeyCode,
+        enrollmentId: enrollment.id,
+        actionId: action.id,
+        leadId: lead.id,
+        stepId: action.stepId,
+        eventType: "delivery_unknown",
+        channel,
+        metadata: { error: result.error || "" },
+        idempotencyKey: `delivery-unknown:${action.id}`,
+      }).catch(error => console.error("[Journey report] Không ghi được delivery unknown:", error));
       await markJourneyActionOutcome(action, "delivery_unknown", attempts, result.error || "Kết quả gửi chưa rõ.");
       return { status: "delivery_unknown", channel, message: "Dừng fallback để đối soát kết quả chưa rõ." };
     }
   }
 
   const error = attempts.slice(-3).map(item => `${item.channel}: ${item.error || item.outcome}`).join(" | ");
+  await recordJourneyEvent({
+    journeyCode: enrollment.journeyCode,
+    enrollmentId: enrollment.id,
+    actionId: action.id,
+    leadId: lead.id,
+    stepId: action.stepId,
+    eventType: "failed",
+    metadata: { error },
+    idempotencyKey: `failed:${action.id}`,
+  }).catch(reportError => console.error("[Journey report] Không ghi được thất bại:", reportError));
   await markJourneyActionOutcome(action, "failed", attempts, error || "Tất cả kênh đều không gửi được.");
   return { status: "failed", message: error || "Tất cả kênh đều không gửi được." };
 }

@@ -15,6 +15,7 @@ import {
   type JourneyChannel,
   type JourneyStepDefinition,
 } from "@/lib/crm-b2b-sofa-journey";
+import { recordJourneyEvent } from "@/lib/crm-journey-reporting";
 
 export interface JourneySettingsBase {
   enabled: boolean;
@@ -373,7 +374,23 @@ export async function enrollLeadInJourney<T extends JourneySettingsBase>(
       );
     }
     await client.query("COMMIT");
-    return { enrollment: mapEnrollment(inserted.rows[0]), created: true };
+    const enrollment = mapEnrollment(inserted.rows[0]);
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: enrollment.leadId,
+      eventType: "enrolled",
+      occurredAt: enrollment.enrolledAt,
+      metadata: {
+        journeyVersion: enrollment.journeyVersion,
+        source: lead.source || "",
+        assignedTo: lead.assignedTo || "",
+        stage: lead.stage,
+        expectedValue: lead.expectedValue || 0,
+      },
+      idempotencyKey: `enrolled:${enrollment.id}`,
+    }).catch(error => console.error("[Journey report] Không ghi được enrollment:", error));
+    return { enrollment, created: true };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -516,24 +533,46 @@ export async function updateJourneyContext(
 
 export async function pauseJourneyEnrollment(id: string, reason: string): Promise<void> {
   await initB2BSofaJourneySchema();
+  const enrollment = await getEnrollmentById(id);
   await query(
     `UPDATE crm_journey_enrollments SET status='paused',paused_reason=$2,updated_at=NOW()
      WHERE id=$1 AND status='active'`,
     [id, reason.slice(0, 1000)],
   );
+  if (enrollment) {
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: enrollment.leadId,
+      eventType: "paused",
+      metadata: { reason },
+      idempotencyKey: `paused:${id}:${reason.slice(0, 120)}`,
+    }).catch(error => console.error("[Journey report] Không ghi được pause:", error));
+  }
 }
 
 export async function resumeJourneyEnrollment(id: string): Promise<void> {
   await initB2BSofaJourneySchema();
+  const enrollment = await getEnrollmentById(id);
   await query(
     `UPDATE crm_journey_enrollments SET status='active',paused_reason='',baseline_contact_at=NOW(),updated_at=NOW()
      WHERE id=$1 AND status='paused'`,
     [id],
   );
+  if (enrollment) {
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: enrollment.leadId,
+      eventType: "resumed",
+      idempotencyKey: `resumed:${id}:${Date.now()}`,
+    }).catch(error => console.error("[Journey report] Không ghi được resume:", error));
+  }
 }
 
 export async function cancelJourneyEnrollment(id: string, reason: string): Promise<void> {
   await initB2BSofaJourneySchema();
+  const enrollment = await getEnrollmentById(id);
   await query(
     `UPDATE crm_journey_enrollments SET status='cancelled',paused_reason=$2,completed_at=NOW(),updated_at=NOW()
      WHERE id=$1 AND status IN ('active','paused');
@@ -545,6 +584,17 @@ export async function cancelJourneyEnrollment(id: string, reason: string): Promi
      WHERE enrollment_id=$1 AND status IN ('pending','waiting_content','sending')`,
     [id, reason.slice(0, 1000)],
   );
+  if (enrollment) {
+    const unsubscribed = /không liên hệ|không làm phiền|unsubscribe|dnc/i.test(reason);
+    await recordJourneyEvent({
+      journeyCode: enrollment.journeyCode,
+      enrollmentId: enrollment.id,
+      leadId: enrollment.leadId,
+      eventType: unsubscribed ? "unsubscribed" : "cancelled",
+      metadata: { reason },
+      idempotencyKey: `cancelled:${id}`,
+    }).catch(error => console.error("[Journey report] Không ghi được cancel:", error));
+  }
 }
 
 export async function markJourneyActionWaitingContent(

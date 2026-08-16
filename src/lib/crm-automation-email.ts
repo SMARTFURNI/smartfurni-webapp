@@ -20,6 +20,29 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#039;");
 }
 
+export function buildAutomationEmailHtml(
+  body: string,
+  tracking?: { openUrl: string; clickBaseUrl: string },
+): string {
+  if (!tracking) return escapeHtml(body).replace(/\n/g, "<br>");
+  const urlPattern = /https?:\/\/[^\s]+/g;
+  let html = "";
+  let cursor = 0;
+  for (const match of body.matchAll(urlPattern)) {
+    const index = match.index ?? 0;
+    const raw = match[0];
+    const trailing = raw.match(/[),.;!?]+$/)?.[0] || "";
+    const destination = trailing ? raw.slice(0, -trailing.length) : raw;
+    html += escapeHtml(body.slice(cursor, index));
+    const trackedUrl = `${tracking.clickBaseUrl}${encodeURIComponent(destination)}`;
+    html += `<a href="${escapeHtml(trackedUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(destination)}</a>${escapeHtml(trailing)}`;
+    cursor = index + raw.length;
+  }
+  html += escapeHtml(body.slice(cursor));
+  html = html.replace(/\n/g, "<br>");
+  return `${html}<img src="${escapeHtml(tracking.openUrl)}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px" />`;
+}
+
 export function isAmbiguousAutomationEmailError(error: string): boolean {
   const value = error.toLocaleLowerCase("vi");
   return [
@@ -46,6 +69,7 @@ export async function sendAutomationEmail(input: {
   body: string;
   fromName?: string;
   media?: EmailMediaItem[];
+  tracking?: { openUrl: string; clickBaseUrl: string };
 }): Promise<AutomationEmailResult> {
   const recipient = input.to.trim();
   if (!/^\S+@\S+\.\S+$/.test(recipient)) {
@@ -76,7 +100,7 @@ export async function sendAutomationEmail(input: {
       to: [recipient],
       subject: input.subject,
       text: input.body,
-      html: escapeHtml(input.body).replace(/\n/g, "<br>"),
+      html: buildAutomationEmailHtml(input.body, input.tracking),
       attachments,
     });
     if (result.error) {

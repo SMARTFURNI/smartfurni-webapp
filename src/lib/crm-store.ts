@@ -220,6 +220,21 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
     `UPDATE crm_leads SET data = $1, stage = $2, last_contact_at = $3, updated_at = NOW() WHERE id = $4`,
     [JSON.stringify(updated), updated.stage, updated.lastContactAt, id]
   );
+  if (existing.stage !== updated.stage) {
+    const occurredAt = updated.updatedAt;
+    try {
+      const { recordLeadStageTransition } = await import("./crm-journey-reporting");
+      await recordLeadStageTransition({
+        leadId: id,
+        fromStage: existing.stage,
+        toStage: updated.stage,
+        source: "crm_lead_update",
+        occurredAt,
+      });
+    } catch (error) {
+      console.error("[crm] Cannot record journey stage history:", error);
+    }
+  }
   return updated;
 }
 
@@ -343,6 +358,18 @@ export async function createQuote(input: Omit<Quote, "id" | "quoteNumber" | "cre
     `INSERT INTO crm_quotes (id, lead_id, data, updated_at) VALUES ($1, $2, $3, NOW())`,
     [quote.id, quote.leadId, JSON.stringify(quote)]
   );
+  try {
+    const { recordJourneyBusinessEvent } = await import("./crm-journey-reporting");
+    await recordJourneyBusinessEvent({
+      leadId: quote.leadId,
+      eventType: "quote_created",
+      referenceId: quote.id,
+      occurredAt: quote.createdAt,
+      metadata: { quoteNumber: quote.quoteNumber, total: quote.total || 0 },
+    });
+  } catch (error) {
+    console.error("[crm] Cannot record journey quote event:", error);
+  }
   try {
     const { syncFacebookGroupQuoteAttribution } = await import("./facebook-group-marketing-integration");
     await syncFacebookGroupQuoteAttribution({ leadId: quote.leadId, quoteId: quote.id });
