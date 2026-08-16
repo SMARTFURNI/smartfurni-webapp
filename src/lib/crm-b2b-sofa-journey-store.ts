@@ -13,7 +13,33 @@ import {
   scheduleJourneyStep,
   type B2BSofaJourneySettings,
   type JourneyChannel,
+  type JourneyStepDefinition,
 } from "@/lib/crm-b2b-sofa-journey";
+
+export interface JourneySettingsBase {
+  enabled: boolean;
+  autoEnroll: boolean;
+  autoEnrollExisting: boolean;
+  activationAt: string | null;
+  timezone: "Asia/Ho_Chi_Minh";
+  businessHoursStart: string;
+  businessHoursEnd: string;
+  maxMessagesPerSevenDays: number;
+  automationAccountId: string;
+  stepOverrides: Record<string, {
+    emailSubject?: string;
+    emailBody?: string;
+    zaloBody?: string;
+    mediaAssetIds?: string[];
+  }>;
+  doNotContactTags: string[];
+}
+
+export interface JourneyDefinitionBase {
+  code: string;
+  version: number;
+  steps: JourneyStepDefinition[];
+}
 
 export type JourneyEnrollmentStatus = "active" | "paused" | "completed" | "cancelled";
 export type JourneyActionStatus =
@@ -218,23 +244,32 @@ export async function initB2BSofaJourneySchema(): Promise<void> {
   return schemaPromise;
 }
 
-export async function getB2BSofaJourneySettings(): Promise<B2BSofaJourneySettings> {
+export async function getJourneySettings<T extends JourneySettingsBase>(
+  journeyCode: string,
+  defaults: T,
+): Promise<T> {
   await initB2BSofaJourneySchema();
-  const row = await queryOne<{ settings: Partial<B2BSofaJourneySettings> | string }>(
+  const row = await queryOne<{ settings: Partial<T> | string }>(
     `SELECT settings FROM crm_journey_settings WHERE journey_code=$1`,
-    [B2B_SOFA_JOURNEY_CODE],
+    [journeyCode],
   );
   const stored = row ? jsonValue(row.settings, {}) : {};
-  return { ...DEFAULT_B2B_SOFA_JOURNEY_SETTINGS, ...stored };
+  return { ...defaults, ...stored };
 }
 
-export async function saveB2BSofaJourneySettings(
-  input: Partial<B2BSofaJourneySettings>,
-): Promise<B2BSofaJourneySettings> {
+export async function getB2BSofaJourneySettings(): Promise<B2BSofaJourneySettings> {
+  return getJourneySettings(B2B_SOFA_JOURNEY_CODE, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS);
+}
+
+export async function saveJourneySettings<T extends JourneySettingsBase>(
+  journeyCode: string,
+  defaults: T,
+  input: Partial<T>,
+): Promise<T> {
   await initB2BSofaJourneySchema();
-  const current = await getB2BSofaJourneySettings();
+  const current = await getJourneySettings(journeyCode, defaults);
   const enablingNow = !current.enabled && input.enabled === true;
-  const settings: B2BSofaJourneySettings = {
+  const settings: T = {
     ...current,
     ...input,
     timezone: "Asia/Ho_Chi_Minh",
@@ -258,35 +293,51 @@ export async function saveB2BSofaJourneySettings(
     `INSERT INTO crm_journey_settings (journey_code,settings,updated_at)
      VALUES ($1,$2::jsonb,NOW())
      ON CONFLICT (journey_code) DO UPDATE SET settings=EXCLUDED.settings,updated_at=NOW()`,
-    [B2B_SOFA_JOURNEY_CODE, JSON.stringify(settings)],
+    [journeyCode, JSON.stringify(settings)],
   );
   return settings;
 }
 
-export async function getJourneyEnrollment(leadId: string): Promise<JourneyEnrollmentRecord | null> {
+export async function saveB2BSofaJourneySettings(
+  input: Partial<B2BSofaJourneySettings>,
+): Promise<B2BSofaJourneySettings> {
+  return saveJourneySettings(B2B_SOFA_JOURNEY_CODE, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS, input);
+}
+
+export async function getJourneyEnrollmentForCode(
+  journeyCode: string,
+  leadId: string,
+): Promise<JourneyEnrollmentRecord | null> {
   await initB2BSofaJourneySchema();
   const row = await queryOne<EnrollmentRow>(
     `SELECT * FROM crm_journey_enrollments WHERE journey_code=$1 AND lead_id=$2`,
-    [B2B_SOFA_JOURNEY_CODE, leadId],
+    [journeyCode, leadId],
   );
   return row ? mapEnrollment(row) : null;
 }
 
-export async function enrollLeadInB2BSofaJourney(
+export async function getJourneyEnrollment(leadId: string): Promise<JourneyEnrollmentRecord | null> {
+  return getJourneyEnrollmentForCode(B2B_SOFA_JOURNEY_CODE, leadId);
+}
+
+export async function enrollLeadInJourney<T extends JourneySettingsBase>(
   lead: Lead,
-  settings: B2BSofaJourneySettings,
+  settings: T,
+  definition: JourneyDefinitionBase,
+  eligibilityCheck: (lead: Lead, settings: T) => { eligible: boolean; reason?: string },
+  contextBuilder: (lead: Lead, settings: T, extra?: Record<string, string>) => Record<string, string>,
   input?: { context?: Record<string, string>; automationAccountId?: string; force?: boolean },
 ): Promise<{ enrollment: JourneyEnrollmentRecord; created: boolean }> {
   await initB2BSofaJourneySchema();
-  const eligibility = isEligibleForB2BSofaJourney(lead, settings);
+  const eligibility = eligibilityCheck(lead, settings);
   if (!eligibility.eligible && !input?.force) throw new Error(eligibility.reason || "Lead không đủ điều kiện.");
 
-  const existing = await getJourneyEnrollment(lead.id);
+  const existing = await getJourneyEnrollmentForCode(definition.code, lead.id);
   if (existing) return { enrollment: existing, created: false };
 
   const id = `jen-${randomUUID()}`;
   const enrolledAt = new Date();
-  const context = buildJourneyContext(lead, settings, input?.context || {});
+  const context = contextBuilder(lead, settings, input?.context || {});
   const accountId = input?.automationAccountId || settings.automationAccountId || "";
   const baseline = lead.lastContactAt || lead.createdAt || enrolledAt.toISOString();
 
@@ -300,15 +351,15 @@ export async function enrollLeadInB2BSofaJourney(
        VALUES ($1,$2,$3,$4,'active',$5,$6::jsonb,$7,$8)
        ON CONFLICT (journey_code,lead_id) DO NOTHING
        RETURNING *`,
-      [id, B2B_SOFA_JOURNEY_CODE, B2B_SOFA_JOURNEY.version, lead.id, accountId, JSON.stringify(context), enrolledAt.toISOString(), baseline],
+      [id, definition.code, definition.version, lead.id, accountId, JSON.stringify(context), enrolledAt.toISOString(), baseline],
     );
     if (!inserted.rows[0]) {
       await client.query("ROLLBACK");
-      const raced = await getJourneyEnrollment(lead.id);
+      const raced = await getJourneyEnrollmentForCode(definition.code, lead.id);
       if (!raced) throw new Error("Không thể tạo journey cho lead.");
       return { enrollment: raced, created: false };
     }
-    for (const step of B2B_SOFA_JOURNEY.steps) {
+    for (const step of definition.steps) {
       await client.query(
         `INSERT INTO crm_journey_actions
           (id,enrollment_id,lead_id,step_id,day_offset,scheduled_at,status,primary_channel,fallback_channels,content_version)
@@ -317,7 +368,7 @@ export async function enrollLeadInB2BSofaJourney(
         [
           `jac-${randomUUID()}`, id, lead.id, step.id, step.day,
           scheduleJourneyStep(enrolledAt, step).toISOString(), step.primaryChannel,
-          JSON.stringify(step.fallbackChannels), B2B_SOFA_JOURNEY.version,
+          JSON.stringify(step.fallbackChannels), definition.version,
         ],
       );
     }
@@ -331,8 +382,37 @@ export async function enrollLeadInB2BSofaJourney(
   }
 }
 
+export async function enrollLeadInB2BSofaJourney(
+  lead: Lead,
+  settings: B2BSofaJourneySettings,
+  input?: { context?: Record<string, string>; automationAccountId?: string; force?: boolean },
+): Promise<{ enrollment: JourneyEnrollmentRecord; created: boolean }> {
+  return enrollLeadInJourney(
+    lead,
+    settings,
+    B2B_SOFA_JOURNEY,
+    isEligibleForB2BSofaJourney,
+    buildJourneyContext,
+    input,
+  );
+}
+
 export async function autoEnrollEligibleB2BSofaLeads(
   settings: B2BSofaJourneySettings,
+): Promise<{ checked: number; enrolled: number; skipped: number }> {
+  return autoEnrollEligibleJourney(
+    settings,
+    B2B_SOFA_JOURNEY,
+    isEligibleForB2BSofaJourney,
+    (lead, currentSettings) => enrollLeadInB2BSofaJourney(lead, currentSettings),
+  );
+}
+
+export async function autoEnrollEligibleJourney<T extends JourneySettingsBase>(
+  settings: T,
+  _definition: JourneyDefinitionBase,
+  eligibilityCheck: (lead: Lead, settings: T) => { eligible: boolean; reason?: string },
+  enroll: (lead: Lead, settings: T) => Promise<{ enrollment: JourneyEnrollmentRecord; created: boolean }>,
 ): Promise<{ checked: number; enrolled: number; skipped: number }> {
   if (!settings.enabled || !settings.autoEnroll) return { checked: 0, enrolled: 0, skipped: 0 };
   const leads = await getLeads();
@@ -344,18 +424,25 @@ export async function autoEnrollEligibleB2BSofaLeads(
       skipped += 1;
       continue;
     }
-    const eligible = isEligibleForB2BSofaJourney(lead, settings);
+    const eligible = eligibilityCheck(lead, settings);
     if (!eligible.eligible) {
       skipped += 1;
       continue;
     }
-    const result = await enrollLeadInB2BSofaJourney(lead, settings).catch(() => null);
+    const result = await enroll(lead, settings).catch(() => null);
     if (result?.created) enrolled += 1;
   }
   return { checked: leads.length, enrolled, skipped };
 }
 
 export async function claimDueJourneyActions(limit = 20): Promise<JourneyActionRecord[]> {
+  return claimDueJourneyActionsForCode(B2B_SOFA_JOURNEY_CODE, limit);
+}
+
+export async function claimDueJourneyActionsForCode(
+  journeyCode: string,
+  limit = 20,
+): Promise<JourneyActionRecord[]> {
   await initB2BSofaJourneySchema();
   const db = getDb();
   const client = await db.connect();
@@ -363,21 +450,24 @@ export async function claimDueJourneyActions(limit = 20): Promise<JourneyActionR
     await client.query("BEGIN");
     // Không tự gửi lại một job đã mất kết nối sau khi bắt đầu gửi; cần đối soát thủ công.
     await client.query(
-      `UPDATE crm_journey_actions
+      `UPDATE crm_journey_actions a
        SET status='delivery_unknown',error='Worker mất kết nối sau khi claim; cần đối soát trước khi gửi lại.',updated_at=NOW()
-       WHERE status='sending' AND claimed_at < NOW()-INTERVAL '15 minutes'`,
+       FROM crm_journey_enrollments e
+       WHERE e.id=a.enrollment_id AND e.journey_code=$1
+         AND a.status='sending' AND a.claimed_at < NOW()-INTERVAL '15 minutes'`,
+      [journeyCode],
     );
     const rows = await client.query<ActionRow>(
       `SELECT a.*
        FROM crm_journey_actions a
        JOIN crm_journey_enrollments e ON e.id=a.enrollment_id
-       WHERE e.status='active'
+       WHERE e.status='active' AND e.journey_code=$1
          AND a.status IN ('pending','waiting_content')
          AND COALESCE(a.next_attempt_at,a.scheduled_at)<=NOW()
        ORDER BY COALESCE(a.next_attempt_at,a.scheduled_at),a.day_offset
        FOR UPDATE OF a SKIP LOCKED
-       LIMIT $1`,
-      [Math.max(1, Math.min(100, Math.trunc(limit)))],
+       LIMIT $2`,
+      [journeyCode, Math.max(1, Math.min(100, Math.trunc(limit)))],
     );
     const ids = rows.rows.map(row => row.id);
     if (ids.length) {
@@ -558,8 +648,20 @@ export async function getB2BSofaJourneyDashboard(): Promise<{
   recentEnrollments: Array<JourneyEnrollmentRecord & { leadName: string }>;
   recentActions: JourneyActionRecord[];
 }> {
+  return getJourneyDashboard(B2B_SOFA_JOURNEY_CODE, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS);
+}
+
+export async function getJourneyDashboard<T extends JourneySettingsBase>(
+  journeyCode: string,
+  defaults: T,
+): Promise<{
+  settings: T;
+  stats: Record<string, number>;
+  recentEnrollments: Array<JourneyEnrollmentRecord & { leadName: string }>;
+  recentActions: JourneyActionRecord[];
+}> {
   await initB2BSofaJourneySchema();
-  const settings = await getB2BSofaJourneySettings();
+  const settings = await getJourneySettings(journeyCode, defaults);
   const [statRow, enrollmentRows, actionRows] = await Promise.all([
     queryOne<Record<string, number>>(
       `SELECT
@@ -567,25 +669,25 @@ export async function getB2BSofaJourneyDashboard(): Promise<{
         COUNT(*) FILTER (WHERE status='paused')::int AS paused,
         COUNT(*) FILTER (WHERE status='completed')::int AS completed,
         COUNT(*) FILTER (WHERE status='cancelled')::int AS cancelled,
-        (SELECT COUNT(*)::int FROM crm_journey_actions WHERE status='pending') AS pending,
-        (SELECT COUNT(*)::int FROM crm_journey_actions WHERE status='sent') AS sent,
-        (SELECT COUNT(*)::int FROM crm_journey_actions WHERE status='waiting_content') AS waiting_content,
-        (SELECT COUNT(*)::int FROM crm_journey_actions WHERE status='delivery_unknown') AS delivery_unknown,
-        (SELECT COUNT(*)::int FROM crm_journey_actions WHERE status='failed') AS failed
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='pending') AS pending,
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='sent') AS sent,
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='waiting_content') AS waiting_content,
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='delivery_unknown') AS delivery_unknown,
+        (SELECT COUNT(*)::int FROM crm_journey_actions a JOIN crm_journey_enrollments x ON x.id=a.enrollment_id WHERE x.journey_code=$1 AND a.status='failed') AS failed
        FROM crm_journey_enrollments WHERE journey_code=$1`,
-      [B2B_SOFA_JOURNEY_CODE],
+      [journeyCode],
     ),
     query<EnrollmentRow & { lead_name: string }>(
       `SELECT e.*,COALESCE(l.data->>'name',e.lead_id) AS lead_name
        FROM crm_journey_enrollments e LEFT JOIN crm_leads l ON l.id=e.lead_id
        WHERE e.journey_code=$1 ORDER BY e.updated_at DESC LIMIT 20`,
-      [B2B_SOFA_JOURNEY_CODE],
+      [journeyCode],
     ),
     query<ActionRow>(
       `SELECT a.* FROM crm_journey_actions a
        JOIN crm_journey_enrollments e ON e.id=a.enrollment_id
        WHERE e.journey_code=$1 ORDER BY a.updated_at DESC LIMIT 40`,
-      [B2B_SOFA_JOURNEY_CODE],
+      [journeyCode],
     ),
   ]);
   return {

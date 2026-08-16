@@ -12,6 +12,7 @@ import type {
   JourneyStepDefinition,
   JourneyStepOverride,
 } from "@/lib/crm-b2b-sofa-journey";
+import { B2C_ERGONOMIC_BED_JOURNEY_CODE } from "@/lib/crm-b2c-ergonomic-bed-journey";
 import AutomationMediaField from "./AutomationMediaField";
 import AutomationTemplateTest from "./AutomationTemplateTest";
 
@@ -72,6 +73,25 @@ const PROJECT_CONTEXT_FIELDS = [
   ["next_step_date", "Ngày hẹn bước tiếp theo"],
 ] as const;
 
+const RETAIL_CONTEXT_FIELDS = [
+  ["primary_benefit", "Lợi ích khách quan tâm nhất"],
+  ["solution_type", "Nguyên bộ hoặc khung nâng hạ"],
+  ["user_profile", "Người sử dụng"],
+  ["existing_bed_dimensions", "Kích thước lòng giường hiện tại"],
+  ["mattress_type", "Loại nệm đang dùng"],
+  ["benefit_summary", "Tóm tắt trải nghiệm đề xuất"],
+  ["fit_reason", "Lý do cấu hình phù hợp"],
+  ["recommended_size", "Kích thước đề xuất"],
+  ["price_range", "Khoảng đầu tư"],
+  ["included_items", "Hạng mục bao gồm"],
+  ["purchase_timing", "Thời điểm dự kiến mua"],
+  ["objection_topic", "Vướng mắc cần xử lý"],
+] as const;
+
+interface JourneyAutomationProps {
+  variant?: "b2b" | "b2c_ergonomic";
+}
+
 function formatDate(value: string): string {
   if (!value) return "—";
   return new Intl.DateTimeFormat("vi-VN", {
@@ -89,7 +109,13 @@ function statusLabel(status: string): string {
   } as Record<string, string>)[status] || status;
 }
 
-export default function B2BSofaJourneyAutomation() {
+export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAutomationProps) {
+  const isRetailJourney = variant === "b2c_ergonomic";
+  const endpoint = isRetailJourney
+    ? "/api/crm/automation/b2c-ergonomic-bed-journey"
+    : "/api/crm/automation/b2b-sofa-journey";
+  const journeyCode = isRetailJourney ? B2C_ERGONOMIC_BED_JOURNEY_CODE : undefined;
+  const contextFields = isRetailJourney ? RETAIL_CONTEXT_FIELDS : PROJECT_CONTEXT_FIELDS;
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [settings, setSettings] = useState<B2BSofaJourneySettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,7 +130,7 @@ export default function B2BSofaJourneyAutomation() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/crm/automation/b2b-sofa-journey", { cache: "no-store" });
+      const response = await fetch(endpoint, { cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Không tải được journey.");
       setData(payload);
@@ -114,12 +140,12 @@ export default function B2BSofaJourneyAutomation() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [endpoint]);
 
   useEffect(() => { void load(); }, [load]);
 
   const post = async (body: Record<string, unknown>) => {
-    const response = await fetch("/api/crm/automation/b2b-sofa-journey", {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -193,7 +219,7 @@ export default function B2BSofaJourneyAutomation() {
     setError("");
     try {
       await post({ action: "update_context", enrollmentId: item.id, context: contextDrafts[item.id] || {} });
-      setMessage(`Đã cập nhật dữ liệu dự án cho ${item.leadName}; bước đang chờ sẽ được xét lại.`);
+      setMessage(`Đã cập nhật dữ liệu cá nhân hóa cho ${item.leadName}; bước đang chờ sẽ được xét lại.`);
       await load();
     } catch (contextError) {
       setError(contextError instanceof Error ? contextError.message : "Không cập nhật được dữ liệu dự án.");
@@ -228,16 +254,16 @@ export default function B2BSofaJourneyAutomation() {
   }
 
   const demoStepHasAttachedMedia = Boolean(
-    data.definition.steps.find(step => step.id === "D5_DEMO")?.mediaAssetIds?.length,
+    data.definition.steps.find(step => ["D5_DEMO", "D4_DEMO_MEDIA"].includes(step.id))?.mediaAssetIds?.length,
   );
   const missingAssets = [
     !settings.approvedDemoVideoUrl && !demoStepHasAttachedMedia && "video demo đã duyệt",
-    !settings.projectBriefUrl && "mẫu hồ sơ dự án",
-    !settings.comparisonPackUrl && "bộ so sánh cấu hình",
+    !isRetailJourney && !settings.projectBriefUrl && "mẫu hồ sơ dự án",
+    !isRetailJourney && !settings.comparisonPackUrl && "bộ so sánh cấu hình",
   ].filter(Boolean);
 
   return (
-    <div className="automation-b2b space-y-5">
+    <div className={isRetailJourney ? "automation-b2c-ergonomic space-y-5" : "automation-b2b space-y-5"}>
       <div className="p-5 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
@@ -295,11 +321,13 @@ export default function B2BSofaJourneyAutomation() {
           {[
             { key: "autoEnroll" as const, label: "Tự động thêm lead đủ điều kiện" },
             { key: "autoEnrollExisting" as const, label: "Cho phép thêm lead đã có trước khi bật" },
-            { key: "requireHospitalitySignal" as const, label: "Bắt buộc có tín hiệu homestay/BnB/phòng trọ" },
+            isRetailJourney
+              ? { key: "requireRetailSignal" as const, label: "Bắt buộc là khách lẻ quan tâm Giường công thái học" }
+              : { key: "requireHospitalitySignal" as const, label: "Bắt buộc có tín hiệu homestay/BnB/phòng trọ" },
           ].map(item => (
             <label key={item.key} className="flex items-center justify-between gap-3 text-sm text-gray-700">
               <span>{item.label}</span>
-              <input type="checkbox" checked={settings[item.key]}
+              <input type="checkbox" checked={Boolean(settings[item.key])}
                 onChange={event => setSettings({ ...settings, [item.key]: event.target.checked })}
                 className="w-4 h-4 accent-[#0068ff]" />
             </label>
@@ -324,12 +352,16 @@ export default function B2BSofaJourneyAutomation() {
             <h3 className="text-sm font-bold text-gray-900">Tài liệu đã duyệt</h3>
             <p className="text-xs text-gray-500 mt-1">Không có URL thì bước liên quan sẽ chờ, không tự bịa nội dung.</p>
           </div>
-          {[
+          {(isRetailJourney ? [
+            ["surveyFormUrl", "Link hướng dẫn gửi ảnh/kích thước"],
+            ["approvedDemoVideoUrl", "Link video trải nghiệm đã duyệt"],
+            ["comparisonPackUrl", "Link so sánh nguyên bộ/khung nâng hạ"],
+          ] : [
             ["surveyFormUrl", "Link checklist/form khảo sát"],
             ["approvedDemoVideoUrl", "Link video demo đã duyệt"],
             ["projectBriefUrl", "Link mẫu Project Brief"],
             ["comparisonPackUrl", "Link bộ so sánh cấu hình"],
-          ].map(([key, label]) => (
+          ]).map(([key, label]) => (
             <label key={key} className="block text-xs text-gray-600">{label}
               <input value={String(settings[key as keyof B2BSofaJourneySettings] || "")}
                 onChange={event => setSettings({ ...settings, [key]: event.target.value })}
@@ -363,8 +395,8 @@ export default function B2BSofaJourneyAutomation() {
       <div className="p-5 rounded-2xl bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-bold text-gray-900">Chuỗi nội dung 90 ngày</h3>
-            <p className="text-xs text-gray-500 mt-1">Mỗi bước chỉ được ghi nhận gửi thành công trên một kênh.</p>
+            <h3 className="text-sm font-bold text-gray-900">{isRetailJourney ? "Chuỗi lợi ích 90 ngày · tập trung 30 ngày đầu" : "Chuỗi nội dung 90 ngày"}</h3>
+            <p className="text-xs text-gray-500 mt-1">Mỗi bước chỉ được ghi nhận gửi thành công trên một kênh; kênh dự phòng bị hủy khi đã gửi thành công.</p>
           </div>
           <a href="https://www.smartfurni.com.vn/contact" target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">Thông tin liên hệ chuẩn <ExternalLink size={11} /></a>
@@ -418,6 +450,7 @@ export default function B2BSofaJourneyAutomation() {
                     body={editableStep.zaloBody}
                     mediaAssetIds={editableStep.mediaAssetIds}
                     requiredVariables={step.requiredContext}
+                    journeyCode={journeyCode}
                   />
                 </div>
                 <div className="min-w-0">
@@ -435,7 +468,7 @@ export default function B2BSofaJourneyAutomation() {
                     rows={10}
                     className="w-full resize-y rounded-xl border border-violet-200 bg-violet-50/40 p-3 font-sans text-xs leading-5 text-gray-700 outline-none focus:ring-2 focus:ring-violet-200"
                   />
-                  <AutomationTemplateTest channel="email" subject={editableStep.emailSubject} body={editableStep.emailBody} mediaAssetIds={editableStep.mediaAssetIds} requiredVariables={step.requiredContext} />
+                  <AutomationTemplateTest channel="email" subject={editableStep.emailSubject} body={editableStep.emailBody} mediaAssetIds={editableStep.mediaAssetIds} requiredVariables={step.requiredContext} journeyCode={journeyCode} emailFromName={isRetailJourney ? "SmartFurni" : "SmartFurni B2B"} />
                 </div>
                 <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <AutomationMediaField
@@ -477,7 +510,7 @@ export default function B2BSofaJourneyAutomation() {
                   <details className="mt-2 border-t border-gray-200 pt-2">
                     <summary className="cursor-pointer text-[11px] font-semibold text-blue-600">Bổ sung dữ liệu cá nhân hóa</summary>
                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {PROJECT_CONTEXT_FIELDS.map(([key, label]) => (
+                      {contextFields.map(([key, label]) => (
                         <label key={key} className="text-[10px] text-gray-500">{label}
                           <input
                             value={contextDrafts[item.id]?.[key] ?? item.context?.[key] ?? ""}
@@ -492,7 +525,7 @@ export default function B2BSofaJourneyAutomation() {
                     </div>
                     <button onClick={() => saveContext(item)} disabled={!contextDrafts[item.id]}
                       className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold disabled:opacity-40">
-                      <Save size={12} /> Lưu dữ liệu dự án
+                      <Save size={12} /> Lưu dữ liệu cá nhân hóa
                     </button>
                   </details>
                 )}

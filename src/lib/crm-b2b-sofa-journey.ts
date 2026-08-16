@@ -51,6 +51,7 @@ export interface B2BSofaJourneySettings {
   autoEnroll: boolean;
   autoEnrollExisting: boolean;
   requireHospitalitySignal: boolean;
+  requireRetailSignal?: boolean;
   activationAt: string | null;
   timezone: "Asia/Ho_Chi_Minh";
   businessHoursStart: string;

@@ -17,6 +17,7 @@ import {
   nextJourneyBusinessWindow,
   renderJourneyTemplate,
   type B2BSofaJourneySettings,
+  type B2BSofaJourneyDefinition,
   type JourneyChannel,
 } from "@/lib/crm-b2b-sofa-journey";
 import {
@@ -44,6 +45,14 @@ import {
   renderAutomationTestTemplate,
 } from "@/lib/crm-automation-test";
 import { sendAutomationEmail } from "@/lib/crm-automation-email";
+import {
+  B2C_ERGONOMIC_BED_JOURNEY_CODE,
+  buildB2CErgonomicJourneyContext,
+} from "@/lib/crm-b2c-ergonomic-bed-journey";
+import {
+  getB2CErgonomicBedJourneyEnrollment,
+  getB2CErgonomicBedJourneySettings,
+} from "@/lib/crm-b2c-ergonomic-bed-journey-store";
 
 export interface SendAttemptResult {
   outcome: "sent" | "definitive_failure" | "delivery_unknown";
@@ -77,6 +86,16 @@ export interface B2BSofaJourneyRunResult {
     channel?: JourneyChannel;
     message: string;
   }>;
+}
+
+export interface JourneyRuntime<TSettings extends B2BSofaJourneySettings> {
+  journeyName: string;
+  getSettings: () => Promise<TSettings>;
+  definitionWithOverrides: (settings: TSettings) => B2BSofaJourneyDefinition;
+  buildContext: (lead: Lead, settings: TSettings, extra?: Record<string, string>) => Record<string, string>;
+  autoEnroll: (settings: TSettings) => Promise<{ checked: number; enrolled: number; skipped: number }>;
+  claimDueActions: (limit: number) => Promise<JourneyActionRecord[]>;
+  emailFromName?: string;
 }
 
 function normalizePhone(phone: string): string {
@@ -171,11 +190,21 @@ export async function sendAutomationTemplateToLead(input: {
   mediaAssetIds?: string[];
   emailFromName?: string;
   requiredVariables?: string[];
+  journeyCode?: string;
 }): Promise<SendAttemptResult & { renderedSubject: string; renderedBody: string }> {
-  const settings = await getB2BSofaJourneySettings();
-  const enrollment = await getJourneyEnrollment(input.lead.id).catch(() => null);
+  const isB2C = input.journeyCode === B2C_ERGONOMIC_BED_JOURNEY_CODE;
+  const settings = isB2C
+    ? await getB2CErgonomicBedJourneySettings()
+    : await getB2BSofaJourneySettings();
+  const enrollment = isB2C
+    ? await getB2CErgonomicBedJourneyEnrollment(input.lead.id).catch(() => null)
+    : await getJourneyEnrollment(input.lead.id).catch(() => null);
+  const journeyContext = isB2C
+    ? buildB2CErgonomicJourneyContext(input.lead, settings)
+    : buildJourneyContext(input.lead, settings);
   const context = {
     ...buildAutomationTestContext(input.lead, settings),
+    ...journeyContext,
     ...nonEmptyContext(enrollment?.context || {}),
   };
   if (settings.surveyFormUrl) context.survey_form_url = settings.surveyFormUrl;
@@ -356,11 +385,12 @@ async function logChannelAttempt(
   lead: Lead,
   channel: JourneyChannel,
   result: SendAttemptResult,
+  journeyName: string,
 ): Promise<void> {
   const notificationChannel = channel === "email" ? "email" : "zalo";
   await logNotification({
     ruleId: action.stepId,
-    ruleName: B2B_SOFA_JOURNEY.name,
+    ruleName: journeyName,
     channel: notificationChannel,
     actionType: channel,
     recipient: result.recipient,
@@ -430,9 +460,10 @@ function stopReason(lead: Lead, settings: B2BSofaJourneySettings): { cancel?: st
   return {};
 }
 
-async function processAction(
+async function processAction<TSettings extends B2BSofaJourneySettings>(
   action: JourneyActionRecord,
-  settings: B2BSofaJourneySettings,
+  settings: TSettings,
+  runtime: JourneyRuntime<TSettings>,
 ): Promise<{ status: string; channel?: JourneyChannel; message: string }> {
   const [lead, enrollment] = await Promise.all([
     getLeadForJourneyAction(action),
@@ -467,6 +498,18 @@ async function processAction(
     return { status: "deferred", message: `Hoãn đến ${nextBusinessWindow.toISOString()} theo giờ làm việc.` };
   }
 
+  // Tránh hai bước dồn vào cùng một ngày khi một lịch Chủ nhật được chuyển sang
+  // thứ Hai, đồng thời giữ tần suất nhất quán giữa nhiều journey của cùng lead.
+  if (enrollment.lastOutboundAt) {
+    const lastOutboundAt = new Date(enrollment.lastOutboundAt).getTime();
+    const earliestNextSendAt = lastOutboundAt + 24 * 60 * 60 * 1000;
+    if (Number.isFinite(lastOutboundAt) && Date.now() < earliestNextSendAt) {
+      const until = new Date(earliestNextSendAt);
+      await deferJourneyAction(action.id, until, "Hoãn để bảo đảm tối đa một nội dung tự động trong 24 giờ.");
+      return { status: "deferred", message: `Hoãn đến ${until.toISOString()} theo giới hạn 24 giờ.` };
+    }
+  }
+
   const sentLastSevenDays = await countJourneyMessagesInLastSevenDays(lead.id);
   if (sentLastSevenDays >= settings.maxMessagesPerSevenDays) {
     const until = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -474,13 +517,13 @@ async function processAction(
     return { status: "deferred", message: `Hoãn đến ${until.toISOString()} theo giới hạn tần suất.` };
   }
 
-  const step = journeyDefinitionWithOverrides(settings).steps.find(item => item.id === action.stepId);
+  const step = runtime.definitionWithOverrides(settings).steps.find(item => item.id === action.stepId);
   if (!step) {
     await markJourneyActionOutcome(action, "skipped", action.attempts, "Không tìm thấy định nghĩa bước journey.");
     return { status: "skipped", message: "Không tìm thấy định nghĩa bước journey." };
   }
 
-  const latestBase = buildJourneyContext(lead, settings);
+  const latestBase = runtime.buildContext(lead, settings);
   const context = { ...latestBase, ...nonEmptyContext(enrollment.context) };
   // Các URL quản trị mới nhất luôn được ưu tiên hơn snapshot khi enrollment.
   if (settings.surveyFormUrl) context.survey_form_url = settings.surveyFormUrl;
@@ -530,7 +573,16 @@ async function processAction(
 
   const attempts = [...action.attempts];
   for (const channel of channelSequence(step)) {
-    const result = await executeChannel(channel, lead, accountId, subject, emailBody, zaloBody, media);
+    const result = await executeChannel(
+      channel,
+      lead,
+      accountId,
+      subject,
+      emailBody,
+      zaloBody,
+      media,
+      runtime.emailFromName,
+    );
     attempts.push({
       channel,
       at: new Date().toISOString(),
@@ -538,7 +590,7 @@ async function processAction(
       error: result.error,
       providerMessageId: result.providerMessageId,
     });
-    await logChannelAttempt(action, lead, channel, result);
+    await logChannelAttempt(action, lead, channel, result, runtime.journeyName);
 
     if (result.outcome === "sent") {
       await markJourneyActionSent(action, channel, attempts);
@@ -555,9 +607,12 @@ async function processAction(
   return { status: "failed", message: error || "Tất cả kênh đều không gửi được." };
 }
 
-export async function runB2BSofaJourney(limit = 20): Promise<B2BSofaJourneyRunResult> {
+export async function runJourneyRuntime<TSettings extends B2BSofaJourneySettings>(
+  runtime: JourneyRuntime<TSettings>,
+  limit = 20,
+): Promise<B2BSofaJourneyRunResult> {
   const startedAt = new Date().toISOString();
-  const settings = await getB2BSofaJourneySettings();
+  const settings = await runtime.getSettings();
   const emptyEnrollment = { checked: 0, enrolled: 0, skipped: 0 };
   if (!settings.enabled) {
     return {
@@ -569,8 +624,8 @@ export async function runB2BSofaJourney(limit = 20): Promise<B2BSofaJourneyRunRe
     };
   }
 
-  const autoEnrollment = await autoEnrollEligibleB2BSofaLeads(settings);
-  const actions = await claimDueJourneyActions(limit);
+  const autoEnrollment = await runtime.autoEnroll(settings);
+  const actions = await runtime.claimDueActions(limit);
   const result: B2BSofaJourneyRunResult = {
     startedAt,
     finishedAt: "",
@@ -587,7 +642,7 @@ export async function runB2BSofaJourney(limit = 20): Promise<B2BSofaJourneyRunRe
 
   for (const action of actions) {
     try {
-      const outcome = await processAction(action, settings);
+      const outcome = await processAction(action, settings, runtime);
       if (outcome.status === "sent") result.sent += 1;
       if (outcome.status === "failed") result.failed += 1;
       if (outcome.status === "delivery_unknown") result.deliveryUnknown += 1;
@@ -604,4 +659,16 @@ export async function runB2BSofaJourney(limit = 20): Promise<B2BSofaJourneyRunRe
 
   result.finishedAt = new Date().toISOString();
   return result;
+}
+
+export async function runB2BSofaJourney(limit = 20): Promise<B2BSofaJourneyRunResult> {
+  return runJourneyRuntime({
+    journeyName: B2B_SOFA_JOURNEY.name,
+    getSettings: getB2BSofaJourneySettings,
+    definitionWithOverrides: journeyDefinitionWithOverrides,
+    buildContext: buildJourneyContext,
+    autoEnroll: autoEnrollEligibleB2BSofaLeads,
+    claimDueActions: claimDueJourneyActions,
+    emailFromName: "SmartFurni B2B",
+  }, limit);
 }

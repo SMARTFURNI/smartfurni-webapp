@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
       mediaAssetIds?: string[];
       emailFromName?: string;
       requiredVariables?: string[];
+      journeyCode?: string;
     };
 
     requestId = String(body.requestId || "");
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
       mediaAssetIds,
       emailFromName,
       requiredVariables,
+      journeyCode: String(body.journeyCode || ""),
     });
     const status = result.outcome === "sent" ? "sent" : result.outcome;
     await query(

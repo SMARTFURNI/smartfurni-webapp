@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAutomationEngine } from "@/lib/crm-automation-engine";
 import { runB2BSofaJourney } from "@/lib/crm-b2b-sofa-journey-engine";
+import { runB2CErgonomicBedJourney } from "@/lib/crm-b2c-ergonomic-bed-journey-engine";
 import { claimAutomationSchedulerRun, releaseAutomationSchedulerRun } from "@/lib/crm-automation-execution-store";
 
 /**
@@ -33,11 +34,13 @@ export async function GET(req: NextRequest) {
     const result = await runAutomationEngine();
     // Chạy journey sau engine chung để hai luồng không tranh chấp cùng kết nối Zalo.
     const b2bSofaJourney = await runB2BSofaJourney();
+    const b2cErgonomicBedJourney = await runB2CErgonomicBedJourney();
     console.log(`[CRM Cron] Done. Triggered: ${result.totalTriggered}/${result.totalLeads} leads`);
     return NextResponse.json({
       ok: true,
       ...result,
       b2bSofaJourney,
+      b2cErgonomicBedJourney,
     });
   } catch (e) {
     console.error("[CRM Cron] Error:", e);

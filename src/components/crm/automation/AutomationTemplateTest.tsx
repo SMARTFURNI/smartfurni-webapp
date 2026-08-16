@@ -15,6 +15,7 @@ interface Props {
   actualChannel?: JourneyChannel;
   emailFromName?: string;
   requiredVariables?: string[];
+  journeyCode?: string;
 }
 
 interface TestLead {
@@ -58,6 +59,17 @@ const SAMPLE_VALUES: Record<string, string> = {
   approved_demo_video_url: "[Video đính kèm từ thư viện]",
   project_brief_url: "https://smartfurni.com.vn/project-brief",
   comparison_pack_url: "https://smartfurni.com.vn/so-sanh",
+  primary_benefit: "đọc sách, xem phim và nghỉ ngơi thuận tiện hơn",
+  solution_type: "Khung nâng hạ lắp vào giường hiện có",
+  benefit_summary: "giữ lại thiết kế phòng ngủ và bổ sung khả năng điều chỉnh tư thế",
+  fit_reason: "lòng giường hiện tại phù hợp để kiểm tra bước tiếp theo",
+  recommended_size: "1,6 × 2 m",
+  price_range: "Cập nhật theo cấu hình đã xác nhận",
+  included_items: "khung nâng hạ, motor, remote, bộ nguồn và phụ kiện lắp đặt",
+  existing_bed_dimensions: "1,62 × 2,02 m",
+  mattress_type: "nệm có độ linh hoạt phù hợp",
+  user_profile: "hai vợ chồng",
+  purchase_timing: "trong 30 ngày tới",
 };
 
 function renderSample(template: string) {
@@ -78,6 +90,7 @@ export default function AutomationTemplateTest({
   actualChannel,
   emailFromName,
   requiredVariables = [],
+  journeyCode,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [realOpen, setRealOpen] = useState(false);
@@ -151,6 +164,7 @@ export default function AutomationTemplateTest({
           mediaAssetIds,
           emailFromName,
           requiredVariables,
+          journeyCode,
         }),
       });
       const payload = await response.json();

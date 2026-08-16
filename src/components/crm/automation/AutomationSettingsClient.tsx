@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Zap, Plus, Trash2, Save, RefreshCw, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Clock, GitBranch, Users, ArrowRight,
-  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle, Mail, Building2,
+  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle, Mail, Building2, BedDouble,
 } from "lucide-react";
 import ZaloWorkflowAutomation from "./ZaloWorkflowAutomation";
 import EmailWorkflowAutomation from "./EmailWorkflowAutomation";
@@ -593,7 +593,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "rules" | "b2b_sofa_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
+type TabId = "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("rules");
@@ -676,6 +676,7 @@ export default function AutomationSettingsClient() {
   const TABS = [
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
     { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2, count: null },
+    { id: "b2c_ergonomic_journey" as TabId, label: "Khách lẻ · Giường 90 ngày", icon: BedDouble, count: null },
     { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle, count: null },
     { id: "email_workflow" as TabId, label: "Email Workflow", icon: Mail, count: null },
     { id: "history" as TabId, label: "Lịch sử gửi", icon: Clock, count: null },
@@ -711,7 +712,7 @@ export default function AutomationSettingsClient() {
                 <CheckCircle2 size={14} /> Đã lưu
               </div>
             )}
-            {activeTab !== "b2b_sofa_journey" && <button onClick={save} disabled={saving}
+            {!(["b2b_sofa_journey", "b2c_ergonomic_journey"] as TabId[]).includes(activeTab) && <button onClick={save} disabled={saving}
               className={styles.primaryButton}>
               {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
               Lưu cài đặt
@@ -722,6 +723,7 @@ export default function AutomationSettingsClient() {
           {[
             { icon: Zap, value: `${rules.filter(rule => rule.enabled).length}/${rules.length}`, label: "Quy tắc đang bật" },
             { icon: Building2, value: "90 ngày", label: "Journey B2B Sofa" },
+            { icon: BedDouble, value: "30 ngày", label: "Tập trung khách lẻ" },
             { icon: MessageCircle, value: "3 kênh", label: "Zalo · OA · Email" },
             { icon: Clock, value: "30 phút", label: "Chu kỳ xử lý" },
           ].map(({ icon: Icon, value, label }) => (
@@ -780,6 +782,10 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "b2b_sofa_journey" && (
         <B2BSofaJourneyAutomation />
+      )}
+
+      {activeTab === "b2c_ergonomic_journey" && (
+        <B2BSofaJourneyAutomation variant="b2c_ergonomic" />
       )}
 
       {activeTab === "email_workflow" && (

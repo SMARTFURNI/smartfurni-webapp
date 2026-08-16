@@ -167,12 +167,18 @@ async function runCrmAutomationCron() {
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error("[Production Scheduler] CRM Automation cron lỗi:", response.status, result);
-    } else if (result.totalTriggered > 0 || result.b2bSofaJourney?.claimed > 0) {
+    } else if (
+      result.totalTriggered > 0 ||
+      result.b2bSofaJourney?.claimed > 0 ||
+      result.b2cErgonomicBedJourney?.claimed > 0
+    ) {
       console.log("[Production Scheduler] CRM Automation cron:", {
         totalTriggered: result.totalTriggered,
         totalLeads: result.totalLeads,
         journeyClaimed: result.b2bSofaJourney?.claimed || 0,
         journeySent: result.b2bSofaJourney?.sent || 0,
+        b2cJourneyClaimed: result.b2cErgonomicBedJourney?.claimed || 0,
+        b2cJourneySent: result.b2cErgonomicBedJourney?.sent || 0,
       });
     }
   } catch (error) {
