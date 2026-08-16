@@ -598,7 +598,7 @@ function AutoAssignTab({ config, onChange }: { config: AutoAssignConfig; onChang
 type TabId = "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "reports" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "history";
 
 export default function AutomationSettingsClient() {
-  const [activeTab, setActiveTab] = useState<TabId>("rules");
+  const [activeTab, setActiveTab] = useState<TabId>("reports");
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [sla, setSla] = useState<SlaConfig | null>(null);
   const [autoAssign, setAutoAssign] = useState<AutoAssignConfig | null>(null);
@@ -675,13 +675,17 @@ export default function AutomationSettingsClient() {
     }
   };
 
+  const WORKFLOW_TABS = [
+    { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2 },
+    { id: "b2c_ergonomic_journey" as TabId, label: "Khách lẻ · Giường 90 ngày", icon: BedDouble },
+    { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle },
+    { id: "email_workflow" as TabId, label: "Email Workflow", icon: Mail },
+  ];
+  const WORKFLOW_TAB_IDS = WORKFLOW_TABS.map(tab => tab.id);
+  const activeWorkflow = WORKFLOW_TABS.find(tab => tab.id === activeTab);
   const TABS = [
-    { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
-    { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2, count: null },
-    { id: "b2c_ergonomic_journey" as TabId, label: "Khách lẻ · Giường 90 ngày", icon: BedDouble, count: null },
     { id: "reports" as TabId, label: "Báo cáo Workflow", icon: BarChart2, count: null },
-    { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle, count: null },
-    { id: "email_workflow" as TabId, label: "Email Workflow", icon: Mail, count: null },
+    { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
     { id: "history" as TabId, label: "Lịch sử gửi", icon: Clock, count: null },
     { id: "sla" as TabId, label: "SLA & Thời gian", icon: Clock, count: null },
     { id: "auto_assign" as TabId, label: "Phân công tự động", icon: Users, count: null },
@@ -715,7 +719,7 @@ export default function AutomationSettingsClient() {
                 <CheckCircle2 size={14} /> Đã lưu
               </div>
             )}
-            {!(["b2b_sofa_journey", "b2c_ergonomic_journey", "reports"] as TabId[]).includes(activeTab) && <button onClick={save} disabled={saving}
+            {!(WORKFLOW_TAB_IDS.includes(activeTab) || activeTab === "reports") && <button onClick={save} disabled={saving}
               className={styles.primaryButton}>
               {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
               Lưu cài đặt
@@ -741,7 +745,30 @@ export default function AutomationSettingsClient() {
       {/* Tabs */}
       <nav className={styles.tabShell} aria-label="Các khu vực tự động hóa">
         <div className={styles.tabTrack}>
-          {TABS.map(tab => (
+          <button onClick={() => setActiveTab(TABS[0].id)}
+            className={styles.tabButton} data-active={activeTab === TABS[0].id ? "true" : "false"}>
+            <span className={styles.tabIcon}><BarChart2 size={16} /></span>
+            <span>{TABS[0].label}</span>
+          </button>
+
+          <label className={styles.workflowPicker} data-active={activeWorkflow ? "true" : "false"}>
+            <span className={styles.tabIcon}><GitBranch size={16} /></span>
+            <span className={styles.workflowPickerLabel}>
+              <strong>Workflow</strong>
+              <small>{activeWorkflow?.label ?? WORKFLOW_TABS.length + " quy trình"}</small>
+            </span>
+            <ChevronDown size={14} className={styles.workflowPickerChevron} />
+            <select
+              aria-label="Chọn workflow cần quản lý"
+              value={activeWorkflow?.id ?? ""}
+              onChange={event => setActiveTab(event.target.value as TabId)}
+            >
+              <option value="" disabled>Chọn workflow</option>
+              {WORKFLOW_TABS.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
+            </select>
+          </label>
+
+          {TABS.slice(1).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={styles.tabButton} data-active={activeTab === tab.id ? "true" : "false"}>
               <span className={styles.tabIcon}><tab.icon size={16} /></span>

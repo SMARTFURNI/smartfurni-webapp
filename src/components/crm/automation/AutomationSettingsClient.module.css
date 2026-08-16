@@ -195,7 +195,7 @@
   z-index: 20;
   margin-top: 18px;
   padding: 7px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--zalo-border);
   border-radius: 16px;
   background: rgba(255,255,255,.96);
@@ -205,10 +205,8 @@
 
 .tabTrack {
   display: grid;
-  grid-template-columns: repeat(8, minmax(132px, 1fr));
+  grid-template-columns: repeat(7, minmax(132px, 1fr));
   gap: 5px;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .tabButton {
@@ -251,6 +249,76 @@
 
 .tabButton[data-active="true"] .tabIcon { color: #fff; background: var(--zalo-blue); }
 .tabCount { display: grid; min-width: 19px; height: 19px; place-items: center; border-radius: 999px; color: #fff; background: #16a46f; font-size: 10px; }
+
+.workflowPicker {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  padding: 6px 9px;
+  color: #5c6d81;
+  background: transparent;
+  transition: all 150ms ease;
+}
+
+.workflowPicker:hover,
+.workflowPicker:focus-within {
+  color: #21426d;
+  background: #f3f7fb;
+}
+
+.workflowPicker[data-active="true"] {
+  border-color: #c8defb;
+  color: var(--zalo-blue);
+  background: linear-gradient(135deg, #edf5ff, #e5f1ff);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.65);
+}
+
+.workflowPicker[data-active="true"] .tabIcon { color: #fff; background: var(--zalo-blue); }
+
+.workflowPickerLabel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  text-align: left;
+}
+
+.workflowPickerLabel strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflowPickerLabel small {
+  overflow: hidden;
+  color: #8291a4;
+  font-size: 9px;
+  font-weight: 550;
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflowPickerChevron { flex: 0 0 auto; color: #8291a4; }
+
+.workflowPicker select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
 
 .content { margin-top: 18px; }
 
@@ -326,6 +394,11 @@
   .heroStat:nth-child(2) { border-right: 0; }
   .heroStat:nth-child(-n+2) { border-bottom: 1px solid #e8eef5; }
   .workspace :global(.automation-history-stats) { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+  .tabTrack {
+    grid-template-columns: repeat(7, minmax(136px, 1fr));
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
 }
 
 @media (max-width: 640px) {
@@ -339,7 +412,7 @@
   .heroStat { padding: 12px; }
   .heroStat:nth-child(even) { border-right: 0; }
   .tabShell { margin-top: 12px; border-radius: 13px; }
-  .tabTrack { grid-template-columns: repeat(8, minmax(128px, 1fr)); }
+  .tabTrack { grid-template-columns: repeat(7, minmax(128px, 1fr)); }
   .sectionToolbar { align-items: flex-start; flex-direction: column; }
   .secondaryButton { width: 100%; }
   .workspace :global(.automation-channel-header) { align-items: flex-start !important; flex-direction: column; padding: 15px; }
