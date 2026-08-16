@@ -19,6 +19,8 @@ export const DEFAULT_B2C_ERGONOMIC_BED_JOURNEY_SETTINGS: B2CErgonomicBedJourneyS
   enabled: false,
   autoEnroll: true,
   autoEnrollExisting: false,
+  canaryMode: false,
+  canaryLeadIds: [],
   requireHospitalitySignal: false,
   requireRetailSignal: true,
   activationAt: null,

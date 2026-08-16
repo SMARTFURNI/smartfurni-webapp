@@ -25,6 +25,8 @@ export interface JourneySettingsBase {
   enabled: boolean;
   autoEnroll: boolean;
   autoEnrollExisting: boolean;
+  canaryMode: boolean;
+  canaryLeadIds: string[];
   activationAt: string | null;
   timezone: "Asia/Ho_Chi_Minh";
   businessHoursStart: string;
@@ -378,6 +380,10 @@ export async function saveJourneySettings<T extends JourneySettingsBase>(
     timezone: "Asia/Ho_Chi_Minh",
     activationAt: enablingNow ? new Date().toISOString() : (input.activationAt ?? current.activationAt),
     maxMessagesPerSevenDays: Math.max(1, Math.min(7, Number(input.maxMessagesPerSevenDays ?? current.maxMessagesPerSevenDays))),
+    canaryMode: Boolean(input.canaryMode ?? current.canaryMode),
+    canaryLeadIds: [...new Set(Array.isArray(input.canaryLeadIds)
+      ? input.canaryLeadIds.map(String).filter(Boolean)
+      : current.canaryLeadIds || [])].slice(0, 3),
     stepOverrides: Object.fromEntries(
       Object.entries(input.stepOverrides ?? current.stepOverrides ?? {}).map(([stepId, override]) => {
         const value = override && typeof override === "object" ? override : {};
@@ -539,6 +545,10 @@ export async function autoEnrollEligibleJourney<T extends JourneySettingsBase>(
   let skipped = 0;
   const activationAt = settings.activationAt ? new Date(settings.activationAt).getTime() : Date.now();
   for (const lead of leads) {
+    if (settings.canaryMode && !settings.canaryLeadIds.includes(lead.id)) {
+      skipped += 1;
+      continue;
+    }
     if (!settings.autoEnrollExisting && new Date(lead.createdAt).getTime() < activationAt) {
       skipped += 1;
       continue;
@@ -554,13 +564,17 @@ export async function autoEnrollEligibleJourney<T extends JourneySettingsBase>(
   return { checked: leads.length, enrolled, skipped };
 }
 
-export async function claimDueJourneyActions(limit = 20): Promise<JourneyActionRecord[]> {
-  return claimDueJourneyActionsForCode(B2B_SOFA_JOURNEY_CODE, limit);
+export async function claimDueJourneyActions(
+  limit = 20,
+  allowedLeadIds: string[] | null = null,
+): Promise<JourneyActionRecord[]> {
+  return claimDueJourneyActionsForCode(B2B_SOFA_JOURNEY_CODE, limit, allowedLeadIds);
 }
 
 export async function claimDueJourneyActionsForCode(
   journeyCode: string,
   limit = 20,
+  allowedLeadIds: string[] | null = null,
 ): Promise<JourneyActionRecord[]> {
   await initB2BSofaJourneySchema();
   const db = getDb();
@@ -588,12 +602,13 @@ export async function claimDueJourneyActionsForCode(
        FROM crm_journey_actions a
        JOIN crm_journey_enrollments e ON e.id=a.enrollment_id
        WHERE e.status='active' AND e.journey_code=$1
+         AND ($3::text[] IS NULL OR a.lead_id=ANY($3::text[]))
          AND a.status IN ('pending','waiting_content')
          AND COALESCE(a.next_attempt_at,a.scheduled_at)<=NOW()
        ORDER BY COALESCE(a.next_attempt_at,a.scheduled_at),a.day_offset
        FOR UPDATE OF a SKIP LOCKED
        LIMIT $2`,
-      [journeyCode, Math.max(1, Math.min(100, Math.trunc(limit)))],
+      [journeyCode, Math.max(1, Math.min(100, Math.trunc(limit))), allowedLeadIds],
     );
     const ids = rows.rows.map(row => row.id);
     if (ids.length) {
@@ -610,6 +625,25 @@ export async function claimDueJourneyActionsForCode(
   } finally {
     client.release();
   }
+}
+
+export async function makeCanaryDayZeroActionsDue(
+  journeyCode: string,
+  leadIds: string[],
+): Promise<number> {
+  await initB2BSofaJourneySchema();
+  if (!leadIds.length) return 0;
+  const rows = await query<{ id: string }>(
+    `UPDATE crm_journey_actions a
+     SET scheduled_at=NOW(),next_attempt_at=NULL,error='',updated_at=NOW()
+     FROM crm_journey_enrollments e
+     WHERE e.id=a.enrollment_id AND e.journey_code=$1
+       AND a.lead_id=ANY($2::text[]) AND a.day_offset=0
+       AND e.status='active' AND a.status IN ('pending','waiting_content')
+     RETURNING a.id`,
+    [journeyCode, leadIds],
+  );
+  return rows.length;
 }
 
 export async function getEnrollmentById(id: string): Promise<JourneyEnrollmentRecord | null> {

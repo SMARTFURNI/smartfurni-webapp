@@ -50,6 +50,8 @@ export interface B2BSofaJourneySettings {
   enabled: boolean;
   autoEnroll: boolean;
   autoEnrollExisting: boolean;
+  canaryMode: boolean;
+  canaryLeadIds: string[];
   requireHospitalitySignal: boolean;
   requireRetailSignal?: boolean;
   activationAt: string | null;
@@ -70,6 +72,8 @@ export const DEFAULT_B2B_SOFA_JOURNEY_SETTINGS: B2BSofaJourneySettings = {
   enabled: false,
   autoEnroll: true,
   autoEnrollExisting: false,
+  canaryMode: false,
+  canaryLeadIds: [],
   requireHospitalitySignal: true,
   activationAt: null,
   timezone: "Asia/Ho_Chi_Minh",

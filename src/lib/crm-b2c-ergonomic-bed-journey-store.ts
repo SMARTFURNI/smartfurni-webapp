@@ -72,8 +72,9 @@ export async function autoEnrollEligibleB2CErgonomicBedLeads(
 
 export async function claimDueB2CErgonomicBedJourneyActions(
   limit = 20,
+  allowedLeadIds: string[] | null = null,
 ): Promise<JourneyActionRecord[]> {
-  return claimDueJourneyActionsForCode(B2C_ERGONOMIC_BED_JOURNEY_CODE, limit);
+  return claimDueJourneyActionsForCode(B2C_ERGONOMIC_BED_JOURNEY_CODE, limit, allowedLeadIds);
 }
 
 export async function getB2CErgonomicBedJourneyDashboard(): Promise<{

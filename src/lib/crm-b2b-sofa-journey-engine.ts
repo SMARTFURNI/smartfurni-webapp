@@ -108,7 +108,7 @@ export interface JourneyRuntime<TSettings extends B2BSofaJourneySettings> {
   definitionWithOverrides: (settings: TSettings) => B2BSofaJourneyDefinition;
   buildContext: (lead: Lead, settings: TSettings, extra?: Record<string, string>) => Record<string, string>;
   autoEnroll: (settings: TSettings) => Promise<{ checked: number; enrolled: number; skipped: number }>;
-  claimDueActions: (limit: number) => Promise<JourneyActionRecord[]>;
+  claimDueActions: (limit: number, allowedLeadIds?: string[] | null) => Promise<JourneyActionRecord[]>;
   emailFromName?: string;
 }
 
@@ -799,7 +799,8 @@ export async function runJourneyRuntime<TSettings extends B2BSofaJourneySettings
 
   const autoEnrollment = await runtime.autoEnroll(settings);
   const replyRecommendations = await scanJourneyReplies(runtime);
-  const actions = await runtime.claimDueActions(limit);
+  const allowedLeadIds = settings.canaryMode ? settings.canaryLeadIds : null;
+  const actions = await runtime.claimDueActions(limit, allowedLeadIds);
   const result: B2BSofaJourneyRunResult = {
     startedAt,
     finishedAt: "",

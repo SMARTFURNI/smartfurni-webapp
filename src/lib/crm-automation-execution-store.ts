@@ -95,6 +95,24 @@ export async function releaseAutomationSchedulerRun(key = "crm_automation"): Pro
   );
 }
 
+export async function getAutomationSchedulerHealth(key = "crm_automation"): Promise<{
+  lastRunAt: string | null;
+  lockedUntil: string | null;
+  isRunning: boolean;
+}> {
+  await initAutomationExecutionSchema();
+  const row = await queryOne<{ updated_at: string; locked_until: string; is_running: boolean }>(
+    `SELECT updated_at, locked_until, locked_until > NOW() AS is_running
+     FROM crm_automation_scheduler_locks WHERE key=$1`,
+    [key],
+  );
+  return {
+    lastRunAt: row?.updated_at ? new Date(row.updated_at).toISOString() : null,
+    lockedUntil: row?.locked_until ? new Date(row.locked_until).toISOString() : null,
+    isRunning: Boolean(row?.is_running),
+  };
+}
+
 export async function claimAutomationExecution(input: {
   ruleId: string;
   leadId: string;

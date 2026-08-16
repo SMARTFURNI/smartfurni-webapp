@@ -11,6 +11,7 @@ import EmailWorkflowAutomation from "./EmailWorkflowAutomation";
 import AutomationHistoryPanel from "./AutomationHistoryPanel";
 import B2BSofaJourneyAutomation from "./B2BSofaJourneyAutomation";
 import WorkflowReportsDashboard from "./WorkflowReportsDashboard";
+import WorkflowValidationCenter from "./WorkflowValidationCenter";
 import styles from "./AutomationSettingsClient.module.css";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
@@ -812,6 +813,8 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "run" && (
         <div className="space-y-5">
+          <WorkflowValidationCenter />
+
           {/* Giới thiệu 4 nhóm */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
