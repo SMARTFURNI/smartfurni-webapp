@@ -5,6 +5,15 @@ export const B2B_SOFA_JOURNEY_VERSION = 2;
 
 export type JourneyChannel = "zalo_personal" | "zalo_oa" | "email";
 
+/**
+ * Kanban stages only stop an active nurture journey after the opportunity has
+ * reached a terminal sales outcome. Intermediate pipeline stages must not
+ * pause the scheduled journey.
+ */
+export function stageStopsJourney(stage: Lead["stage"]): boolean {
+  return stage === "won" || stage === "lost";
+}
+
 export interface JourneyStepDefinition {
   id: string;
   enabled?: boolean;

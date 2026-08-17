@@ -11,6 +11,7 @@ import {
   nextJourneyBusinessWindow,
   renderJourneyTemplate,
   scheduleJourneyStep,
+  stageStopsJourney,
 } from "@/lib/crm-b2b-sofa-journey";
 
 function lead(patch: Partial<Lead> = {}): Lead {
@@ -151,5 +152,18 @@ describe("B2B sofa journey scheduling", () => {
     const now = new Date("2026-08-15T12:00:00.000Z"); // Saturday 19:00 ICT
     expect(nextJourneyBusinessWindow(now, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS)?.toISOString())
       .toBe("2026-08-17T01:30:00.000Z");
+  });
+});
+
+describe("Kanban stage impact on nurture journeys", () => {
+  it.each(["new", "profile_sent", "surveyed", "quoted", "negotiating"] as const)(
+    "keeps the journey running in the %s stage",
+    stage => {
+      expect(stageStopsJourney(stage)).toBe(false);
+    },
+  );
+
+  it.each(["won", "lost"] as const)("stops the journey in the %s stage", stage => {
+    expect(stageStopsJourney(stage)).toBe(true);
   });
 });

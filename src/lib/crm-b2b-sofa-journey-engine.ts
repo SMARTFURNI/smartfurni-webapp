@@ -16,6 +16,7 @@ import {
   missingRequiredContext,
   nextJourneyBusinessWindow,
   renderJourneyTemplate,
+  stageStopsJourney,
   type B2BSofaJourneySettings,
   type B2BSofaJourneyDefinition,
   type JourneyChannel,
@@ -611,8 +612,7 @@ async function scanJourneyReplies<TSettings extends B2BSofaJourneySettings>(
 }
 
 function stopReason(lead: Lead, settings: B2BSofaJourneySettings): { cancel?: string; pause?: string } {
-  if (["won", "lost"].includes(lead.stage)) return { cancel: `Lead đã chuyển sang giai đoạn ${lead.stage}.` };
-  if (["quoted", "negotiating"].includes(lead.stage)) return { pause: "Lead đã vào giai đoạn báo giá/thương thảo; dừng chuỗi nuôi dưỡng chung." };
+  if (stageStopsJourney(lead.stage)) return { cancel: `Lead đã chuyển sang giai đoạn ${lead.stage}.` };
   const tags = new Set((lead.tags || []).map(tag => tag.trim().toLocaleLowerCase("vi")));
   const dnc = settings.doNotContactTags.find(tag => tags.has(tag.trim().toLocaleLowerCase("vi")));
   if (dnc) return { cancel: `Lead có nhãn không liên hệ: ${dnc}.` };
