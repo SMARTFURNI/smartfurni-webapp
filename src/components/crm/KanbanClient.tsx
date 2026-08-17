@@ -135,14 +135,18 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const activeFilters = [filterDistrict, filterType, filterSource].filter(Boolean).length;
 
   return (
-    <div className={`${customerStyles.workspace} crm-kanban flex h-full flex-col gap-3 p-3 md:p-4`}>
+    <div
+      className={`${customerStyles.workspace} ${customerStyles.kanbanWorkspace} crm-kanban flex h-full flex-col gap-3 p-3 md:p-4`}
+      style={{ background: "radial-gradient(circle at 92% 2%, rgba(0,104,255,0.10), transparent 25rem), linear-gradient(160deg, #f8fbff 0%, #f4f7fb 58%, #f7fbff 100%)" }}
+    >
       <CrmFoundationHeader
         active="kanban"
         title="Bảng Kanban chăm sóc"
         description={`${filtered.length} khách hàng · ${leads.filter(isOverdue).length} quá hạn tương tác`}
+        variant="zalo"
       />
       {/* Header */}
-      <div className="crm-admin-page-header flex-shrink-0 rounded-2xl border border-[#dbe5f0] bg-white px-4 py-3 shadow-sm">
+      <div className="crm-admin-page-header flex-shrink-0 rounded-2xl border border-[#dbe5f1] bg-white px-4 py-3 shadow-[0_10px_28px_rgba(33,82,150,0.07)]">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-base font-bold text-gray-900">Pipeline khách hàng</h2>
@@ -161,7 +165,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="pl-9 pr-3 py-2 text-sm rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none w-48 transition-all"
-                style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}
+                style={{ background: "#f5f8fc", border: "1px solid #dbe5f1" }}
               />
             </div>
 
@@ -170,23 +174,23 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
               onClick={() => setShowFilters(v => !v)}
               className="flex items-center gap-2 px-3 py-2 text-sm rounded-xl border transition-colors"
               style={{
-                background: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.12)" : "#f3f4f6",
-                borderColor: showFilters || activeFilters > 0 ? "rgba(201,168,76,0.3)" : "#e5e7eb",
-                color: showFilters || activeFilters > 0 ? "#C9A84C" : "#6b7280",
+                background: showFilters || activeFilters > 0 ? "#eaf3ff" : "#f5f8fc",
+                borderColor: showFilters || activeFilters > 0 ? "#8bbcff" : "#dbe5f1",
+                color: showFilters || activeFilters > 0 ? "#0068ff" : "#64748b",
               }}
             >
               <Filter size={15} />
               Bộ lọc
               {activeFilters > 0 && (
                 <span className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-                  style={{ background: "#f59e0b", color: "#fff" }}>{activeFilters}</span>
+                  style={{ background: "#0068ff", color: "#fff" }}>{activeFilters}</span>
               )}
             </button>
 
             {/* Refresh */}
             <button onClick={refresh}
               className="p-2 rounded-xl transition-colors"
-              style={{ border: "1px solid #e5e7eb", color: "#6b7280" }}
+              style={{ background: "#f5f8fc", border: "1px solid #dbe5f1", color: "#64748b" }}
               title="Làm mới">
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             </button>
@@ -194,8 +198,8 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
             {/* Add lead */}
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl text-black transition-opacity hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #C9A84C, #E2C97E)" }}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl text-white transition-all hover:-translate-y-0.5"
+              style={{ background: "linear-gradient(135deg, #1687ff, #0068ff)", boxShadow: "0 8px 18px rgba(0,104,255,0.20)" }}
             >
               <Plus size={15} />
               Thêm khách hàng
@@ -206,16 +210,16 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
         {/* Filter panel */}
         {showFilters && (
           <div className="mt-3 pt-3 flex items-center gap-3 flex-wrap"
-            style={{ borderTop: "1px solid #e5e7eb" }}>
+            style={{ borderTop: "1px solid #e7eef7" }}>
             <select value={filterDistrict} onChange={e => setFilterDistrict(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+              style={{ background: "#f5f8fc", border: "1px solid #dbe5f1" }}>
               <option value="">Tất cả tỉnh/thành</option>
               {VIETNAM_PROVINCES.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <select value={filterType} onChange={e => setFilterType(e.target.value as LeadType | "")}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+              style={{ background: "#f5f8fc", border: "1px solid #dbe5f1" }}>
               <option value="">Tất cả loại</option>
               {leadTypes.map(lt => (
                 <option key={lt.id} value={lt.id}>{lt.label}</option>
@@ -223,7 +227,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
             </select>
             <select value={filterSource} onChange={e => setFilterSource(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-xl text-gray-900 focus:outline-none"
-              style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+              style={{ background: "#f5f8fc", border: "1px solid #dbe5f1" }}>
               <option value="">Tất cả nguồn</option>
               {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -239,7 +243,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
 
       {/* Kanban Board */}
       <div className="crm-kanban-scroll flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="crm-kanban-track flex gap-3 p-4 h-full" style={{ minWidth: "max-content" }}>
+        <div className="crm-kanban-track flex gap-3 p-1 pb-3 h-full" style={{ minWidth: "max-content" }}>
           {STAGES.map(stage => {
             const stageLeads = getStageLeads(stage);
             const isWon = stage === "won";
@@ -253,10 +257,10 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                 style={{
                   width: "250px",
                   minWidth: "250px",
-                  background: isDragTarget ? `${STAGE_COLORS[stage]}10` : "#f8f9fb",
-                  border: `1px solid ${isDragTarget ? STAGE_COLORS[stage] + "40" : "#e5e7eb"}`,
+                  background: isDragTarget ? `${STAGE_COLORS[stage]}0d` : "#f7f9fc",
+                  border: `1px solid ${isDragTarget ? STAGE_COLORS[stage] + "55" : "#dbe5f1"}`,
                   minHeight: "200px",
-                  boxShadow: isDragTarget ? `0 0 0 2px ${STAGE_COLORS[stage]}20` : "none",
+                  boxShadow: isDragTarget ? `0 0 0 3px ${STAGE_COLORS[stage]}18` : "0 10px 24px rgba(33,82,150,0.06)",
                 }}
                 onDragOver={e => onDragOver(e, stage)}
                 onDrop={e => onDrop(e, stage)}
@@ -264,7 +268,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
               >
                 {/* Column header */}
                 <div className="flex items-center justify-between px-3 py-3 flex-shrink-0 rounded-t-2xl"
-                  style={{ background: `${STAGE_COLORS[stage]}08`, borderBottom: `1px solid ${STAGE_COLORS[stage]}20` }}>
+                  style={{ background: `linear-gradient(135deg, #ffffff, ${STAGE_COLORS[stage]}0d)`, borderBottom: `1px solid ${STAGE_COLORS[stage]}25` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: STAGE_COLORS[stage] }} />
                     <span className="text-[12px] font-semibold" style={{ color: STAGE_COLORS[stage] }}>{STAGE_LABELS[stage]}</span>
@@ -277,7 +281,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                     {!isLost && (
                       <button
                         onClick={() => setShowAddModal(true)}
-                        className="w-5 h-5 rounded flex items-center justify-center hover:bg-black/10 transition-colors text-gray-500"
+                        className="w-5 h-5 rounded flex items-center justify-center hover:bg-blue-50 transition-colors text-gray-500"
                         title="Thêm khách hàng"
                       >
                         <Plus size={12} />
@@ -291,7 +295,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                   {stageLeads.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-8">
                       <div className="w-8 h-8 rounded-xl border-2 border-dashed flex items-center justify-center mb-2"
-                        style={{ borderColor: "#d1d5db", color: "#9ca3af" }}>
+                        style={{ borderColor: "#b9c9dc", color: "#94a3b8" }}>
                         <Plus size={14} />
                       </div>
                       <span className="text-xs" style={{ color: "#9ca3af" }}>Kéo thả vào đây</span>
@@ -312,7 +316,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                 {/* Column footer - total value */}
                 {stageLeads.length > 0 && (
                   <div className="px-3 py-2 flex-shrink-0 rounded-b-2xl"
-                    style={{ borderTop: `1px solid ${STAGE_COLORS[stage]}15`, background: `${STAGE_COLORS[stage]}05` }}>
+                    style={{ borderTop: `1px solid ${STAGE_COLORS[stage]}18`, background: `linear-gradient(135deg, #ffffff, ${STAGE_COLORS[stage]}08)` }}>
                     <span className="text-xs font-medium" style={{ color: STAGE_COLORS[stage] + "99" }}>
                       {formatVND(stageLeads.reduce((s, l) => s + (l.expectedValue || 0), 0))}
                     </span>
@@ -366,9 +370,9 @@ function LeadCard({
       onDragEnd={onDragEnd}
       className="rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing select-none hover:-translate-y-0.5"
       style={{
-        background: overdue ? "rgba(248,113,113,0.06)" : "#ffffff",
-        border: overdue ? "1px solid rgba(248,113,113,0.4)" : "1px solid #e5e7eb",
-        boxShadow: isDragging ? "0 8px 24px rgba(0,0,0,0.15)" : overdue ? "0 0 0 1px rgba(248,113,113,0.15)" : "0 1px 3px rgba(0,0,0,0.06)",
+        background: overdue ? "linear-gradient(145deg, #ffffff, #fff5f6)" : "linear-gradient(145deg, #ffffff, #fbfdff)",
+        border: overdue ? "1px solid #fecdd3" : "1px solid #dbe5f1",
+        boxShadow: isDragging ? "0 14px 30px rgba(33,82,150,0.18)" : overdue ? "0 8px 18px rgba(239,68,68,0.08)" : "0 6px 16px rgba(33,82,150,0.06)",
         opacity: isDragging ? 0.4 : 1,
         transform: isDragging ? "rotate(1.5deg) scale(1.02)" : "none",
       }}
@@ -435,8 +439,8 @@ function LeadCard({
               <span>{daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}</span>
             </div>
             {lead.assignedTo && (
-              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-gray-900 flex-shrink-0"
-                style={{ background: "#6366f1" }}>
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, #1687ff, #0068ff)" }}>
                 {lead.assignedTo.charAt(0).toUpperCase()}
               </div>
             )}

@@ -17,6 +17,7 @@ import { STAGE_LABELS, STAGE_COLORS, formatVND, isOverdue } from "@/lib/crm-type
 import type { DashboardTheme, DashboardSectionId } from "@/lib/crm-settings-store";
 import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
 import { CRM_LEAD_TYPE_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
+import { dashboardNotificationDismissalKey } from "@/lib/crm-dashboard-notifications";
 import AddLeadModal from "./AddLeadModal";
 import { TwelveWeekReportDashboard, GoalDetailDashboard } from "./TwelveWeekReportWidgets";
 
@@ -1257,7 +1258,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 // ── Notification bell ────────────────────────────────────────────────────────
 interface InboxItem {
   id: string; type: "warning" | "info" | "alert";
-  title: string; body: string; href: string; time: string; read: boolean;
+  version: string; title: string; body: string; href: string; time: string; read: boolean;
 }
 
 function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
@@ -1265,14 +1266,39 @@ function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
   const [items, setItems] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const dismissalStorageKey = `smartfurni:crm-dashboard-notifications:${currentUser?.username || "anonymous"}`;
+
+  const getDismissedKeys = useCallback((): string[] => {
+    try {
+      const stored = window.localStorage.getItem(dismissalStorageKey);
+      const parsed = stored ? JSON.parse(stored) : [];
+      return Array.isArray(parsed) ? parsed.filter(value => typeof value === "string") : [];
+    } catch {
+      return [];
+    }
+  }, [dismissalStorageKey]);
 
   const fetch_ = useCallback(async () => {
     setLoading(true);
     try {
       const r = await fetch("/api/crm/dashboard-extras?type=inbox");
-      if (r.ok) setItems(await r.json());
+      if (r.ok) {
+        const nextItems = await r.json() as InboxItem[];
+        const dismissed = new Set(getDismissedKeys());
+        setItems(nextItems.filter(item => !dismissed.has(dashboardNotificationDismissalKey(item))));
+      }
     } finally { setLoading(false); }
-  }, []);
+  }, [getDismissedKeys]);
+
+  const dismiss = useCallback((item: InboxItem) => {
+    const itemKey = dashboardNotificationDismissalKey(item);
+    try {
+      const nextKeys = Array.from(new Set([...getDismissedKeys(), itemKey])).slice(-100);
+      window.localStorage.setItem(dismissalStorageKey, JSON.stringify(nextKeys));
+    } catch { /* Trình duyệt có thể chặn localStorage; vẫn ẩn trong phiên hiện tại. */ }
+    setItems(current => current.filter(candidate => dashboardNotificationDismissalKey(candidate) !== itemKey));
+    setOpen(false);
+  }, [dismissalStorageKey, getDismissedKeys]);
 
   useEffect(() => { fetch_(); }, [fetch_]);
   useEffect(() => {
@@ -1322,7 +1348,7 @@ function NotificationBell({ currentUser }: { currentUser?: CurrentUser }) {
                 const color = colorMap[item.type];
                 return (
                   <Link key={item.id} href={item.href}
-                    onClick={() => setOpen(false)}
+                    onClick={() => dismiss(item)}
                     className="flex items-start gap-3 px-4 py-3 hover:opacity-90 transition-opacity">
                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                       style={{ background: `${color}15` }}>

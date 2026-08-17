@@ -9,6 +9,7 @@ import {
   type DashboardPeriod,
   vietnamDateKey,
 } from "@/lib/crm-dashboard-period";
+import { dashboardNotificationVersion } from "@/lib/crm-dashboard-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -270,6 +271,7 @@ export async function GET(req: NextRequest) {
     if (overdue.length > 0) {
       notifications.push({
         id: "overdue",
+        version: dashboardNotificationVersion(overdue.map(lead => lead.id)),
         type: "warning",
         title: `${overdue.length} khách hàng quá hạn liên hệ`,
         body: overdue.slice(0, 3).map(l => l.name).join(", ") + (overdue.length > 3 ? "..." : ""),
@@ -281,12 +283,13 @@ export async function GET(req: NextRequest) {
 
     // Tasks due today
     try {
-      const taskRows = await query<{ data: string }>(
-        `SELECT data FROM crm_tasks WHERE due_date = CURRENT_DATE AND done = false ORDER BY created_at DESC LIMIT 5`
+      const taskRows = await query<{ id: string }>(
+        `SELECT id FROM crm_tasks WHERE due_date = CURRENT_DATE AND done = false ORDER BY id ASC LIMIT 5`
       );
       if (taskRows.length > 0) {
         notifications.push({
           id: "tasks_today",
+          version: dashboardNotificationVersion(taskRows.map(task => task.id)),
           type: "info",
           title: `${taskRows.length} việc cần làm hôm nay`,
           body: "Nhấn để xem danh sách việc cần làm",
@@ -306,6 +309,7 @@ export async function GET(req: NextRequest) {
     if (stale.length > 0) {
       notifications.push({
         id: "stale_deals",
+        version: dashboardNotificationVersion(stale.map(lead => lead.id)),
         type: "alert",
         title: `${stale.length} deal có nguy cơ mất`,
         body: stale.slice(0, 2).map(l => l.name).join(", ") + " — không có hoạt động 5+ ngày",

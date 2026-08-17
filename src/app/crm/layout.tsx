@@ -7,15 +7,13 @@ import DataPoolNotification from "@/components/crm/DataPoolNotification";
 import CrmPushNotifications from "@/components/crm/CrmPushNotifications";
 import ItySoftphone from "@/components/crm/ItySoftphone";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
-import CrmAdminThemeBoundary from "@/components/crm/CrmAdminThemeBoundary";
 import type { Metadata, Viewport } from "next";
 import "./facebook-group-marketing.css";
-import "./admin-refresh.css";
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
-  themeColor: "#0B111B",
-  colorScheme: "dark",
+  themeColor: "#f4f8ff",
+  colorScheme: "light",
   viewportFit: "cover",
 };
 
@@ -237,7 +235,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         className="crm-root flex h-screen overflow-hidden"
         style={{
           background:
-            "radial-gradient(circle at 12% 4%, rgba(50,76,124,0.22), transparent 28rem), radial-gradient(circle at 86% 12%, rgba(164,112,24,0.18), transparent 32rem), radial-gradient(circle at 58% 96%, rgba(94,56,12,0.17), transparent 34rem), linear-gradient(135deg, #0c1321 0%, #17160f 47%, #1a1105 100%)",
+            "radial-gradient(circle at 10% 0%, rgba(0,104,255,0.10), transparent 30rem), radial-gradient(circle at 90% 8%, rgba(65,183,255,0.10), transparent 32rem), linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%)",
         }}
       >
         <CrmSidebar
@@ -247,8 +245,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           rolePermissions={rolePermissions}
           roleName={roleName}
         />
-        <main className="flex-1 overflow-auto min-w-0" style={{ background: "inherit" }}>
-          <CrmAdminThemeBoundary>{children}</CrmAdminThemeBoundary>
+        <main className="min-w-0 flex-1 overflow-auto" style={{ background: "inherit" }}>
+          {children}
         </main>
         {/* Real-time notification khi có lead mới vào Data Pool */}
         <DataPoolNotification />

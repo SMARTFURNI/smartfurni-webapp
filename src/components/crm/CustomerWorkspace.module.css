@@ -27,6 +27,31 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.kanbanWorkspace :global(input:focus),
+.kanbanWorkspace :global(select:focus) {
+  border-color: #78afff !important;
+  box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.13) !important;
+}
+
+.kanbanWorkspace :global(.crm-kanban-scroll) {
+  scrollbar-color: #8bbcff #eaf3ff;
+  scrollbar-width: thin;
+}
+
+.kanbanWorkspace :global(.crm-kanban-scroll::-webkit-scrollbar) {
+  height: 8px;
+}
+
+.kanbanWorkspace :global(.crm-kanban-scroll::-webkit-scrollbar-track) {
+  border-radius: 999px;
+  background: #eaf3ff;
+}
+
+.kanbanWorkspace :global(.crm-kanban-scroll::-webkit-scrollbar-thumb) {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8bbcff, #0068ff);
+}
+
 .surface {
   background: rgba(255, 255, 255, 0.96) !important;
   border: 1px solid #dbe3ee !important;
