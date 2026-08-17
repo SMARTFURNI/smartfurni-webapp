@@ -115,16 +115,17 @@ function KpiCard({ icon: Icon, label, value, note, tone = "blue" }: {
     rose: "bg-rose-50 border-rose-200 text-rose-700",
     slate: "bg-slate-50 border-slate-200 text-slate-700",
   };
+  const compactValue = value.length > 10;
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+    <div className="self-start rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase leading-4 tracking-wide text-slate-500">{label}</p>
+          <p className={`mt-0.5 font-bold text-slate-900 ${compactValue ? "text-base leading-5" : "text-xl leading-6"}`}>{value}</p>
         </div>
-        <span className={`grid h-9 w-9 place-items-center rounded-xl border ${colors[tone]}`}><Icon size={17} /></span>
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg border ${colors[tone]}`}><Icon size={15} /></span>
       </div>
-      <p className="mt-2 text-[11px] leading-4 text-slate-500">{note}</p>
+      <p className="mt-1.5 text-[10px] leading-4 text-slate-500">{note}</p>
     </div>
   );
 }
@@ -196,14 +197,14 @@ function Funnel({ report }: { report: JourneyWorkflowReport }) {
 
 function SummaryCards({ summary }: { summary: JourneyReportSummary }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 2xl:grid-cols-10">
+    <div className="grid grid-cols-2 items-start gap-2.5 lg:grid-cols-5 2xl:grid-cols-10">
       <KpiCard icon={Target} label="Đủ điều kiện hiện tại" value={formatNumber(summary.eligibleNow)} note="Theo dữ liệu lead hiện có" tone="slate" />
       <KpiCard icon={Users} label="Đã tham gia" value={formatNumber(summary.enrolled)} note={`${summary.active} đang chạy · ${summary.paused} tạm dừng`} />
       <KpiCard icon={Send} label="Tỷ lệ gửi" value={`${summary.sendSuccessRate}%`} note={`${summary.sentActions}/${summary.dueActions} action đến hạn`} tone="violet" />
       <KpiCard icon={MessageCircle} label="Tỷ lệ phản hồi" value={`${summary.responseRate}%`} note={`${summary.responded}/${summary.contacted} lead đã tiếp cận`} tone="green" />
       <KpiCard icon={UserCheck} label="Tỷ lệ mở Email" value={`${summary.openRate}%`} note={`${summary.openedMessages} lượt mở ghi nhận`} tone="violet" />
       <KpiCard icon={MousePointerClick} label="Tỷ lệ click link" value={`${summary.clickRate}%`} note={`${summary.clickedMessages} tin có click Email/Zalo`} tone="green" />
-      <KpiCard icon={Clock3} label="Phản hồi trung bình" value={summary.averageResponseHours == null ? "Chưa đủ dữ liệu" : `${summary.averageResponseHours} giờ`} note="Từ lần gửi gần nhất" tone="slate" />
+      <KpiCard icon={Clock3} label="Phản hồi trung bình" value={summary.averageResponseHours == null ? "—" : `${summary.averageResponseHours} giờ`} note={summary.averageResponseHours == null ? "Chưa đủ dữ liệu phản hồi" : "Từ lần gửi gần nhất"} tone="slate" />
       <KpiCard icon={TrendingUp} label="Đã báo giá" value={`${summary.quoteRate}%`} note={`${summary.quoted} lead có báo giá`} tone="amber" />
       <KpiCard icon={CheckCircle2} label="Tỷ lệ chốt" value={`${summary.winRate}%`} note={`${summary.won} thắng · ${summary.lost} thất bại`} tone="green" />
       <KpiCard icon={Wallet} label="Doanh thu hỗ trợ" value={formatCurrency(summary.assistedRevenue)} note={`Pipeline: ${formatCurrency(summary.pipelineValue)}`} tone="amber" />
