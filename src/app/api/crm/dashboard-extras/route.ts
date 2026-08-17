@@ -3,6 +3,12 @@ import { getCrmSession } from "@/lib/admin-auth";
 import { getLeads } from "@/lib/crm-store";
 import { getAllStaff } from "@/lib/crm-staff-store";
 import { query } from "@/lib/db";
+import {
+  dashboardPeriodWindow,
+  isDashboardPeriod,
+  type DashboardPeriod,
+  vietnamDateKey,
+} from "@/lib/crm-dashboard-period";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +18,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
-  const period = searchParams.get("period") || "month"; // month | quarter | year
+  const rawPeriod = searchParams.get("period");
+  const period: DashboardPeriod = isDashboardPeriod(rawPeriod) ? rawPeriod : "today";
   const staffFilter = (!session.isAdmin && session.staffId)
     ? { assignedTo: undefined as string | undefined }
     : undefined;
@@ -205,40 +212,36 @@ export async function GET(req: NextRequest) {
     const cacheKey = `period_${period}_${session.staffId || 'admin'}`;
     const leads = await getLeads(filter);
     const now = new Date();
-    let startDate: Date;
-    if (period === "quarter") {
-      const q = Math.floor(now.getMonth() / 3);
-      startDate = new Date(now.getFullYear(), q * 3, 1);
-    } else if (period === "year") {
-      startDate = new Date(now.getFullYear(), 0, 1);
-    } else {
-      // month (default)
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
-
-    const inPeriod = (dateStr: string) => new Date(dateStr) >= startDate;
+    const { start: startDate, end: endDate, days } = dashboardPeriodWindow(period, now);
+    const inPeriod = (dateStr: string) => {
+      const timestamp = new Date(dateStr);
+      return timestamp >= startDate && timestamp < endDate;
+    };
     const newLeads = leads.filter(l => inPeriod(l.createdAt));
     const wonLeads = leads.filter(l => l.stage === "won" && inPeriod(l.updatedAt));
     const wonValue = wonLeads.reduce((s, l) => s + (l.expectedValue || 0), 0);
     const totalClosed = wonLeads.length + leads.filter(l => l.stage === "lost" && inPeriod(l.updatedAt)).length;
     const convRate = totalClosed > 0 ? Math.round((wonLeads.length / totalClosed) * 100) : 0;
 
-    // Sparkline: daily new leads for last 7 days
+    // Sparkline follows the selected period; single-day views still show seven
+    // recent points so the compact chart has useful context.
+    const sparklineDays = Math.max(days, 7);
+    const chartEndDay = new Date(endDate.getTime() - 1);
     const sparkline = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
+    for (let i = sparklineDays - 1; i >= 0; i--) {
+      const d = new Date(chartEndDay);
       d.setDate(d.getDate() - i);
-      const dayStr = d.toISOString().slice(0, 10);
-      sparkline.push(leads.filter(l => l.createdAt.slice(0, 10) === dayStr).length);
+      const dayStr = vietnamDateKey(d);
+      sparkline.push(leads.filter(l => vietnamDateKey(new Date(l.createdAt)) === dayStr).length);
     }
 
     // Won sparkline
     const wonSparkline = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
+    for (let i = sparklineDays - 1; i >= 0; i--) {
+      const d = new Date(chartEndDay);
       d.setDate(d.getDate() - i);
-      const dayStr = d.toISOString().slice(0, 10);
-      wonSparkline.push(leads.filter(l => l.stage === "won" && l.updatedAt.slice(0, 10) === dayStr).length);
+      const dayStr = vietnamDateKey(d);
+      wonSparkline.push(leads.filter(l => l.stage === "won" && vietnamDateKey(new Date(l.updatedAt)) === dayStr).length);
     }
 
     return NextResponse.json({

@@ -6,9 +6,8 @@ import { getCrmSettings } from "@/lib/crm-settings-store";
 import { getAllPlans } from "@/lib/twelve-week-plan-store";
 import { getRawLeadStats } from "@/lib/crm-raw-lead-store";
 import CrmDashboardClient from "@/components/crm/CrmDashboardClient";
-import { cookies } from "next/headers";
-import { queryOne } from "@/lib/db";
 import { redirect } from "next/navigation";
+import { dashboardPeriodWindow, vietnamDateKey } from "@/lib/crm-dashboard-period";
 
 export const dynamic = "force-dynamic";
 
@@ -47,30 +46,6 @@ export default async function CrmDashboardPage({
     }
   }
 
-  // Đọc darkMode và gradientPreset preference theo tài khoản
-  let initialDarkMode = false;
-  let initialGradientPreset = "default";
-  try {
-    if (session.isAdmin) {
-      // Admin: đọc từ cookie sf_admin_theme
-      const cookieStore = await cookies();
-      initialDarkMode = cookieStore.get("sf_admin_theme")?.value === "dark";
-      initialGradientPreset = cookieStore.get("sf_admin_gradient")?.value ?? "default";
-    } else if (session.staffId) {
-      // Nhân viên: đọc từ data JSONB của crm_staff
-      const row = await queryOne<{ data: string }>(
-        "SELECT data FROM crm_staff WHERE id = $1",
-        [session.staffId]
-      );
-      if (row) {
-        const data = typeof row.data === "string" ? JSON.parse(row.data) : row.data as Record<string, unknown>;
-        const prefs = (data?.preferences as Record<string, unknown>) ?? {};
-        initialDarkMode = prefs.darkMode === true;
-        initialGradientPreset = (prefs.gradientPreset as string) ?? "default";
-      }
-    }
-  } catch { /* ignore, default to light */ }
-
   // canViewAll (admin hoặc leader): xem tất cả; còn lại chỉ xem leads được giao cho mình
   const staffFilter = (!canViewAll && staffName) ? { assignedTo: staffName } : undefined;
 
@@ -99,36 +74,34 @@ export default async function CrmDashboardPage({
   // Kế hoạch chung của admin (shared) — dành cho nhân viên xem
   const sharedPlan = allPlans.find(p => (p as any).isShared === true) ?? null;
 
-  // Tính period_stats (week mặc định) server-side
+  // Tính period_stats cho "Hôm nay" ngay từ server để dashboard mở ra
+  // đúng bộ lọc mặc định và không nhấp nháy dữ liệu tuần cũ khi hydrate.
   const now = new Date();
-  // Tuần hiện tại: thứ 2 gần nhất
-  const dayOfWeek = now.getDay(); // 0=Sun
-  const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - daysFromMonday);
-  weekStart.setHours(0, 0, 0, 0);
-
-  const inWeek = (dateStr: string) => new Date(dateStr) >= weekStart;
-  const newLeadsWeek = leads.filter(l => inWeek(l.createdAt));
-  const wonLeadsWeek = leads.filter(l => l.stage === "won" && inWeek(l.updatedAt));
-  const wonValueWeek = wonLeadsWeek.reduce((s, l) => s + (l.expectedValue || 0), 0);
-  const totalClosedWeek = wonLeadsWeek.length + leads.filter(l => l.stage === "lost" && inWeek(l.updatedAt)).length;
-  const convRateWeek = totalClosedWeek > 0 ? Math.round((wonLeadsWeek.length / totalClosedWeek) * 100) : 0;
+  const { start: todayStart, end: tomorrowStart } = dashboardPeriodWindow("today", now);
+  const inToday = (dateStr: string) => {
+    const timestamp = new Date(dateStr);
+    return timestamp >= todayStart && timestamp < tomorrowStart;
+  };
+  const newLeadsToday = leads.filter(l => inToday(l.createdAt));
+  const wonLeadsToday = leads.filter(l => l.stage === "won" && inToday(l.updatedAt));
+  const wonValueToday = wonLeadsToday.reduce((s, l) => s + (l.expectedValue || 0), 0);
+  const totalClosedToday = wonLeadsToday.length + leads.filter(l => l.stage === "lost" && inToday(l.updatedAt)).length;
+  const convRateToday = totalClosedToday > 0 ? Math.round((wonLeadsToday.length / totalClosedToday) * 100) : 0;
   const sparkline = [];
   const wonSparkline = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const dayStr = d.toISOString().slice(0, 10);
-    sparkline.push(leads.filter(l => l.createdAt.slice(0, 10) === dayStr).length);
-    wonSparkline.push(leads.filter(l => l.stage === "won" && l.updatedAt.slice(0, 10) === dayStr).length);
+    const dayStr = vietnamDateKey(d);
+    sparkline.push(leads.filter(l => vietnamDateKey(new Date(l.createdAt)) === dayStr).length);
+    wonSparkline.push(leads.filter(l => l.stage === "won" && vietnamDateKey(new Date(l.updatedAt)) === dayStr).length);
   }
   const periodStats = {
-    period: "week",
-    newLeads: newLeadsWeek.length,
-    wonLeads: wonLeadsWeek.length,
-    wonValue: wonValueWeek,
-    convRate: convRateWeek,
+    period: "today",
+    newLeads: newLeadsToday.length,
+    wonLeads: wonLeadsToday.length,
+    wonValue: wonValueToday,
+    convRate: convRateToday,
     sparkline,
     wonSparkline,
   };
@@ -172,8 +145,6 @@ export default async function CrmDashboardPage({
         isAdmin: session.isAdmin,
         staffId: staffId ?? undefined,
       }}
-      initialDarkMode={initialDarkMode}
-      initialGradientPreset={initialGradientPreset}
       initialRenderTimestamp={now.getTime()}
       initialGreeting={initialGreeting}
       initialDateLabel={initialDateLabel}
