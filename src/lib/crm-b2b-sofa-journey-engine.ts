@@ -1,7 +1,7 @@
 import "server-only";
 
 import { query, queryOne } from "@/lib/db";
-import { createTask, getLead } from "@/lib/crm-store";
+import { createActivityOnce, createTask, getLead } from "@/lib/crm-store";
 import { logNotification } from "@/lib/crm-notifications-store";
 import { listZaloAccounts } from "@/lib/zalo-account-store";
 import { findZaloUserByPhone, initZaloGateway, sendZaloAttachment as sendPersonalAttachment, sendZaloMessage } from "@/lib/zalo-gateway";
@@ -31,6 +31,7 @@ import {
   getJourneyEnrollment,
   getEnrollmentById,
   getJourneyEnrollmentsForReplyScan,
+  getJourneySentActivityBackfillCandidates,
   getLeadForJourneyAction,
   markJourneyActionOutcome,
   markJourneyActionSent,
@@ -41,6 +42,10 @@ import {
   type JourneyChannelAttempt,
   type JourneyEnrollmentRecord,
 } from "@/lib/crm-b2b-sofa-journey-store";
+import {
+  buildJourneySentActivity,
+  journeySentActivityId,
+} from "@/lib/crm-journey-activity";
 import { analyzeJourneyReply } from "@/lib/crm-journey-reply-ai";
 import type { Lead } from "@/lib/crm-types";
 import {
@@ -421,6 +426,66 @@ async function logChannelAttempt(
   });
 }
 
+async function recordJourneySentActivity(input: {
+  actionId: string;
+  leadId: string;
+  channel: JourneyChannel;
+  stepTitle: string;
+  subject: string;
+  emailBody: string;
+  zaloBody: string;
+  media: PreparedMedia[];
+  createdAt?: string;
+}): Promise<boolean> {
+  const activity = await createActivityOnce(
+    journeySentActivityId(input.actionId),
+    buildJourneySentActivity({
+      leadId: input.leadId,
+      channel: input.channel,
+      stepTitle: input.stepTitle,
+      emailSubject: input.subject,
+      emailBody: input.emailBody,
+      zaloBody: input.zaloBody,
+      media: input.media.map(item => ({
+        name: item.asset.name,
+        url: item.asset.url,
+        contentType: item.asset.contentType,
+        sizeBytes: item.asset.sizeBytes,
+      })),
+    }),
+    input.createdAt,
+  );
+  return activity !== null;
+}
+
+async function backfillJourneySentActivities<TSettings extends B2BSofaJourneySettings>(
+  runtime: JourneyRuntime<TSettings>,
+  settings: TSettings,
+): Promise<number> {
+  const candidates = await getJourneySentActivityBackfillCandidates(runtime.journeyCode, 100);
+  if (candidates.length === 0) return 0;
+  const steps = new Map(
+    runtime.definitionWithOverrides(settings).steps.map(step => [step.id, step] as const),
+  );
+  let inserted = 0;
+  for (const candidate of candidates) {
+    const step = steps.get(candidate.stepId);
+    const created = await recordJourneySentActivity({
+      actionId: candidate.actionId,
+      leadId: candidate.leadId,
+      channel: candidate.sentChannel,
+      stepTitle: step?.title || candidate.stepId,
+      subject: candidate.sentChannel === "email" ? candidate.message : "",
+      emailBody: "",
+      zaloBody: candidate.sentChannel === "email" ? "" : candidate.message,
+      media: [],
+      createdAt: candidate.sentAt,
+    });
+    if (created) inserted += 1;
+  }
+  return inserted;
+}
+
 interface InboundSignal {
   reason: string;
   channel: string;
@@ -768,6 +833,16 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
           idempotencyKey: `fallback:${action.id}`,
         }).catch(error => console.error("[Journey report] Không ghi được fallback:", error));
       }
+      await recordJourneySentActivity({
+        actionId: action.id,
+        leadId: lead.id,
+        channel,
+        stepTitle: step.title,
+        subject,
+        emailBody,
+        zaloBody,
+        media,
+      }).catch(error => console.error("[Journey activity] Không ghi được lịch sử gửi:", error));
       await markJourneyActionSent(action, channel, attempts);
       return { status: "sent", channel, message: `Đã gửi qua ${channel}.` };
     }
@@ -820,6 +895,9 @@ export async function runJourneyRuntime<TSettings extends B2BSofaJourneySettings
       replyRecommendations: 0,
     };
   }
+
+  await backfillJourneySentActivities(runtime, settings)
+    .catch(error => console.error("[Journey activity] Không đối soát được lịch sử gửi:", error));
 
   const autoEnrollment = await runtime.autoEnroll(settings);
   const replyRecommendations = await scanJourneyReplies(runtime);

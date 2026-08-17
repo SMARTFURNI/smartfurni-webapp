@@ -133,6 +133,17 @@ export interface JourneyActionRecord {
   updatedAt: string;
 }
 
+export interface JourneySentActivityBackfillCandidate {
+  actionId: string;
+  enrollmentId: string;
+  journeyCode: string;
+  leadId: string;
+  stepId: string;
+  sentChannel: JourneyChannel;
+  sentAt: string;
+  message: string;
+}
+
 interface EnrollmentRow {
   id: string;
   journey_code: string;
@@ -939,6 +950,58 @@ export async function markJourneyActionSent(
     [action.enrollmentId],
   );
   await completeJourneyIfFinished(action.enrollmentId);
+}
+
+export async function getJourneySentActivityBackfillCandidates(
+  journeyCode: string,
+  limit = 100,
+): Promise<JourneySentActivityBackfillCandidate[]> {
+  await initB2BSofaJourneySchema();
+  const rows = await query<{
+    action_id: string;
+    enrollment_id: string;
+    journey_code: string;
+    lead_id: string;
+    step_id: string;
+    sent_channel: JourneyChannel;
+    sent_at: string;
+    message: string | null;
+  }>(
+    `SELECT a.id AS action_id,a.enrollment_id,e.journey_code,a.lead_id,a.step_id,
+            a.sent_channel,a.sent_at,COALESCE(notification.message,'') AS message
+     FROM crm_journey_actions a
+     JOIN crm_journey_enrollments e ON e.id=a.enrollment_id
+     LEFT JOIN crm_activities activity ON activity.id=('journey-sent:' || a.id)
+     LEFT JOIN LATERAL (
+       SELECT log.message
+       FROM crm_notification_logs log
+       WHERE log.lead_id=a.lead_id
+         AND log.rule_id=a.step_id
+         AND log.status='sent'
+         AND log.action_type=a.sent_channel
+         AND log.sent_at BETWEEN a.sent_at-INTERVAL '5 minutes' AND a.sent_at+INTERVAL '5 minutes'
+       ORDER BY ABS(EXTRACT(EPOCH FROM (log.sent_at-a.sent_at)))
+       LIMIT 1
+     ) notification ON TRUE
+     WHERE e.journey_code=$1
+       AND a.status='sent'
+       AND a.sent_channel IS NOT NULL
+       AND a.sent_at IS NOT NULL
+       AND activity.id IS NULL
+     ORDER BY a.sent_at DESC
+     LIMIT $2`,
+    [journeyCode, Math.max(1, Math.min(limit, 500))],
+  );
+  return rows.map(row => ({
+    actionId: row.action_id,
+    enrollmentId: row.enrollment_id,
+    journeyCode: row.journey_code,
+    leadId: row.lead_id,
+    stepId: row.step_id,
+    sentChannel: row.sent_channel,
+    sentAt: String(row.sent_at),
+    message: row.message || "",
+  }));
 }
 
 export async function markJourneyActionOutcome(

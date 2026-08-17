@@ -279,6 +279,35 @@ export async function createActivity(input: Omit<Activity, "id" | "createdAt">):
   return activity;
 }
 
+/**
+ * Ghi activity với ID ổn định để các worker/retry không tạo trùng lịch sử.
+ * `createdAt` cho phép tiến trình đối soát giữ nguyên thời điểm gửi thật.
+ */
+export async function createActivityOnce(
+  id: string,
+  input: Omit<Activity, "id" | "createdAt">,
+  createdAt = new Date().toISOString(),
+): Promise<Activity | null> {
+  await initCrmSchema();
+  const activity: Activity = { ...input, id, createdAt };
+  const inserted = await queryOne<{ id: string }>(
+    `INSERT INTO crm_activities (id, lead_id, data, created_at)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (id) DO NOTHING
+     RETURNING id`,
+    [activity.id, activity.leadId, JSON.stringify(activity), activity.createdAt],
+  );
+  if (!inserted) return null;
+
+  const existing = await getLead(activity.leadId);
+  const existingContactAt = existing?.lastContactAt ? new Date(existing.lastContactAt).getTime() : 0;
+  const activityAt = new Date(activity.createdAt).getTime();
+  if (existing && Number.isFinite(activityAt) && activityAt > existingContactAt) {
+    await updateLead(activity.leadId, { lastContactAt: activity.createdAt });
+  }
+  return activity;
+}
+
 export async function deleteActivity(id: string): Promise<void> {
   await initCrmSchema();
   await query(`DELETE FROM crm_activities WHERE id = $1`, [id]);
