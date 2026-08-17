@@ -3,18 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Phone, Mail, MapPin, Building2, User, Store,
+  ArrowLeft, Phone, Mail, MapPin, User,
   Calendar, Edit3, Trash2, Plus, CheckSquare, FileText,
   Clock, MessageSquare, Users, Send, FileCheck, Loader2,
   ChevronDown, AlertCircle, Tag, DollarSign, Home, X,
-  ShoppingCart, ExternalLink, Star, TrendingUp, Hash, Copy,
-  PhoneCall, PhoneMissed, PhoneIncoming, Mic, Play, Pause, Volume2, Save,
-  MessageCircle,
+  ShoppingCart, ExternalLink, Star, Copy,
+  PhoneCall, PhoneMissed, PhoneIncoming, Play, Pause, Save,
+  MessageCircle, MoreHorizontal, ListChecks, Workflow, CirclePause, BriefcaseBusiness,
 } from "lucide-react";
 import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog, InterestedProduct } from "@/lib/crm-types";
 import type { FacebookGroupLeadSource } from "@/lib/facebook-group-marketing-types";
-import CustomerContactActions from "@/components/crm/high-performance-features/CustomerContactActions";
-import { ItyCallButton } from "@/components/crm/ItySoftphone";
 import { formatDuration } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
@@ -25,19 +23,19 @@ import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS, PRODUCT_LABELS } from "@/li
 
 // ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
-  bg: "radial-gradient(circle at 92% 2%, rgba(212,175,69,0.12), transparent 25rem), linear-gradient(160deg, #f8fbff 0%, #f4f7fb 52%, #fffdf7 100%)",
+  bg: "linear-gradient(180deg, #f7faff 0%, #eef4fb 100%)",
   surface: "#ffffff",
   surfaceHover: "#eef3f8",
-  surfaceActive: "#fff8e6",
+  surfaceActive: "#eaf3ff",
   border: "#dbe3ee",
-  borderGold: "rgba(212,175,69,0.44)",
+  borderGold: "rgba(0,104,255,0.36)",
   text: "#172033",
   textMuted: "#64748b",
   textDim: "#94a3b8",
-  gold: "#d4af45",
-  goldDark: "#b98720",
-  goldGlow: "rgba(185,135,32,0.22)",
-  header: "linear-gradient(135deg, #ffffff 0%, #fffdf7 100%)",
+  gold: "#0068ff",
+  goldDark: "#0056d6",
+  goldGlow: "rgba(0,104,255,0.18)",
+  header: "linear-gradient(135deg, #ffffff 0%, #f7fbff 100%)",
   card: "#ffffff",
   cardBorder: "#dbe3ee",
   inputBg: "#f8fafc",
@@ -56,17 +54,37 @@ interface Props {
   staffList?: { id: string; fullName: string }[];
 }
 
-const TABS = ["timeline", "calls", "quotes", "tasks", "facebook_group", "info"] as const;
+const TABS = ["timeline", "calls", "tasks", "quotes", "info"] as const;
 type Tab = typeof TABS[number];
 
 const TAB_LABELS: Record<Tab, string> = {
-  timeline: "Lịch sử",
-  calls: "Cuộc gọi",
-  quotes: "Báo giá",
-  tasks: "Việc cần làm",
-  facebook_group: "Nguồn Facebook Group",
+  timeline: "Tổng quan",
+  calls: "Tương tác",
+  tasks: "Công việc",
+  quotes: "Kinh doanh",
   info: "Thông tin",
 };
+
+type InteractionFilter = "all" | "call" | "zalo" | "email" | "note";
+
+function interactionKind(activity: Activity): InteractionFilter {
+  const text = `${activity.title || ""} ${activity.content || ""}`.toLowerCase();
+  if (activity.type === "call") return "call";
+  if (activity.type === "email") return "email";
+  if (text.includes("zalo")) return "zalo";
+  return "note";
+}
+
+function activityGroupLabel(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const diff = Math.round((today - target) / 86400000);
+  if (diff === 0) return "Hôm nay";
+  if (diff === 1) return "Hôm qua";
+  return date.toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+}
 
 const ACTIVITY_TYPE_ICONS: Record<ActivityType, React.ElementType> = {
   call: Phone,
@@ -103,19 +121,22 @@ export default function LeadDetailClient({
   const [activeTab, setActiveTab] = useState<Tab>("timeline");
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
-  const [callLogsLoaded, setCallLogsLoaded] = useState(false);
+  const [, setCallLogsLoaded] = useState(false);
   const [callLogsLoading, setCallLogsLoading] = useState(false);
   const [playingCallId, setPlayingCallId] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<Record<string, string>>({});
   const [savingNote, setSavingNote] = useState<string | null>(null);
-  const [zaloCallResult, setZaloCallResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
   const [showEditLead, setShowEditLead] = useState(false);
   const [showStageMenu, setShowStageMenu] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [contactModal, setContactModal] = useState<'call' | 'zalo' | 'email' | null>(null);
   const [contactCopied, setContactCopied] = useState(false);
+  const [interactionFilter, setInteractionFilter] = useState<InteractionFilter>("all");
+  const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
+  const [visibleActivityCount, setVisibleActivityCount] = useState(10);
 
   const handleContactCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -185,6 +206,13 @@ export default function LeadDetailClient({
   };
 
   const overdue = isOverdue(lead);
+  const openTasks = tasks
+    .filter(task => !task.done)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  const nextTask = openTasks[0];
+  const lastInteractionAt = activities[0]?.createdAt || lead.lastContactAt;
+  const filteredActivities = activities.filter(activity => interactionFilter === "all" || interactionKind(activity) === interactionFilter);
+  const visibleActivities = filteredActivities.slice(0, visibleActivityCount);
 
   async function deleteLead() {
     setDeleting(true);
@@ -215,25 +243,23 @@ export default function LeadDetailClient({
   return (
     <div className={`${customerStyles.workspace} flex flex-col h-full`} style={{ background: DL.bg, minHeight: "100vh" }}>
       {/* ── Header ── */}
-      <div className={`${customerStyles.headerSurface} flex-shrink-0 mx-3 sm:mx-5 mt-2 rounded-2xl px-3 sm:px-4 py-2.5 backdrop-blur-sm`}
-        style={{ background: DL.header, borderBottom: `1px solid ${DL.border}`, overflow: "visible", position: "relative", zIndex: 100 }}>
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className={`${customerStyles.headerSurface} flex-shrink-0 mx-3 sm:mx-5 mt-2 rounded-2xl px-3 sm:px-4 py-2.5 backdrop-blur-sm sticky top-2`}
+        style={{ background: DL.header, border: `1px solid ${DL.border}`, boxShadow: "0 12px 30px rgba(31,62,104,.08)", overflow: "visible", position: "sticky", zIndex: 100 }}>
+        <div className="flex items-center gap-2.5">
           <Link href="/crm/leads"
-            className="flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
             style={{ color: DL.textMuted }}
-            onMouseEnter={e => (e.currentTarget.style.color = DL.gold)}
-            onMouseLeave={e => (e.currentTarget.style.color = DL.textMuted)}>
-            <ArrowLeft size={15} />
-            <span>Danh sách KH</span>
+            title="Quay lại danh sách khách hàng">
+            <ArrowLeft size={18} />
           </Link>
-
-          <div className="w-px h-4" style={{ background: DL.border }} />
-
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-black text-white flex-shrink-0"
+            style={{ background: `linear-gradient(135deg, ${TYPE_COLORS[lead.type]}, #0068ff)` }}>
+            {lead.name.charAt(0).toUpperCase()}
+          </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-base font-bold" style={{ color: DL.text }}>{lead.name}</h1>
-              {lead.company && <span className="text-xs" style={{ color: DL.textMuted }}>{lead.company}</span>}
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-base font-bold truncate" style={{ color: DL.text }}>{lead.name}</h1>
+              <span className="hidden sm:inline text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                 style={{ background: `${TYPE_COLORS[lead.type]}18`, color: TYPE_COLORS[lead.type], border: `1px solid ${TYPE_COLORS[lead.type]}30` }}>
                 {TYPE_LABELS[lead.type]}
               </span>
@@ -244,9 +270,19 @@ export default function LeadDetailClient({
                 </span>
               )}
             </div>
+            <div className="text-xs truncate mt-0.5" style={{ color: DL.textMuted }}>{lead.company || lead.phone}</div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="hidden md:flex items-center gap-1.5">
+            <button onClick={() => setContactModal("call")} className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-semibold"
+              style={{ background: "#ecfdf5", color: "#059669", border: "1px solid #a7f3d0" }}><Phone size={14} /> Gọi</button>
+            <button onClick={() => setContactModal("zalo")} className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-semibold"
+              style={{ background: "#eaf3ff", color: DL.gold, border: "1px solid #bfdbfe" }}><MessageCircle size={14} /> Zalo</button>
+            {lead.email && <button onClick={() => setContactModal("email")} className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-semibold"
+              style={{ background: "#f5f3ff", color: "#7c3aed", border: "1px solid #ddd6fe" }}><Mail size={14} /> Email</button>}
+          </div>
+
+          <div className="flex items-center gap-2">
             {/* Stage selector */}
             <div className="relative">
               <button
@@ -278,44 +314,36 @@ export default function LeadDetailClient({
               )}
             </div>
 
-            <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
-              className={`${customerStyles.blueButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all`}>
-              <ShoppingCart size={13} /> Tạo đơn hàng
-            </Link>
-            <Link href={`/crm/quotes/new?leadId=${lead.id}&leadName=${encodeURIComponent(lead.name)}`}
-              className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all`}>
-              <FileText size={13} /> Tạo báo giá
-            </Link>
-            <button onClick={() => setShowEditLead(true)}
-              className={`${customerStyles.secondaryButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all`}
-              style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}
-              onMouseEnter={e => { e.currentTarget.style.color = DL.text; e.currentTarget.style.background = DL.surfaceHover; }}
-              onMouseLeave={e => { e.currentTarget.style.color = DL.textMuted; e.currentTarget.style.background = DL.surface; }}>
-              <Edit3 size={13} /> Sửa
-            </button>
-            {isAdmin && (
-              <button onClick={() => setShowDeleteConfirm(true)}
-                className={`${customerStyles.dangerButton} flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all`}
-                style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#dc2626" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#ffe4e6")}
-                onMouseLeave={e => (e.currentTarget.style.background = "#fff1f2")}>
-                <Trash2 size={13} /> Xóa
+            <div className="relative">
+              <button onClick={() => setShowActionMenu(value => !value)} className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }} aria-label="Mở menu thao tác">
+                <MoreHorizontal size={18} />
               </button>
-            )}
+              {showActionMenu && (
+                <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-xl p-1.5" style={{ background: DL.modalBg, border: `1px solid ${DL.border}`, zIndex: 9999 }}>
+                  <button onClick={() => { setShowEditLead(true); setShowActionMenu(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-left hover:bg-slate-50" style={{ color: DL.text }}><Edit3 size={15} /> Chỉnh sửa hồ sơ</button>
+                  <Link href={`/crm/quotes/new?leadId=${lead.id}&leadName=${encodeURIComponent(lead.name)}`} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50" style={{ color: DL.text }}><FileText size={15} /> Tạo báo giá</Link>
+                  <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm hover:bg-slate-50" style={{ color: DL.text }}><ShoppingCart size={15} /> Tạo đơn hàng</Link>
+                  {isAdmin && <button onClick={() => { setShowDeleteConfirm(true); setShowActionMenu(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-left hover:bg-red-50" style={{ color: "#dc2626" }}><Trash2 size={15} /> Xóa khách hàng</button>}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Body ── */}
-      <div className="flex-1 overflow-y-auto xl:overflow-hidden flex flex-col xl:flex-row gap-0">
+      <div className="flex-1 overflow-y-auto xl:overflow-hidden flex flex-col xl:flex-row gap-0 pb-20 md:pb-0">
         {/* Left: Main content */}
         <div className="flex-1 xl:overflow-y-auto p-3 sm:p-4 min-w-0">
           {/* Quick stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3">
-            <DLInfoCard icon={Tag} label="Sản phẩm quan tâm" value={lead.interestedProducts?.length ? lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ") : "Chưa xác định"} color="#6366f1" />
-            <DLInfoCard icon={Home} label="Số căn" value={lead.unitCount > 0 ? `${lead.unitCount} căn` : "—"} color="#60a5fa" />
-            <DLInfoCard icon={MapPin} label="Khu vực" value={lead.district || "—"} color="#a78bfa" />
-            <DLInfoCard icon={Tag} label="Nguồn" value={lead.source} color="#34d399" />
+          <div className="flex gap-2 overflow-x-auto mb-3 pb-0.5">
+            <DLInfoCard icon={Star} label="Sản phẩm" value={lead.interestedProducts?.length ? lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ") : "Chưa xác định"} color="#6366f1" />
+            {lead.district && <DLInfoCard icon={MapPin} label="Khu vực" value={lead.district} color="#8b5cf6" />}
+            {lead.assignedTo && <DLInfoCard icon={User} label="Phụ trách" value={lead.assignedTo} color="#0068ff" />}
+            {lastInteractionAt && <DLInfoCard icon={Clock} label="Tương tác cuối" value={new Date(lastInteractionAt).toLocaleDateString("vi-VN")} color="#0ea5e9" />}
+            {lead.expectedValue > 0 && <DLInfoCard icon={DollarSign} label="Giá trị" value={formatVND(lead.expectedValue)} color="#f59e0b" />}
+            <DLInfoCard icon={Workflow} label="Workflow" value={lead.stage === "won" || lead.stage === "lost" ? "Đã dừng" : "Đang tiếp tục"} color={lead.stage === "won" || lead.stage === "lost" ? "#64748b" : "#10b981"} />
           </div>
 
           {/* Tabs container */}
@@ -328,7 +356,7 @@ export default function LeadDetailClient({
                   className="min-w-28 flex-1 py-2.5 px-2 text-sm font-semibold transition-all relative whitespace-nowrap"
                   style={{
                     color: activeTab === tab ? DL.gold : DL.textMuted,
-                    background: activeTab === tab ? "linear-gradient(135deg, #fff9e8, #fff1bd)" : "transparent",
+                    background: activeTab === tab ? "linear-gradient(135deg, #f2f7ff, #eaf3ff)" : "transparent",
                   }}>
                   {TAB_LABELS[tab]}
                   {tab === "calls" && callLogs.length > 0 && (
@@ -349,12 +377,6 @@ export default function LeadDetailClient({
                       {tasks.filter(t => !t.done).length}
                     </span>
                   )}
-                  {tab === "facebook_group" && facebookGroupSources.length > 0 && (
-                    <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
-                      style={{ background: "rgba(24,119,242,0.15)", color: "#60a5fa" }}>
-                      {facebookGroupSources.length}
-                    </span>
-                  )}
                   {activeTab === tab && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
                       style={{ background: `linear-gradient(90deg, transparent, ${DL.gold}, transparent)` }} />
@@ -367,12 +389,24 @@ export default function LeadDetailClient({
               {/* ── Timeline ── */}
               {activeTab === "timeline" && (
                 <div>
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-semibold text-sm" style={{ color: DL.text }}>Lịch sử tương tác</h3>
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="font-semibold text-sm" style={{ color: DL.text }}>Tổng quan tương tác</h3>
+                      <p className="text-xs mt-0.5" style={{ color: DL.textMuted }}>Hoạt động mới nhất của khách hàng và đội ngũ</p>
+                    </div>
                     <button onClick={() => setShowAddActivity(true)}
                       className={`${customerStyles.primaryButton} flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg transition-all`}>
                       <Plus size={13} /> Thêm hoạt động
                     </button>
+                  </div>
+                  <div className="flex gap-1.5 overflow-x-auto mb-4">
+                    {([['all', 'Tất cả'], ['call', 'Cuộc gọi'], ['zalo', 'Zalo'], ['email', 'Email'], ['note', 'Ghi chú']] as const).map(([value, label]) => (
+                      <button key={value} onClick={() => { setInteractionFilter(value); setVisibleActivityCount(10); }}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
+                        style={{ background: interactionFilter === value ? DL.gold : DL.surface, color: interactionFilter === value ? '#fff' : DL.textMuted, border: `1px solid ${interactionFilter === value ? DL.gold : DL.border}` }}>
+                        {label}
+                      </button>
+                    ))}
                   </div>
                   {activities.length === 0 ? (
                     <div className="text-center py-14">
@@ -380,8 +414,8 @@ export default function LeadDetailClient({
                       <p className="text-sm" style={{ color: DL.textMuted }}>Chưa có hoạt động nào</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {activities.map((act, idx) => {
+                    <div className="space-y-1">
+                      {visibleActivities.map((act, idx) => {
                         const Icon = ACTIVITY_TYPE_ICONS[act.type];
                         // Phân biệt màu cho activity "Gọi điện" dựa vào nội dung
                         let color = ACTIVITY_COLORS[act.type];
@@ -391,18 +425,23 @@ export default function LeadDetailClient({
                           else if (act.content.startsWith("Bận")) color = "#f59e0b";        // vàng
                           else if (act.content.startsWith("Thất bại")) color = "#dc2626";  // đỏ
                         }
+                        const expanded = expandedActivities.has(act.id);
+                        const showGroup = idx === 0 || activityGroupLabel(visibleActivities[idx - 1].createdAt) !== activityGroupLabel(act.createdAt);
+                        const isAutomation = (act.createdBy || '').toLowerCase().includes('automation') || `${act.title} ${act.content}`.toLowerCase().includes('workflow');
                         return (
-                          <div key={act.id} className="flex gap-3">
+                          <div key={act.id}>
+                            {showGroup && <div className="text-[11px] font-bold uppercase tracking-wider pt-3 pb-2" style={{ color: DL.textDim }}>{activityGroupLabel(act.createdAt)}</div>}
+                            <div className="flex gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-slate-50">
                             <div className="flex flex-col items-center">
                               <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                                 style={{ background: `${color}15`, border: `1.5px solid ${color}35` }}>
                                 <Icon size={13} style={{ color }} />
                               </div>
-                              {idx < activities.length - 1 && (
+                              {idx < visibleActivities.length - 1 && (
                                 <div className="w-px flex-1 mt-1" style={{ background: DL.border, minHeight: "16px" }} />
                               )}
                             </div>
-                            <div className="flex-1 pb-3">
+                            <div className="flex-1 min-w-0 pb-1">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
                                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
@@ -413,6 +452,7 @@ export default function LeadDetailClient({
                                     {new Date(act.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                                   </span>
                                   {act.createdBy && <span className="text-xs ml-1" style={{ color: DL.textMuted }}>· {act.createdBy}</span>}
+                                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: isAutomation ? '#eaf3ff' : '#f1f5f9', color: isAutomation ? DL.gold : DL.textMuted }}>{isAutomation ? 'Workflow' : 'Nhân viên'}</span>
                                 </div>
                                 <button
                                   onClick={async () => {
@@ -427,8 +467,9 @@ export default function LeadDetailClient({
                                   <Trash2 size={12} />
                                 </button>
                               </div>
-                              {act.title && <p className="text-sm font-medium mt-1" style={{ color: DL.text }}>{act.title}</p>}
-                              {act.content && <p className="text-sm mt-0.5 leading-relaxed" style={{ color: DL.textMuted }}>{act.content}</p>}
+                              {act.title && <p className="text-sm font-medium mt-1 truncate" style={{ color: DL.text }}>{act.title}</p>}
+                              {act.content && <p className="text-sm mt-0.5 leading-relaxed" style={{ color: DL.textMuted, display: '-webkit-box', WebkitLineClamp: expanded ? 'unset' : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{act.content}</p>}
+                              {act.content && act.content.length > 150 && <button onClick={() => setExpandedActivities(prev => { const next = new Set(prev); if (next.has(act.id)) next.delete(act.id); else next.add(act.id); return next; })} className="text-xs font-semibold mt-1" style={{ color: DL.gold }}>{expanded ? 'Thu gọn' : 'Xem thêm'}</button>}
                               {act.attachments?.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 mt-2">
                                   {act.attachments.map((att, i) => (
@@ -442,8 +483,10 @@ export default function LeadDetailClient({
                               )}
                             </div>
                           </div>
+                          </div>
                         );
                       })}
+                      {filteredActivities.length > visibleActivityCount && <button onClick={() => setVisibleActivityCount(count => count + 10)} className="w-full py-2.5 mt-3 rounded-xl text-sm font-semibold" style={{ border: `1px solid ${DL.border}`, color: DL.gold, background: DL.surface }}>Xem thêm {Math.min(10, filteredActivities.length - visibleActivityCount)} hoạt động</button>}
                     </div>
                   )}
                 </div>
@@ -653,9 +696,9 @@ export default function LeadDetailClient({
               )}
 
               {/* ── Facebook Group source ── */}
-              {activeTab === "facebook_group" && (
+              {activeTab === "info" && facebookGroupSources.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-sm mb-4" style={{ color: DL.text }}>
+                  <h3 className="font-semibold text-sm mb-4 mt-6" style={{ color: DL.text }}>
                     Nguồn Facebook Group đã xác thực từ Messenger
                   </h3>
                   {facebookGroupSources.length === 0 ? (
@@ -741,135 +784,44 @@ export default function LeadDetailClient({
           </div>
         </div>
 
-        {/* ── Right Sidebar ── */}
-        <div className="w-full xl:w-72 flex-shrink-0 p-3 xl:overflow-y-auto space-y-2.5 border-t xl:border-t-0 xl:border-l" style={{ borderColor: DL.border }}>
+        {/* ── Action Center ── */}
+        <aside className="w-full xl:w-80 flex-shrink-0 p-3 xl:overflow-y-auto border-t xl:border-t-0 xl:border-l" style={{ borderColor: DL.border }}>
+          <div className="xl:sticky xl:top-3 space-y-3">
+            <div className="rounded-2xl p-4" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, boxShadow: "0 8px 24px rgba(31,62,104,.06)" }}>
+              <div className="flex items-center justify-between mb-3"><h3 className="font-bold text-sm" style={{ color: DL.text }}>Việc tiếp theo</h3><ListChecks size={17} style={{ color: DL.gold }} /></div>
+              {nextTask ? <>
+                <p className="text-sm font-semibold" style={{ color: DL.text }}>{nextTask.title}</p>
+                <div className="flex items-center gap-2 mt-2 text-xs" style={{ color: new Date(nextTask.dueDate) < new Date() ? '#dc2626' : DL.textMuted }}><Calendar size={13} /> {new Date(nextTask.dueDate).toLocaleDateString('vi-VN')} {nextTask.assignedTo && `· ${nextTask.assignedTo}`}</div>
+                <button onClick={() => handleTabChange('tasks')} className="w-full mt-3 py-2 rounded-xl text-xs font-bold" style={{ background: '#eaf3ff', color: DL.gold }}>Mở công việc</button>
+              </> : <div className="text-center py-3"><CheckSquare size={24} className="mx-auto mb-2" style={{ color: '#10b981' }} /><p className="text-xs" style={{ color: DL.textMuted }}>Không có việc đang mở</p><button onClick={() => setShowAddTask(true)} className="mt-2 text-xs font-bold" style={{ color: DL.gold }}>+ Thêm việc</button></div>}
+            </div>
 
-          {/* Customer Profile Card */}
-          <div className={`${customerStyles.featureCard} rounded-2xl`} style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)", overflow: "visible" }}>
-            <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(212,175,69,0.12), #ffffff)", overflow: "visible", position: "relative" }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black flex-shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${TYPE_COLORS[lead.type]}, ${TYPE_COLORS[lead.type]}99)`, color: "#fff" }}>
-                  {lead.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-bold truncate" style={{ color: DL.text }}>{lead.name}</div>
-                  {lead.company && <div className="text-xs truncate" style={{ color: DL.textMuted }}>{lead.company}</div>}
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5 inline-block"
-                    style={{ background: `${TYPE_COLORS[lead.type]}18`, color: TYPE_COLORS[lead.type] }}>
-                    {TYPE_LABELS[lead.type]}
-                  </span>
-                </div>
-              </div>
+            <div className="rounded-2xl p-4" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}` }}>
+              <div className="flex items-center justify-between"><div><div className="text-xs font-bold uppercase tracking-wider" style={{ color: DL.textMuted }}>Workflow chăm sóc</div><div className="font-semibold text-sm mt-1" style={{ color: DL.text }}>{lead.stage === 'won' || lead.stage === 'lost' ? 'Đã dừng theo giai đoạn' : 'Đang tiếp tục chạy'}</div></div>{lead.stage === 'won' || lead.stage === 'lost' ? <CirclePause size={20} style={{ color: DL.textMuted }} /> : <Workflow size={20} style={{ color: '#10b981' }} />}</div>
+              <p className="text-xs mt-2 leading-relaxed" style={{ color: DL.textMuted }}>{lead.stage === 'won' || lead.stage === 'lost' ? 'Workflow dừng khi khách đã chốt hoặc thất bại.' : 'Các thay đổi giai đoạn khác không làm gián đoạn lịch chăm sóc.'}</p>
+              <Link href="/crm/automation" className="inline-flex items-center gap-1 mt-3 text-xs font-bold" style={{ color: DL.gold }}>Xem tại Automation <ExternalLink size={11} /></Link>
+            </div>
 
-              {/* Zalo call result */}
-              {zaloCallResult && (
-                <div className={`mb-3 p-2.5 rounded-xl text-xs font-medium flex items-start gap-2`}
-                  style={{
-                    background: zaloCallResult.ok ? "#ecfdf5" : "#fff1f2",
-                    border: zaloCallResult.ok ? "1px solid #a7f3d0" : "1px solid #fecdd3",
-                    color: zaloCallResult.ok ? "#047857" : "#be123c",
-                  }}>
-                  <span className="flex-shrink-0 mt-0.5">{zaloCallResult.ok ? "✅" : "❌"}</span>
-                  <span>{zaloCallResult.message}</span>
-                </div>
-              )}
-
-              {/* Quick action buttons */}
-              <div className="grid grid-cols-4 gap-2">
-                <button onClick={() => setContactModal('call')}
-                  className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
-                  style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.20)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(52,211,153,0.15)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(52,211,153,0.08)")}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(52,211,153,0.15)" }}>
-                    <Phone size={13} style={{ color: "#34d399" }} />
-                  </div>
-                  <span className="text-[10px] font-semibold" style={{ color: "#34d399" }}>Gọi</span>
-                </button>
-                <button onClick={() => setContactModal('zalo')}
-                  className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
-                  style={{ background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.20)" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(96,165,250,0.15)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(96,165,250,0.08)")}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(96,165,250,0.15)" }}>
-                    <MessageCircle size={13} style={{ color: "#60a5fa" }} />
-                  </div>
-                  <span className="text-[10px] font-semibold" style={{ color: "#60a5fa" }}>Zalo</span>
-                </button>
-                {lead.email ? (
-                  <button onClick={() => setContactModal('email')}
-                    className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
-                    style={{ background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.20)" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(167,139,250,0.15)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(167,139,250,0.08)")}>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(167,139,250,0.15)" }}>
-                      <Mail size={13} style={{ color: "#a78bfa" }} />
-                    </div>
-                    <span className="text-[10px] font-semibold" style={{ color: "#a78bfa" }}>Email</span>
-                  </button>
-                ) : (
-                  <div className="flex flex-col items-center gap-1 p-2 rounded-xl opacity-25" style={{ background: DL.surface, border: `1px solid ${DL.border}` }}>
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: DL.surface }}>
-                      <Mail size={13} style={{ color: DL.textMuted }} />
-                    </div>
-                    <span className="text-[10px] font-semibold" style={{ color: DL.textMuted }}>Email</span>
-                  </div>
-                )}
-                <Link href={`/crm/quotes/new?leadId=${lead.id}`}
-                  className={`${customerStyles.iconAction} flex flex-col items-center gap-1 p-2 rounded-xl transition-all`}
-                  style={{ background: `${DL.gold}0d`, border: `1px solid ${DL.gold}30` }}
-                  onMouseEnter={e => (e.currentTarget.style.background = `${DL.gold}18`)}
-                  onMouseLeave={e => (e.currentTarget.style.background = `${DL.gold}0d`)}>
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: `${DL.gold}15` }}>
-                    <FileText size={13} style={{ color: DL.gold }} />
-                  </div>
-                  <span className="text-[10px] font-semibold" style={{ color: DL.gold }}>Báo giá</span>
-                </Link>
+            <div className="rounded-2xl p-4" style={{ background: DL.card, border: `1px solid ${DL.cardBorder}` }}>
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Thông tin nhanh</h3>
+              <div className="space-y-3">
+                <SidebarInfoRow icon={Phone} label="Điện thoại" value={lead.phone} iconColor="#10b981" />
+                {lead.email && <SidebarInfoRow icon={Mail} label="Email" value={lead.email} iconColor="#7c3aed" />}
+                {lead.district && <SidebarInfoRow icon={MapPin} label="Khu vực" value={lead.district} iconColor="#8b5cf6" />}
+                {lead.source && <SidebarInfoRow icon={Tag} label="Nguồn" value={lead.source} iconColor="#0ea5e9" />}
+                <SidebarInfoRow icon={BriefcaseBusiness} label="Sản phẩm" value={lead.interestedProducts?.length ? lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ") : "Chưa xác định"} iconColor="#6366f1" />
+                <SidebarInfoRow icon={DollarSign} label="Giá trị dự kiến" value={lead.expectedValue > 0 ? formatVND(lead.expectedValue) : "—"} iconColor="#f59e0b" />
               </div>
             </div>
           </div>
+        </aside>
+      </div>
 
-          {/* Key Info Card */}
-          <div className={`${customerStyles.featureCard} rounded-2xl p-4`}
-            style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Thông tin chính</h3>
-            <div className="space-y-3">
-              <SidebarInfoRow icon={Phone} label="Điện thoại" value={lead.phone} iconColor="#34d399" />
-              {lead.email && <SidebarInfoRow icon={Mail} label="Email" value={lead.email} iconColor="#a78bfa" />}
-              {lead.district && <SidebarInfoRow icon={MapPin} label="Khu vực" value={lead.district} iconColor="#a78bfa" />}
-              {lead.assignedTo && <SidebarInfoRow icon={User} label="Sales phụ trách" value={lead.assignedTo} iconColor={DL.gold} highlight />}
-              {lead.source && <SidebarInfoRow icon={Tag} label="Nguồn" value={lead.source} iconColor="#34d399" />}
-              <SidebarInfoRow icon={Star} label="Sản phẩm" value={lead.interestedProducts?.length ? lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ") : "Chưa xác định"} iconColor="#6366f1" highlight />
-              <SidebarInfoRow icon={Calendar} label="Ngày tạo" value={new Date(lead.createdAt).toLocaleDateString("vi-VN")} iconColor={DL.textMuted} />
-            </div>
-          </div>
-
-          {/* Value Card */}
-          <div className={`${customerStyles.featureCard} rounded-2xl p-4`}
-            style={{ background: DL.card, border: `1px solid ${DL.cardBorder}`, backdropFilter: "blur(12px)" }}>
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Giá trị</h3>
-            <div className="p-3 rounded-xl" style={{ background: `${DL.gold}0d`, border: `1px solid ${DL.gold}25` }}>
-              <div className="flex items-center gap-2 mb-1">
-                <DollarSign size={13} style={{ color: DL.gold }} />
-                <span className="text-xs" style={{ color: DL.textMuted }}>Giá trị dự kiến</span>
-              </div>
-              <div className="text-lg font-black" style={{ color: lead.expectedValue > 0 ? DL.gold : DL.textDim }}>
-                {lead.expectedValue > 0 ? formatVND(lead.expectedValue) : "—"}
-              </div>
-            </div>
-          </div>
-
-          {/* CTA: Tạo đơn hàng */}
-          <Link href={`/admin/orders/new?customerId=${lead.id}&customerName=${encodeURIComponent(lead.name)}&customerPhone=${encodeURIComponent(lead.phone)}&customerEmail=${encodeURIComponent(lead.email || "")}`}
-            className={`${customerStyles.blueButton} block w-full py-3 rounded-2xl text-center font-bold text-sm transition-all`}>
-            <div className="flex items-center justify-center gap-2">
-              <ShoppingCart size={15} />
-              <span>Tạo đơn hàng</span>
-            </div>
-            <div className="text-xs font-normal mt-0.5 opacity-70">Chuyển khách hàng thành đơn hàng</div>
-          </Link>
-        </div>
+      <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 grid grid-cols-4 gap-1 rounded-2xl p-2 shadow-2xl" style={{ background: '#fff', border: `1px solid ${DL.border}` }}>
+        <button onClick={() => setContactModal('call')} className="flex flex-col items-center gap-1 py-1 text-[10px] font-semibold" style={{ color: '#059669' }}><Phone size={18} />Gọi</button>
+        <button onClick={() => setContactModal('zalo')} className="flex flex-col items-center gap-1 py-1 text-[10px] font-semibold" style={{ color: DL.gold }}><MessageCircle size={18} />Zalo</button>
+        <button disabled={!lead.email} onClick={() => lead.email && setContactModal('email')} className="flex flex-col items-center gap-1 py-1 text-[10px] font-semibold disabled:opacity-30" style={{ color: '#7c3aed' }}><Mail size={18} />Email</button>
+        <button onClick={() => setShowAddActivity(true)} className="flex flex-col items-center gap-1 py-1 text-[10px] font-semibold" style={{ color: DL.text }}><Plus size={18} />Hoạt động</button>
       </div>
 
       {/* ── Modals ── */}
@@ -939,10 +891,10 @@ export default function LeadDetailClient({
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                     style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(201,168,76,0.08)")}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,104,255,0.08)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(201,168,76,0.15)" }}>
-                      <Phone size={15} style={{ color: "#C9A84C" }} />
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(0,104,255,0.12)" }}>
+                      <Phone size={15} style={{ color: DL.gold }} />
                     </div>
                     <div>
                       <p className="text-sm font-semibold" style={{ color: DL.text }}>Gọi qua ITY Tổng đài</p>
@@ -1088,12 +1040,12 @@ export default function LeadDetailClient({
 
 function DLInfoCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string; color: string }) {
   return (
-    <div className={`${customerStyles.statCard} rounded-xl px-3 py-2`} style={{ background: `linear-gradient(135deg, #ffffff, ${color}0b)`, border: `1px solid ${color}30`, backdropFilter: "blur(8px)" }}>
-      <div className="flex items-center gap-2 mb-1">
-        <Icon size={13} style={{ color }} />
-        <span className="text-[11px]" style={{ color: DL.textMuted }}>{label}</span>
+    <div className={`${customerStyles.statCard} rounded-xl px-3 py-2 flex-shrink-0 min-w-[150px] max-w-[240px]`} style={{ background: `linear-gradient(135deg, #ffffff, ${color}0b)`, border: `1px solid ${color}30`, backdropFilter: "blur(8px)" }}>
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}14` }}><Icon size={13} style={{ color }} /></div>
+        <div className="min-w-0"><span className="text-[10px] block" style={{ color: DL.textMuted }}>{label}</span>
+        <div className="text-xs font-extrabold truncate" style={{ color: value === "—" ? DL.textDim : DL.text }}>{value}</div></div>
       </div>
-      <div className="text-sm font-extrabold truncate" style={{ color: value === "—" ? DL.textDim : DL.text }}>{value}</div>
     </div>
   );
 }
