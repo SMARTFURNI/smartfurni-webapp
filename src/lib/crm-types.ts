@@ -244,6 +244,73 @@ export const SOURCES = [
 export type CallStatus = "answered" | "missed" | "busy" | "failed";
 export type CallDirection = "outbound" | "inbound";
 
+export type CallAiStatus = "pending" | "processing" | "completed" | "failed" | "insufficient";
+
+export interface CallAiAnalysis {
+  transcript: string;
+  executiveSummary: string;
+  customerContext: {
+    role: string;
+    customerType: string;
+    businessModel: string;
+    location: string;
+  };
+  needs: {
+    primaryNeed: string;
+    products: string[];
+    useCases: string[];
+    quantity: string;
+    dimensions: string;
+    budget: string;
+    timeline: string;
+    priorities: string[];
+    painPoints: string[];
+  };
+  conversation: {
+    intent: string;
+    sentiment: string;
+    interestLevel: string;
+    questions: string[];
+    objections: string[];
+    commitments: string[];
+    buyingSignals: string[];
+    risks: string[];
+    competitors: string[];
+  };
+  qualification: {
+    fitScore: number;
+    urgencyScore: number;
+    purchaseProbability: number;
+    dataGaps: string[];
+    disqualifiers: string[];
+  };
+  nextBestAction: {
+    title: string;
+    objective: string;
+    channel: "call" | "zalo" | "email" | "meeting";
+    dueInHours: number;
+    priority: "high" | "medium" | "low";
+    rationale: string;
+    checklist: string[];
+    draftMessage: string;
+    callScript: string[];
+    stageSuggestion: string;
+    workflowRecommendation: "continue" | "suggest_pause" | "suggest_stop";
+    workflowReason: string;
+  };
+  evidence: Array<{ quote: string; reason: string; timestamp: string }>;
+  warnings: string[];
+  confidence: number;
+  analyzedAt: string;
+  transcriptionModel: string;
+  analysisModel: string;
+  promptVersion: string;
+  reviewStatus?: "pending" | "approved" | "rejected";
+  reviewedAt?: string;
+  reviewedBy?: string;
+  createdTaskId?: string;
+}
+
 export interface CallLog {
   id: string;
   callId: string;           // ID từ tổng đài (Stringee, Zalo Cloud...)
@@ -259,6 +326,9 @@ export interface CallLog {
   leadName?: string;
   note?: string;            // Ghi chú sau cuộc gọi
   aiSummary?: string;       // Tóm tắt AI
+  aiStatus?: CallAiStatus;
+  aiError?: string;
+  aiAnalysis?: CallAiAnalysis;
   provider?: string;        // Tên tổng đài (stringee, zalo, manual...)
   startedAt: string;        // ISO datetime
   endedAt?: string;

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCallLogs, createCallLog, updateCallLog, deleteCallLog, createActivity } from "@/lib/crm-store";
 import { getStaffById } from "@/lib/crm-staff-store";
 import { formatDuration } from "@/lib/crm-types";
+import { enqueueCallAiAnalysis } from "@/lib/crm-call-ai";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +93,10 @@ export async function POST(req: NextRequest) {
       // Không để lỗi tạo activity ảnh hưởng đến việc lưu call log
       console.error("[call-logs] Failed to create activity:", e);
     }
+  }
+
+  if (log.recordingUrl && log.status === "answered") {
+    await enqueueCallAiAnalysis(log.id).catch(error => console.error("[call-logs] Failed to queue call AI:", error));
   }
 
   return NextResponse.json(log, { status: 201 });

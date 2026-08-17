@@ -3,6 +3,7 @@ import { runAutomationEngine } from "@/lib/crm-automation-engine";
 import { runB2BSofaJourney } from "@/lib/crm-b2b-sofa-journey-engine";
 import { runB2CErgonomicBedJourney } from "@/lib/crm-b2c-ergonomic-bed-journey-engine";
 import { claimAutomationSchedulerRun, releaseAutomationSchedulerRun } from "@/lib/crm-automation-execution-store";
+import { processDueCallAiJobs } from "@/lib/crm-call-ai";
 
 /**
  * GET /api/crm/automation/cron
@@ -39,12 +40,15 @@ export async function GET(req: NextRequest) {
     // Chạy journey sau engine chung để hai luồng không tranh chấp cùng kết nối Zalo.
     const b2bSofaJourney = await runB2BSofaJourney();
     const b2cErgonomicBedJourney = await runB2CErgonomicBedJourney();
+    // Mỗi chu kỳ chỉ xử lý tối đa một bản ghi để không làm chậm lịch workflow.
+    const callAi = await processDueCallAiJobs(1);
     console.log(`[CRM Cron] Done. Triggered: ${result.totalTriggered}/${result.totalLeads} leads`);
     return NextResponse.json({
       ok: true,
       ...result,
       b2bSofaJourney,
       b2cErgonomicBedJourney,
+      callAi,
     });
   } catch (e) {
     console.error("[CRM Cron] Error:", e);

@@ -23,6 +23,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCallLog, updateCallLog, initCallLogSchema } from "@/lib/crm-store";
 import { query } from "@/lib/db";
+import { enqueueCallAiAnalysis } from "@/lib/crm-call-ai";
 
 export const dynamic = "force-dynamic";
 
@@ -163,6 +164,9 @@ export async function POST(req: NextRequest) {
         [callid, recordingUrl || null, mergedData.duration, mergedData.status,
          mergedData.note ?? null, endedAt, JSON.stringify(mergedData), existingId]
       );
+      if (mergedData.status === "answered" && mergedData.recordingUrl) {
+        await enqueueCallAiAnalysis(existingId).catch(error => console.error("[ITY call-completed] AI queue error:", error));
+      }
       console.log(`[ITY call-completed] MERGED into existing JsSIP record ${existingId}, CallID: ${callid}`);
       return NextResponse.json({ status: "ok", id: existingId, callId: callid, merged: true });
     }
@@ -183,6 +187,10 @@ export async function POST(req: NextRequest) {
     });
 
     console.log(`[ITY call-completed] NEW record, CallID: ${callid}, Status: ${ityStatus}, Duration: ${billsec}s, Recording: ${recordingUrl || "none"}`);
+
+    if (callLog.status === "answered" && callLog.recordingUrl) {
+      await enqueueCallAiAnalysis(callLog.id).catch(error => console.error("[ITY call-completed] AI queue error:", error));
+    }
 
     return NextResponse.json({
       status: "ok",

@@ -10,6 +10,7 @@ import {
   ShoppingCart, ExternalLink, Star, Copy,
   PhoneCall, PhoneMissed, PhoneIncoming, Play, Pause, Save,
   MessageCircle, MoreHorizontal, ListChecks, Workflow, CirclePause, BriefcaseBusiness,
+  Sparkles, ChevronUp, CheckCircle2, RefreshCw,
 } from "lucide-react";
 import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog, InterestedProduct } from "@/lib/crm-types";
 import type { FacebookGroupLeadSource } from "@/lib/facebook-group-marketing-types";
@@ -126,6 +127,10 @@ export default function LeadDetailClient({
   const [playingCallId, setPlayingCallId] = useState<string | null>(null);
   const [callNotes, setCallNotes] = useState<Record<string, string>>({});
   const [savingNote, setSavingNote] = useState<string | null>(null);
+  const [analyzingCallId, setAnalyzingCallId] = useState<string | null>(null);
+  const [approvingCallId, setApprovingCallId] = useState<string | null>(null);
+  const [expandedCallAi, setExpandedCallAi] = useState<Set<string>>(new Set());
+  const [callAiError, setCallAiError] = useState<Record<string, string>>({});
   const [showAddTask, setShowAddTask] = useState(false);
   const [showEditLead, setShowEditLead] = useState(false);
   const [showStageMenu, setShowStageMenu] = useState(false);
@@ -203,6 +208,47 @@ export default function LeadDetailClient({
       });
       setCallLogs(prev => prev.map(l => l.id === callId ? { ...l, note: callNotes[callId] ?? l.note } : l));
     } finally { setSavingNote(null); }
+  };
+
+  const analyzeCall = async (callId: string, force = false) => {
+    setAnalyzingCallId(callId);
+    setCallAiError(prev => ({ ...prev, [callId]: "" }));
+    try {
+      const res = await fetch(`/api/crm/call-logs/${callId}/ai-analysis`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.call?.aiError || "Không thể phân tích cuộc gọi");
+      if (data.call) setCallLogs(prev => prev.map(item => item.id === callId ? data.call : item));
+      setExpandedCallAi(prev => new Set(prev).add(callId));
+    } catch (error) {
+      setCallAiError(prev => ({ ...prev, [callId]: error instanceof Error ? error.message : "Không thể phân tích cuộc gọi" }));
+      await loadCallLogs();
+    } finally {
+      setAnalyzingCallId(null);
+    }
+  };
+
+  const approveCallNextAction = async (callId: string) => {
+    setApprovingCallId(callId);
+    setCallAiError(prev => ({ ...prev, [callId]: "" }));
+    try {
+      const res = await fetch(`/api/crm/call-logs/${callId}/ai-analysis`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_next_action" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Không thể tạo việc chăm sóc");
+      if (data.call) setCallLogs(prev => prev.map(item => item.id === callId ? data.call : item));
+      if (data.task) setTasks(prev => [data.task, ...prev]);
+    } catch (error) {
+      setCallAiError(prev => ({ ...prev, [callId]: error instanceof Error ? error.message : "Không thể tạo việc chăm sóc" }));
+    } finally {
+      setApprovingCallId(null);
+    }
   };
 
   const overdue = isOverdue(lead);
@@ -518,6 +564,9 @@ export default function LeadDetailClient({
                         const statusLabel = isMissed ? "Nhỡ" : isSuccess ? "Thành công" : "Không trả lời";
                         const noteKey = call.id;
                         const currentNote = callNotes[noteKey] !== undefined ? callNotes[noteKey] : (call.note ?? "");
+                        const analysis = call.aiAnalysis;
+                        const aiExpanded = expandedCallAi.has(call.id);
+                        const aiBusy = analyzingCallId === call.id || call.aiStatus === "processing";
                         return (
                           <div key={call.id} className="rounded-xl p-4 transition-all"
                             style={{ background: DL.surface, border: `1px solid ${DL.border}` }}
@@ -545,7 +594,7 @@ export default function LeadDetailClient({
                                   )}
                                 </div>
                                 {call.recordingUrl && (
-                                  <div className="mt-2 flex items-center gap-2">
+                                  <div className="mt-2 flex items-center gap-2 flex-wrap">
                                     <audio id={`audio-${call.id}`} src={call.recordingUrl} className="hidden"
                                       onEnded={() => setPlayingCallId(null)} />
                                     <button
@@ -566,6 +615,120 @@ export default function LeadDetailClient({
                                       {playingCallId === call.id ? <Pause size={11} /> : <Play size={11} />}
                                       {playingCallId === call.id ? "Dừng" : "Nghe lại"}
                                     </button>
+                                    <button
+                                      onClick={() => analysis
+                                        ? setExpandedCallAi(prev => { const next = new Set(prev); if (next.has(call.id)) next.delete(call.id); else next.add(call.id); return next; })
+                                        : analyzeCall(call.id)}
+                                      disabled={aiBusy}
+                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all disabled:opacity-60"
+                                      style={{ background: "rgba(0,104,255,0.10)", border: "1px solid rgba(0,104,255,0.25)", color: DL.gold }}>
+                                      {aiBusy ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                                      {aiBusy ? "AI đang phân tích" : analysis ? (aiExpanded ? "Thu gọn AI" : "Xem tóm tắt AI") : call.aiStatus === "pending" ? "Đang chờ · chạy ngay" : "Tóm tắt bằng AI"}
+                                      {analysis && (aiExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}
+                                    </button>
+                                    {analysis && (
+                                      <button onClick={() => analyzeCall(call.id, true)} disabled={aiBusy}
+                                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
+                                        style={{ color: DL.textMuted, border: `1px solid ${DL.border}` }} title="Phân tích lại">
+                                        <RefreshCw size={10} /> Phân tích lại
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                                {(call.aiError || callAiError[call.id]) && (
+                                  <div className="mt-2 px-3 py-2 rounded-lg text-xs" style={{ color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca" }}>
+                                    {callAiError[call.id] || call.aiError}
+                                  </div>
+                                )}
+                                {analysis && aiExpanded && (
+                                  <div className="mt-3 rounded-xl overflow-hidden" style={{ border: `1px solid ${DL.borderGold}`, background: "#f8fbff" }}>
+                                    <div className="p-4" style={{ background: "linear-gradient(135deg, rgba(0,104,255,.10), rgba(16,185,129,.06))" }}>
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                          <div className="flex items-center gap-2 text-sm font-bold" style={{ color: DL.text }}><Sparkles size={15} style={{ color: DL.gold }} /> Hồ sơ AI sau cuộc gọi</div>
+                                          <p className="mt-2 text-sm leading-relaxed" style={{ color: DL.text }}>{analysis.executiveSummary}</p>
+                                        </div>
+                                        <span className="text-[11px] whitespace-nowrap px-2 py-1 rounded-full" style={{ color: "#047857", background: "#d1fae5" }}>Tin cậy {analysis.confidence}%</span>
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-2 mt-3">
+                                        {[
+                                          ["Phù hợp", analysis.qualification.fitScore],
+                                          ["Khẩn cấp", analysis.qualification.urgencyScore],
+                                          ["Khả năng mua", analysis.qualification.purchaseProbability],
+                                        ].map(([label, score]) => (
+                                          <div key={String(label)} className="rounded-lg p-2.5 bg-white" style={{ border: `1px solid ${DL.border}` }}>
+                                            <div className="text-[11px]" style={{ color: DL.textMuted }}>{label}</div>
+                                            <div className="text-lg font-bold" style={{ color: DL.gold }}>{score}%</div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    <div className="grid lg:grid-cols-2 gap-3 p-4">
+                                      <div className="rounded-lg bg-white p-3" style={{ border: `1px solid ${DL.border}` }}>
+                                        <h5 className="text-xs font-bold uppercase tracking-wide" style={{ color: DL.gold }}>Nhu cầu đã nhận diện</h5>
+                                        <div className="mt-2 space-y-1.5 text-xs" style={{ color: DL.text }}>
+                                          <p><b>Nhu cầu chính:</b> {analysis.needs.primaryNeed}</p>
+                                          <p><b>Sản phẩm:</b> {analysis.needs.products.join(", ") || "Chưa xác định"}</p>
+                                          <p><b>Mục đích:</b> {analysis.needs.useCases.join(", ") || "Chưa xác định"}</p>
+                                          <p><b>Số lượng:</b> {analysis.needs.quantity}</p>
+                                          <p><b>Kích thước:</b> {analysis.needs.dimensions}</p>
+                                          <p><b>Ngân sách:</b> {analysis.needs.budget}</p>
+                                          <p><b>Thời điểm:</b> {analysis.needs.timeline}</p>
+                                          <p><b>Ưu tiên:</b> {analysis.needs.priorities.join(" · ") || "Chưa xác định"}</p>
+                                          <p><b>Vấn đề cần giải quyết:</b> {analysis.needs.painPoints.join(" · ") || "Chưa xác định"}</p>
+                                        </div>
+                                      </div>
+                                      <div className="rounded-lg bg-white p-3" style={{ border: `1px solid ${DL.border}` }}>
+                                        <h5 className="text-xs font-bold uppercase tracking-wide" style={{ color: "#059669" }}>Tín hiệu hội thoại</h5>
+                                        <div className="mt-2 space-y-1.5 text-xs" style={{ color: DL.text }}>
+                                          <p><b>Ý định:</b> {analysis.conversation.intent}</p>
+                                          <p><b>Cảm xúc:</b> {analysis.conversation.sentiment} · <b>Quan tâm:</b> {analysis.conversation.interestLevel}</p>
+                                          <p><b>Tín hiệu mua:</b> {analysis.conversation.buyingSignals.join(" · ") || "Chưa có"}</p>
+                                          <p><b>Câu hỏi:</b> {analysis.conversation.questions.join(" · ") || "Chưa có"}</p>
+                                          <p><b>Phản đối:</b> {analysis.conversation.objections.join(" · ") || "Chưa có"}</p>
+                                          <p><b>Cam kết:</b> {analysis.conversation.commitments.join(" · ") || "Chưa có"}</p>
+                                          <p><b>Rủi ro:</b> {analysis.conversation.risks.join(" · ") || "Chưa có"}</p>
+                                          <p><b>Đối thủ:</b> {analysis.conversation.competitors.join(" · ") || "Chưa đề cập"}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="mx-4 mb-4 rounded-lg p-3" style={{ background: "#fff", border: "1px solid #bfdbfe" }}>
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                          <h5 className="text-sm font-bold" style={{ color: DL.text }}>Bước chăm sóc tiếp theo: {analysis.nextBestAction.title}</h5>
+                                          <p className="text-xs mt-1" style={{ color: DL.textMuted }}>{analysis.nextBestAction.objective}</p>
+                                          <p className="text-xs mt-1" style={{ color: DL.text }}><b>Lý do:</b> {analysis.nextBestAction.rationale}</p>
+                                          <p className="text-xs mt-1" style={{ color: DL.text }}><b>Kênh:</b> {analysis.nextBestAction.channel} · <b>Trong:</b> {analysis.nextBestAction.dueInHours} giờ · <b>Ưu tiên:</b> {analysis.nextBestAction.priority}</p>
+                                        </div>
+                                        <span className="text-[11px] px-2 py-1 rounded-full whitespace-nowrap" style={{ color: analysis.nextBestAction.workflowRecommendation === "continue" ? "#047857" : "#b45309", background: analysis.nextBestAction.workflowRecommendation === "continue" ? "#d1fae5" : "#fef3c7" }}>
+                                          Workflow: {analysis.nextBestAction.workflowRecommendation === "continue" ? "Tiếp tục" : "Cần xem xét"}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs mt-2" style={{ color: DL.textMuted }}>{analysis.nextBestAction.workflowReason}</p>
+                                      {analysis.nextBestAction.checklist.length > 0 && (
+                                        <ul className="mt-2 space-y-1 text-xs" style={{ color: DL.text }}>{analysis.nextBestAction.checklist.map((item, index) => <li key={index}>□ {item}</li>)}</ul>
+                                      )}
+                                      <div className="grid lg:grid-cols-2 gap-2 mt-3">
+                                        <div className="rounded-lg p-2.5" style={{ background: DL.inputBg }}><b className="text-xs">Tin nhắn gợi ý</b><p className="text-xs mt-1 whitespace-pre-wrap" style={{ color: DL.textMuted }}>{analysis.nextBestAction.draftMessage || "Chưa có"}</p></div>
+                                        <div className="rounded-lg p-2.5" style={{ background: DL.inputBg }}><b className="text-xs">Kịch bản gọi lại</b><ol className="text-xs mt-1 space-y-1" style={{ color: DL.textMuted }}>{analysis.nextBestAction.callScript.map((item, index) => <li key={index}>{index + 1}. {item}</li>)}</ol></div>
+                                      </div>
+                                      <button onClick={() => approveCallNextAction(call.id)} disabled={approvingCallId === call.id || analysis.reviewStatus === "approved"}
+                                        className="mt-3 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-70" style={{ background: analysis.reviewStatus === "approved" ? "#059669" : DL.gold }}>
+                                        {approvingCallId === call.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                                        {analysis.reviewStatus === "approved" ? "Đã tạo việc chăm sóc" : "Duyệt & tạo việc chăm sóc"}
+                                      </button>
+                                    </div>
+
+                                    <details className="mx-4 mb-4 rounded-lg bg-white" style={{ border: `1px solid ${DL.border}` }}>
+                                      <summary className="cursor-pointer p-3 text-xs font-semibold" style={{ color: DL.text }}>Xem bản chép lời, bằng chứng và dữ liệu còn thiếu</summary>
+                                      <div className="px-3 pb-3 space-y-3">
+                                        {analysis.qualification.dataGaps.length > 0 && <div><b className="text-xs text-amber-700">Cần hỏi thêm</b><p className="text-xs mt-1" style={{ color: DL.textMuted }}>{analysis.qualification.dataGaps.join(" · ")}</p></div>}
+                                        {analysis.evidence.length > 0 && <div><b className="text-xs">Bằng chứng từ hội thoại</b>{analysis.evidence.map((item, index) => <blockquote key={index} className="text-xs mt-1 pl-2" style={{ borderLeft: `2px solid ${DL.gold}`, color: DL.textMuted }}>“{item.quote}” — {item.reason}</blockquote>)}</div>}
+                                        <div><b className="text-xs">Bản chép lời đầy đủ</b><p className="text-xs mt-1 whitespace-pre-wrap leading-relaxed" style={{ color: DL.textMuted }}>{analysis.transcript}</p></div>
+                                      </div>
+                                    </details>
                                   </div>
                                 )}
                                 <div className="mt-2">
