@@ -17,6 +17,36 @@ export type LeadStage =
 export type LeadType = "retail" | "architect" | "investor" | "dealer" | "b2b";
 
 export type CustomerSegment = "retail" | "dealer" | "project" | "b2b";
+export type CustomerMarketScope = "b2c" | "b2b";
+export type B2BCustomerGroup =
+  | "hospitality"
+  | "property_rental"
+  | "design_construction"
+  | "resale"
+  | "internal_use";
+export type B2BCustomerSubtype =
+  | "B2B-HOMESTAY"
+  | "B2B-SERVICED-APT"
+  | "B2B-HOTEL"
+  | "B2B-DEVELOPER"
+  | "B2B-RENTAL"
+  | "B2B-CONTRACTOR"
+  | "B2B-DEALER"
+  | "B2B-ONLINE-SELLER"
+  | "B2B-HEALTHCARE"
+  | "B2B-WORKPLACE";
+export type CustomerContactRole =
+  | "owner"
+  | "investor"
+  | "decision_maker"
+  | "procurement"
+  | "operator"
+  | "architect"
+  | "contractor"
+  | "dealer"
+  | "referrer"
+  | "unknown";
+export type CustomerClassificationSource = "manual" | "google_sheet" | "raw_lead" | "legacy";
 export type InterestedProduct = "sofa_bed" | "ergonomic_bed" | "other";
 export type LeadTemperature = "hot" | "warm" | "cold";
 export type LeadDataQuality = "complete" | "needs_verification" | "incomplete";
@@ -55,6 +85,13 @@ export interface Lead {
   dataQuality?: LeadDataQuality;
   rawLeadIds?: string[];
   sourceDetail?: string;
+  /** Phân loại kinh doanh nhiều tầng. `type` phía trên vẫn được giữ làm mã tương thích workflow cũ. */
+  marketScope?: CustomerMarketScope;
+  b2bCustomerGroup?: B2BCustomerGroup;
+  b2bCustomerSubtype?: B2BCustomerSubtype;
+  contactRole?: CustomerContactRole;
+  classificationConfidence?: number;
+  classificationSource?: CustomerClassificationSource;
 }
 
 export interface Activity {

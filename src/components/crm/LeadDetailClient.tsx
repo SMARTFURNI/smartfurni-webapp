@@ -12,7 +12,10 @@ import {
   MessageCircle, MoreHorizontal, ListChecks, Workflow, CirclePause, BriefcaseBusiness,
   Sparkles, ChevronUp, CheckCircle2, RefreshCw,
 } from "lucide-react";
-import type { Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog, InterestedProduct } from "@/lib/crm-types";
+import type {
+  Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog, InterestedProduct,
+  B2BCustomerGroup, B2BCustomerSubtype, CustomerContactRole, CustomerMarketScope,
+} from "@/lib/crm-types";
 import type { FacebookGroupLeadSource } from "@/lib/facebook-group-marketing-types";
 import { formatDuration } from "@/lib/crm-types";
 import {
@@ -20,7 +23,18 @@ import {
   ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
 } from "@/lib/crm-types";
 import customerStyles from "./CustomerWorkspace.module.css";
-import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS, PRODUCT_LABELS } from "@/lib/crm-taxonomy";
+import {
+  B2B_GROUP_LABELS,
+  B2B_SUBTYPE_LABELS,
+  CONTACT_ROLE_LABELS,
+  CRM_B2B_GROUP_OPTIONS,
+  CRM_B2B_SUBTYPE_OPTIONS,
+  CRM_CONTACT_ROLE_OPTIONS,
+  CRM_MARKET_SCOPE_OPTIONS,
+  CRM_PRODUCT_OPTIONS,
+  PRODUCT_LABELS,
+  legacyLeadTypeForCustomerClassification,
+} from "@/lib/crm-taxonomy";
 
 // ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
@@ -286,6 +300,17 @@ export default function LeadDetailClient({
     }
   }
 
+  const customerClassificationLabel = lead.marketScope === "b2c"
+    ? "Khách mua lẻ"
+    : lead.b2bCustomerSubtype
+      ? B2B_SUBTYPE_LABELS[lead.b2bCustomerSubtype]
+      : lead.b2bCustomerGroup
+        ? B2B_GROUP_LABELS[lead.b2bCustomerGroup]
+        : TYPE_LABELS[lead.type];
+  const customerContactRoleLabel = lead.contactRole && lead.contactRole !== "unknown"
+    ? CONTACT_ROLE_LABELS[lead.contactRole]
+    : undefined;
+
   return (
     <div className={`${customerStyles.workspace} flex flex-col h-full`} style={{ background: DL.bg, minHeight: "100vh" }}>
       {/* ── Header ── */}
@@ -307,8 +332,14 @@ export default function LeadDetailClient({
               <h1 className="text-base font-bold truncate" style={{ color: DL.text }}>{lead.name}</h1>
               <span className="hidden sm:inline text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                 style={{ background: `${TYPE_COLORS[lead.type]}18`, color: TYPE_COLORS[lead.type], border: `1px solid ${TYPE_COLORS[lead.type]}30` }}>
-                {TYPE_LABELS[lead.type]}
+                {customerClassificationLabel}
               </span>
+              {customerContactRoleLabel && (
+                <span className="hidden lg:inline text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                  style={{ background: "#f8fafc", color: DL.textMuted, border: `1px solid ${DL.border}` }}>
+                  {customerContactRoleLabel}
+                </span>
+              )}
               {overdue && (
                 <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: "#fff1f2", color: "#dc2626", border: "1px solid #fecdd3" }}>
@@ -1536,15 +1567,6 @@ function DLAddTaskModal({ leadId, leadName, isAdmin = false, currentUserName = "
 function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () => void; onUpdated: (l: Lead) => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [leadTypes, setLeadTypes] = useState<{ id: string; label: string; color: string }[]>([]);
-  useEffect(() => {
-    fetch("/api/crm/settings/lead-types")
-      .then(r => r.ok ? r.json() : [])
-      .then((data: { id: string; label: string; color: string }[]) => {
-        if (Array.isArray(data) && data.length > 0) setLeadTypes(data);
-      })
-      .catch(() => {});
-  }, []);
   const [form, setForm] = useState({
     name: lead.name, company: lead.company || "", phone: lead.phone, email: lead.email || "",
     type: lead.type, district: lead.district || "",
@@ -1553,6 +1575,11 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
     projectName: lead.projectName || "", projectAddress: lead.projectAddress || "",
     unitCount: lead.unitCount > 0 ? String(lead.unitCount) : "", notes: lead.notes || "",
     interestedProducts: (lead.interestedProducts ?? []) as InterestedProduct[],
+    marketScope: (lead.marketScope ?? (lead.type === "retail" ? "b2c" : "b2b")) as CustomerMarketScope,
+    b2bCustomerGroup: (lead.b2bCustomerGroup ?? "") as B2BCustomerGroup | "",
+    b2bCustomerSubtype: (lead.b2bCustomerSubtype ?? "") as B2BCustomerSubtype | "",
+    contactRole: (lead.contactRole ?? "unknown") as CustomerContactRole,
+    classificationSource: "manual" as const,
   });
 
   function set(key: string, value: string) { setForm(prev => ({ ...prev, [key]: value })); }
@@ -1563,6 +1590,58 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
         ? prev.interestedProducts.filter(item => item !== product)
         : [...prev.interestedProducts, product],
     }));
+  }
+
+  function setMarketScope(scope: CustomerMarketScope) {
+    setForm(prev => {
+      const b2bCustomerGroup = scope === "b2c" ? "" : prev.b2bCustomerGroup;
+      const b2bCustomerSubtype = scope === "b2c" ? "" : prev.b2bCustomerSubtype;
+      return {
+        ...prev,
+        marketScope: scope,
+        b2bCustomerGroup,
+        b2bCustomerSubtype,
+        type: legacyLeadTypeForCustomerClassification({
+          marketScope: scope,
+          b2bCustomerGroup: b2bCustomerGroup || undefined,
+          b2bCustomerSubtype: b2bCustomerSubtype || undefined,
+          currentType: prev.type,
+        }),
+      };
+    });
+  }
+
+  function setB2BGroup(group: B2BCustomerGroup | "") {
+    setForm(prev => ({
+      ...prev,
+      marketScope: "b2b",
+      b2bCustomerGroup: group,
+      b2bCustomerSubtype: "",
+      type: legacyLeadTypeForCustomerClassification({
+        marketScope: "b2b",
+        b2bCustomerGroup: group || undefined,
+        currentType: prev.type,
+      }),
+    }));
+  }
+
+  function setB2BSubtype(subtype: B2BCustomerSubtype | "") {
+    const meta = CRM_B2B_SUBTYPE_OPTIONS.find(item => item.id === subtype);
+    setForm(prev => {
+      const b2bCustomerGroup = meta?.groupId ?? prev.b2bCustomerGroup;
+      return {
+        ...prev,
+        marketScope: "b2b",
+        b2bCustomerGroup,
+        b2bCustomerSubtype: subtype,
+        type: legacyLeadTypeForCustomerClassification({
+          marketScope: "b2b",
+          b2bCustomerGroup: b2bCustomerGroup || undefined,
+          b2bCustomerSubtype: subtype || undefined,
+          currentType: prev.type,
+        }),
+      };
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1604,6 +1683,52 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
             </div>
           )}
           <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Phân loại khách hàng</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {CRM_MARKET_SCOPE_OPTIONS.map(option => {
+                const active = form.marketScope === option.id;
+                return (
+                  <button key={option.id} type="button" onClick={() => setMarketScope(option.id)}
+                    className="rounded-xl px-3 py-2.5 text-left transition-all"
+                    style={{ background: active ? `${option.color}12` : DL.surface, border: `1px solid ${active ? option.color : DL.border}` }}>
+                    <span className="block text-xs font-bold" style={{ color: active ? option.color : DL.text }}>{option.label}</span>
+                    <span className="mt-0.5 block text-[10px]" style={{ color: DL.textMuted }}>{option.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {form.marketScope === "b2b" && (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Nhóm B2B</label>
+                  <select value={form.b2bCustomerGroup} onChange={e => setB2BGroup(e.target.value as B2BCustomerGroup | "")}
+                    className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }}>
+                    <option value="">Chọn nhóm</option>
+                    {CRM_B2B_GROUP_OPTIONS.map(group => <option key={group.id} value={group.id}>{group.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Loại hình chi tiết</label>
+                  <select value={form.b2bCustomerSubtype} onChange={e => setB2BSubtype(e.target.value as B2BCustomerSubtype | "")}
+                    className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }}>
+                    <option value="">Chọn loại hình</option>
+                    {CRM_B2B_SUBTYPE_OPTIONS.filter(item => !form.b2bCustomerGroup || item.groupId === form.b2bCustomerGroup).map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Vai trò liên hệ</label>
+                  <select value={form.contactRole} onChange={e => set("contactRole", e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }}>
+                    {CRM_CONTACT_ROLE_OPTIONS.map(role => <option key={role.id} value={role.id}>{role.label}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+            <p className="mt-2 text-[11px]" style={{ color: DL.textDim }}>
+              Mã workflow tương thích được hệ thống tự duy trì: {form.type}.
+            </p>
+          </div>
+          <div>
             <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Thông tin cơ bản</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
@@ -1615,16 +1740,6 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Công ty / Dự án</label>
                 <input value={form.company} onChange={e => set("company", e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }} placeholder="Tên công ty" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Loại khách *</label>
-                <select value={form.type} onChange={e => set("type", e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }}>
-                  {leadTypes.length > 0
-                    ? leadTypes.map(lt => <option key={lt.id} value={lt.id}>{lt.label}</option>)
-                    : CRM_LEAD_TYPE_OPTIONS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)
-                  }
-                </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Số điện thoại *</label>

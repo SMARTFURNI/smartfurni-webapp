@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "./crm-types";
-import { normalizeLeadStage, normalizeLeadType, previewCanonicalLeadTaxonomy, segmentForLeadType } from "./crm-taxonomy";
+import {
+  CRM_B2B_SUBTYPE_OPTIONS,
+  legacyLeadTypeForCustomerClassification,
+  normalizeLeadStage,
+  normalizeLeadType,
+  previewCanonicalLeadTaxonomy,
+  segmentForLeadType,
+} from "./crm-taxonomy";
 
 function lead(overrides: Partial<Lead> = {}): Lead {
   return {
@@ -75,5 +82,22 @@ describe("crm taxonomy", () => {
       tags: ["PROD:SOFA_GIUONG"],
     }));
     expect(preview.patch.interestedProducts).toEqual(["sofa_bed"]);
+  });
+
+  it("maps all 10 business types to legacy workflow codes", () => {
+    expect(CRM_B2B_SUBTYPE_OPTIONS).toHaveLength(10);
+    for (const subtype of CRM_B2B_SUBTYPE_OPTIONS) {
+      expect(legacyLeadTypeForCustomerClassification({
+        marketScope: "b2b",
+        b2bCustomerGroup: subtype.groupId,
+        b2bCustomerSubtype: subtype.id,
+      })).toBe(subtype.legacyType);
+    }
+  });
+
+  it("keeps the old type as source of truth for legacy records", () => {
+    const preview = previewCanonicalLeadTaxonomy(lead({ type: "investor", marketScope: undefined }));
+    expect(preview.patch.type).toBe("investor");
+    expect(preview.patch.marketScope).toBe("b2b");
   });
 });

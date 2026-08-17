@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Loader2, User, Building2, Phone, Mail, MapPin, DollarSign, Tag, FileText, Users } from "lucide-react";
-import type { Lead, LeadType, LeadStage, InterestedProduct } from "@/lib/crm-types";
+import type { B2BCustomerGroup, B2BCustomerSubtype, CustomerContactRole, CustomerMarketScope, Lead, LeadType, LeadStage, InterestedProduct } from "@/lib/crm-types";
 import { SOURCES, STAGE_LABELS } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES, getDistricts } from "@/lib/crm-locations";
 import customerStyles from "./CustomerWorkspace.module.css";
-import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS } from "@/lib/crm-taxonomy";
+import { CRM_B2B_GROUP_OPTIONS, CRM_B2B_SUBTYPE_OPTIONS, CRM_CONTACT_ROLE_OPTIONS, CRM_MARKET_SCOPE_OPTIONS, CRM_PRODUCT_OPTIONS, legacyLeadTypeForCustomerClassification } from "@/lib/crm-taxonomy";
 
 interface Props {
   onClose: () => void;
@@ -33,31 +33,10 @@ const DL = {
   tabBorder: "#dbe3ee",
 };
 
-const DEFAULT_TYPE_CONFIG = CRM_LEAD_TYPE_OPTIONS.map(item => ({
-  ...item,
-  bg: `${item.color}20`,
-}));
-
 export default function AddLeadModal({ onClose, onCreated, defaultStage = "new", currentUserName = "", isAdmin = false }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"basic" | "project" | "notes">("basic");
-  const [typeConfig, setTypeConfig] = useState<{ id: string; label: string; color: string; bg: string }[]>(DEFAULT_TYPE_CONFIG);
-  useEffect(() => {
-    fetch("/api/crm/settings/lead-types")
-      .then(r => r.ok ? r.json() : [])
-      .then((data: { id: string; label: string; color: string }[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setTypeConfig(data.map(lt => ({
-            id: lt.id,
-            label: lt.label,
-            color: lt.color || "#6b7280",
-            bg: lt.color ? lt.color + "20" : "rgba(107,114,128,0.12)",
-          })));
-        }
-      })
-      .catch(() => {});
-  }, []);
   const [form, setForm] = useState({
     name: "",
     company: "",
@@ -75,6 +54,11 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
     unitCount: "",
     notes: "",
     interestedProducts: [] as InterestedProduct[],
+    marketScope: "b2c" as CustomerMarketScope,
+    b2bCustomerGroup: "" as B2BCustomerGroup | "",
+    b2bCustomerSubtype: "" as B2BCustomerSubtype | "",
+    contactRole: "unknown" as CustomerContactRole,
+    classificationSource: "manual" as const,
   });
 
   const districts = getDistricts(form.province);
@@ -85,6 +69,37 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
     } else {
       setForm(prev => ({ ...prev, [key]: value }));
     }
+  }
+
+  function setMarketScope(scope: CustomerMarketScope) {
+    setForm(prev => ({
+      ...prev,
+      marketScope: scope,
+      b2bCustomerGroup: scope === "b2c" ? "" : prev.b2bCustomerGroup,
+      b2bCustomerSubtype: scope === "b2c" ? "" : prev.b2bCustomerSubtype,
+      type: legacyLeadTypeForCustomerClassification({ marketScope: scope, b2bCustomerGroup: scope === "b2b" ? prev.b2bCustomerGroup || undefined : undefined, b2bCustomerSubtype: scope === "b2b" ? prev.b2bCustomerSubtype || undefined : undefined, currentType: prev.type }),
+    }));
+  }
+
+  function setB2BGroup(group: B2BCustomerGroup | "") {
+    setForm(prev => ({
+      ...prev,
+      marketScope: "b2b",
+      b2bCustomerGroup: group,
+      b2bCustomerSubtype: "",
+      type: legacyLeadTypeForCustomerClassification({ marketScope: "b2b", b2bCustomerGroup: group || undefined, currentType: prev.type }),
+    }));
+  }
+
+  function setB2BSubtype(subtype: B2BCustomerSubtype | "") {
+    const meta = CRM_B2B_SUBTYPE_OPTIONS.find(item => item.id === subtype);
+    setForm(prev => ({
+      ...prev,
+      marketScope: "b2b",
+      b2bCustomerGroup: meta?.groupId ?? prev.b2bCustomerGroup,
+      b2bCustomerSubtype: subtype,
+      type: legacyLeadTypeForCustomerClassification({ marketScope: "b2b", b2bCustomerGroup: meta?.groupId ?? (prev.b2bCustomerGroup || undefined), b2bCustomerSubtype: subtype || undefined, currentType: prev.type }),
+    }));
   }
 
   function toggleProduct(product: InterestedProduct) {
@@ -186,26 +201,29 @@ export default function AddLeadModal({ onClose, onCreated, defaultStage = "new",
           </button>
         </div>
 
-        {/* Lead Type Selector */}
-        <div className="px-6 pt-4 flex flex-wrap gap-2">
-          {typeConfig.map(cfg => {
-            const active = form.type === cfg.id;
-            return (
-              <button
-                key={cfg.id}
-                type="button"
-                onClick={() => set("type", cfg.id)}
-                className="flex-1 min-w-[80px] py-2 rounded-xl text-xs font-semibold transition-all"
-                style={{
-                  background: active ? cfg.bg : DL.surface,
-                  color: active ? cfg.color : DL.textMuted,
-                  border: `1px solid ${active ? cfg.color + "40" : DL.border}`,
-                }}
-              >
-                {cfg.label}
-              </button>
-            );
-          })}
+        {/* Customer classification — type remains an internal compatibility field. */}
+        <div className="px-6 pt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            {CRM_MARKET_SCOPE_OPTIONS.map(option => {
+              const active = form.marketScope === option.id;
+              return <button key={option.id} type="button" onClick={() => setMarketScope(option.id)} className="rounded-xl px-3 py-2.5 text-left transition-all" style={{ background: active ? `${option.color}12` : DL.surface, border: `1px solid ${active ? option.color : DL.border}` }}><span className="block text-xs font-bold" style={{ color: active ? option.color : DL.text }}>{option.label}</span><span className="mt-0.5 block text-[10px]" style={{ color: DL.textMuted }}>{option.description}</span></button>;
+            })}
+          </div>
+          {form.marketScope === "b2b" && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <DLSelect value={form.b2bCustomerGroup} onChange={value => setB2BGroup(value as B2BCustomerGroup | "")} inputStyle={inputStyle}>
+                <option value="">Chọn nhóm B2B</option>
+                {CRM_B2B_GROUP_OPTIONS.map(group => <option key={group.id} value={group.id}>{group.label}</option>)}
+              </DLSelect>
+              <DLSelect value={form.b2bCustomerSubtype} onChange={value => setB2BSubtype(value as B2BCustomerSubtype | "")} inputStyle={inputStyle}>
+                <option value="">Chọn loại hình chi tiết</option>
+                {CRM_B2B_SUBTYPE_OPTIONS.filter(item => !form.b2bCustomerGroup || item.groupId === form.b2bCustomerGroup).map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </DLSelect>
+              <DLSelect value={form.contactRole} onChange={value => set("contactRole", value)} inputStyle={inputStyle}>
+                {CRM_CONTACT_ROLE_OPTIONS.map(role => <option key={role.id} value={role.id}>{role.label}</option>)}
+              </DLSelect>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}

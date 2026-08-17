@@ -1,5 +1,9 @@
 import type { RawLead, RawLeadSource } from "./crm-raw-lead-store";
 import type {
+  B2BCustomerGroup,
+  B2BCustomerSubtype,
+  CustomerContactRole,
+  CustomerMarketScope,
   CustomerSegment,
   InterestedProduct,
   Lead,
@@ -14,6 +18,11 @@ import {
   SEGMENT_TAGS,
   TEMPERATURE_LABELS,
   TEMP_TAGS,
+  legacyLeadTypeForCustomerClassification,
+  normalizeB2BCustomerGroup,
+  normalizeB2BCustomerSubtype,
+  normalizeCustomerContactRole,
+  normalizeCustomerMarketScope,
 } from "./crm-taxonomy";
 
 export { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "./crm-taxonomy";
@@ -40,6 +49,8 @@ function fold(value: unknown): string {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
     .toLowerCase();
 }
 
@@ -67,7 +78,25 @@ export function classifyRawLead(rawLead: RawLead): {
   source: string;
   sourceDetail: string;
   legacyType: LeadType;
+  marketScope: CustomerMarketScope;
+  b2bCustomerGroup?: B2BCustomerGroup;
+  b2bCustomerSubtype?: B2BCustomerSubtype;
+  contactRole?: CustomerContactRole;
+  classificationConfidence: number;
 } {
+  const raw = rawLead.rawData ?? {};
+  const explicitMarketScope = normalizeCustomerMarketScope(
+    raw.marketScope ?? raw.market_scope ?? raw.b2c_b2b ?? raw.phan_khuc ?? raw.phân_khúc,
+  );
+  const explicitGroup = normalizeB2BCustomerGroup(
+    raw.b2bCustomerGroup ?? raw.b2b_group ?? raw.nhom_b2b ?? raw.nhóm_b2b,
+  );
+  const explicitSubtype = normalizeB2BCustomerSubtype(
+    raw.b2bCustomerSubtype ?? raw.b2b_subtype ?? raw.loai_hinh_b2b ?? raw.phan_loai_chi_tiet ?? raw.đối_tượng_kh,
+  );
+  const explicitContactRole = normalizeCustomerContactRole(
+    raw.contactRole ?? raw.contact_role ?? raw.vai_tro_lien_he ?? rawLead.customerRole,
+  );
   const context = fold([
     rawLead.customerRole,
     rawLead.message,
@@ -77,10 +106,32 @@ export function classifyRawLead(rawLead: RawLead): {
     JSON.stringify(rawLead.rawData ?? {}),
   ].join(" "));
 
+  const b2bCustomerSubtype = explicitMarketScope === "b2c"
+    ? undefined
+    : explicitSubtype ?? normalizeB2BCustomerSubtype(context);
+  const subtypeMeta = b2bCustomerSubtype
+    ? ({
+        "B2B-HOMESTAY": "hospitality",
+        "B2B-SERVICED-APT": "hospitality",
+        "B2B-HOTEL": "hospitality",
+        "B2B-DEVELOPER": "property_rental",
+        "B2B-RENTAL": "property_rental",
+        "B2B-CONTRACTOR": "design_construction",
+        "B2B-DEALER": "resale",
+        "B2B-ONLINE-SELLER": "resale",
+        "B2B-HEALTHCARE": "internal_use",
+        "B2B-WORKPLACE": "internal_use",
+      } as Record<B2BCustomerSubtype, B2BCustomerGroup>)[b2bCustomerSubtype]
+    : undefined;
+  const b2bCustomerGroup = explicitMarketScope === "b2c" ? undefined : explicitGroup ?? subtypeMeta;
+
   let customerSegment: CustomerSegment = "retail";
   if (/dai ly|nha phan phoi|si |ban si|reseller/.test(context)) customerSegment = "dealer";
   else if (/du an|kien truc|thiet ke|nha thau|chdv|homestay|khach san|can ho dich vu/.test(context)) customerSegment = "project";
   else if (/b2b|doanh nghiep|cong ty|van phong|mua so luong|doi tac/.test(context)) customerSegment = "b2b";
+
+  const marketScope: CustomerMarketScope = explicitMarketScope
+    ?? (b2bCustomerGroup || b2bCustomerSubtype || customerSegment !== "retail" ? "b2b" : "b2c");
 
   const interestedProducts: InterestedProduct[] = [];
   if (/sofa giuong|sofa bed|giuong sofa/.test(context)) interestedProducts.push("sofa_bed");
@@ -106,13 +157,14 @@ export function classifyRawLead(rawLead: RawLead): {
       : "incomplete";
   const source = SOURCE_LABELS[rawLead.source] ?? rawLead.source;
   const sourceDetail = [rawLead.campaignName, rawLead.adName, rawLead.formName].filter(Boolean).join(" · ");
-  const legacyType: LeadType = customerSegment === "dealer"
-    ? "dealer"
-    : customerSegment === "project"
-      ? "investor"
-      : customerSegment === "b2b"
-        ? "b2b"
-        : "retail";
+  const legacyType = legacyLeadTypeForCustomerClassification({
+    marketScope,
+    b2bCustomerGroup,
+    b2bCustomerSubtype,
+    currentType: customerSegment === "dealer" ? "dealer" : customerSegment === "project" ? "investor" : customerSegment === "b2b" ? "b2b" : "retail",
+  });
+  customerSegment = legacyType === "dealer" ? "dealer" : ["architect", "investor"].includes(legacyType) ? "project" : legacyType === "b2b" ? "b2b" : "retail";
+  const classificationConfidence = explicitSubtype ? 100 : explicitGroup ? 90 : explicitMarketScope ? 80 : b2bCustomerSubtype ? 85 : b2bCustomerGroup ? 70 : 45;
 
   return {
     customerSegment,
@@ -123,12 +175,21 @@ export function classifyRawLead(rawLead: RawLead): {
     source,
     sourceDetail,
     legacyType,
+    marketScope,
+    b2bCustomerGroup,
+    b2bCustomerSubtype,
+    contactRole: explicitContactRole,
+    classificationConfidence,
     tags: uniqueTags([
       SEGMENT_TAGS[customerSegment],
       ...interestedProducts.map(product => PRODUCT_TAGS[product]),
       `SRC:${rawLead.source.toUpperCase()}`,
       TEMP_TAGS[leadTemperature],
       `QUALITY:${dataQuality.toUpperCase()}`,
+      `MARKET:${marketScope.toUpperCase()}`,
+      b2bCustomerGroup ? `B2B_GROUP:${b2bCustomerGroup.toUpperCase()}` : undefined,
+      b2bCustomerSubtype ? `B2B_TYPE:${b2bCustomerSubtype}` : undefined,
+      explicitContactRole ? `CONTACT_ROLE:${explicitContactRole.toUpperCase()}` : undefined,
     ]),
   };
 }
@@ -166,6 +227,12 @@ export function buildLeadFromRawLead(rawLead: RawLead, assignedTo: string): Omit
     dataQuality: classification.dataQuality,
     rawLeadIds: [rawLead.id],
     sourceDetail: classification.sourceDetail,
+    marketScope: classification.marketScope,
+    b2bCustomerGroup: classification.b2bCustomerGroup,
+    b2bCustomerSubtype: classification.b2bCustomerSubtype,
+    contactRole: classification.contactRole,
+    classificationConfidence: classification.classificationConfidence,
+    classificationSource: rawLead.rawData?.syncedFrom === "google_sheet" ? "google_sheet" : "raw_lead",
   };
 }
 
@@ -188,5 +255,11 @@ export function mergeStandardizedLead(existing: Lead, incoming: Omit<Lead, "id" 
     dataQuality: incoming.dataQuality === "complete" ? "complete" : existing.dataQuality ?? incoming.dataQuality,
     customerSegment: existing.customerSegment ?? incoming.customerSegment,
     type: existing.type ?? incoming.type,
+    marketScope: existing.marketScope ?? incoming.marketScope,
+    b2bCustomerGroup: existing.b2bCustomerGroup ?? incoming.b2bCustomerGroup,
+    b2bCustomerSubtype: existing.b2bCustomerSubtype ?? incoming.b2bCustomerSubtype,
+    contactRole: existing.contactRole ?? incoming.contactRole,
+    classificationConfidence: Math.max(existing.classificationConfidence ?? 0, incoming.classificationConfidence ?? 0),
+    classificationSource: existing.classificationSource ?? incoming.classificationSource,
   };
 }

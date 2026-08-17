@@ -11,6 +11,7 @@ import {
   Lock,
 } from "lucide-react";
 import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme, DashboardSectionId, KpiCardId, ChartType, FunnelStyle, ChartPalette, DensityMode, FontFamily, KpiSize, KpiColumns, RefreshInterval } from "@/lib/crm-settings-store";
+import { CRM_B2B_GROUP_OPTIONS, CRM_B2B_SUBTYPE_OPTIONS, CRM_CONTACT_ROLE_OPTIONS } from "@/lib/crm-taxonomy";
 
 const GoogleSheetClient = dynamic(() => import("@/app/crm/integrations/google-sheet/GoogleSheetClient"), { ssr: false });
 
@@ -26,7 +27,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; desc: string }[
   { id: "company",       label: "Thông tin công ty",   icon: Building2,  desc: "Tên, địa chỉ, liên hệ, ngân hàng" },
   { id: "pipeline",      label: "Giai đoạn Pipeline",  icon: GitBranch,  desc: "Tùy chỉnh các cột Kanban" },
   { id: "sources",       label: "Nguồn khách hàng",    icon: Tag,        desc: "Kênh tiếp thị và màu sắc" },
-  { id: "leadtypes",     label: "Phân loại KH",        icon: Users,      desc: "Kiến trúc sư, Chủ đầu tư, Đại lý" },
+  { id: "leadtypes",     label: "Phân loại KH",        icon: Users,      desc: "5 nhóm B2B · 10 loại hình · vai trò liên hệ" },
   { id: "discount",      label: "Bậc chiết khấu",      icon: Percent,    desc: "Chiết khấu theo số lượng" },
   { id: "webhook",       label: "Webhook & API",       icon: Webhook,    desc: "Make.com, n8n, tích hợp tự động" },
   { id: "notifications", label: "Thông báo",           icon: Bell,       desc: "Nhắc nhở quá hạn, lịch hẹn" },
@@ -269,31 +270,65 @@ function SourcesTab({ data, onChange }: { data: LeadSource[]; onChange: (d: Lead
 
 function LeadTypesTab({ data }: { data: LeadTypeConfig[]; onChange: (d: LeadTypeConfig[]) => void }) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+    <div className="space-y-6">
+      <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
         <Lock size={18} className="mt-0.5 shrink-0 text-amber-700" />
         <div>
-          <p className="text-sm font-semibold text-amber-950">Vai trò khách hàng dùng chung toàn CRM</p>
-          <p className="mt-1 text-xs leading-5 text-amber-800">
-            Danh sách khách hàng, Kanban, phân nhóm, Email Marketing và tự động hóa đều đọc cùng danh mục này.
+          <p className="text-sm font-semibold text-slate-950">Phân loại nhiều tầng, tương thích toàn bộ dữ liệu cũ</p>
+          <p className="mt-1 text-xs leading-5 text-slate-700">
+            Nhân viên chọn loại hình kinh doanh và vai trò người liên hệ. Hệ thống tự ánh xạ về 5 mã kỹ thuật cũ nên workflow, Kanban, Email Marketing và Google Sheet → Data Pool vẫn hoạt động.
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {data.map((type, idx) => (
-          <div key={type.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
-              style={{ background: `${type.color}20`, color: type.color, border: `1px solid ${type.color}40` }}>
-              {idx + 1}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{type.label}</p>
-              <p className="mt-1 text-xs text-slate-500">Mã: {type.id}</p>
-            </div>
-            <span className="h-3 w-3 rounded-full" style={{ background: type.color }} />
+
+      <section>
+        <div className="mb-3 flex items-end justify-between gap-4">
+          <div><h3 className="text-base font-bold text-slate-950">Cây phân loại khách hàng</h3><p className="mt-1 text-xs text-slate-500">B2C tách riêng; khách mua số lượng được chia thành 5 nhóm dễ chọn.</p></div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">5 nhóm · 10 loại hình</span>
+        </div>
+        <div className="mb-3 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+          <p className="text-sm font-bold text-sky-900">B2C · Khách mua lẻ</p>
+          <p className="mt-1 text-xs text-sky-700">Mua cho cá nhân/gia đình; không áp dụng workflow chăm sóc dự án B2B.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {CRM_B2B_GROUP_OPTIONS.map(group => {
+            const children = CRM_B2B_SUBTYPE_OPTIONS.filter(item => item.groupId === group.id).sort((a, b) => a.priority - b.priority);
+            return (
+              <div key={group.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ background: group.color }} />
+                  <div><p className="text-sm font-bold text-slate-950">{group.label}</p><p className="mt-0.5 text-xs text-slate-500">{group.description}</p></div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {children.map(item => (
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+                      <div className="min-w-0"><p className="text-xs font-semibold text-slate-800">{item.label}</p><p className="mt-0.5 text-[11px] text-slate-500">{item.id} · {item.typicalOrder}</p></div>
+                      <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-slate-500">Ưu tiên {item.priority}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-950">Vai trò người liên hệ</h3>
+          <p className="mt-1 text-xs text-slate-500">Tách khỏi loại hình doanh nghiệp để không nhầm “kiến trúc sư” với “công ty thiết kế”.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {CRM_CONTACT_ROLE_OPTIONS.map(role => <span key={role.id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">{role.label}</span>)}
           </div>
-        ))}
-      </div>
+        </div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <h3 className="text-sm font-bold text-amber-950">Lớp tương thích workflow hiện tại</h3>
+          <p className="mt-1 text-xs leading-5 text-amber-800">Các mã dưới đây không bị xóa hoặc đổi. Loại hình mới tự ánh xạ về đúng mã để các điều kiện đang chạy không gián đoạn.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {data.map(type => <div key={type.id} className="rounded-xl border border-amber-100 bg-white px-3 py-2"><p className="text-xs font-semibold text-slate-800">{type.label}</p><p className="text-[11px] text-slate-500">Mã: {type.id}</p></div>)}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

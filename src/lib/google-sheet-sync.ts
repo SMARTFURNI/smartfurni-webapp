@@ -52,6 +52,19 @@ function isTestLead(row: Record<string, string>): boolean {
   return Object.values(row).some(v => v.includes("<test lead"));
 }
 
+function foldHeader(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function getAliasedValue(row: Record<string, string>, aliases: string[]): string {
+  const values = new Map(Object.entries(row).map(([key, value]) => [foldHeader(key), value]));
+  for (const alias of aliases) {
+    const value = values.get(foldHeader(alias));
+    if (value?.trim()) return value.trim();
+  }
+  return "";
+}
+
 // ─── Sync một sheet ───────────────────────────────────────────────────────────
 
 async function syncOneSheet(
@@ -162,6 +175,10 @@ async function syncOneSheet(
     const formName = getCol(row, globalCfg.formNameColumn) || rowObj["form_name"] || "";
     const message = globalCfg.messageColumn ? getCol(row, globalCfg.messageColumn) : "";
     const customerRole = getCol(row, globalCfg.customerRoleColumn) || rowObj["vai_trò_hoặc_nhu_cầu_chính_của_anh/chị_là_gì_ạ"] || rowObj["customer_role"] || "";
+    const marketScope = getAliasedValue(rowObj, ["market_scope", "pham_vi_khach_hang", "phạm vi khách hàng", "b2c_b2b"]);
+    const b2bCustomerGroup = getAliasedValue(rowObj, ["b2b_group", "nhom_b2b", "nhóm b2b", "nhóm khách hàng b2b"]);
+    const b2bCustomerSubtype = getAliasedValue(rowObj, ["b2b_subtype", "loai_hinh_b2b", "loại hình b2b", "doi_tuong_kh", "đối tượng khách hàng", "phan_loai_chi_tiet"]);
+    const contactRole = getAliasedValue(rowObj, ["contact_role", "vai_tro_lien_he", "vai trò liên hệ", "customer_role"]);
 
     // Sử dụng giá trị mặc định cho name nếu trống
     const fullName = rawName || "Khách hàng từ Sheet";
@@ -187,6 +204,10 @@ async function syncOneSheet(
           sheetSourceId: sheetCfg.id,
           spreadsheetId: sheetCfg.spreadsheetId,
           originalId: rowId,
+          ...(marketScope ? { marketScope } : {}),
+          ...(b2bCustomerGroup ? { b2bCustomerGroup } : {}),
+          ...(b2bCustomerSubtype ? { b2bCustomerSubtype } : {}),
+          ...(contactRole ? { contactRole } : {}),
         },
       });
       console.info(`[gsheet-sync] ✅ Successfully synced row ${rowNumber} (ID: ${rowId})`);

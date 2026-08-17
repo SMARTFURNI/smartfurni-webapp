@@ -656,6 +656,10 @@ const HOSPITALITY_TERMS = [
 const SOFA_TERMS = ["sofa", "sofa giường", "sofa giuong", "giường gấp", "giuong gap"];
 
 export function leadHasHospitalitySignal(lead: Lead): boolean {
+  if (lead.b2bCustomerGroup === "hospitality") return true;
+  if (["B2B-HOMESTAY", "B2B-SERVICED-APT", "B2B-HOTEL", "B2B-RENTAL"].includes(lead.b2bCustomerSubtype ?? "")) {
+    return true;
+  }
   const text = [
     lead.company,
     lead.projectName,

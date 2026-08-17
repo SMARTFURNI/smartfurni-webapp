@@ -8,6 +8,7 @@ import {
 import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-store";
 import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-store";
 import { classifyRawLead, PRODUCT_LABELS } from "@/lib/crm-lead-standardization";
+import { B2B_GROUP_LABELS, B2B_SUBTYPE_LABELS, CONTACT_ROLE_LABELS } from "@/lib/crm-taxonomy";
 import CrmFoundationHeader from "./CrmFoundationHeader";
 import styles from "./DataPoolClient.module.css";
 
@@ -76,6 +77,13 @@ function StatusBadge({ status }: { status: RawLeadStatus }) {
       {STATUS_LABELS[status]}
     </span>
   );
+}
+
+function classificationLabel(classification: ReturnType<typeof classifyRawLead>): string {
+  if (classification.marketScope === "b2c") return "Khách mua lẻ";
+  if (classification.b2bCustomerSubtype) return B2B_SUBTYPE_LABELS[classification.b2bCustomerSubtype];
+  if (classification.b2bCustomerGroup) return B2B_GROUP_LABELS[classification.b2bCustomerGroup];
+  return "Khách số lượng / B2B";
 }
 
 function formatDate(iso: string) {
@@ -653,9 +661,12 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
           <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Loại khách / Sản phẩm quan tâm</p>
             <div className="flex flex-wrap gap-2">
-              {lead.customerRole && (
-                <span className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: "#eef6ff", color: "#2563eb" }}>
-                  {lead.customerRole}
+              <span className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: "#eef6ff", color: "#2563eb" }}>
+                {classificationLabel(classification)}
+              </span>
+              {classification.contactRole && classification.contactRole !== "unknown" && (
+                <span className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: "#f3f4f6", color: "#4b5563" }}>
+                  {CONTACT_ROLE_LABELS[classification.contactRole]}
                 </span>
               )}
               {classification.interestedProducts.map(product => (
@@ -1030,10 +1041,15 @@ export default function DataPoolClient({ isAdmin, currentStaffId, currentStaffNa
                     {/* Loại khách / Sản phẩm */}
                     <div className={styles.roleCell}>
                       <p className="text-xs text-gray-700 truncate font-medium">
-                        {lead.customerRole || "Chưa xác định loại"}
+                        {classificationLabel(classification)}
                       </p>
                       <p className="text-xs truncate mt-0.5" style={{ color: "#9a6b08" }}>
-                        {classification.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", ")}
+                        {[
+                          classification.contactRole && classification.contactRole !== "unknown"
+                            ? CONTACT_ROLE_LABELS[classification.contactRole]
+                            : undefined,
+                          classification.interestedProducts.map(product => PRODUCT_LABELS[product]).join(", "),
+                        ].filter(Boolean).join(" · ")}
                       </p>
                     </div>
 

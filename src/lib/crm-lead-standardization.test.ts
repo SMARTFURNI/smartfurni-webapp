@@ -27,6 +27,32 @@ describe("CRM lead standardization", () => {
     expect(lead.rawLeadIds).toEqual(["raw-1"]);
   });
 
+  it("reads optional Google Sheet classification without changing the Data Pool contract", () => {
+    const result = classifyRawLead(raw({
+      rawData: {
+        syncedFrom: "google_sheet",
+        marketScope: "B2B",
+        b2bCustomerSubtype: "B2B-HOTEL",
+        contactRole: "operator",
+      },
+    }));
+    expect(result.marketScope).toBe("b2b");
+    expect(result.b2bCustomerGroup).toBe("hospitality");
+    expect(result.b2bCustomerSubtype).toBe("B2B-HOTEL");
+    expect(result.contactRole).toBe("operator");
+    expect(result.legacyType).toBe("investor");
+  });
+
+  it("honors an explicit B2C Sheet value even when free text contains a company", () => {
+    const result = classifyRawLead(raw({
+      message: "Công ty ghi trong địa chỉ giao hàng",
+      rawData: { syncedFrom: "google_sheet", b2c_b2b: "B2C" },
+    }));
+    expect(result.marketScope).toBe("b2c");
+    expect(result.legacyType).toBe("retail");
+    expect(result.b2bCustomerGroup).toBeUndefined();
+  });
+
   it("hợp nhất dấu vết và sản phẩm mà không ghi đè người phụ trách", () => {
     const incoming = buildLeadFromRawLead(raw({ id: "raw-2", formName: "Giường công thái học" }), "Nhân viên B");
     const existing = { ...incoming, id: "lead-1", createdAt: "2026-08-01", updatedAt: "2026-08-01", assignedTo: "Nhân viên A", rawLeadIds: ["raw-1"], interestedProducts: ["sofa_bed" as const] };

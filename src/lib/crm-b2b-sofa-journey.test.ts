@@ -95,6 +95,19 @@ describe("B2B sofa journey eligibility", () => {
     const generic = lead({ company: "Công ty ABC", projectName: "Dự án ABC", notes: "Cần sofa giường", tags: [] });
     expect(isEligibleForB2BSofaJourney(generic, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS).eligible).toBe(false);
   });
+
+  it("accepts the new structured hospitality taxonomy without relying on notes", () => {
+    const structured = lead({
+      company: "Công ty ABC",
+      projectName: "",
+      notes: "",
+      tags: [],
+      marketScope: "b2b",
+      b2bCustomerGroup: "hospitality",
+      b2bCustomerSubtype: "B2B-HOTEL",
+    });
+    expect(isEligibleForB2BSofaJourney(structured, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS)).toEqual({ eligible: true });
+  });
 });
 
 describe("B2B sofa journey content", () => {
