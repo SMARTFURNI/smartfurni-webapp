@@ -3,6 +3,7 @@ import { z } from "zod";
 import { query, queryOne } from "@/lib/db";
 import { createActivity, createTask, getCallLog, getLead, updateCallLog } from "@/lib/crm-store";
 import type { CallAiAnalysis, CallLog } from "@/lib/crm-types";
+import { downloadCrmRecording } from "@/lib/crm-recording";
 
 const PROMPT_VERSION = "smartfurni-call-analysis-v1";
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -129,35 +130,9 @@ async function claimJob(callLogId?: string) {
   );
 }
 
-function validateRecordingUrl(value: string) {
-  const url = new URL(value);
-  const host = url.hostname.toLowerCase();
-  const extraHosts = (process.env.CALL_AI_RECORDING_HOSTS || "")
-    .split(",").map(item => item.trim().toLowerCase()).filter(Boolean);
-  const allowed = host === "ity.vn" || host.endsWith(".ity.vn") || extraHosts.includes(host);
-  if (url.protocol !== "https:" || !allowed) throw new Error("Nguồn bản ghi âm không nằm trong danh sách an toàn");
-  return url;
-}
-
-function audioMetadata(url: URL, contentType: string | null) {
-  const fromPath = url.pathname.split(".").pop()?.toLowerCase();
-  const allowed = new Set(["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]);
-  const ext = fromPath && allowed.has(fromPath) ? fromPath : contentType?.includes("wav") ? "wav" : contentType?.includes("webm") ? "webm" : contentType?.includes("mp4") ? "m4a" : "mp3";
-  const mime = contentType?.split(";")[0] || (ext === "wav" ? "audio/wav" : ext === "webm" ? "audio/webm" : "audio/mpeg");
-  return { filename: `call-recording.${ext}`, mime };
-}
-
 async function downloadRecording(recordingUrl: string) {
-  const url = validateRecordingUrl(recordingUrl);
-  const response = await fetch(url, { signal: AbortSignal.timeout(60_000), redirect: "follow" });
-  if (!response.ok) throw new Error(`Không tải được bản ghi âm (${response.status})`);
-  validateRecordingUrl(response.url);
-  const declaredSize = Number(response.headers.get("content-length") || 0);
-  if (declaredSize > MAX_AUDIO_BYTES) throw new Error("Bản ghi âm vượt quá giới hạn 25 MB");
-  const buffer = Buffer.from(await response.arrayBuffer());
-  if (!buffer.length) throw new Error("Bản ghi âm rỗng");
-  if (buffer.length > MAX_AUDIO_BYTES) throw new Error("Bản ghi âm vượt quá giới hạn 25 MB");
-  return { buffer, ...audioMetadata(url, response.headers.get("content-type")) };
+  const recording = await downloadCrmRecording(recordingUrl, MAX_AUDIO_BYTES);
+  return { buffer: recording.buffer, filename: recording.filename, mime: recording.contentType };
 }
 
 function analysisPrompt(call: CallLog, lead: Awaited<ReturnType<typeof getLead>>, transcript: string) {

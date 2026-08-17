@@ -23,6 +23,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { nanoid } from "nanoid";
+import { ensureHotlineInboundCallLog, findHotlineCallIdByCallId } from "@/lib/crm-hotline-inbound";
+import { enqueueCallAiAnalysis } from "@/lib/crm-call-ai";
 
 export const dynamic = "force-dynamic";
 
@@ -149,8 +151,26 @@ export async function POST(req: NextRequest) {
        JSON.stringify(body)]
     );
 
+    // Đồng bộ về nhật ký cuộc gọi CRM dùng chung. Nhờ vậy cùng một cuộc gọi
+    // xuất hiện ở hồ sơ khách hàng và dùng chung pipeline AI tóm tắt.
+    const saved = await findHotlineCallIdByCallId(callId);
+    let callLogId: string | undefined;
+    if (saved) {
+      try {
+        const callLog = await ensureHotlineInboundCallLog(saved.id);
+        callLogId = callLog.id;
+        if (callLog.status === "answered" && callLog.recordingUrl) {
+          await enqueueCallAiAnalysis(callLog.id).catch(error =>
+            console.error("[hotline-inbound webhook] AI queue error:", error));
+        }
+      } catch (syncError) {
+        // Không để lỗi đồng bộ CRM làm ITY gửi lại webhook liên tục.
+        console.error("[hotline-inbound webhook] CRM sync error:", syncError);
+      }
+    }
+
     console.log(`[hotline-inbound] Saved: ${callerNumber} → ${hotlineNumber}, status=${status}, duration=${duration}s`);
-    return NextResponse.json({ ok: true, id, callId, status });
+    return NextResponse.json({ ok: true, id: saved?.id || id, callId, callLogId, status });
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

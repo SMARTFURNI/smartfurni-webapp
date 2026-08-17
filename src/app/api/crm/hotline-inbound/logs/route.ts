@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
+import { initCallLogSchema } from "@/lib/crm-store";
+import type { CallLog } from "@/lib/crm-types";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +38,7 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await ensureSchema();
+  await initCallLogSchema();
 
   const { searchParams } = new URL(req.url);
   const limit = Math.min(Number(searchParams.get("limit") ?? 200), 500);
@@ -51,24 +54,24 @@ export async function GET(req: NextRequest) {
   let idx = 1;
 
   if (status) {
-    conditions.push(`status = $${idx++}`);
+    conditions.push(`h.status = $${idx++}`);
     params.push(status);
   }
   if (hotline) {
-    conditions.push(`hotline_number = $${idx++}`);
+    conditions.push(`h.hotline_number = $${idx++}`);
     params.push(hotline);
   }
   if (search) {
-    conditions.push(`(caller_number ILIKE $${idx} OR hotline_number ILIKE $${idx})`);
+    conditions.push(`(h.caller_number ILIKE $${idx} OR h.hotline_number ILIKE $${idx})`);
     params.push(`%${search}%`);
     idx++;
   }
   if (dateFrom) {
-    conditions.push(`started_at >= $${idx++}`);
+    conditions.push(`h.started_at >= $${idx++}`);
     params.push(dateFrom);
   }
   if (dateTo) {
-    conditions.push(`started_at < $${idx++}`);
+    conditions.push(`h.started_at < $${idx++}`);
     // Add 1 day to include the end date
     const end = new Date(dateTo);
     end.setDate(end.getDate() + 1);
@@ -92,12 +95,16 @@ export async function GET(req: NextRequest) {
       direction: string;
       started_at: string;
       created_at: string;
+      call_log_id: string | null;
+      call_log_data: CallLog | string | null;
     }>(
-      `SELECT id, call_id, hotline_number, caller_number, extension, duration, billsec,
-              status, recording_url, userfield, direction, started_at, created_at
-       FROM crm_hotline_inbound_calls
+      `SELECT h.id, h.call_id, h.hotline_number, h.caller_number, h.extension, h.duration, h.billsec,
+              h.status, h.recording_url, h.userfield, h.direction, h.started_at, h.created_at,
+              cl.id AS call_log_id, cl.data AS call_log_data
+       FROM crm_hotline_inbound_calls h
+       LEFT JOIN crm_call_logs cl ON cl.call_id = h.call_id
        ${where}
-       ORDER BY started_at DESC
+       ORDER BY h.started_at DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
       [...params, limit, offset]
     );
@@ -114,7 +121,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) FILTER (WHERE status = 'answered') as answered,
         COUNT(*) FILTER (WHERE status = 'missed') as missed,
         COALESCE(SUM(billsec), 0) as total_duration
-       FROM crm_hotline_inbound_calls ${where}`,
+       FROM crm_hotline_inbound_calls h ${where}`,
       params
     );
 
@@ -126,7 +133,21 @@ export async function GET(req: NextRequest) {
     const stats = statsRows[0] || { total: "0", answered: "0", missed: "0", total_duration: "0" };
 
     return NextResponse.json({
-      calls: rows,
+      calls: rows.map(row => {
+        const callLog = row.call_log_data
+          ? (typeof row.call_log_data === "string" ? JSON.parse(row.call_log_data) : row.call_log_data)
+          : null;
+        const { call_log_data: _data, ...call } = row;
+        void _data;
+        return {
+          ...call,
+          lead_id: callLog?.leadId || null,
+          lead_name: callLog?.leadName || null,
+          ai_status: callLog?.aiStatus || null,
+          ai_error: callLog?.aiError || null,
+          ai_analysis: callLog?.aiAnalysis || null,
+        };
+      }),
       stats: {
         total: Number(stats.total),
         answered: Number(stats.answered),

@@ -749,8 +749,17 @@ export async function updateCallLog(id: string, updates: Partial<CallLog>): Prom
   if (!existing) return null;
   const updated: CallLog = { ...existing, ...updates, id, updatedAt: new Date().toISOString() };
   await query(
-    `UPDATE crm_call_logs SET data = $1, updated_at = NOW(), note = $2 WHERE id = $3`,
-    [JSON.stringify(updated), updated.note ?? null, id]
+    `UPDATE crm_call_logs SET
+       data = $1, note = $2, call_id = $3, staff_id = $4, lead_id = $5,
+       caller_number = $6, receiver_number = $7, direction = $8, status = $9,
+       duration = $10, recording_url = $11, provider = $12,
+       started_at = $13, ended_at = $14, updated_at = NOW()
+     WHERE id = $15`,
+    [JSON.stringify(updated), updated.note ?? null, updated.callId,
+     updated.staffId ?? null, updated.leadId ?? null, updated.callerNumber,
+     updated.receiverNumber, updated.direction, updated.status, updated.duration,
+     updated.recordingUrl ?? null, updated.provider ?? "manual", updated.startedAt,
+     updated.endedAt ?? null, id]
   );
   return updated;
 }

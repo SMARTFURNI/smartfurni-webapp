@@ -8,40 +8,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
+import { downloadCrmRecording } from "@/lib/crm-recording";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-function parseAllowedRecordingUrl(rawUrl: string | null): URL | null {
-  if (!rawUrl) return null;
-
-  try {
-    const url = new URL(rawUrl);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-
-    const hostname = url.hostname.toLowerCase();
-    const allowed = hostname === "ity.vn" || hostname.endsWith(".ity.vn");
-    return allowed ? url : null;
-  } catch {
-    return null;
-  }
-}
-
-function copyHeader(from: Headers, to: Headers, key: string) {
-  const value = from.get(key);
-  if (value) to.set(key, value);
-}
-
-function isPlayableContentType(contentType: string) {
-  const lower = contentType.toLowerCase();
-  return (
-    lower.startsWith("audio/") ||
-    lower.includes("mpeg") ||
-    lower.includes("wav") ||
-    lower.includes("ogg") ||
-    lower.includes("octet-stream")
-  );
-}
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
@@ -50,82 +20,63 @@ export async function GET(req: NextRequest) {
   }
 
   const debug = req.nextUrl.searchParams.get("debug") === "1";
-  const targetUrl = parseAllowedRecordingUrl(req.nextUrl.searchParams.get("url"));
+  const targetUrl = req.nextUrl.searchParams.get("url");
   if (!targetUrl) {
     return new NextResponse("Invalid recording URL", { status: 400 });
   }
 
-  const headers = new Headers({
-    "Accept": "audio/*,application/octet-stream,*/*;q=0.8",
-    "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
-    "User-Agent": "Mozilla/5.0 (compatible; SmartFurniCRM/1.0)",
-  });
-
-  // Trình duyệt gửi Range khi cần đọc metadata hoặc tua file.
-  // Chuyển tiếp header này giúp audio player không bị kẹt thời lượng 0:00.
-  const range = req.headers.get("range");
-  if (range) headers.set("Range", range);
-  if (debug && !range) headers.set("Range", "bytes=0-0");
-
-  let response: Response;
+  let recording: Awaited<ReturnType<typeof downloadCrmRecording>>;
   try {
-    response = await fetch(targetUrl.toString(), {
-      headers,
-      redirect: "follow",
-      cache: "no-store",
-    });
+    recording = await downloadCrmRecording(targetUrl);
   } catch (err) {
     console.error("[hotline recording proxy] Fetch error:", err);
-    return new NextResponse("Cannot fetch recording", { status: 502 });
+    const message = err instanceof Error ? err.message : "Không thể tải bản ghi âm";
+    if (debug) return NextResponse.json({ ok: false, message }, { status: 502 });
+    return new NextResponse(message, { status: 502 });
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  const contentLength = response.headers.get("content-length");
-  const playable = isPlayableContentType(contentType);
+  if (debug) return NextResponse.json({
+    ok: true,
+    status: 200,
+    contentType: recording.contentType,
+    contentLength: recording.buffer.length,
+    playable: true,
+    message: "Server đã tải và nhận diện được file ghi âm.",
+  });
 
-  if (debug) {
-    return NextResponse.json({
-      ok: response.ok || response.status === 206,
-      status: response.status,
-      contentType: contentType || "không có content-type",
-      contentLength: contentLength || "không có content-length",
-      playable,
-      message: !response.ok && response.status !== 206
-        ? `Tổng đài trả về lỗi ${response.status}.`
-        : playable
-          ? "Server đọc được file ghi âm."
-          : "Tổng đài không trả về file âm thanh, có thể đang trả về trang đăng nhập hoặc HTML.",
-    });
+  const total = recording.buffer.length;
+  const range = req.headers.get("range");
+  let start = 0;
+  let end = total - 1;
+  let status = 200;
+  if (range) {
+    const match = /^bytes=(\d*)-(\d*)$/i.exec(range.trim());
+    if (!match) return new NextResponse("Invalid range", { status: 416, headers: { "Content-Range": `bytes */${total}` } });
+    if (match[1]) start = Number(match[1]);
+    if (match[2]) end = Number(match[2]);
+    if (!match[1] && match[2]) {
+      const suffixLength = Number(match[2]);
+      start = Math.max(0, total - suffixLength);
+      end = total - 1;
+    }
+    end = Math.min(end, total - 1);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start > end || start >= total) {
+      return new NextResponse("Range not satisfiable", { status: 416, headers: { "Content-Range": `bytes */${total}` } });
+    }
+    status = 206;
   }
+  const body = recording.buffer.subarray(start, end + 1);
+  const responseHeaders = new Headers({
+    "Accept-Ranges": "bytes",
+    "Cache-Control": "private, max-age=3600",
+    "Content-Disposition": `inline; filename="${recording.filename}"`,
+    "Content-Length": String(body.length),
+    "Content-Type": recording.contentType,
+  });
+  if (status === 206) responseHeaders.set("Content-Range", `bytes ${start}-${end}/${total}`);
 
-  if (!response.ok && response.status !== 206) {
-    console.error(
-      `[hotline recording proxy] Remote error ${response.status}: ${targetUrl.toString()}`
-    );
-    return new NextResponse(`Recording fetch failed: ${response.status}`, { status: 502 });
-  }
-
-  if (!playable) {
-    console.error(
-      `[hotline recording proxy] Non-audio response ${contentType || "unknown"}: ${targetUrl.toString()}`
-    );
-    return new NextResponse("Recording URL did not return an audio file", { status: 502 });
-  }
-
-  if (!response.body) {
-    return new NextResponse("Recording body is empty", { status: 502 });
-  }
-
-  const responseHeaders = new Headers();
-  responseHeaders.set("Content-Type", contentType || "audio/mpeg");
-  responseHeaders.set("Cache-Control", "private, max-age=300");
-  responseHeaders.set("Accept-Ranges", response.headers.get("accept-ranges") || "bytes");
-  copyHeader(response.headers, responseHeaders, "content-length");
-  copyHeader(response.headers, responseHeaders, "content-range");
-  copyHeader(response.headers, responseHeaders, "content-disposition");
-
-  return new NextResponse(response.body, {
-    status: response.status,
+  return new NextResponse(new Uint8Array(body), {
+    status,
     headers: responseHeaders,
   });
 }
