@@ -1672,20 +1672,47 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
     e.preventDefault();
     if (!form.name.trim()) { setError("Vui lòng nhập tên khách hàng"); return; }
     if (!form.phone.trim()) { setError("Vui lòng nhập số điện thoại"); return; }
+    if (form.interestedProducts.length === 0) { setError("Vui lòng chọn ít nhất một sản phẩm quan tâm"); return; }
+    if (form.marketScope === "b2b" && !form.b2bCustomerSubtype) { setError("Vui lòng chọn loại hình chi tiết cho khách B2B"); return; }
+    const parsedUnitCount = Number(form.unitCount);
+    if (form.marketScope === "b2b" && (!Number.isInteger(parsedUnitCount) || parsedUnitCount <= 0)) {
+      setError("Vui lòng nhập số căn/phòng lớn hơn 0 cho khách B2B");
+      return;
+    }
     setLoading(true); setError("");
     try {
       const res = await fetch(`/api/crm/leads/${lead.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, expectedValue: parseFloat(form.expectedValue) || 0, unitCount: parseInt(form.unitCount) || 0 }),
+        body: JSON.stringify({ ...form, expectedValue: parseFloat(form.expectedValue) || 0, unitCount: parsedUnitCount || 0 }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      onUpdated(await res.json());
-    } catch { setError("Có lỗi xảy ra, vui lòng thử lại"); }
+      const response = await res.json().catch(() => null) as (Lead & { error?: string }) | null;
+      if (!res.ok) throw new Error(response?.error || "Có lỗi xảy ra, vui lòng thử lại");
+      if (!response) throw new Error("Máy chủ không trả về dữ liệu khách hàng");
+      onUpdated(response);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Có lỗi xảy ra, vui lòng thử lại");
+    }
     finally { setLoading(false); }
   }
 
   const inputStyle = { background: DL.inputBg, border: `1px solid ${DL.inputBorder}`, color: DL.text };
   const labelStyle = { color: DL.textMuted };
+  const parsedUnitCount = Number(form.unitCount);
+  const missingProduct = form.interestedProducts.length === 0;
+  const missingB2BSubtype = form.marketScope === "b2b" && !form.b2bCustomerSubtype;
+  const missingB2BUnitCount = form.marketScope === "b2b" && (!Number.isInteger(parsedUnitCount) || parsedUnitCount <= 0);
+  const canSubmit = Boolean(
+    form.name.trim()
+    && form.phone.trim()
+    && !missingProduct
+    && !missingB2BSubtype
+    && !missingB2BUnitCount
+  );
+  const missingRequirements = [
+    missingProduct ? "sản phẩm" : "",
+    missingB2BSubtype ? "loại hình chi tiết" : "",
+    missingB2BUnitCount ? "số căn/phòng" : "",
+  ].filter(Boolean);
 
   return (
     <div className={`${customerStyles.modalBackdrop} fixed inset-0 z-50 flex items-center justify-center p-4`}
@@ -1732,12 +1759,15 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Loại hình chi tiết</label>
+                  <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Loại hình chi tiết *</label>
                   <select value={form.b2bCustomerSubtype} onChange={e => setB2BSubtype(e.target.value as B2BCustomerSubtype | "")}
-                    className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }}>
+                    required aria-invalid={missingB2BSubtype}
+                    className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none"
+                    style={{ ...inputStyle, borderColor: missingB2BSubtype ? "#ef4444" : DL.inputBorder }}>
                     <option value="">Chọn loại hình</option>
                     {CRM_B2B_SUBTYPE_OPTIONS.filter(item => !form.b2bCustomerGroup || item.groupId === form.b2bCustomerGroup).map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
                   </select>
+                  {missingB2BSubtype && <p className="mt-1.5 text-[11px] text-red-600">Bắt buộc chọn loại hình chi tiết.</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Vai trò liên hệ</label>
@@ -1781,7 +1811,7 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
             <h3 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: DL.textMuted }}>Thông tin kinh doanh</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="block text-xs font-semibold mb-2" style={labelStyle}>Sản phẩm quan tâm</label>
+                <label className="block text-xs font-semibold mb-2" style={labelStyle}>Sản phẩm quan tâm *</label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {CRM_PRODUCT_OPTIONS.map(product => {
                     const active = form.interestedProducts.includes(product.id);
@@ -1794,6 +1824,7 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                     );
                   })}
                 </div>
+                {missingProduct && <p className="mt-1.5 text-[11px] text-red-600">Bắt buộc chọn ít nhất một sản phẩm.</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Giá trị dự kiến (VND)</label>
@@ -1801,9 +1832,11 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
                   className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }} placeholder="500000000" />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Số căn / phòng</label>
-                <input type="number" value={form.unitCount} onChange={e => set("unitCount", e.target.value)}
+                <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Số căn / phòng{form.marketScope === "b2b" ? " *" : ""}</label>
+                <input type="number" min={form.marketScope === "b2b" ? 1 : undefined} step="1" required={form.marketScope === "b2b"}
+                  value={form.unitCount} onChange={e => set("unitCount", e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ ...inputStyle }} placeholder="10" />
+                {missingB2BUnitCount && <p className="mt-1.5 text-[11px] text-red-600">Khách B2B phải có số căn/phòng lớn hơn 0.</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={labelStyle}>Khu vực</label>
@@ -1843,14 +1876,17 @@ function EditLeadModal({ lead, onClose, onUpdated }: { lead: Lead; onClose: () =
               className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none"
               style={{ ...inputStyle }} placeholder="Ghi chú thêm về khách hàng..." />
           </div>
+          {missingRequirements.length > 0 && (
+            <p className="text-xs text-red-600">Cần bổ sung trước khi lưu: {missingRequirements.join(", ")}.</p>
+          )}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
               className={`${customerStyles.secondaryButton} flex-1 py-2.5 text-sm rounded-xl transition-all`}
               style={{ background: DL.surface, border: `1px solid ${DL.border}`, color: DL.textMuted }}>
               Hủy
             </button>
-            <button type="submit" disabled={loading}
-              className={`${customerStyles.primaryButton} flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all`}>
+            <button type="submit" disabled={loading || !canSubmit}
+              className={`${customerStyles.primaryButton} flex-1 py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all disabled:cursor-not-allowed disabled:opacity-50`}>
               {loading && <Loader2 size={13} className="animate-spin" />}
               Lưu thay đổi
             </button>

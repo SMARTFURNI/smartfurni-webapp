@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getLead, updateLead, deleteLead } from "@/lib/crm-store";
 import { triggerStageChangeAutomation } from "@/lib/crm-automation-engine";
 import { logAudit, getClientIp, resolveActorName } from "@/lib/audit-helper";
+import { isLeadProfileUpdate, validateLeadProfileForUpdate } from "@/lib/crm-lead-profile-validation";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCrmSession();
@@ -17,11 +18,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  const updates = await req.json();
+  const payload = await req.json();
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return NextResponse.json({ error: "Dữ liệu cập nhật không hợp lệ" }, { status: 400 });
+  }
+  const updates = payload as Record<string, unknown>;
 
   // Luu stage cu truoc khi update de trigger automation
   const existingLead = await getLead(id);
-  const prevStage = existingLead?.stage;
+  if (!existingLead) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const prevStage = existingLead.stage;
+
+  if (isLeadProfileUpdate(updates)) {
+    const validation = validateLeadProfileForUpdate({ ...existingLead, ...updates });
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: validation.errors[0], errors: validation.errors },
+        { status: 422 },
+      );
+    }
+  }
 
   const lead = await updateLead(id, updates);
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -189,6 +189,7 @@
 .modalBackdrop {
   background: rgba(15, 23, 42, 0.52) !important;
   backdrop-filter: blur(7px);
+  z-index: 120 !important;
 }
 
 .modalPanel {
