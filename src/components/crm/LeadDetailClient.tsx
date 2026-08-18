@@ -605,7 +605,7 @@ export default function LeadDetailClient({
                         const currentNote = callNotes[noteKey] !== undefined ? callNotes[noteKey] : (call.note ?? "");
                         const analysis = call.aiAnalysis;
                         const aiExpanded = expandedCallAi.has(call.id);
-                        const aiBusy = analyzingCallId === call.id || call.aiStatus === "processing";
+                        const aiBusy = analyzingCallId === call.id;
                         return (
                           <div key={call.id} className="rounded-xl p-4 transition-all"
                             style={{ background: DL.surface, border: `1px solid ${DL.border}` }}
@@ -662,7 +662,7 @@ export default function LeadDetailClient({
                                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all disabled:opacity-60"
                                       style={{ background: "rgba(0,104,255,0.10)", border: "1px solid rgba(0,104,255,0.25)", color: DL.gold }}>
                                       {aiBusy ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-                                      {aiBusy ? "AI đang phân tích" : analysis ? (aiExpanded ? "Thu gọn AI" : "Xem tóm tắt AI") : call.aiStatus === "pending" ? "Đang chờ · chạy ngay" : "Tóm tắt bằng AI"}
+                                      {aiBusy ? "AI đang phân tích" : analysis ? (aiExpanded ? "Thu gọn AI" : "Xem tóm tắt AI") : "Tóm tắt bằng AI"}
                                       {analysis && (aiExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}
                                     </button>
                                     {analysis && (
@@ -674,9 +674,9 @@ export default function LeadDetailClient({
                                     )}
                                   </div>
                                 )}
-                                {(call.aiError || callAiError[call.id]) && (
+                                {callAiError[call.id] && (
                                   <div className="mt-2 rounded-lg px-3 py-2 text-xs" style={{ color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca" }}>
-                                    <div>{callAiError[call.id] || call.aiError}</div>
+                                    <div>{callAiError[call.id]}</div>
                                     {call.recordingUrl && !analysis && (
                                       <label className="mt-2 inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-700">
                                         <Upload size={13} /> Chọn file ghi âm để AI phân tích
