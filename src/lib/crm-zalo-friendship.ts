@@ -27,7 +27,7 @@ export { buildZaloFriendRequestMessage, getLeadProductLabel, normalizeZaloFriend
 
 const DEFAULT_SETTINGS: ZaloFriendshipSettings = {
   enabled: true,
-  initialDelayMinutes: 2,
+  initialDelayMinutes: 0,
   retryAfterHours: 72,
   resendDelayMinutes: 15,
   maxRetries: 2,
@@ -474,6 +474,60 @@ export async function runZaloFriendshipAutomation(limit = 20) {
     }
   }
   return { enabled: true, claimed: rows.length, results };
+}
+
+/**
+ * Process one specific lead immediately after it is saved. This deliberately
+ * bypasses the background queue delay, while keeping working-hour, account and
+ * daily-cap safeguards. The regular cron remains the recovery path when the
+ * request cannot be completed synchronously.
+ */
+export async function runZaloFriendshipForLeadNow(leadId: string) {
+  await ensureZaloFriendshipSchema();
+  const settings = await getZaloFriendshipSettings();
+  if (!settings.enabled) {
+    return { enabled: false, claimed: false, result: "disabled" };
+  }
+
+  const now = new Date();
+  if (nextAllowedTime(now, settings).getTime() !== now.getTime()) {
+    return { enabled: true, outsideWorkingHours: true, claimed: false, result: "outside_working_hours" };
+  }
+
+  const row = await queryOne<FriendshipRow>(
+    `WITH target AS (
+       SELECT lead_id, status FROM crm_zalo_friendships
+       WHERE lead_id=$1
+         AND auto_enabled=TRUE
+         AND status IN ('queued','waiting_data','waiting_account','not_found','retry_scheduled','failed','processing')
+         AND (status <> 'processing' OR claimed_at < NOW() - INTERVAL '15 minutes')
+       FOR UPDATE SKIP LOCKED
+     )
+     UPDATE crm_zalo_friendships f SET status='processing', claimed_at=NOW(), updated_at=NOW()
+     FROM target WHERE f.lead_id=target.lead_id
+     RETURNING f.*, target.status AS previous_status`,
+    [leadId],
+  );
+  if (!row) {
+    return { enabled: true, claimed: false, result: "not_actionable" };
+  }
+
+  const originalStatus = row.previous_status || row.status;
+  row.status = originalStatus;
+  try {
+    const result = await processRow(row, settings);
+    return { enabled: true, claimed: true, result };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Lỗi không xác định";
+    await updateRow(row.lead_id, {
+      status: "failed",
+      last_error: message,
+      next_action_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+      claimed_at: null,
+    });
+    console.error(`[ZaloFriendship] Immediate lead ${row.lead_id} failed from ${originalStatus}:`, error);
+    return { enabled: true, claimed: true, result: "failed", error: message };
+  }
 }
 
 export async function requestZaloFriendshipAction(leadId: string, action: "retry" | "stop" | "resume" | "check") {

@@ -193,8 +193,13 @@ export async function createLead(
   );
   if (!options?.suppressZaloFriendship) {
     try {
-      const { enqueueZaloFriendshipForLead, getZaloFriendshipSummary } = await import("./crm-zalo-friendship");
+      const {
+        enqueueZaloFriendshipForLead,
+        getZaloFriendshipSummary,
+        runZaloFriendshipForLeadNow,
+      } = await import("./crm-zalo-friendship");
       await enqueueZaloFriendshipForLead(lead);
+      await runZaloFriendshipForLeadNow(lead.id);
       const zaloFriendship = await getZaloFriendshipSummary(lead.id);
       return { ...lead, zaloFriendship: zaloFriendship || undefined };
     } catch (error) {
@@ -251,9 +256,21 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
     `UPDATE crm_leads SET data = $1, stage = $2, last_contact_at = $3, updated_at = NOW() WHERE id = $4`,
     [JSON.stringify(persistedLead), updated.stage, updated.lastContactAt, id]
   );
+  let refreshedZaloFriendship = updated.zaloFriendship;
   try {
-    const { enqueueZaloFriendshipForLead } = await import("./crm-zalo-friendship");
+    const {
+      enqueueZaloFriendshipForLead,
+      getZaloFriendshipSummary,
+      runZaloFriendshipForLeadNow,
+    } = await import("./crm-zalo-friendship");
     await enqueueZaloFriendshipForLead(persistedLead as Lead);
+    const friendship = await getZaloFriendshipSummary(id);
+    // Existing leads that were waiting for phone/product data are sent as soon
+    // as an edit makes them eligible. Routine lead updates do not re-check Zalo.
+    if (friendship?.status === "queued" && friendship.attemptCount === 0) {
+      await runZaloFriendshipForLeadNow(id);
+    }
+    refreshedZaloFriendship = (await getZaloFriendshipSummary(id)) || undefined;
   } catch (error) {
     console.error("[crm] Cannot refresh Zalo friendship data:", error);
   }
@@ -272,7 +289,7 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
       console.error("[crm] Cannot record journey stage history:", error);
     }
   }
-  return updated;
+  return { ...updated, zaloFriendship: refreshedZaloFriendship };
 }
 
 export async function updateLeadStage(id: string, stage: LeadStage, lostReason?: string): Promise<Lead | null> {
