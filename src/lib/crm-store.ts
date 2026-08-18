@@ -613,6 +613,7 @@ export async function getCrmStats(staffFilter?: { assignedTo?: string }): Promis
 
 // ─── Call Log CRUD ────────────────────────────────────────────────────────────
 import type { CallLog, CallAnalytics } from "@/lib/crm-types";
+import { coalesceComplementaryItyCallLogs } from "@/lib/crm-call-log-reconciliation";
 
 let callSchemaInitialized = false;
 
@@ -681,7 +682,8 @@ export async function getCallLogs(filters?: {
     `SELECT data FROM crm_call_logs ${where} ORDER BY started_at DESC LIMIT ${limit} OFFSET ${offset}`,
     params
   );
-  return rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
+  const logs = rows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data);
+  return coalesceComplementaryItyCallLogs(logs);
 }
 
 export async function getCallLog(id: string): Promise<CallLog | null> {

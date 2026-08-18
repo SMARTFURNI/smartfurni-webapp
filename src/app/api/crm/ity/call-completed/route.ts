@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
   const referer = req.headers.get("referer") || "";
   const origin = req.headers.get("origin") || "";
   const host = req.headers.get("host") || "";
-  const isInternal = referer.includes(host) || origin.includes(host) || !origin;
+  const isInternal = Boolean(host && ((referer && referer.includes(host)) || (origin && origin.includes(host))));
   if (expectedSecret && secret !== expectedSecret && !isInternal) {
     return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
   }
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     // Xây dựng note chi tiết từ các fields ITY
     const noteParts: string[] = [];
     if (hotline) noteParts.push(`Hotline: ${hotline}`);
-    if (hangupBy) noteParts.push(`Nắt bởi: ${hangupBy}`);
+    if (hangupBy) noteParts.push(`Ngắt bởi: ${hangupBy}`);
     if (hangupCause) noteParts.push(`Lý do: ${hangupCause}`);
     if (mos) noteParts.push(`Chất lượng (MOS): ${mos}`);
     if (userfield) noteParts.push(`Userfield: ${userfield}`);
@@ -118,25 +118,34 @@ export async function POST(req: NextRequest) {
     const receiverPhone = direction === "outbound" ? phone : extension;
     const callerNum = direction === "outbound" ? extension : phone;
 
-    // --- Gộp với bản ghi JsSIP đã lưu trước đó ---
-    // Tìm bản ghi có cùng số điện thoại + thời gian gần nhau (±5 phút) + chưa có recording_url
+    // --- Gộp với bản ghi đã lưu trước đó ---
+    // Ưu tiên call_id chính xác; nếu ITY đổi call_id thì ghép theo số điện thoại + thời gian.
     const normalizePhone = (p: string) => p.replace(/\D/g, "").replace(/^84/, "0");
     const normalizedReceiver = normalizePhone(receiverPhone);
-    const plus84Receiver = normalizedReceiver.startsWith("0") ? "+84" + normalizedReceiver.slice(1) : normalizedReceiver;
+    const internationalReceiver = normalizedReceiver.startsWith("0") ? "84" + normalizedReceiver.slice(1) : normalizedReceiver;
     const startedAtDate = new Date(startedAt);
-    // Nới rộng window ±10 phút để xử lý lệch múi giờ hoặc delay webhook
-    const windowStart = new Date(startedAtDate.getTime() - 10 * 60 * 1000).toISOString();
-    const windowEnd = new Date(startedAtDate.getTime() + 10 * 60 * 1000).toISOString();
+    // Ba phút đủ cho độ trễ webhook nhưng tránh gộp nhầm hai cuộc gọi thật liên tiếp.
+    const windowStart = new Date(startedAtDate.getTime() - 3 * 60 * 1000).toISOString();
+    const windowEnd = new Date(startedAtDate.getTime() + 3 * 60 * 1000).toISOString();
 
     const existingRows = await query<{ id: string; data: string }>(
       `SELECT id, data FROM crm_call_logs
-       WHERE (receiver_number = $1 OR receiver_number = $2
-           OR caller_number = $1 OR caller_number = $2)
-         AND started_at BETWEEN $3 AND $4
-         AND provider = 'jssip'
-       ORDER BY started_at DESC
+       WHERE call_id = $1
+          OR (
+            $2 <> ''
+            AND (
+              REGEXP_REPLACE(receiver_number, '[^0-9]', '', 'g') IN ($2, $3)
+              OR REGEXP_REPLACE(caller_number, '[^0-9]', '', 'g') IN ($2, $3)
+            )
+            AND started_at BETWEEN $4 AND $5
+            AND recording_url IS NULL
+            AND provider IN ('jssip', 'ity')
+          )
+       ORDER BY CASE WHEN call_id = $1 THEN 0 ELSE 1 END,
+                ABS(EXTRACT(EPOCH FROM (started_at - $6::timestamptz))) ASC,
+                updated_at DESC
        LIMIT 1`,
-      [normalizedReceiver, plus84Receiver, windowStart, windowEnd]
+      [callid, normalizedReceiver, internationalReceiver, windowStart, windowEnd, startedAt]
     );
 
     if (existingRows.length > 0) {
@@ -167,7 +176,7 @@ export async function POST(req: NextRequest) {
       if (mergedData.status === "answered" && mergedData.recordingUrl) {
         await enqueueCallAiAnalysis(existingId).catch(error => console.error("[ITY call-completed] AI queue error:", error));
       }
-      console.log(`[ITY call-completed] MERGED into existing JsSIP record ${existingId}, CallID: ${callid}`);
+      console.log(`[ITY call-completed] MERGED into existing record ${existingId}, CallID: ${callid}`);
       return NextResponse.json({ status: "ok", id: existingId, callId: callid, merged: true });
     }
 
