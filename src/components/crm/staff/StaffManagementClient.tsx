@@ -231,8 +231,47 @@ export default function StaffManagementClient({ initialStaff }: Props) {
       </div>
 
       {/* Staff Table */}
-      <div className="px-8 pb-8">
-        <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="px-3 pb-8 md:px-8">
+        <div className="grid gap-3 md:hidden">
+          {staff.map(member => {
+            const roleInfo = getRoleInfo(member.role, roles);
+            const isActive = member.status === "active";
+            return (
+              <article key={member.id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold"
+                    style={{ background: `${roleInfo.color}20`, color: roleInfo.color }}>
+                    {member.fullName.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-bold text-gray-900">{member.fullName}</div>
+                    <div className="truncate text-xs text-gray-400">@{member.username}</div>
+                  </div>
+                  <span className="flex-shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold"
+                    style={{ background: `${roleInfo.color}15`, color: roleInfo.color }}>{roleInfo.icon} {roleInfo.name}</span>
+                </div>
+                <div className="mt-3 grid gap-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+                  <div className="flex items-center gap-2"><Phone size={14} className="text-gray-400" /><span>{member.phone || "Chưa có SĐT"}</span></div>
+                  <div className="flex min-w-0 items-center gap-2"><Mail size={14} className="flex-shrink-0 text-gray-400" /><span className="truncate">{member.email || "Chưa có email"}</span></div>
+                  <div className="flex items-start gap-2"><MapPin size={14} className="mt-0.5 flex-shrink-0 text-gray-400" /><span>{member.assignedDistricts.length ? member.assignedDistricts.join(", ") : "Toàn quốc"}</span></div>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <button onClick={() => handleToggleStatus(member)}
+                    className="min-h-11 rounded-xl px-3 text-xs font-semibold"
+                    style={{ background: isActive ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)", color: isActive ? "#16a34a" : "#dc2626" }}>
+                    {isActive ? "Hoạt động" : "Tạm khóa"}
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setPermissionStaff(member)} className="h-11 w-11 rounded-xl border border-gray-200" aria-label={`Phân quyền ${member.fullName}`}><Shield size={16} className="mx-auto text-purple-600" /></button>
+                    <button onClick={() => setEditingStaff(member)} className="h-11 w-11 rounded-xl border border-gray-200" aria-label={`Chỉnh sửa ${member.fullName}`}><Edit2 size={16} className="mx-auto text-blue-600" /></button>
+                    {member.role !== "super_admin" && <button onClick={() => handleDelete(member.id, member.fullName)} className="h-11 w-11 rounded-xl border border-gray-200" aria-label={`Xóa ${member.fullName}`}><Trash2 size={16} className="mx-auto text-red-500" /></button>}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        <div className="hidden rounded-2xl overflow-hidden md:block" style={{ border: "1px solid #e5e7eb" }}>
           <table className="w-full">
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>

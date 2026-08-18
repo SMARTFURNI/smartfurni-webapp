@@ -303,6 +303,57 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
       {/* ── Table ── */}
       <div className="flex-1 overflow-auto px-3 sm:px-5 pb-4">
         <div className={`${customerStyles.tableShell} rounded-2xl overflow-hidden`} style={{ border: `1px solid ${C.border}`, background: C.surface }}>
+          <div className="grid gap-3 p-3 md:hidden">
+            {paginated.length === 0 && (
+              <div className="py-12 text-center text-sm" style={{ color: C.textMuted }}>Không có khách hàng nào</div>
+            )}
+            {paginated.map(lead => {
+              const overdue = isOverdue(lead);
+              const typeInfo = getTypeInfo(lead.type);
+              const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
+              return (
+                <article key={lead.id} className="rounded-2xl border bg-white p-4 shadow-sm"
+                  style={{ borderColor: overdue ? "#fecdd3" : C.border, borderLeft: `4px solid ${overdue ? C.red : C.gold}` }}>
+                  <Link href={`/crm/leads/${lead.id}`} className="block">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                        style={{ background: `linear-gradient(135deg, ${overdue ? C.red : avatarColor(lead.name)}, ${overdue ? "#dc2626" : avatarColor(lead.name) + "bb"})` }}>
+                        {lead.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 truncate text-sm font-bold" style={{ color: overdue ? C.red : C.text }}>
+                          {overdue && <AlertCircle size={13} className="flex-shrink-0" />}{lead.name}
+                        </div>
+                        <div className="truncate text-xs" style={{ color: C.textMuted }}>{lead.company || lead.phone}</div>
+                      </div>
+                      <span className="flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
+                        style={{ background: `${typeInfo.color}20`, color: typeInfo.color }}>{typeInfo.label}</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                        style={{ background: `${STAGE_COLORS[lead.stage]}18`, color: STAGE_COLORS[lead.stage] }}>{STAGE_LABELS[lead.stage]}</span>
+                      {lead.interestedProducts?.slice(0, 2).map(product => <span key={product} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold text-indigo-600">{PRODUCT_LABELS[product]}</span>)}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
+                      <div><span className="block text-[10px] text-slate-400">Điện thoại</span><b className="mt-0.5 block text-slate-700">{lead.phone || "—"}</b></div>
+                      <div><span className="block text-[10px] text-slate-400">Tương tác cuối</span><b className="mt-0.5 block" style={{ color: overdue ? C.red : C.textDim }}>{daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}</b></div>
+                    </div>
+                  </Link>
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {lead.phone && <ItyCallButton phone={lead.phone} leadId={lead.id} leadName={lead.name} size="md" />}
+                      <CustomerContactActions lead={lead} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/crm/leads/${lead.id}`} className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600" aria-label={`Xem ${lead.name}`}><Eye size={17} /></Link>
+                      {isAdmin && <button onClick={() => setConfirmDeleteId(lead.id)} className="h-11 w-11 rounded-xl bg-red-50 text-red-600" aria-label={`Xóa ${lead.name}`}><Trash2 size={17} className="mx-auto" /></button>}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          <div className="hidden md:block">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: C.headerBg, borderBottom: `1px solid ${C.border}` }}>
@@ -546,6 +597,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
               })}
             </tbody>
           </table>
+          </div>
 
           {/* Pagination */}
           {totalPages > 1 && (

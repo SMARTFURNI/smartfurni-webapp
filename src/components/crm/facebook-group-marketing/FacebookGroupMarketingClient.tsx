@@ -1806,7 +1806,8 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
               const item = value(row, key);
               const isStatus = key.includes("status") || key === "group_kind" || key === "lifecycle_stage";
               const isDate = key.includes("_at") || key.includes("date");
-              return <td key={key} className="max-w-[280px] truncate px-4 py-3">
+              const columnLabel = selected.find(([columnKey]) => columnKey === key)?.[1] || key;
+              return <td key={key} data-label={columnLabel} className="max-w-[280px] truncate px-4 py-3">
                 {key === "assets"
                   ? <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
                     <ImageIcon size={15} className={Array.isArray(item) && item.length ? "text-emerald-300" : "text-slate-600"} />
@@ -1815,7 +1816,7 @@ function DataTable({ section, rows, permissions, onAction, onEdit, onDelete }: {
                   : isStatus ? <Status status={item} /> : isDate ? formatDate(item) : key.includes("ratio") ? `${Number(item || 0)}%` : String(item || "—")}
               </td>;
             })}
-            <td className="px-4 py-3">
+            <td data-label="Thao tác" className="px-4 py-3">
               <div className="fbg-table-actions flex gap-2">
                 {canEdit && <button onClick={() => onEdit(row)} title="Sửa bản ghi" aria-label="Sửa bản ghi"><Pencil size={16} /></button>}
                 {permissions.admin && <button onClick={() => onDelete(row)} title="Xóa bản ghi" aria-label="Xóa bản ghi"

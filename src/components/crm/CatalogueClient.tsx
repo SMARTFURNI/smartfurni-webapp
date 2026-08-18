@@ -437,12 +437,23 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   const [dragId, setDragId] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [mobilePane, setMobilePane] = useState<"slides" | "editor" | "preview">("editor");
+  const [previewWidth, setPreviewWidth] = useState(560);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [isExporting, setIsExporting] = useState(false);
   const [undoStack, setUndoStack] = useState<Slide[][]>([]);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // slide id to delete
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const resizePreview = () => {
+      setPreviewWidth(window.innerWidth <= 900 ? Math.max(280, Math.min(560, window.innerWidth - 28)) : 560);
+    };
+    resizePreview();
+    window.addEventListener("resize", resizePreview);
+    return () => window.removeEventListener("resize", resizePreview);
+  }, []);
 
   // ── Auto-save with debounce (1.5s) ──
   const saveSlides = useCallback((slidesToSave: Slide[]) => {
@@ -675,7 +686,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
   }, [updateSlideOverrides]);
 
   return (
-    <div className="flex flex-col h-full" style={{ background: D.pageBg }}>
+    <div className="crm-catalogue flex flex-col h-full" style={{ background: D.pageBg }}>
 
       {/* ── Print CSS ── */}
       <style>{`
@@ -729,6 +740,42 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         .slide-editing .inline-edit-hint { opacity: 1; }
         .slide-editing [data-editable]:hover { outline: 1.5px dashed rgba(201,168,76,0.5); border-radius: 4px; cursor: text; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .catalogue-mobile-switcher { display: none; }
+        @media (max-width: 900px) {
+          .crm-catalogue { min-height: 100%; height: auto !important; }
+          .catalogue-toolbar { align-items: stretch !important; flex-direction: column; gap: 9px; padding: 10px 12px !important; }
+          .catalogue-toolbar > div { min-width: 0; }
+          .catalogue-toolbar > div:last-child {
+            width: 100%; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;
+          }
+          .catalogue-toolbar > div:last-child::-webkit-scrollbar { display: none; }
+          .catalogue-toolbar > div:last-child > * { flex: 0 0 auto; min-height: 44px; }
+          .catalogue-mobile-switcher {
+            display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px;
+            padding: 8px 12px; flex: 0 0 auto; border-bottom: 1px solid ${D.border};
+            background: rgba(8,7,18,.96);
+          }
+          .catalogue-mobile-switcher button {
+            min-height: 44px; border-radius: 12px; font-size: 11px; font-weight: 700;
+            color: ${D.textMuted}; border: 1px solid ${D.border}; background: ${D.cardBg};
+          }
+          .catalogue-mobile-switcher button.is-active {
+            color: ${D.gold}; border-color: ${D.borderGold}; background: ${D.goldDim};
+          }
+          .catalogue-workspace { min-height: calc(100dvh - 250px); overflow: hidden !important; }
+          .catalogue-mobile-pane { display: none !important; width: 100% !important; min-width: 0 !important; border: 0 !important; }
+          .catalogue-mobile-pane.is-mobile-active { display: flex !important; }
+          .catalogue-panel.is-mobile-active { min-height: calc(100dvh - 250px); }
+          .catalogue-preview-area { padding: 12px 0 20px !important; }
+          .catalogue-preview-area > div:first-child {
+            width: 100%; overflow-x: auto; justify-content: flex-start; padding: 0 12px 2px;
+            scrollbar-width: none;
+          }
+          .catalogue-preview-area > div:first-child::-webkit-scrollbar { display: none; }
+          .catalogue-preview-area > div:first-child > * { flex: 0 0 auto; min-height: 44px; }
+          .catalogue-panel .group { min-height: 48px; }
+          .catalogue-panel .group button { width: 44px !important; height: 44px !important; }
+        }
       `}</style>
 
       {/* ── Toolbar ── */}
@@ -782,6 +829,18 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         </div>
       </div>
 
+      <div className="catalogue-mobile-switcher no-print" role="tablist" aria-label="Chế độ Catalogue trên điện thoại">
+        <button type="button" role="tab" aria-selected={mobilePane === "slides"} className={mobilePane === "slides" ? "is-active" : ""} onClick={() => setMobilePane("slides")}>
+          Danh sách
+        </button>
+        <button type="button" role="tab" aria-selected={mobilePane === "editor"} className={mobilePane === "editor" ? "is-active" : ""} onClick={() => setMobilePane("editor")}>
+          Chỉnh sửa
+        </button>
+        <button type="button" role="tab" aria-selected={mobilePane === "preview"} className={mobilePane === "preview" ? "is-active" : ""} onClick={() => setMobilePane("preview")}>
+          Xem trước
+        </button>
+      </div>
+
       {/* ── Add Slide Panel ── */}
       {isAdmin && showAddPanel && (
         <div className="no-print px-4 py-3 flex-shrink-0" style={{ background: "rgba(8,7,18,0.95)", borderBottom: `1px solid ${D.border}` }}>
@@ -811,10 +870,10 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
       )}
 
       {/* ── Main Area ── */}
-      <div className="no-print flex flex-1 overflow-hidden">
+      <div className="catalogue-workspace no-print flex flex-1 overflow-hidden">
 
         {/* ── Left Panel: Slide List ── */}
-        <div className="catalogue-panel w-52 flex-shrink-0 flex flex-col overflow-hidden"
+        <div className={`catalogue-panel catalogue-mobile-pane ${mobilePane === "slides" ? "is-mobile-active" : ""} w-52 flex-shrink-0 flex flex-col overflow-hidden`}
           style={{ background: "rgba(8,7,18,0.9)", borderRight: `1px solid ${D.border}` }}>
           <div className="px-3 py-2.5 flex items-center justify-between flex-shrink-0" style={{ borderBottom: `1px solid ${D.divider}` }}>
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: D.textMuted }}>Danh sách trang</span>
@@ -832,7 +891,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
                   onDragOver={isAdmin ? (e) => handleDragOver(e, slide.id) : undefined}
                   onDrop={isAdmin ? () => handleDrop(slide.id) : undefined}
                   onDragEnd={isAdmin ? () => { setDragId(null); setDragOverId(null); } : undefined}
-                  onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
+                  onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); setMobilePane("editor"); }}
                   className="group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all"
                   style={{
                     background: isActive ? D.goldDim : isDragOver ? "rgba(255,255,255,0.06)" : "transparent",
@@ -870,7 +929,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         </div>
 
         {/* ── Center: Slide Preview ── */}
-        <div className="catalogue-preview-area flex-1 flex flex-col items-center justify-start overflow-auto py-4 px-6"
+        <div className={`catalogue-preview-area catalogue-mobile-pane ${mobilePane === "editor" ? "is-mobile-active" : ""} flex-1 flex flex-col items-center justify-start overflow-auto py-4 px-6`}
           style={{ background: "rgba(5,4,12,0.7)" }}>
           {/* Navigation */}
           <div className="flex items-center gap-3 mb-4 flex-shrink-0">
@@ -923,8 +982,8 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
           {/* Slide preview — scale 794×1123 down to fit container */}
           <div className={`flex-shrink-0 ${isEditing ? "slide-editing" : ""}`}
             style={{
-              width: 560,
-              height: Math.round(560 * 1123 / 794),
+              width: previewWidth,
+              height: Math.round(previewWidth * 1123 / 794),
               position: "relative",
               borderRadius: 12,
               overflow: "hidden",
@@ -936,7 +995,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
               top: 0, left: 0,
               width: 794,
               height: 1123,
-              transform: `scale(${560 / 794})`,
+              transform: `scale(${previewWidth / 794})`,
               transformOrigin: "top left",
               pointerEvents: isAdmin && isEditing ? "auto" : "none",
             }}>
@@ -963,7 +1022,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
         </div>
 
         {/* ── Right Panel: Thumbnails ── */}
-        <div className="catalogue-panel w-36 flex-shrink-0 flex flex-col overflow-hidden"
+        <div className={`catalogue-panel catalogue-mobile-pane ${mobilePane === "preview" ? "is-mobile-active" : ""} w-36 flex-shrink-0 flex flex-col overflow-hidden`}
           style={{ background: "rgba(8,7,18,0.9)", borderLeft: `1px solid ${D.border}` }}>
           <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: `1px solid ${D.divider}` }}>
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: D.textMuted }}>Xem trước</span>
@@ -978,7 +1037,7 @@ export default function CatalogueClient({ products, initialSlides, isAdmin = fal
                 today={today}
                 isActive={slide.id === activeSlideId}
                 idx={idx}
-                onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); }}
+                onClick={() => { setActiveSlideId(slide.id); setIsEditing(false); setMobilePane("editor"); }}
               />
             ))}
           </div>

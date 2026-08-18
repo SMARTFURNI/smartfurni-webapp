@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, Filter, Search, Phone, MapPin, Calendar,
-  AlertCircle, Building2, User, Store, ChevronDown, X, RefreshCw,
+  AlertCircle, Building2, User, Store, ChevronDown, ChevronLeft, ChevronRight, X, RefreshCw,
 } from "lucide-react";
 import type { Lead, LeadStage, LeadType } from "@/lib/crm-types";
 import {
@@ -62,6 +62,8 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
   const [dragOver, setDragOver] = useState<LeadStage | null>(null);
   const [loading, setLoading] = useState(false);
   const dragLeadId = useRef<string | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [currentStageIndex, setCurrentStageIndex] = useState(0);
 
   // Filter leads
   const filtered = leads.filter(lead => {
@@ -89,6 +91,25 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
     setDragOver(stage);
   }
 
+  async function moveLeadToStage(lead: Lead, stage: LeadStage) {
+    if (!lead || lead.stage === stage) return;
+
+    // Optimistic update
+    setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, stage } : l));
+
+    try {
+      const res = await fetch(`/api/crm/leads/${lead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      if (!res.ok) throw new Error("Failed");
+    } catch {
+      // Revert
+      setLeads(prev => prev.map(l => l.id === lead.id ? lead : l));
+    }
+  }
+
   async function onDrop(e: React.DragEvent, stage: LeadStage) {
     e.preventDefault();
     const leadId = dragLeadId.current;
@@ -98,22 +119,28 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
     dragLeadId.current = null;
 
     const lead = leads.find(l => l.id === leadId);
-    if (!lead || lead.stage === stage) return;
+    if (lead) await moveLeadToStage(lead, stage);
+  }
 
-    // Optimistic update
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage } : l));
+  function scrollToStage(index: number) {
+    const next = Math.max(0, Math.min(STAGES.length - 1, index));
+    const column = boardRef.current?.querySelector<HTMLElement>(`[data-kanban-stage="${STAGES[next]}"]`);
+    column?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    setCurrentStageIndex(next);
+  }
 
-    try {
-      const res = await fetch(`/api/crm/leads/${leadId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stage }),
-      });
-      if (!res.ok) throw new Error("Failed");
-    } catch {
-      // Revert
-      setLeads(prev => prev.map(l => l.id === leadId ? lead : l));
-    }
+  function syncStageFromScroll() {
+    const board = boardRef.current;
+    if (!board) return;
+    const columns = [...board.querySelectorAll<HTMLElement>("[data-kanban-stage]")];
+    const center = board.scrollLeft + board.clientWidth / 2;
+    let nearest = 0;
+    let distance = Number.POSITIVE_INFINITY;
+    columns.forEach((column, index) => {
+      const nextDistance = Math.abs(column.offsetLeft + column.offsetWidth / 2 - center);
+      if (nextDistance < distance) { nearest = index; distance = nextDistance; }
+    });
+    setCurrentStageIndex(nearest);
   }
 
   function onDragEnd() {
@@ -241,8 +268,28 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
         )}
       </div>
 
+      <div className="md:hidden flex items-center gap-2 rounded-2xl border border-[#dbe5f1] bg-white p-2 shadow-[0_8px_22px_rgba(33,82,150,0.06)]">
+        <button type="button" aria-label="Giai đoạn trước" disabled={currentStageIndex === 0}
+          onClick={() => scrollToStage(currentStageIndex - 1)}
+          className="h-11 w-11 flex-shrink-0 rounded-xl border border-[#dbe5f1] text-slate-600 disabled:opacity-30">
+          <ChevronLeft size={18} className="mx-auto" />
+        </button>
+        <button type="button" onClick={() => scrollToStage(currentStageIndex)}
+          className="min-w-0 flex-1 rounded-xl bg-[#f5f8fc] px-3 text-left" aria-live="polite">
+          <span className="block truncate text-xs font-bold" style={{ color: STAGE_COLORS[STAGES[currentStageIndex]] }}>
+            {STAGE_LABELS[STAGES[currentStageIndex]]} · {getStageLeads(STAGES[currentStageIndex]).length}
+          </span>
+          <span className="block text-[10px] text-slate-500">Vuốt ngang hoặc dùng mũi tên</span>
+        </button>
+        <button type="button" aria-label="Giai đoạn tiếp theo" disabled={currentStageIndex === STAGES.length - 1}
+          onClick={() => scrollToStage(currentStageIndex + 1)}
+          className="h-11 w-11 flex-shrink-0 rounded-xl border border-[#dbe5f1] text-slate-600 disabled:opacity-30">
+          <ChevronRight size={18} className="mx-auto" />
+        </button>
+      </div>
+
       {/* Kanban Board */}
-      <div className="crm-kanban-scroll flex-1 overflow-x-auto overflow-y-hidden">
+      <div ref={boardRef} onScroll={syncStageFromScroll} className="crm-kanban-scroll flex-1 overflow-x-auto overflow-y-hidden">
         <div className="crm-kanban-track flex gap-3 p-1 pb-3 h-full" style={{ minWidth: "max-content" }}>
           {STAGES.map(stage => {
             const stageLeads = getStageLeads(stage);
@@ -253,6 +300,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
             return (
               <div
                 key={stage}
+                data-kanban-stage={stage}
                 className="crm-kanban-column flex flex-col rounded-2xl transition-all duration-200"
                 style={{
                   width: "250px",
@@ -309,6 +357,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
                       onDragStart={onDragStart}
                       onDragEnd={onDragEnd}
                       getTypeInfo={getTypeInfo}
+                      onMoveStage={nextStage => moveLeadToStage(lead, nextStage)}
                     />
                   ))}
                 </div>
@@ -352,12 +401,14 @@ function LeadCard({
   onDragStart,
   onDragEnd,
   getTypeInfo,
+  onMoveStage,
 }: {
   lead: Lead;
   isDragging: boolean;
   onDragStart: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
   getTypeInfo: (typeId: string) => { label: string; color: string };
+  onMoveStage: (stage: LeadStage) => void;
 }) {
   const overdue = isOverdue(lead);
   const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
@@ -447,6 +498,19 @@ function LeadCard({
           </div>
         </div>
       </Link>
+      <div className="border-t border-slate-100 p-2 md:hidden">
+        <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+          Chuyển giai đoạn
+          <select
+            value={lead.stage}
+            onChange={event => onMoveStage(event.target.value as LeadStage)}
+            onClick={event => event.stopPropagation()}
+            className="ml-auto min-h-11 max-w-[190px] rounded-xl border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700"
+          >
+            {STAGES.map(stage => <option key={stage} value={stage}>{STAGE_LABELS[stage]}</option>)}
+          </select>
+        </label>
+      </div>
     </div>
   );
 }

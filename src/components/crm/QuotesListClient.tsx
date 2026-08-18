@@ -34,7 +34,7 @@ export default function QuotesListClient({ initialQuotes }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-3 md:p-6">
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden" style={{ border: "1px solid #e5e7eb" }}>
           {quotes.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
@@ -42,6 +42,34 @@ export default function QuotesListClient({ initialQuotes }: Props) {
               <p>Chưa có báo giá nào</p>
             </div>
           ) : (
+            <>
+            <div className="grid gap-3 p-3 md:hidden">
+              {quotes.map(q => {
+                const s = STATUS_MAP[q.status];
+                return (
+                  <Link key={q.id} href={`/crm/quotes/${q.id}`}
+                    className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm active:bg-amber-50/50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold uppercase tracking-wide text-amber-700">{q.quoteNumber}</div>
+                        <div className="mt-1 truncate text-base font-bold text-gray-900">{q.leadName}</div>
+                      </div>
+                      <span className="flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
+                        style={{ background: `${s.color}15`, color: s.color }}>{s.label}</span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-xs">
+                      <div><span className="block text-gray-400">Ngày tạo</span><b className="mt-1 block text-gray-700">{new Date(q.createdAt).toLocaleDateString("vi-VN")}</b></div>
+                      <div><span className="block text-gray-400">Hiệu lực</span><b className="mt-1 block text-gray-700">{new Date(q.validUntil).toLocaleDateString("vi-VN")}</b></div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
+                      <span className="text-xs font-medium text-gray-500">Tổng tiền</span>
+                      <b className="text-base" style={{ color: "#9A7418" }}>{formatVND(q.total)}</b>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="hidden md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
@@ -77,6 +105,8 @@ export default function QuotesListClient({ initialQuotes }: Props) {
                 })}
               </tbody>
             </table>
+            </div>
+            </>
           )}
         </div>
       </div>

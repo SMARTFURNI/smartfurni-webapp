@@ -119,7 +119,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-mobile-tabs + main {
             width: 100% !important; min-width: 0 !important;
             padding-top: calc(62px + env(safe-area-inset-top));
-            padding-bottom: calc(82px + env(safe-area-inset-bottom));
+            padding-bottom: calc(92px + env(safe-area-inset-bottom));
             overflow-x: hidden !important; -webkit-overflow-scrolling: touch;
           }
           .crm-root main > *, .crm-root main .grid, .crm-root main .flex { max-width: 100%; }
@@ -140,6 +140,20 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-root main .grid-cols-6:not(form *) { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
           .crm-root main [class~="p-8"], .crm-root main [class~="p-6"] { padding: 14px !important; }
           .crm-root main button, .crm-root main select, .crm-root main input { min-height: 42px; }
+
+          /* Softphone luôn nằm phía trên thanh điều hướng, không che tab Công việc. */
+          .ity-softphone-trigger {
+            right: 18px !important;
+            bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+          }
+          .ity-softphone-panel {
+            right: 12px !important;
+            bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+            width: min(320px, calc(100vw - 24px)) !important;
+            max-height: calc(100dvh - 164px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            overflow-y: auto !important;
+          }
+          .ity-inline-call-button { min-width: 44px !important; min-height: 44px !important; }
 
           /* Focus hôm nay: một hàng thẻ vuốt ngang như carousel trong ứng dụng. */
           .crm-focus-track {
@@ -184,10 +198,23 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-products-stats { grid-template-columns: repeat(2,minmax(0,1fr)) !important; padding: 0 14px !important; gap: 8px !important; }
           .crm-products-stats > div { border: 1px solid rgba(201,168,76,.16) !important; border-top-width: 2px !important; border-radius: 14px; padding: 10px !important; }
           .crm-products-stats > div > div:first-of-type { width: 32px !important; height: 32px !important; }
-          .crm-products-filter { overflow-x: auto; padding: 12px 14px !important; gap: 8px !important; scroll-snap-type: x proximity; }
-          .crm-products-filter > * { flex: 0 0 auto; }
-          .crm-products-filter > :first-child { flex: 0 0 calc(100vw - 92px); max-width: none !important; }
-          .crm-products-filter > .ml-auto { margin-left: 0 !important; }
+          .crm-products-filter {
+            display: grid !important; grid-template-columns: minmax(0,1fr) !important;
+            overflow: visible !important; padding: 12px 14px !important; gap: 9px !important;
+          }
+          .crm-products-filter > * { min-width: 0; max-width: none !important; }
+          .crm-products-filter > :first-child { width: 100%; }
+          .crm-products-filter > .w-px { display: none !important; }
+          .crm-products-filter > .flex.items-center.gap-1 {
+            display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)); width: 100%; gap: 6px !important;
+          }
+          .crm-products-filter > .flex.items-center.gap-1 > button {
+            min-width: 0; min-height: 44px; padding-inline: 8px !important; white-space: nowrap;
+          }
+          .crm-products-filter > .ml-auto {
+            margin-left: 0 !important; width: 100%; justify-content: space-between;
+          }
+          .crm-products-filter > .ml-auto button { width: 44px; height: 44px; padding: 0 !important; }
           .crm-products-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px !important; }
           .crm-products-grid > * { min-width: 0; }
           .crm-product-card-actions { opacity: 1 !important; transform: none !important; }

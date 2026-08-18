@@ -691,6 +691,7 @@ export default function ItySoftphone({
   if (!isOpen) {
     return (
       <button
+        className="ity-softphone-trigger"
         onClick={() => setIsOpen(true)}
         title="Mở softphone ITY"
         style={{
@@ -722,7 +723,7 @@ export default function ItySoftphone({
       <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: "none" }} />
 
       {/* Softphone Widget */}
-      <div style={{
+      <div className="ity-softphone-panel" style={{
         position: "fixed", bottom: 24, right: 24, zIndex: 9999,
         width: 320, borderRadius: 16,
         background: T.darkCard,
@@ -1048,6 +1049,7 @@ export function ItyCallButton({
 
   return (
     <button
+      className="ity-inline-call-button"
       onClick={handleCall}
       title={`Gọi ${phone} qua ITY`}
       style={{
