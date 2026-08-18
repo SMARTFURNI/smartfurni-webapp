@@ -5,8 +5,8 @@ import {
   ArrowRight, Users, AlertCircle, ChevronLeft, ChevronRight,
   Facebook, Smartphone, Plus, X, UserCheck, Trash2, Eye, Copy, Check
 } from "lucide-react";
-import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-store";
-import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-store";
+import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-types";
+import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-types";
 import { classifyRawLead, PRODUCT_LABELS } from "@/lib/crm-lead-standardization";
 import { B2B_GROUP_LABELS, B2B_SUBTYPE_LABELS, CONTACT_ROLE_LABELS } from "@/lib/crm-taxonomy";
 import CrmFoundationHeader from "./CrmFoundationHeader";

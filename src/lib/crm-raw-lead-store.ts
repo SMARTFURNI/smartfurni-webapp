@@ -4,44 +4,11 @@
  * Logic FIFO: nhân viên lấy theo thứ tự vào trước lấy trước
  */
 import { randomUUID } from "crypto";
+import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type RawLeadSource = "facebook_lead" | "tiktok_lead" | "manual" | "other";
-export type RawLeadStatus = "pending" | "claimed" | "converted";
-
-export interface RawLead {
-  id: string;
-  source: RawLeadSource;
-  fullName: string;
-  phone: string;
-  email: string;
-  adName?: string;         // Tên quảng cáo
-  campaignName?: string;   // Tên chiến dịch
-  formName?: string;       // Tên form lead
-  message?: string;        // Nội dung/ghi chú từ form
-  customerRole?: string;   // Vai trò/nhu cầu chính của khách hàng
-  rawData?: Record<string, unknown>; // Toàn bộ data gốc từ webhook
-  status: RawLeadStatus;
-  claimedBy?: string;      // staffId đã nhận
-  claimedByName?: string;  // tên nhân viên đã nhận
-  claimedAt?: string;      // thời điểm nhận
-  convertedLeadId?: string; // ID lead CRM sau khi convert
-  createdAt: string;       // Thời điểm data vào hệ thống (dùng cho FIFO)
-}
-
-export const SOURCE_LABELS: Record<RawLeadSource, string> = {
-  facebook_lead: "Facebook Lead",
-  tiktok_lead: "TikTok Lead",
-  manual: "Nhập tay",
-  other: "Khác",
-};
-
-export const SOURCE_COLORS: Record<RawLeadSource, string> = {
-  facebook_lead: "#1877F2",
-  tiktok_lead: "#000000",
-  manual: "#6b7280",
-  other: "#9ca3af",
-};
+export type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-types";
+export { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-types";
 
 // ─── DB helpers ───────────────────────────────────────────────────────────────
 async function query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
