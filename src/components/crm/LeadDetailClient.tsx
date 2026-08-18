@@ -35,6 +35,7 @@ import {
   PRODUCT_LABELS,
   legacyLeadTypeForCustomerClassification,
 } from "@/lib/crm-taxonomy";
+import ZaloFriendshipStatus from "./ZaloFriendshipStatus";
 
 // ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
@@ -429,6 +430,7 @@ export default function LeadDetailClient({
             {lastInteractionAt && <DLInfoCard icon={Clock} label="Tương tác cuối" value={new Date(lastInteractionAt).toLocaleDateString("vi-VN")} color="#0ea5e9" />}
             {lead.expectedValue > 0 && <DLInfoCard icon={DollarSign} label="Giá trị" value={formatVND(lead.expectedValue)} color="#f59e0b" />}
             <DLInfoCard icon={Workflow} label="Workflow" value={lead.stage === "won" || lead.stage === "lost" ? "Đã dừng" : "Đang tiếp tục"} color={lead.stage === "won" || lead.stage === "lost" ? "#64748b" : "#10b981"} />
+            <ZaloFriendshipStatus leadId={lead.id} initialSummary={lead.zaloFriendship} />
           </div>
 
           {/* Tabs container */}

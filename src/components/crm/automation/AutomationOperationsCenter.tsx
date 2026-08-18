@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, History, Loader2, Mail, MessageCircle, RefreshCw, RotateCcw, Save, Send, ShieldCheck } from "lucide-react";
 import type { AutomationContactPolicy } from "@/lib/crm-automation-store";
 import type { AutomationConfigVersion } from "@/lib/crm-automation-governance";
+import type { ZaloFriendshipSettings } from "@/lib/crm-zalo-friendship-types";
 
 interface OperationsData {
   ready: boolean;
@@ -32,18 +33,22 @@ export default function AutomationOperationsCenter() {
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [friendSettings, setFriendSettings] = useState<ZaloFriendshipSettings | null>(null);
 
   const load = useCallback(async () => {
     setBusy("load"); setError("");
     try {
-      const [operationsResponse, versionsResponse] = await Promise.all([
+      const [operationsResponse, versionsResponse, friendshipResponse] = await Promise.all([
         fetch("/api/crm/automation/operations", { cache: "no-store" }),
         fetch("/api/crm/automation/versions", { cache: "no-store" }),
+        fetch("/api/crm/zalo-friendships", { cache: "no-store" }),
       ]);
       const operations = await operationsResponse.json();
       const history = await versionsResponse.json();
+      const friendship = await friendshipResponse.json();
       if (!operationsResponse.ok) throw new Error(operations.error || "Không tải được vận hành automation.");
       setData(operations); setPolicy(operations.policy); setVersions(history.versions || []);
+      if (friendshipResponse.ok) setFriendSettings(friendship.settings);
     } catch (loadError) { setError(loadError instanceof Error ? loadError.message : "Không tải được dữ liệu."); }
     finally { setBusy(""); }
   }, []);
@@ -71,6 +76,21 @@ export default function AutomationOperationsCenter() {
       if (!response.ok) throw new Error(payload.error || "Không thể thử lại.");
       setMessage(`Đã đưa ${payload.retried} công việc trở lại hàng đợi.`); await load();
     } catch (retryError) { setError(retryError instanceof Error ? retryError.message : "Không thể thử lại."); }
+    finally { setBusy(""); }
+  };
+
+  const saveFriendSettings = async () => {
+    if (!friendSettings) return;
+    setBusy("friendship"); setError(""); setMessage("");
+    try {
+      const response = await fetch("/api/crm/zalo-friendships", {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(friendSettings),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Không lưu được cấu hình kết bạn Zalo.");
+      setFriendSettings(payload.settings);
+      setMessage("Đã lưu chính sách tự động kết bạn Zalo cá nhân.");
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Không lưu được cấu hình."); }
     finally { setBusy(""); }
   };
 
@@ -112,6 +132,25 @@ export default function AutomationOperationsCenter() {
     <section className="rounded-2xl border border-gray-200 bg-white p-5"><div className="mb-4 flex items-center gap-2"><Clock3 size={18} className="text-blue-600" /><div><h3 className="text-sm font-bold text-gray-900">Hàng đợi gửi & sự cố</h3><p className="text-xs text-gray-500">Zalo gửi trễ và Email được xử lý không chặn worker; công việc lỗi có thể phát lại có kiểm soát.</p></div></div><div className="grid gap-3 md:grid-cols-2">{data.queues.map(queue => { const Icon = queue.channel === "email" ? Mail : MessageCircle; return <div key={queue.channel} className="rounded-xl border border-gray-200 p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-bold text-gray-900"><Icon size={16} className="text-blue-600" />{queue.channel === "email" ? "Email" : "Zalo cá nhân"}</div><button onClick={() => retry(queue.channel)} disabled={!queue.failed || Boolean(busy)} className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-2 py-1 text-[10px] font-semibold text-blue-700 disabled:opacity-40"><RotateCcw size={11} />Thử lại lỗi</button></div><div className="mt-3 grid grid-cols-4 gap-2 text-center">{[["Chờ",queue.pending],["Đang gửi",queue.processing],["Lỗi",queue.failed],["Gửi 24h",queue.sent24h]].map(([label,value]) => <div key={String(label)} className="rounded-lg bg-gray-50 p-2"><strong className={label === "Lỗi" && Number(value) ? "text-red-600" : "text-gray-900"}>{value}</strong><span className="block text-[9px] text-gray-500">{label}</span></div>)}</div>{queue.oldestPendingAt && <p className="mt-2 text-[10px] text-gray-500">Cũ nhất: {dateLabel(queue.oldestPendingAt)}</p>}</div>})}</div></section>
 
     <section className="rounded-2xl border border-gray-200 bg-white p-5"><div className="mb-4 flex items-center gap-2"><MessageCircle size={18} className="text-blue-600" /><div><h3 className="text-sm font-bold text-gray-900">Nhóm tài khoản Zalo cá nhân</h3><p className="text-xs text-gray-500">Mỗi enrollment giữ cố định tài khoản đã chọn; tài khoản tắt sẽ được chuyển về SmartFurni mặc định cho lần xử lý kế tiếp.</p></div></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data.zaloAccounts.map(account => <div key={account.id} className="rounded-xl border border-gray-200 p-3"><div className="flex items-center justify-between"><strong className="text-xs text-gray-900">{account.label || account.displayName}</strong><span className={`rounded-full px-2 py-1 text-[9px] font-bold ${account.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{account.isActive ? "Hoạt động" : "Đã tắt"}</span></div><p className="mt-2 truncate text-[10px] text-gray-500">{account.displayName} · kết nối {dateLabel(account.lastConnected)}</p></div>)}{!data.zaloAccounts.length && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">Chưa có tài khoản Zalo cá nhân hoạt động.</div>}</div></section>
+
+    {friendSettings && <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-white to-blue-50 p-5">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2"><MessageCircle size={18} className="text-blue-600" /><div><h3 className="text-sm font-bold text-gray-900">Tự động kết bạn Zalo khi có khách hàng mới</h3><p className="text-xs text-gray-500">Gửi lời mời theo sản phẩm, kiểm tra chấp nhận, thu hồi sau thời hạn và gửi lại có giới hạn.</p></div></div>
+        <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={friendSettings.enabled} onChange={event => setFriendSettings({ ...friendSettings, enabled: event.target.checked })} className="accent-[#0068ff]" />{friendSettings.enabled ? "Đang bật" : "Đang tắt"}</label><button onClick={saveFriendSettings} disabled={busy === "friendship"} className="inline-flex items-center gap-2 rounded-xl bg-[#0068ff] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">{busy === "friendship" ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}Lưu</button></div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <label className="text-xs text-gray-600">Gửi lần đầu sau (phút)<input type="number" min={0} max={60} value={friendSettings.initialDelayMinutes} onChange={event => setFriendSettings({ ...friendSettings, initialDelayMinutes: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <label className="text-xs text-gray-600">Thu hồi sau (giờ)<input type="number" min={12} max={720} value={friendSettings.retryAfterHours} onChange={event => setFriendSettings({ ...friendSettings, retryAfterHours: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <label className="text-xs text-gray-600">Chờ gửi lại (phút)<input type="number" min={5} max={1440} value={friendSettings.resendDelayMinutes} onChange={event => setFriendSettings({ ...friendSettings, resendDelayMinutes: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <label className="text-xs text-gray-600">Số lần gửi lại tối đa<input type="number" min={0} max={5} value={friendSettings.maxRetries} onChange={event => setFriendSettings({ ...friendSettings, maxRetries: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <label className="text-xs text-gray-600">Giới hạn/ngày/tài khoản<input type="number" min={1} max={100} value={friendSettings.dailyCapPerAccount} onChange={event => setFriendSettings({ ...friendSettings, dailyCapPerAccount: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <label className="text-xs text-gray-600">Bắt đầu gửi<input type="time" value={`${String(friendSettings.sendStartHour).padStart(2, "0")}:${String(friendSettings.sendStartMinute).padStart(2, "0")}`} onChange={event => { const [hour, minute] = event.target.value.split(":").map(Number); setFriendSettings({ ...friendSettings, sendStartHour: hour, sendStartMinute: minute }); }} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <label className="text-xs text-gray-600">Kết thúc gửi<input type="time" value={`${String(friendSettings.sendEndHour).padStart(2, "0")}:${String(friendSettings.sendEndMinute).padStart(2, "0")}`} onChange={event => { const [hour, minute] = event.target.value.split(":").map(Number); setFriendSettings({ ...friendSettings, sendEndHour: hour, sendEndMinute: minute }); }} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+        <div className="rounded-xl border border-blue-100 bg-white p-3 text-xs text-gray-600"><strong className="block text-gray-900">Mặc định an toàn</strong><span className="mt-1 block">72 giờ · gửi lại tối đa 2 lần · khung 08:30–19:30 · cron 5 phút.</span></div>
+        <label className="text-xs text-gray-600 md:col-span-2">Lời nhắn lần đầu<textarea rows={3} maxLength={300} value={friendSettings.initialMessageTemplate} onChange={event => setFriendSettings({ ...friendSettings, initialMessageTemplate: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /><span className="mt-1 block text-[10px] text-gray-400">Biến dùng được: {'{first_name}'}, {'{staff_name}'}, {'{product}'}. Zalo nhận tối đa 150 ký tự sau khi thay biến.</span></label>
+        <label className="text-xs text-gray-600 md:col-span-2">Lời nhắn khi gửi lại<textarea rows={3} maxLength={300} value={friendSettings.retryMessageTemplate} onChange={event => setFriendSettings({ ...friendSettings, retryMessageTemplate: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /><span className="mt-1 block text-[10px] text-gray-400">Dùng sau khi hệ thống thu hồi lời mời cũ và chờ đủ thời gian cấu hình.</span></label>
+      </div>
+    </section>}
 
     <section className="rounded-2xl border border-gray-200 bg-white p-5"><div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex items-center gap-2"><ShieldCheck size={18} className="text-blue-600" /><div><h3 className="text-sm font-bold text-gray-900">Chính sách liên hệ toàn hệ thống</h3><p className="text-xs text-gray-500">Áp dụng trước khi gửi để chống làm phiền, gửi trùng và email đã bounce/complaint.</p></div></div><button onClick={savePolicy} disabled={busy === "policy"} className="inline-flex items-center gap-2 rounded-xl bg-[#0068ff] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">{busy === "policy" ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}Lưu chính sách</button></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       <label className="text-xs text-gray-600">Bắt đầu giờ yên lặng<input type="time" value={policy.quietHoursStart} onChange={event => setPolicy({ ...policy, quietHoursStart: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>

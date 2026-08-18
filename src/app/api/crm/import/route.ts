@@ -164,7 +164,8 @@ export async function POST(req: NextRequest) {
         results.errors.push(`Dòng ${i + 2}: Thiếu tên khách hàng`);
         continue;
       }
-      await createLead(input);
+      // Import lịch sử không được tự động gửi hàng loạt lời mời Zalo.
+      await createLead(input, { suppressZaloFriendship: true });
       results.success++;
     } catch (e) {
       results.failed++;

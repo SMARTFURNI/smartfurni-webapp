@@ -228,7 +228,7 @@ export async function POST() {
 
     const createdLeads = [];
     for (const l of leads) {
-      const lead = await createLead(l);
+      const lead = await createLead(l, { suppressZaloFriendship: true });
       createdLeads.push(lead);
     }
 

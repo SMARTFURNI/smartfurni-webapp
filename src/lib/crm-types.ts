@@ -52,6 +52,7 @@ export type LeadTemperature = "hot" | "warm" | "cold";
 export type LeadDataQuality = "complete" | "needs_verification" | "incomplete";
 
 import { CRM_LEAD_STAGE_OPTIONS, CRM_LEAD_TYPE_OPTIONS } from "./crm-taxonomy";
+import type { ZaloFriendshipSummary } from "./crm-zalo-friendship-types";
 
 export type ActivityType = "call" | "meeting" | "email" | "note" | "quote_sent" | "contract";
 
@@ -92,6 +93,8 @@ export interface Lead {
   contactRole?: CustomerContactRole;
   classificationConfidence?: number;
   classificationSource?: CustomerClassificationSource;
+  /** Trạng thái kết bạn Zalo cá nhân, được ghép từ kho vận hành khi đọc lead. */
+  zaloFriendship?: ZaloFriendshipSummary;
 }
 
 export interface Activity {

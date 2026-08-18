@@ -29,6 +29,7 @@ const fanpageCareCronUrl = `http://127.0.0.1:${port}/api/crm/conversation-learni
 const mediaCleanupUrl = `http://127.0.0.1:${port}/api/internal/media-cleanup`;
 const zaloGmfCronUrl = `http://127.0.0.1:${port}/api/crm/zalo/gmf/cron`;
 const crmAutomationCronUrl = `http://127.0.0.1:${port}/api/crm/automation/cron`;
+const zaloFriendshipCronUrl = `http://127.0.0.1:${port}/api/crm/zalo-friendships/cron`;
 const callAiCronUrl = `http://127.0.0.1:${port}/api/crm/call-ai/cron`;
 const fanpageCareIntervalMs = Math.max(
   5 * 60_000,
@@ -39,6 +40,10 @@ const crmAutomationIntervalMs = Math.max(
   Number(process.env.CRM_AUTOMATION_CRON_INTERVAL_MS || 30 * 60_000),
 );
 const callAiIntervalMs = Math.max(30_000, Number(process.env.CALL_AI_CRON_INTERVAL_MS || 60_000));
+const zaloFriendshipIntervalMs = Math.max(
+  60_000,
+  Number(process.env.ZALO_FRIENDSHIP_CRON_INTERVAL_MS || 5 * 60_000),
+);
 
 if (!process.env.CRON_SECRET) {
   console.warn("[Production Scheduler] CRON_SECRET chưa cấu hình; đang dùng secret tạm cho scheduler nội bộ của tiến trình này.");
@@ -55,6 +60,7 @@ let fanpageCareTimer;
 let mediaCleanupTimer;
 let zaloGmfTimer;
 let crmAutomationTimer;
+let zaloFriendshipTimer;
 let callAiTimer;
 
 async function runFacebookGroupCron() {
@@ -193,6 +199,29 @@ async function runCrmAutomationCron() {
 
 crmAutomationTimer = setTimeout(runCrmAutomationCron, 75_000);
 
+async function runZaloFriendshipCron() {
+  if (stopping) return;
+  try {
+    const response = await fetch(zaloFriendshipCronUrl, {
+      headers: { authorization: `Bearer ${cronSecret}` },
+      signal: AbortSignal.timeout(2 * 60_000),
+      cache: "no-store",
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("[Production Scheduler] Zalo Friendship cron lỗi:", response.status, result);
+    } else if (result.claimed > 0) {
+      console.log("[Production Scheduler] Zalo Friendship cron:", result);
+    }
+  } catch (error) {
+    console.error("[Production Scheduler] Chưa gọi được Zalo Friendship cron:", error instanceof Error ? error.message : error);
+  } finally {
+    if (!stopping) zaloFriendshipTimer = setTimeout(runZaloFriendshipCron, zaloFriendshipIntervalMs);
+  }
+}
+
+zaloFriendshipTimer = setTimeout(runZaloFriendshipCron, 50_000);
+
 async function runCallAiCron() {
   if (stopping) return;
   try {
@@ -224,6 +253,7 @@ function stop(signal) {
   if (mediaCleanupTimer) clearTimeout(mediaCleanupTimer);
   if (zaloGmfTimer) clearTimeout(zaloGmfTimer);
   if (crmAutomationTimer) clearTimeout(crmAutomationTimer);
+  if (zaloFriendshipTimer) clearTimeout(zaloFriendshipTimer);
   if (callAiTimer) clearTimeout(callAiTimer);
   if (!nextProcess.killed) nextProcess.kill(signal);
 }
@@ -238,6 +268,7 @@ nextProcess.on("exit", (code, signal) => {
   if (mediaCleanupTimer) clearTimeout(mediaCleanupTimer);
   if (zaloGmfTimer) clearTimeout(zaloGmfTimer);
   if (crmAutomationTimer) clearTimeout(crmAutomationTimer);
+  if (zaloFriendshipTimer) clearTimeout(zaloFriendshipTimer);
   if (callAiTimer) clearTimeout(callAiTimer);
   process.exit(code ?? (signal ? 0 : 1));
 });

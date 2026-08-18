@@ -19,6 +19,7 @@ import CrmFoundationHeader from "./CrmFoundationHeader";
 import { PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
 import customerStyles from "./CustomerWorkspace.module.css";
 import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
+import { ZaloFriendshipBadge } from "./ZaloFriendshipStatus";
 
 interface LeadTypeItem { id: string; label: string; color?: string; }
 interface Props { initialLeads: Lead[]; isAdmin?: boolean; currentUserName?: string; initialLeadTypes?: LeadTypeItem[]; }
@@ -333,6 +334,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                         style={{ background: `${STAGE_COLORS[lead.stage]}18`, color: STAGE_COLORS[lead.stage] }}>{STAGE_LABELS[lead.stage]}</span>
                       {lead.interestedProducts?.slice(0, 2).map(product => <span key={product} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold text-indigo-600">{PRODUCT_LABELS[product]}</span>)}
+                      <ZaloFriendshipBadge summary={lead.zaloFriendship} />
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
                       <div><span className="block text-[10px] text-slate-400">Điện thoại</span><b className="mt-0.5 block text-slate-700">{lead.phone || "—"}</b></div>
@@ -380,6 +382,8 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 {/* Sản phẩm quan tâm */}
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest"
                   style={{ color: C.textMuted }}>Sản phẩm</th>
+                <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden xl:table-cell"
+                  style={{ color: C.textMuted }}>Kết bạn Zalo</th>
                 {/* Tương tác */}
                 <th className="text-left px-4 py-3 hidden xl:table-cell">
                   <button onClick={() => toggleSort("lastContactAt")}
@@ -396,7 +400,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             <tbody>
               {paginated.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-16">
+                  <td colSpan={9} className="text-center py-16">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: C.surface2, border: `1px solid ${C.border}` }}>
                         <Users size={24} style={{ color: C.textMuted }} />
@@ -531,6 +535,11 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                           <span className="text-xs" style={{ color: C.textMuted }}>Chưa xác định</span>
                         )}
                       </div>
+                    </td>
+
+                    {/* Zalo personal friendship */}
+                    <td className="px-4 py-2.5 hidden xl:table-cell">
+                      <ZaloFriendshipBadge summary={lead.zaloFriendship} />
                     </td>
 
                     {/* Last contact */}

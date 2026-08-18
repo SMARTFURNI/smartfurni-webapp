@@ -741,13 +741,22 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
           } catch { /* ignore */ }
           incomingFriendRequests.set(`${runtime.accountId}:${fromUid}`, req);
           broadcastSSE("friend_request", { type: "incoming", request: req }, runtime.accountId);
+          void import("./crm-zalo-friendship")
+            .then(module => module.recordZaloFriendshipGatewayEvent({ type: "incoming", userId: fromUid, accountId: runtime.accountId }))
+            .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái lời mời đến:", error));
           console.log(`[ZaloGateway] Incoming friend request from ${fromUid}: ${message}`);
         }
       }
       // FriendEventType.ADD = 0 (đã kết bạn thành công)
       else if (eventType === 0) {
-        const friendUid = (eventData as unknown as string) || "";
+        const friendCandidates = typeof event.data === "string"
+          ? [event.data]
+          : [eventData.friendUid, eventData.userId, eventData.uid, eventData.fromUid, eventData.toUid].map(String).filter(value => value && value !== "undefined");
+        const friendUid = friendCandidates[0] || "";
         broadcastSSE("friend_event", { type: "added", userId: friendUid, isSelf }, runtime.accountId);
+        for (const candidate of new Set(friendCandidates)) void import("./crm-zalo-friendship")
+          .then(module => module.recordZaloFriendshipGatewayEvent({ type: "accepted", userId: candidate, accountId: runtime.accountId }))
+          .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái đã kết bạn:", error));
         console.log(`[ZaloGateway] Friend added: ${friendUid}`);
       }
       // FriendEventType.REJECT_REQUEST = 4
@@ -755,6 +764,9 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
         const fromUid = (eventData.fromUid as string) || "";
         const toUid = (eventData.toUid as string) || "";
         broadcastSSE("friend_event", { type: "rejected", fromUid, toUid, isSelf }, runtime.accountId);
+        for (const customerUid of new Set([fromUid, toUid].filter(Boolean))) void import("./crm-zalo-friendship")
+          .then(module => module.recordZaloFriendshipGatewayEvent({ type: "rejected", userId: customerUid, accountId: runtime.accountId }))
+          .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái bị từ chối:", error));
         console.log(`[ZaloGateway] Friend request rejected: from=${fromUid} to=${toUid}`);
       }
       // FriendEventType.UNDO_REQUEST = 3

@@ -138,10 +138,18 @@ export async function getLeads(filters?: {
   sql += ` ORDER BY updated_at DESC`;
 
   const rows = await query<{ data: Lead | string }>(sql, params);
-  return rows.map(r => {
+  const leads = rows.map(r => {
     const lead = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
     return filters?.canonicalize === false ? lead : canonicalizeLeadTaxonomy(lead);
   });
+  try {
+    const { getZaloFriendshipSummaries } = await import("./crm-zalo-friendship");
+    const summaries = await getZaloFriendshipSummaries(leads.map(lead => lead.id));
+    return leads.map(lead => ({ ...lead, zaloFriendship: summaries.get(lead.id) }));
+  } catch (error) {
+    console.error("[crm] Cannot attach Zalo friendship summaries:", error);
+    return leads;
+  }
 }
 
 export async function getLead(id: string): Promise<Lead | null> {
@@ -150,10 +158,21 @@ export async function getLead(id: string): Promise<Lead | null> {
     `SELECT data FROM crm_leads WHERE id = $1`, [id]
   );
   if (!row) return null;
-  return canonicalizeLeadTaxonomy(typeof row.data === "string" ? JSON.parse(row.data) : row.data);
+  const lead = canonicalizeLeadTaxonomy(typeof row.data === "string" ? JSON.parse(row.data) : row.data);
+  try {
+    const { getZaloFriendshipSummary } = await import("./crm-zalo-friendship");
+    const zaloFriendship = await getZaloFriendshipSummary(lead.id);
+    return { ...lead, zaloFriendship: zaloFriendship || undefined };
+  } catch (error) {
+    console.error("[crm] Cannot attach Zalo friendship summary:", error);
+    return lead;
+  }
 }
 
-export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updatedAt">): Promise<Lead> {
+export async function createLead(
+  input: Omit<Lead, "id" | "createdAt" | "updatedAt" | "zaloFriendship">,
+  options?: { suppressZaloFriendship?: boolean },
+): Promise<Lead> {
   await initCrmSchema();
   const now = new Date().toISOString();
   const draft: Lead = {
@@ -172,6 +191,17 @@ export async function createLead(input: Omit<Lead, "id" | "createdAt" | "updated
     `INSERT INTO crm_leads (id, data, stage, last_contact_at, updated_at) VALUES ($1, $2, $3, $4, NOW())`,
     [lead.id, JSON.stringify(lead), lead.stage, lead.lastContactAt]
   );
+  if (!options?.suppressZaloFriendship) {
+    try {
+      const { enqueueZaloFriendshipForLead, getZaloFriendshipSummary } = await import("./crm-zalo-friendship");
+      await enqueueZaloFriendshipForLead(lead);
+      const zaloFriendship = await getZaloFriendshipSummary(lead.id);
+      return { ...lead, zaloFriendship: zaloFriendship || undefined };
+    } catch (error) {
+      // Việc tạo khách hàng không được thất bại chỉ vì Zalo tạm thời chưa sẵn sàng.
+      console.error("[crm] Cannot enqueue Zalo friendship:", error);
+    }
+  }
   return lead;
 }
 
@@ -195,7 +225,7 @@ export async function findLeadByIdentity(identity: { phone?: string; email?: str
 }
 
 export async function createOrMergeStandardizedLead(
-  input: Omit<Lead, "id" | "createdAt" | "updatedAt">
+  input: Omit<Lead, "id" | "createdAt" | "updatedAt" | "zaloFriendship">
 ): Promise<{ lead: Lead; created: boolean; matchedBy?: "phone" | "email" }> {
   const existing = await findLeadByIdentity({ phone: input.phone, email: input.email });
   if (!existing) return { lead: await createLead(input), created: true };
@@ -216,10 +246,17 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
   if (preview.invalidStage) throw new Error(`Invalid CRM lead stage: ${String(draft.stage)}`);
   if (preview.invalidType) throw new Error(`Invalid CRM lead type: ${String(draft.type)}`);
   const updated: Lead = { ...draft, ...preview.patch };
+  const { zaloFriendship: _operationalZaloState, ...persistedLead } = updated;
   await query(
     `UPDATE crm_leads SET data = $1, stage = $2, last_contact_at = $3, updated_at = NOW() WHERE id = $4`,
-    [JSON.stringify(updated), updated.stage, updated.lastContactAt, id]
+    [JSON.stringify(persistedLead), updated.stage, updated.lastContactAt, id]
   );
+  try {
+    const { enqueueZaloFriendshipForLead } = await import("./crm-zalo-friendship");
+    await enqueueZaloFriendshipForLead(persistedLead as Lead);
+  } catch (error) {
+    console.error("[crm] Cannot refresh Zalo friendship data:", error);
+  }
   if (existing.stage !== updated.stage) {
     const occurredAt = updated.updatedAt;
     try {
