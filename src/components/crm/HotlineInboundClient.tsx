@@ -10,7 +10,7 @@ import {
   Search, RefreshCw, Download, Copy, Check,
   Clock, Calendar, Mic, ExternalLink,
   ChevronDown, ChevronUp, Info, Filter,
-  Sparkles, Loader2, CheckCircle2, MessageCircle, Target,
+  Sparkles, Loader2, CheckCircle2, MessageCircle, Target, Upload,
 } from "lucide-react";
 import type { CallAiAnalysis, CallAiStatus, CallLog } from "@/lib/crm-types";
 
@@ -378,12 +378,20 @@ function CallRow({ call }: { call: HotlineCall }) {
     setLeadName(synced.leadName || null);
   };
 
-  const analyze = async (force = false) => {
+  const analyze = async (force = false, recordingFile?: File) => {
     setAnalyzing(true);
     setAiError(null);
     setAiStatus("processing");
     try {
-      const res = await fetch(`/api/crm/hotline-inbound/calls/${call.id}/ai-analysis`, {
+      const form = recordingFile ? new FormData() : null;
+      if (form && recordingFile) {
+        form.append("recording", recordingFile);
+        form.append("force", String(force));
+      }
+      const res = await fetch(`/api/crm/hotline-inbound/calls/${call.id}/ai-analysis`, form ? {
+        method: "POST",
+        body: form,
+      } : {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ force }),
@@ -592,7 +600,23 @@ function CallRow({ call }: { call: HotlineCall }) {
               </div>
               {aiError && (
                 <div className="mt-2 rounded-lg px-3 py-2 text-xs" style={{ color: T.red, background: T.redBg, border: `1px solid ${T.red}30` }}>
-                  {aiError}
+                  <div>{aiError}</div>
+                  {!analysis && (
+                    <label className="mt-2 inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-700">
+                      <Upload size={13} /> Chọn file ghi âm để AI phân tích
+                      <input
+                        type="file"
+                        accept="audio/*,.mp3,.mp4,.m4a,.wav,.ogg,.webm"
+                        className="hidden"
+                        disabled={analyzing}
+                        onChange={event => {
+                          const file = event.currentTarget.files?.[0];
+                          if (file) void analyze(true, file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  )}
                 </div>
               )}
             </div>

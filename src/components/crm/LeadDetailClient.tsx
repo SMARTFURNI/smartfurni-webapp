@@ -10,7 +10,7 @@ import {
   ShoppingCart, ExternalLink, Star, Copy,
   PhoneCall, PhoneMissed, PhoneIncoming, Play, Pause, Save,
   MessageCircle, MoreHorizontal, ListChecks, Workflow, CirclePause, BriefcaseBusiness,
-  Sparkles, ChevronUp, CheckCircle2, RefreshCw,
+  Sparkles, ChevronUp, CheckCircle2, RefreshCw, Upload,
 } from "lucide-react";
 import type {
   Lead, Activity, Quote, CrmTask, LeadStage, ActivityType, CallLog, InterestedProduct,
@@ -224,11 +224,19 @@ export default function LeadDetailClient({
     } finally { setSavingNote(null); }
   };
 
-  const analyzeCall = async (callId: string, force = false) => {
+  const analyzeCall = async (callId: string, force = false, recordingFile?: File) => {
     setAnalyzingCallId(callId);
     setCallAiError(prev => ({ ...prev, [callId]: "" }));
     try {
-      const res = await fetch(`/api/crm/call-logs/${callId}/ai-analysis`, {
+      const form = recordingFile ? new FormData() : null;
+      if (form && recordingFile) {
+        form.append("recording", recordingFile);
+        form.append("force", String(force));
+      }
+      const res = await fetch(`/api/crm/call-logs/${callId}/ai-analysis`, form ? {
+        method: "POST",
+        body: form,
+      } : {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ force }),
@@ -667,8 +675,24 @@ export default function LeadDetailClient({
                                   </div>
                                 )}
                                 {(call.aiError || callAiError[call.id]) && (
-                                  <div className="mt-2 px-3 py-2 rounded-lg text-xs" style={{ color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca" }}>
-                                    {callAiError[call.id] || call.aiError}
+                                  <div className="mt-2 rounded-lg px-3 py-2 text-xs" style={{ color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca" }}>
+                                    <div>{callAiError[call.id] || call.aiError}</div>
+                                    {call.recordingUrl && !analysis && (
+                                      <label className="mt-2 inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 font-semibold text-red-700">
+                                        <Upload size={13} /> Chọn file ghi âm để AI phân tích
+                                        <input
+                                          type="file"
+                                          accept="audio/*,.mp3,.mp4,.m4a,.wav,.ogg,.webm"
+                                          className="hidden"
+                                          disabled={aiBusy}
+                                          onChange={event => {
+                                            const file = event.currentTarget.files?.[0];
+                                            if (file) void analyzeCall(call.id, true, file);
+                                            event.currentTarget.value = "";
+                                          }}
+                                        />
+                                      </label>
+                                    )}
                                   </div>
                                 )}
                                 {analysis && aiExpanded && (

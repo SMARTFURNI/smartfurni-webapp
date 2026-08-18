@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getStaffById } from "@/lib/crm-staff-store";
 import { getCallLog } from "@/lib/crm-store";
-import { approveCallAiNextAction, enqueueCallAiAnalysis, processCallAiJob } from "@/lib/crm-call-ai";
+import {
+  approveCallAiNextAction,
+  enqueueCallAiAnalysis,
+  processCallAiJob,
+  validateCallAiUpload,
+  type CallAiAudioInput,
+} from "@/lib/crm-call-ai";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -30,10 +36,32 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   const session = await getCrmSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
-  const body = await req.json().catch(() => ({}));
-  const queued = await enqueueCallAiAnalysis(id, body.force === true);
+  let force = false;
+  let uploadedAudio: CallAiAudioInput | undefined;
+  if ((req.headers.get("content-type") || "").includes("multipart/form-data")) {
+    const form = await req.formData();
+    force = form.get("force") === "true";
+    const recording = form.get("recording");
+    if (!(recording instanceof File)) {
+      return NextResponse.json({ error: "Vui lòng chọn file ghi âm" }, { status: 422 });
+    }
+    try {
+      validateCallAiUpload(recording);
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "File ghi âm không hợp lệ" }, { status: 422 });
+    }
+    uploadedAudio = {
+      buffer: Buffer.from(await recording.arrayBuffer()),
+      filename: recording.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "call-recording.mp3",
+      mime: recording.type || "application/octet-stream",
+    };
+  } else {
+    const body = await req.json().catch(() => ({}));
+    force = body.force === true;
+  }
+  const queued = await enqueueCallAiAnalysis(id, force);
   if (!queued) return NextResponse.json({ error: "Cuộc gọi cần thành công, có bản ghi âm và đủ thời lượng để phân tích" }, { status: 422 });
-  const result = await processCallAiJob(id);
+  const result = await processCallAiJob(id, uploadedAudio);
   const call = await getCallLog(id);
   const status = result.status === "failed" ? 502 : 200;
   return NextResponse.json({ ...result, call }, { status });

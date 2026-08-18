@@ -6,8 +6,27 @@ import type { CallAiAnalysis, CallLog } from "@/lib/crm-types";
 import { downloadCrmRecording } from "@/lib/crm-recording";
 
 const PROMPT_VERSION = "smartfurni-call-analysis-v1";
-const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+export const CALL_AI_MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 let initialized = false;
+
+export interface CallAiAudioInput {
+  buffer: Buffer;
+  filename: string;
+  mime: string;
+}
+
+const SUPPORTED_AUDIO_EXTENSIONS = new Set(["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "ogg", "webm"]);
+
+export function validateCallAiUpload(file: { name: string; type: string; size: number }) {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "";
+  const supportedType = file.type.startsWith("audio/") || file.type === "video/mp4";
+  const genericType = !file.type || file.type === "application/octet-stream";
+  if ((!supportedType && !genericType) || (genericType && !SUPPORTED_AUDIO_EXTENSIONS.has(extension))) {
+    throw new Error("File ghi âm phải là MP3, MP4, M4A, WAV, OGG hoặc WEBM");
+  }
+  if (file.size <= 0) throw new Error("File ghi âm rỗng");
+  if (file.size > CALL_AI_MAX_AUDIO_BYTES) throw new Error("File ghi âm vượt quá giới hạn 25 MB");
+}
 
 const analysisSchema = z.object({
   executiveSummary: z.string().default(""),
@@ -131,7 +150,7 @@ async function claimJob(callLogId?: string) {
 }
 
 async function downloadRecording(recordingUrl: string) {
-  const recording = await downloadCrmRecording(recordingUrl, MAX_AUDIO_BYTES);
+  const recording = await downloadCrmRecording(recordingUrl, CALL_AI_MAX_AUDIO_BYTES);
   return { buffer: recording.buffer, filename: recording.filename, mime: recording.contentType };
 }
 
@@ -162,14 +181,14 @@ Quy tắc bắt buộc:
 - Workflow chỉ là ĐỀ XUẤT: mặc định continue. Chỉ suggest_pause/suggest_stop khi có bằng chứng rõ như khách yêu cầu ngừng, đã mua, không phù hợp hoặc cần nhân viên xử lý. Không tự đổi giai đoạn hay dừng workflow.`;
 }
 
-async function analyzeCall(call: CallLog): Promise<CallAiAnalysis> {
-  if (!call.recordingUrl) throw new Error("Cuộc gọi chưa có bản ghi âm");
+async function analyzeCall(call: CallLog, uploadedAudio?: CallAiAudioInput): Promise<CallAiAnalysis> {
+  if (!call.recordingUrl && !uploadedAudio) throw new Error("Cuộc gọi chưa có bản ghi âm");
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY chưa được cấu hình");
   const client = new OpenAI({ apiKey });
   const transcriptionModel = process.env.CALL_AI_TRANSCRIPTION_MODEL || "gpt-4o-transcribe-diarize";
   const analysisModel = process.env.CALL_AI_ANALYSIS_MODEL || "gpt-4o-mini";
-  const audio = await downloadRecording(call.recordingUrl);
+  const audio = uploadedAudio || await downloadRecording(call.recordingUrl!);
   const file = await toFile(audio.buffer, audio.filename, { type: audio.mime });
   const useDiarization = transcriptionModel.includes("diarize");
   const transcription = await client.audio.transcriptions.create(useDiarization ? {
@@ -218,7 +237,7 @@ async function analyzeCall(call: CallLog): Promise<CallAiAnalysis> {
   };
 }
 
-async function processClaimedJob(callLogId: string): Promise<CallAiJobResult> {
+async function processClaimedJob(callLogId: string, uploadedAudio?: CallAiAudioInput): Promise<CallAiJobResult> {
   const call = await getCallLog(callLogId);
   if (!call || !isCallEligibleForAi(call)) {
     await query(`UPDATE crm_call_ai_jobs SET status='skipped', updated_at=NOW() WHERE call_log_id=$1`, [callLogId]);
@@ -227,7 +246,7 @@ async function processClaimedJob(callLogId: string): Promise<CallAiJobResult> {
   }
   await updateCallLog(callLogId, { aiStatus: "processing", aiError: undefined });
   try {
-    const analysis = await analyzeCall(call);
+    const analysis = await analyzeCall(call, uploadedAudio);
     await updateCallLog(callLogId, { aiStatus: "completed", aiSummary: analysis.executiveSummary, aiAnalysis: analysis, aiError: undefined });
     await query(`UPDATE crm_call_ai_jobs SET status='completed', last_error=NULL, updated_at=NOW() WHERE call_log_id=$1`, [callLogId]);
     return { callLogId, status: "completed" };
@@ -240,10 +259,10 @@ async function processClaimedJob(callLogId: string): Promise<CallAiJobResult> {
   }
 }
 
-export async function processCallAiJob(callLogId: string) {
+export async function processCallAiJob(callLogId: string, uploadedAudio?: CallAiAudioInput) {
   const claimed = await claimJob(callLogId);
   if (!claimed) return { callLogId, status: "not_claimed" };
-  return processClaimedJob(claimed.call_log_id);
+  return processClaimedJob(claimed.call_log_id, uploadedAudio);
 }
 
 export async function processDueCallAiJobs(limit = 1) {

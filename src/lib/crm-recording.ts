@@ -7,6 +7,19 @@ export interface RecordingFile {
   sourceUrl: URL;
 }
 
+function recordingNetworkError(error: unknown) {
+  const root = error && typeof error === "object" && "cause" in error
+    ? (error as { cause?: unknown }).cause
+    : undefined;
+  const code = root && typeof root === "object" && "code" in root
+    ? String((root as { code?: unknown }).code || "")
+    : "";
+  if (code === "UND_ERR_CONNECT_TIMEOUT" || code === "ETIMEDOUT") {
+    return "Máy chủ ghi âm ITY không phản hồi từ Railway. Hãy tải file bằng nút Nghe lại rồi chọn file để AI phân tích.";
+  }
+  return "Không thể kết nối máy chủ ghi âm ITY. Hãy tải file bằng nút Nghe lại rồi chọn file để AI phân tích.";
+}
+
 export function validateCrmRecordingUrl(value: string) {
   const url = new URL(value);
   const host = url.hostname.toLowerCase();
@@ -69,12 +82,17 @@ function filenameFromHeaders(url: URL, disposition: string | null, extension: st
 
 export async function downloadCrmRecording(value: string, maxBytes = DEFAULT_MAX_BYTES): Promise<RecordingFile> {
   const url = validateCrmRecordingUrl(value);
-  const response = await fetch(url, {
-    headers: recordingRequestHeaders(url),
-    signal: AbortSignal.timeout(60_000),
-    redirect: "follow",
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: recordingRequestHeaders(url),
+      signal: AbortSignal.timeout(60_000),
+      redirect: "follow",
+      cache: "no-store",
+    });
+  } catch (error) {
+    throw new Error(recordingNetworkError(error));
+  }
   if (!response.ok) throw new Error(`Không tải được bản ghi âm (${response.status})`);
   const finalUrl = validateCrmRecordingUrl(response.url || url.toString());
   const declaredSize = Number(response.headers.get("content-length") || 0);
