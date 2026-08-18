@@ -68,7 +68,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       <PwaDocumentConfig manifestHref="/crm-manifest.webmanifest" />
       {/* Global print CSS — ẩn sidebar, fix layout khi in */}
       <style>{`
-        .crm-mobile-bar, .crm-mobile-tabs, .crm-mobile-overlay, .crm-contracts-back { display: none; }
+        .crm-mobile-bar, .crm-mobile-overlay, .crm-contracts-back { display: none; }
         @media (max-width: 900px) {
           .crm-root { height: 100dvh !important; min-height: 100dvh; overflow: hidden; }
           .crm-mobile-bar {
@@ -101,25 +101,10 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
             backdrop-filter: blur(5px); transition: opacity .22s ease;
           }
           .crm-mobile-overlay.is-visible { opacity: 1; pointer-events: auto; }
-          .crm-mobile-tabs {
-            position: fixed; inset: auto 10px calc(8px + env(safe-area-inset-bottom)) 10px; z-index: 78;
-            min-height: 62px; padding: 7px 6px; display: grid;
-            grid-template-columns: repeat(4,minmax(0,1fr)); border-radius: 22px;
-            border: 1px solid rgba(255,200,100,.18);
-            background: linear-gradient(115deg,rgba(15,21,35,.97),rgba(37,24,9,.96));
-            box-shadow: 0 18px 45px rgba(0,0,0,.44), inset 0 1px 0 rgba(255,255,255,.035);
-            backdrop-filter: blur(22px);
-          }
-          .crm-mobile-tabs a {
-            min-width: 0; min-height: 48px; border-radius: 15px; display: flex;
-            flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-            color: rgba(245,237,214,.48); font-size: 9px; font-weight: 600;
-          }
-          .crm-mobile-tabs a.is-active { color: #fde68a; background: linear-gradient(145deg,rgba(245,158,11,.22),rgba(245,158,11,.07)); }
-          .crm-mobile-tabs + main {
+          .crm-root > main {
             width: 100% !important; min-width: 0 !important;
             padding-top: calc(62px + env(safe-area-inset-top));
-            padding-bottom: calc(92px + env(safe-area-inset-bottom));
+            padding-bottom: calc(18px + env(safe-area-inset-bottom));
             overflow-x: hidden !important; -webkit-overflow-scrolling: touch;
           }
           .crm-root main > *, .crm-root main .grid, .crm-root main .flex { max-width: 100%; }
@@ -141,19 +126,37 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-root main [class~="p-8"], .crm-root main [class~="p-6"] { padding: 14px !important; }
           .crm-root main button, .crm-root main select, .crm-root main input { min-height: 42px; }
 
-          /* Softphone luôn nằm phía trên thanh điều hướng, không che tab Công việc. */
+          /* Thanh điều hướng dưới đã bỏ; softphone neo sát vùng an toàn của điện thoại. */
           .ity-softphone-trigger {
             right: 18px !important;
-            bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+            bottom: calc(18px + env(safe-area-inset-bottom)) !important;
           }
           .ity-softphone-panel {
             right: 12px !important;
-            bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+            bottom: calc(18px + env(safe-area-inset-bottom)) !important;
             width: min(320px, calc(100vw - 24px)) !important;
-            max-height: calc(100dvh - 164px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            max-height: calc(100dvh - 98px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
             overflow-y: auto !important;
           }
           .ity-inline-call-button { min-width: 44px !important; min-height: 44px !important; }
+
+          /* Danh sách KH: thẻ báo cáo chỉ chiếm một hàng và vuốt ngang. */
+          .crm-leads-stats {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .crm-leads-stats::-webkit-scrollbar { display: none; }
+          .crm-leads-stat-card {
+            flex: 0 0 min(70vw, 240px);
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+          }
 
           /* Focus hôm nay: một hàng thẻ vuốt ngang như carousel trong ứng dụng. */
           .crm-focus-track {
@@ -251,7 +254,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           .crm-contracts-detail > :first-child > :last-child { flex-wrap: wrap; }
         }
         @media print {
-          .no-print, .crm-mobile-bar, .crm-mobile-tabs, .crm-mobile-overlay { display: none !important; }
+          .no-print, .crm-mobile-bar, .crm-mobile-overlay { display: none !important; }
           .crm-root { display: block !important; height: auto !important; overflow: visible !important; }
           .crm-root > aside { display: none !important; }
           .crm-root > main { width: 100% !important; overflow: visible !important; height: auto !important; }

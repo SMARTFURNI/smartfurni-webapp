@@ -567,23 +567,6 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
       onClick={() => setMobileOpen(false)}
       aria-label="Đóng menu CRM"
     />
-    <nav className="crm-mobile-tabs no-print" aria-label="Điều hướng CRM nhanh">
-      {[
-        { href: "/crm", label: "Tổng quan", icon: LayoutDashboard, exact: true },
-        { href: "/crm/kanban", label: "Kanban", icon: Kanban },
-        { href: "/crm/leads", label: "Khách hàng", icon: Users },
-        { href: "/crm/tasks", label: "Công việc", icon: CheckSquare },
-      ].map(item => {
-        const active = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
-        const Icon = item.icon;
-        return (
-          <Link key={item.href} href={item.href} className={active ? "is-active" : ""}>
-            <Icon size={19} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
     </>
   );
 }

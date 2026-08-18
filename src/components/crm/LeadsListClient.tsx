@@ -279,14 +279,14 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
       </div>
 
       {/* ── Summary Stats ── */}
-      <div className="flex-shrink-0 px-3 sm:px-5 py-2 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div className="crm-leads-stats flex-shrink-0 px-3 sm:px-5 py-2 grid grid-cols-2 md:grid-cols-4 gap-2.5">
         {[
           { icon: Users,       label: "Tổng khách hàng", value: String(leads.length),    color: C.blue,   bg: C.blueBg,   sub: `${leads.filter(l => !["won","lost"].includes(l.stage)).length} đang theo dõi` },
           { icon: DollarSign,  label: "Tổng giá trị",    value: formatVND(totalValue),   color: C.gold,   bg: C.goldBg,   sub: "Pipeline" },
           { icon: Award,       label: "Tỷ lệ chốt",      value: `${winRate}%`,           color: C.green,  bg: C.greenBg,  sub: `${wonCount} đơn thành công` },
           { icon: AlertCircle, label: "Cần liên hệ",     value: String(overdueCount),    color: C.red,    bg: C.redBg,    sub: "Quá 3 ngày" },
         ].map(({ icon: Icon, label, value, color, bg, sub }, index) => (
-          <div key={label} className={`${customerStyles.statCard} ${statThemes[index]} rounded-xl px-3 py-2 flex items-center gap-2.5`}
+          <div key={label} className={`crm-leads-stat-card ${customerStyles.statCard} ${statThemes[index]} rounded-xl px-3 py-2 flex items-center gap-2.5`}
             style={{ background: C.surface, border: `1px solid ${C.border}` }}>
             <div className="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
               <Icon size={15} style={{ color }} />
