@@ -42,7 +42,7 @@ export default function CrmPushNotifications({ staffName }: { staffName: string 
           await requestTaskDigest();
         }
       })
-      .catch(() => setState(current => current || "unsupported"));
+      .catch(() => setState(current => current || ("unsupported" as const)));
   }, []);
 
   const enable = async () => {
@@ -56,7 +56,7 @@ export default function CrmPushNotifications({ staffName }: { staffName: string 
       window.setTimeout(() => setJustEnabled(false), 4500);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Không thể bật thông báo.");
-      setState(await getPushPermissionState().catch(() => "unsupported"));
+      setState(await getPushPermissionState().catch(() => "unsupported" as const));
     } finally {
       setBusy(false);
     }
@@ -84,12 +84,12 @@ export default function CrmPushNotifications({ staffName }: { staffName: string 
           </b>
           <p className="mt-1 text-xs leading-5 text-slate-400">
             {justEnabled
-              ? `${staffName || "Tài khoản này"} sẽ nhận tin nhắn Zalo mới, nhiệm vụ, lead và kế hoạch chăm sóc Fanpage.`
+              ? `${staffName || "Tài khoản này"} sẽ nhận lead mới trong Data Pool, tin nhắn Zalo, nhiệm vụ và kế hoạch chăm sóc Fanpage.`
               : blocked
                 ? "Trình duyệt đang chặn thông báo. Hãy cho phép thông báo cho smartfurni.com.vn trong cài đặt trình duyệt."
                 : unsupported
                   ? "Trình duyệt hiện tại chưa hỗ trợ Web Push. Trên iPhone, hãy cài CRM vào Màn hình chính trước."
-                  : `${staffName || "Nhân viên"} cần bật một lần trên thiết bị này để nhận tin nhắn Zalo mới, nhiệm vụ và kế hoạch chăm sóc khách hàng.`}
+                  : `${staffName || "Nhân viên"} cần bật một lần trên thiết bị này để nhận lead mới trong Data Pool, tin nhắn Zalo, nhiệm vụ và kế hoạch chăm sóc khách hàng.`}
           </p>
           {error && <p className="mt-1 text-xs text-red-300">{error}</p>}
           {!justEnabled && !blocked && !unsupported && (

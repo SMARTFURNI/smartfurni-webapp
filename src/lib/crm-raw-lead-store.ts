@@ -120,11 +120,12 @@ export async function createRawLead(data: Partial<RawLead>): Promise<RawLead> {
   await initRawLeadSchema();
   const id = data.id || randomUUID();
   const now = new Date().toISOString();
-  await query(
+  const inserted = await query<{ id: string }>(
     `INSERT INTO crm_raw_leads
       (id, source, full_name, phone, email, ad_name, campaign_name, form_name, message, customer_role, raw_data, status, created_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)
-     ON CONFLICT (id) DO NOTHING`,
+     ON CONFLICT (id) DO NOTHING
+     RETURNING id`,
     [
       id,
       data.source || "manual",
@@ -143,23 +144,35 @@ export async function createRawLead(data: Partial<RawLead>): Promise<RawLead> {
   const row = await queryOne<Record<string, unknown>>(
     "SELECT * FROM crm_raw_leads WHERE id = $1", [id]
   );
-  const lead = mapRow(row!);
-  // Emit SSE event — thông báo real-time cho tất cả nhân viên đang online
-  try {
-    const { emitSSE } = await import("@/lib/sse-emitter");
-    emitSSE({
-      type: "new_raw_lead",
-      payload: {
-        id: lead.id,
-        fullName: lead.fullName,
-        phone: lead.phone,
-        source: lead.source,
-        createdAt: lead.createdAt,
-        campaignName: lead.campaignName ?? null,
-        adName: lead.adName ?? null,
-      },
-    });
-  } catch { /* ignore — SSE là best-effort, không ảnh hưởng luồng chính */ }
+  if (!row) throw new Error("Không thể đọc lead vừa tạo trong Data Pool");
+  const lead = mapRow(row);
+  // Chỉ phát sự kiện khi INSERT thực sự tạo bản ghi; request trùng ID không
+  // được làm nhân viên nhận lại cùng một thông báo.
+  if (inserted.length > 0) {
+    try {
+      const { emitSSE } = await import("@/lib/sse-emitter");
+      emitSSE({
+        type: "new_raw_lead",
+        payload: {
+          id: lead.id,
+          fullName: lead.fullName,
+          phone: lead.phone,
+          source: lead.source,
+          createdAt: lead.createdAt,
+          campaignName: lead.campaignName ?? null,
+          adName: lead.adName ?? null,
+        },
+      });
+    } catch { /* ignore — SSE là best-effort, không ảnh hưởng luồng chính */ }
+
+    try {
+      const { notifyNewDataPoolLead } = await import("@/lib/crm-raw-lead-push");
+      await notifyNewDataPoolLead(lead);
+    } catch (error) {
+      // Web Push không được phép làm hỏng webhook hoặc thao tác tạo lead.
+      console.error("[Data Pool Push] Không thể gửi thông báo lead mới:", error);
+    }
+  }
   return lead;
 }
 
