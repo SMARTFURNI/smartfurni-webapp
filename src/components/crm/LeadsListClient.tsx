@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
-  Plus, Search, Filter, AlertCircle, Phone, MapPin, X,
+  Plus, Search, Filter, AlertCircle, Phone, Star, X,
   ChevronUp, ChevronDown, Users, DollarSign,
   Award, Eye, Edit3, Trash2, Loader2, UserCheck,
 } from "lucide-react";
@@ -376,12 +376,11 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 {/* NV phụ trách */}
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden md:table-cell"
                   style={{ color: C.textMuted }}>NV Phụ trách</th>
-                {/* Khu vực */}
-                <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden lg:table-cell"
-                  style={{ color: C.textMuted }}>Khu vực</th>
                 {/* Sản phẩm quan tâm */}
-                <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest"
-                  style={{ color: C.textMuted }}>Sản phẩm</th>
+                <th className="min-w-[240px] px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: C.goldDark }}>
+                  <span className="inline-flex items-center gap-1.5"><Star size={12} fill="currentColor" /> Sản phẩm</span>
+                </th>
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden xl:table-cell"
                   style={{ color: C.textMuted }}>Kết bạn Zalo</th>
                 {/* Tương tác */}
@@ -400,7 +399,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             <tbody>
               {paginated.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center py-16">
+                  <td colSpan={8} className="text-center py-16">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: C.surface2, border: `1px solid ${C.border}` }}>
                         <Users size={24} style={{ color: C.textMuted }} />
@@ -516,25 +515,25 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                       )}
                     </td>
 
-                    {/* District */}
-                    <td className="px-4 py-2.5 hidden lg:table-cell">
-                      <div className="flex items-center gap-1 text-xs" style={{ color: C.textDim }}>
-                        <MapPin size={10} style={{ flexShrink: 0 }} />
-                        <span className="truncate max-w-[90px]">{lead.district || "—"}</span>
-                      </div>
-                    </td>
-
                     {/* Interested products */}
-                    <td className="px-4 py-2.5">
-                      <div className="flex max-w-[210px] flex-wrap gap-1">
-                        {lead.interestedProducts?.length ? lead.interestedProducts.map(product => (
-                          <span key={product} className="rounded-full border border-[#c7d2fe] bg-[#eef2ff] px-2 py-1 text-[10px] font-semibold text-[#4f46e5]">
-                            {PRODUCT_LABELS[product]}
+                    <td className="min-w-[240px] px-4 py-2.5">
+                      {lead.interestedProducts?.length ? (
+                        <div
+                          className="inline-flex max-w-[320px] items-center gap-2 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-violet-50 px-2.5 py-1.5 shadow-sm"
+                          title={lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(" · ")}
+                        >
+                          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
+                            <Star size={12} fill="currentColor" />
                           </span>
-                        )) : (
-                          <span className="text-xs" style={{ color: C.textMuted }}>Chưa xác định</span>
-                        )}
-                      </div>
+                          <span className="truncate whitespace-nowrap text-[11px] font-bold text-indigo-700">
+                            {lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(" · ")}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-400">
+                          <Star size={11} /> Chưa xác định
+                        </span>
+                      )}
                     </td>
 
                     {/* Zalo personal friendship */}
