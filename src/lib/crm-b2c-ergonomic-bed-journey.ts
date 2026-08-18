@@ -47,7 +47,7 @@ export const DEFAULT_B2C_ERGONOMIC_BED_JOURNEY_SETTINGS: B2CErgonomicBedJourneyS
 const ZALO_SIGNATURE = [
   "",
   "SmartFurni | Hotline 028.7122.0818",
-  "Zalo tư vấn 0918.326.552 | smartfurni.com.vn",
+  "Zalo tư vấn 0918.326.552 | https://www.smartfurni.com.vn",
 ].join("\n");
 
 const EMAIL_SIGNATURE = [

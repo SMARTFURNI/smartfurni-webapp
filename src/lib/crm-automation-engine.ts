@@ -33,6 +33,7 @@ import { automationTriggerKey, isAutomationTriggerStageAllowed } from "./crm-aut
 import { evaluateAutomationContact } from "./crm-automation-policy";
 import { getAllStaff } from "./crm-staff-store";
 import { queryOne } from "./db";
+import { prepareAutomationTrackedMessage } from "./crm-automation-link-tracking";
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
@@ -164,7 +165,18 @@ async function sendAutomationZaloNow(input: {
   }
 
   const { uid } = findResult.user;
-  const sendResult = await sendZaloMessage({ conversationId: uid, content: input.message });
+  const trackedMessage = await prepareAutomationTrackedMessage({
+    message: input.message,
+    ruleId: input.ruleId,
+    ruleName: input.ruleName,
+    leadId: input.lead.id,
+    leadName: input.lead.name,
+    channel: "zalo_personal",
+  }).catch(error => {
+    console.error("[Automation Zalo tracking]", error);
+    return input.message;
+  });
+  const sendResult = await sendZaloMessage({ conversationId: uid, content: trackedMessage });
   if (!sendResult.success) {
     throw new Error(`Không gửi được Zalo: ${sendResult.error || "unknown"}`);
   }

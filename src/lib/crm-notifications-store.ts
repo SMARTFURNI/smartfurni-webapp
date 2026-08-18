@@ -3,6 +3,7 @@
  * Handles: Auto-assign rules, Zalo OA messaging, SMS reminders, overdue alerts
  */
 import { query } from "@/lib/db";
+import { prepareAutomationTrackedMessage } from "@/lib/crm-automation-link-tracking";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -428,6 +429,15 @@ export async function sendZaloMessage(phone: string, message: string, zaloUid?: 
       return { ok: false, error: "Tin tư vấn Zalo OA bắt buộc dùng Zalo UID; không được gửi trực tiếp bằng số điện thoại." };
     }
     const recipient = { user_id: zaloUid };
+    const trackedMessage = await prepareAutomationTrackedMessage({
+      message,
+      ruleId: "zalo-oa-notification",
+      ruleName: "Zalo OA",
+      channel: "zalo_oa",
+    }).catch(error => {
+      console.error("[Zalo OA tracking]", error);
+      return message;
+    });
     const res = await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
       method: "POST",
       headers: {
@@ -436,7 +446,7 @@ export async function sendZaloMessage(phone: string, message: string, zaloUid?: 
       },
       body: JSON.stringify({
         recipient,
-        message: { text: message },
+        message: { text: trackedMessage },
       }),
     });
     const data = await res.json() as { error: number; message: string };

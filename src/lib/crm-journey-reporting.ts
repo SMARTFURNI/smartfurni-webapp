@@ -2,6 +2,8 @@ import "server-only";
 
 import { randomUUID } from "crypto";
 import { query, queryOne } from "@/lib/db";
+import { initAutomationLinkTrackingSchema } from "@/lib/crm-automation-link-tracking";
+import { rewriteTrackedLinks } from "@/lib/crm-link-tracking-utils";
 import { getLeads } from "@/lib/crm-store";
 import {
   B2B_SOFA_JOURNEY,
@@ -286,11 +288,7 @@ export async function createJourneyEmailTracking(input: {
 }
 
 export function rewriteJourneyTrackedLinks(body: string, clickBaseUrl: string): string {
-  return body.replace(/https?:\/\/[^\s]+/g, raw => {
-    const trailing = raw.match(/[),.;!?]+$/)?.[0] || "";
-    const destination = trailing ? raw.slice(0, -trailing.length) : raw;
-    return `${clickBaseUrl}${encodeURIComponent(destination)}${trailing}`;
-  });
+  return rewriteTrackedLinks(body, clickBaseUrl);
 }
 
 export async function attachJourneyEmailProviderId(token: string, providerMessageId: string): Promise<void> {
@@ -462,6 +460,44 @@ function buildScope(filters: JourneyReportFilters): { sql: string; params: unkno
   };
 }
 
+function buildClickEventScope(filters: JourneyReportFilters): {
+  sql: string;
+  params: unknown[];
+  channelSql: string;
+  eventWindowSql: string;
+  actionWindowSql: string;
+} {
+  const from = dateAtVietnamStart(filters.from).toISOString();
+  const toExclusive = addDays(dateAtVietnamStart(filters.to), 1).toISOString();
+  const params: unknown[] = [from, toExclusive];
+  const clauses = ["TRUE"];
+  if (filters.journeyCode) {
+    params.push(filters.journeyCode);
+    clauses.push(`e.journey_code=$${params.length}`);
+  }
+  if (filters.source) {
+    params.push(filters.source);
+    clauses.push(`COALESCE(l.data->>'source','')=$${params.length}`);
+  }
+  if (filters.assignedTo) {
+    params.push(filters.assignedTo);
+    clauses.push(`COALESCE(l.data->>'assignedTo','')=$${params.length}`);
+  }
+  let channelSql = "";
+  if (filters.channel) {
+    params.push(filters.channel);
+    channelSql = `$${params.length}`;
+  }
+  return {
+    sql: `SELECT e.*,l.data AS lead_data FROM crm_journey_enrollments e
+      LEFT JOIN crm_leads l ON l.id=e.lead_id WHERE ${clauses.join(" AND ")}`,
+    params,
+    channelSql,
+    eventWindowSql: "ev.occurred_at >= $1 AND ev.occurred_at < $2",
+    actionWindowSql: "a.sent_at >= $1 AND a.sent_at < $2",
+  };
+}
+
 function numberValue(value: unknown): number {
   const parsed = Number(value || 0);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -496,15 +532,22 @@ async function countEligibleNow(filters: JourneyReportFilters): Promise<number> 
 export async function getJourneyWorkflowReport(
   rawFilters: Partial<JourneyReportFilters>,
 ): Promise<JourneyWorkflowReport> {
-  await initJourneyReportingSchema();
+  await Promise.all([initJourneyReportingSchema(), initAutomationLinkTrackingSchema()]);
   const filters = normalizeJourneyReportFilters(rawFilters);
   const scope = buildScope(filters);
+  const clickScope = buildClickEventScope(filters);
   const actionChannel = scope.channelSql
     ? `(a.primary_channel=${scope.channelSql} OR a.sent_channel=${scope.channelSql} OR EXISTS (
         SELECT 1 FROM jsonb_array_elements(a.attempts) attempt WHERE attempt->>'channel'=${scope.channelSql}
       ))`
     : "TRUE";
   const eventChannel = scope.channelSql ? `ev.channel=${scope.channelSql}` : "TRUE";
+  const clickEventChannel = clickScope.channelSql ? `ev.channel=${clickScope.channelSql}` : "TRUE";
+  const clickActionChannel = clickScope.channelSql
+    ? `(a.primary_channel=${clickScope.channelSql} OR a.sent_channel=${clickScope.channelSql} OR EXISTS (
+        SELECT 1 FROM jsonb_array_elements(a.attempts) attempt WHERE attempt->>'channel'=${clickScope.channelSql}
+      ))`
+    : "TRUE";
   const summaryLegacyReply = scope.channelSql ? "FALSE" : "paused_reason ILIKE '%phản hồi%'";
   const scopedLegacyReply = scope.channelSql ? "FALSE" : "s.paused_reason ILIKE '%phản hồi%'";
 
@@ -680,6 +723,48 @@ export async function getJourneyWorkflowReport(
     countEligibleNow(filters).catch(() => 0),
   ]);
 
+  const [clickPeriodSummary, clickPeriodChannels, clickPeriodSteps, linkRowsRaw] = await Promise.all([
+    queryOne<Record<string, unknown>>(
+      `WITH scoped AS (${clickScope.sql})
+       SELECT
+        (SELECT COUNT(DISTINCT ev.action_id)::int
+         FROM scoped s JOIN crm_journey_events ev ON ev.enrollment_id=s.id
+         WHERE ev.event_type='clicked' AND ${clickScope.eventWindowSql} AND ${clickEventChannel}) AS clicked_messages,
+        (SELECT COUNT(*)::int
+         FROM scoped s JOIN crm_journey_actions a ON a.enrollment_id=s.id
+         WHERE a.status='sent' AND a.sent_at IS NOT NULL AND ${clickScope.actionWindowSql} AND ${clickActionChannel}) AS sent_messages`,
+      clickScope.params,
+    ),
+    query<Record<string, unknown>>(
+      `WITH scoped AS (${clickScope.sql})
+       SELECT ev.channel,COUNT(DISTINCT ev.action_id)::int AS clicked
+       FROM scoped s JOIN crm_journey_events ev ON ev.enrollment_id=s.id
+       WHERE ev.event_type='clicked' AND ${clickScope.eventWindowSql} AND ${clickEventChannel}
+       GROUP BY ev.channel`,
+      clickScope.params,
+    ),
+    query<Record<string, unknown>>(
+      `WITH scoped AS (${clickScope.sql})
+       SELECT s.journey_code,a.step_id,a.day_offset,COUNT(DISTINCT ev.action_id)::int AS clicked
+       FROM scoped s
+       JOIN crm_journey_actions a ON a.enrollment_id=s.id
+       JOIN crm_journey_events ev ON ev.action_id=a.id
+       WHERE ev.event_type='clicked' AND ${clickScope.eventWindowSql} AND ${clickEventChannel}
+       GROUP BY s.journey_code,a.step_id,a.day_offset`,
+      clickScope.params,
+    ),
+    query<Record<string, unknown>>(
+      `WITH scoped AS (${clickScope.sql})
+       SELECT ev.channel,ev.metadata->>'url' AS url,COUNT(*)::int AS clicks,
+         COUNT(DISTINCT ev.action_id)::int AS unique_actions,MAX(ev.occurred_at) AS last_clicked_at
+       FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id
+       WHERE ev.event_type='clicked' AND COALESCE(ev.metadata->>'url','')<>''
+         AND ${clickScope.eventWindowSql} AND ${clickEventChannel}
+       GROUP BY ev.channel,ev.metadata->>'url' ORDER BY clicks DESC,last_clicked_at DESC LIMIT 100`,
+      clickScope.params,
+    ),
+  ]);
+
   const raw = summaryRow || {};
   const summary: JourneyReportSummary = {
     eligibleNow,
@@ -704,7 +789,8 @@ export async function getJourneyWorkflowReport(
     bouncedEmails: numberValue(raw.bounced_emails),
     complainedEmails: numberValue(raw.complained_emails),
     openedMessages: numberValue(raw.opened_messages),
-    clickedMessages: numberValue(raw.clicked_messages),
+    clickedMessages: numberValue(clickPeriodSummary?.clicked_messages),
+    clickTrackedSentMessages: numberValue(clickPeriodSummary?.sent_messages),
     fallbackActions: numberValue(raw.fallback_actions),
     sendSuccessRate: 0,
     responseRate: 0,
@@ -723,7 +809,7 @@ export async function getJourneyWorkflowReport(
   summary.winRate = percentage(summary.won, summary.enrolled);
   summary.fallbackRate = percentage(summary.fallbackActions, summary.sentActions);
   summary.openRate = percentage(summary.openedMessages, numberValue(raw.sent_emails));
-  summary.clickRate = percentage(summary.clickedMessages, summary.sentActions);
+  summary.clickRate = percentage(summary.clickedMessages, summary.clickTrackedSentMessages);
 
   const funnelCounts = [
     ["enrolled", "Đã vào workflow", summary.enrolled],
@@ -760,9 +846,14 @@ export async function getJourneyWorkflowReport(
     };
   });
 
+  const clickPeriodChannelMap = new Map(clickPeriodChannels.map(row => [String(row.channel || ""), numberValue(row.clicked)]));
   const channelEvents = new Map(channelEventRows.map(row => [String(row.channel || ""), row]));
-  const channels: JourneyReportChannelRow[] = channelRowsRaw.map(row => {
-    const channel = String(row.channel || "");
+  const allChannelKeys = new Set([
+    ...channelRowsRaw.map(row => String(row.channel || "")),
+    ...clickPeriodChannels.map(row => String(row.channel || "")),
+  ]);
+  const channels: JourneyReportChannelRow[] = Array.from(allChannelKeys).filter(Boolean).map(channel => {
+    const row = channelRowsRaw.find(item => String(item.channel || "") === channel) || {};
     const events = channelEvents.get(channel) || {};
     const attempted = numberValue(row.attempted);
     const sent = numberValue(row.sent);
@@ -777,13 +868,36 @@ export async function getJourneyWorkflowReport(
       fallbackSent: numberValue(row.fallback_sent),
       responses,
       opened: numberValue(events.opened),
-      clicked: numberValue(events.clicked),
+      clicked: clickPeriodChannelMap.get(channel) || 0,
       successRate: percentage(sent, attempted),
       responseRate: percentage(responses, sent),
     };
   });
 
-  const steps: JourneyReportStepRow[] = stepRowsRaw.map(row => {
+  const clickPeriodStepMap = new Map(clickPeriodSteps.map(row => [
+    `${String(row.journey_code || "")}:${String(row.step_id || "")}`,
+    row,
+  ]));
+  const allStepRows = [...stepRowsRaw];
+  for (const clickRow of clickPeriodSteps) {
+    const key = `${String(clickRow.journey_code || "")}:${String(clickRow.step_id || "")}`;
+    if (!allStepRows.some(row => `${String(row.journey_code || "")}:${String(row.step_id || "")}` === key)) {
+      allStepRows.push({
+        ...clickRow,
+        due: 0,
+        sent: 0,
+        failed: 0,
+        waiting_content: 0,
+        delivery_unknown: 0,
+        fallback_sent: 0,
+        responses: 0,
+        opened: 0,
+        stage_advanced: 0,
+        unsubscribed: 0,
+      });
+    }
+  }
+  const steps: JourneyReportStepRow[] = allStepRows.map(row => {
     const journeyCode = String(row.journey_code || "");
     const stepId = String(row.step_id || "");
     const meta = STEP_META.get(`${journeyCode}:${stepId}`);
@@ -801,7 +915,7 @@ export async function getJourneyWorkflowReport(
       deliveryUnknown: numberValue(row.delivery_unknown),
       fallbackSent: numberValue(row.fallback_sent),
       opened: numberValue(row.opened),
-      clicked: numberValue(row.clicked),
+      clicked: numberValue(clickPeriodStepMap.get(`${journeyCode}:${stepId}`)?.clicked),
       stageAdvanced: numberValue(row.stage_advanced),
       unsubscribed: numberValue(row.unsubscribed),
       successRate: percentage(sent, due),
@@ -838,15 +952,6 @@ export async function getJourneyWorkflowReport(
     pausedReason: String(row.paused_reason || ""),
   }));
 
-  const linkRowsRaw = await query<Record<string, unknown>>(
-    `WITH scoped AS (${scope.sql})
-     SELECT ev.channel,ev.metadata->>'url' AS url,COUNT(*)::int AS clicks,
-       COUNT(DISTINCT ev.action_id)::int AS unique_actions,MAX(ev.occurred_at) AS last_clicked_at
-     FROM crm_journey_events ev JOIN scoped s ON s.id=ev.enrollment_id
-     WHERE ev.event_type='clicked' AND COALESCE(ev.metadata->>'url','')<>'' AND ${eventChannel}
-     GROUP BY ev.channel,ev.metadata->>'url' ORDER BY clicks DESC,last_clicked_at DESC LIMIT 100`,
-    scope.params,
-  );
   const links: JourneyReportLinkRow[] = linkRowsRaw.map(row => ({
     channel: String(row.channel || ""), url: String(row.url || ""), clicks: numberValue(row.clicks),
     uniqueActions: numberValue(row.unique_actions), lastClickedAt: isoValue(row.last_clicked_at),
@@ -858,7 +963,11 @@ export async function getJourneyWorkflowReport(
       (SELECT COUNT(*) FROM crm_notification_logs WHERE action_type='sla' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS sla_alerts,
       ((SELECT COUNT(*) FROM crm_automation_email_queue WHERE status IN ('pending','processing'))+(SELECT COUNT(*) FROM crm_automation_zalo_queue WHERE status IN ('pending','processing')))::int AS queued_pending,
       (SELECT COUNT(*) FROM crm_notification_logs WHERE status='sent' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS notification_sent,
-      (SELECT COUNT(*) FROM crm_notification_logs WHERE status='failed' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS notification_failed`,
+      (SELECT COUNT(*) FROM crm_notification_logs WHERE status='failed' AND sent_at::date BETWEEN $1::date AND $2::date)::int AS notification_failed,
+      (SELECT COUNT(*) FROM crm_automation_link_tracking
+        WHERE (clicked_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date)::int AS generic_clicked_messages,
+      (SELECT COUNT(*) FROM crm_automation_link_clicks
+        WHERE (occurred_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date BETWEEN $1::date AND $2::date)::int AS generic_link_clicks`,
     [filters.from, filters.to],
   ).catch(() => null) || {};
 
@@ -888,12 +997,13 @@ export async function getJourneyWorkflowReport(
     dataFreshness: {
       lastActionAt: freshness?.last_action_at ? isoValue(freshness.last_action_at) : null,
       lastEventAt: freshness?.last_event_at ? isoValue(freshness.last_event_at) : null,
-      note: "Phản hồi, delivered/bounce và open/click bắt đầu được ghi chi tiết từ khi mô-đun báo cáo được triển khai; dữ liệu gửi cũ vẫn được tổng hợp từ action hiện có.",
+      note: "Click được lọc theo đúng ngày phát sinh trong khoảng đã chọn, kể cả khi khách hàng tham gia workflow trước đó; dữ liệu click cũ chỉ có từ khi link theo dõi được triển khai.",
     },
     operations: {
       genericExecutions: numberValue(operations?.generic_executions), genericFailed: numberValue(operations?.generic_failed),
       slaAlerts: numberValue(operations?.sla_alerts), queuedPending: numberValue(operations?.queued_pending),
       notificationSent: numberValue(operations?.notification_sent), notificationFailed: numberValue(operations?.notification_failed),
+      genericClickedMessages: numberValue(operations?.generic_clicked_messages), genericLinkClicks: numberValue(operations?.generic_link_clicks),
     },
     options: {
       workflows: workflowOptions.map(value => ({ value, label: JOURNEY_NAMES[value] || value })),

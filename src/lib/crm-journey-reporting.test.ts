@@ -33,4 +33,19 @@ describe("journey report filters", () => {
     expect(rewriteJourneyTrackedLinks("Xem https://smartfurni.com.vn/demo, rồi phản hồi.", "https://crm.test/click?u="))
       .toBe("Xem https://crm.test/click?u=https%3A%2F%2Fsmartfurni.com.vn%2Fdemo, rồi phản hồi.");
   });
+
+  it("chuẩn hóa và theo dõi tên miền SmartFurni dạng trần nhưng không đụng vào email", () => {
+    expect(rewriteJourneyTrackedLinks(
+      "Website smartfurni.com.vn/demo. Email b2b@smartfurni.com.vn",
+      "https://crm.test/click?u=",
+    )).toBe(
+      "Website https://crm.test/click?u=https%3A%2F%2Fsmartfurni.com.vn%2Fdemo. Email b2b@smartfurni.com.vn",
+    );
+  });
+
+  it("không bọc lặp đường dẫn theo dõi đã tạo", () => {
+    const clickBaseUrl = "https://www.smartfurni.com.vn/api/crm/automation/reports/email-click?t=abc&u=";
+    const tracked = `${clickBaseUrl}https%3A%2F%2Fwww.smartfurni.com.vn`;
+    expect(rewriteJourneyTrackedLinks(tracked, clickBaseUrl)).toBe(tracked);
+  });
 });

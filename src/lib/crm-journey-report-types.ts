@@ -54,6 +54,7 @@ export interface JourneyReportSummary {
   complainedEmails: number;
   openedMessages: number;
   clickedMessages: number;
+  clickTrackedSentMessages: number;
   fallbackActions: number;
   sendSuccessRate: number;
   responseRate: number;
@@ -193,6 +194,8 @@ export interface JourneyWorkflowReport {
     queuedPending: number;
     notificationSent: number;
     notificationFailed: number;
+    genericClickedMessages: number;
+    genericLinkClicks: number;
   };
   options: {
     workflows: JourneyReportOption[];
