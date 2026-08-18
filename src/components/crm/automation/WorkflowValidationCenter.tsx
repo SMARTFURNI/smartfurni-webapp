@@ -7,7 +7,7 @@ import {
   TestTube2, UserRound, XCircle, Zap,
 } from "lucide-react";
 
-type WorkflowKey = "b2b_sofa" | "b2c_ergonomic";
+type WorkflowKey = "b2b_sofa" | "b2c_ergonomic" | "b2c_sofa";
 type CheckStatus = "pass" | "warn" | "fail";
 
 interface LeadOption {
@@ -62,6 +62,7 @@ interface ValidationData {
 const workflowOptions: Array<{ key: WorkflowKey; label: string; description: string }> = [
   { key: "b2b_sofa", label: "B2B Sofa giường", description: "Chủ đầu tư lưu trú · 90 ngày" },
   { key: "b2c_ergonomic", label: "Khách lẻ Giường công thái học", description: "Khách mua nguyên bộ/khung nâng hạ · 90 ngày" },
+  { key: "b2c_sofa", label: "Khách lẻ Sofa Giường", description: "Chỉ Zalo cá nhân · tập trung 14 ngày đầu" },
 ];
 
 const channelLabel = {

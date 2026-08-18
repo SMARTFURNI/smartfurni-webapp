@@ -66,6 +66,15 @@ import {
   getB2CErgonomicBedJourneySettings,
 } from "@/lib/crm-b2c-ergonomic-bed-journey-store";
 import {
+  B2C_SOFA_BED_JOURNEY_CODE,
+  buildB2CSofaBedJourneyContext,
+  type B2CSofaBedJourneySettings,
+} from "@/lib/crm-b2c-sofa-bed-journey";
+import {
+  getB2CSofaBedJourneyEnrollment,
+  getB2CSofaBedJourneySettings,
+} from "@/lib/crm-b2c-sofa-bed-journey-store";
+import {
   attachJourneyEmailProviderId,
   createJourneyEmailTracking,
   recordJourneyEvent,
@@ -118,6 +127,8 @@ export interface JourneyRuntime<TSettings extends B2BSofaJourneySettings> {
   autoEnroll: (settings: TSettings) => Promise<{ checked: number; enrolled: number; skipped: number }>;
   claimDueActions: (limit: number, allowedLeadIds?: string[] | null) => Promise<JourneyActionRecord[]>;
   emailFromName?: string;
+  requireAcceptedZaloFriendship?: boolean;
+  replyChannels?: JourneyChannel[];
 }
 
 function normalizePhone(phone: string): string {
@@ -214,16 +225,17 @@ export async function sendAutomationTemplateToLead(input: {
   requiredVariables?: string[];
   journeyCode?: string;
 }): Promise<SendAttemptResult & { renderedSubject: string; renderedBody: string }> {
-  const isB2C = input.journeyCode === B2C_ERGONOMIC_BED_JOURNEY_CODE;
-  const settings = isB2C
+  const isErgonomicB2C = input.journeyCode === B2C_ERGONOMIC_BED_JOURNEY_CODE;
+  const isSofaB2C = input.journeyCode === B2C_SOFA_BED_JOURNEY_CODE;
+  const settings = isErgonomicB2C
     ? await getB2CErgonomicBedJourneySettings()
-    : await getB2BSofaJourneySettings();
-  const enrollment = isB2C
+    : isSofaB2C ? await getB2CSofaBedJourneySettings() : await getB2BSofaJourneySettings();
+  const enrollment = isErgonomicB2C
     ? await getB2CErgonomicBedJourneyEnrollment(input.lead.id).catch(() => null)
-    : await getJourneyEnrollment(input.lead.id).catch(() => null);
-  const journeyContext = isB2C
+    : isSofaB2C ? await getB2CSofaBedJourneyEnrollment(input.lead.id).catch(() => null) : await getJourneyEnrollment(input.lead.id).catch(() => null);
+  const journeyContext = isErgonomicB2C
     ? buildB2CErgonomicJourneyContext(input.lead, settings as B2CErgonomicBedJourneySettings)
-    : buildJourneyContext(input.lead, settings);
+    : isSofaB2C ? buildB2CSofaBedJourneyContext(input.lead, settings as B2CSofaBedJourneySettings) : buildJourneyContext(input.lead, settings);
   const context = {
     ...buildAutomationTestContext(input.lead, settings),
     ...journeyContext,
@@ -498,6 +510,7 @@ interface InboundSignal {
 async function findLatestUnreviewedInbound(
   lead: Lead,
   enrollment: JourneyEnrollmentRecord,
+  allowedChannels: JourneyChannel[] = ["zalo_personal", "zalo_oa"],
 ): Promise<InboundSignal | null> {
   const reviewed = await queryOne<{ last_inbound_at: string | null }>(
     `SELECT MAX(inbound_at) AS last_inbound_at FROM crm_journey_reply_reviews WHERE enrollment_id=$1`,
@@ -509,18 +522,18 @@ async function findLatestUnreviewedInbound(
     new Date(reviewed?.last_inbound_at || 0).getTime(),
   ));
   const baselineMs = baselineAt.getTime();
-  const personalInbound = await queryOne<{ msg_id: string; content: string; timestamp: string }>(
+  const personalInbound = allowedChannels.includes("zalo_personal") ? await queryOne<{ msg_id: string; content: string; timestamp: string }>(
     `SELECT m.msg_id,m.content,m.timestamp
      FROM zalo_inbox_messages_v2 m
      JOIN zalo_conversations_v2 c ON c.account_id=m.account_id AND c.thread_id=m.thread_id
      WHERE c.lead_id=$1 AND m.is_self=FALSE AND m.timestamp>$2
      ORDER BY m.timestamp DESC LIMIT 1`,
     [lead.id, baselineMs],
-  ).catch(() => null);
+  ).catch(() => null) : null;
 
   const phone = normalizePhone(lead.zaloPhone || lead.phone || "");
   let oaInbound: { id: string; content: string; created_at: string } | null = null;
-  if (phone) {
+  if (phone && allowedChannels.includes("zalo_oa")) {
     const phone84 = phone.startsWith("0") ? `84${phone.slice(1)}` : phone;
     oaInbound = await queryOne<{ id: string; content: string; created_at: string }>(
       `SELECT m.id,m.content,m.created_at FROM crm_zalo_messages m
@@ -558,7 +571,7 @@ async function scanJourneyReplies<TSettings extends B2BSofaJourneySettings>(
   for (const enrollment of enrollments) {
     const lead = await getLead(enrollment.leadId);
     if (!lead) continue;
-    const inbound = await findLatestUnreviewedInbound(lead, enrollment);
+    const inbound = await findLatestUnreviewedInbound(lead, enrollment, runtime.replyChannels);
     if (!inbound?.sourceId) continue;
     const analysis = await analyzeJourneyReply({
       message: inbound.message,
@@ -645,6 +658,13 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
     await pauseJourneyEnrollment(enrollment.id, stopping.pause);
     await deferJourneyAction(action.id, new Date(Date.now() + 24 * 60 * 60 * 1000), stopping.pause);
     return { status: "paused", message: stopping.pause };
+  }
+
+  if (runtime.requireAcceptedZaloFriendship && lead.zaloFriendship?.status !== "accepted") {
+    const reason = "Tạm dừng – mất kết nối Zalo";
+    await pauseJourneyEnrollment(enrollment.id, reason);
+    await deferJourneyAction(action.id, new Date(Date.now() + 24 * 60 * 60 * 1000), reason);
+    return { status: "paused", message: reason };
   }
 
   const nextBusinessWindow = nextJourneyBusinessWindow(new Date(), settings);

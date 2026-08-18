@@ -4,6 +4,7 @@ import { getAutomationConfigVersion, listAutomationConfigVersions, saveAutomatio
 import { saveAutomationContactPolicy, saveAutomationRules, saveAutoAssignConfig, saveSlaConfig } from "@/lib/crm-automation-store";
 import { saveB2BSofaJourneySettings } from "@/lib/crm-b2b-sofa-journey-store";
 import { saveB2CErgonomicBedJourneySettings } from "@/lib/crm-b2c-ergonomic-bed-journey-store";
+import { saveB2CSofaBedJourneySettings } from "@/lib/crm-b2c-sofa-bed-journey-store";
 import { logAudit, getClientIp } from "@/lib/audit-helper";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
   else if (selected.version.scope === "contact_policy") await saveAutomationContactPolicy(snapshot);
   else if (selected.version.scope === "b2b_sofa") await saveB2BSofaJourneySettings(snapshot);
   else if (selected.version.scope === "b2c_ergonomic") await saveB2CErgonomicBedJourneySettings(snapshot);
+  else if (selected.version.scope === "b2c_sofa") await saveB2CSofaBedJourneySettings(snapshot);
   const restored = await saveAutomationConfigVersion({ scope: selected.version.scope, snapshot, status: "published",
     note: body.action === 'publish' ? `Xuất bản từ bản nháp ${selected.version.version}` : `Khôi phục từ phiên bản ${selected.version.version}`, actorId: "admin", actorName: "Admin" });
   await logAudit({ action: "automation.version_restored", entityType: "automation", entityId: selected.version.scope,

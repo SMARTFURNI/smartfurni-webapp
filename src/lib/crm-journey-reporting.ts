@@ -17,6 +17,12 @@ import {
   DEFAULT_B2C_ERGONOMIC_BED_JOURNEY_SETTINGS,
   isEligibleForB2CErgonomicBedJourney,
 } from "@/lib/crm-b2c-ergonomic-bed-journey";
+import {
+  B2C_SOFA_BED_JOURNEY,
+  B2C_SOFA_BED_JOURNEY_CODE,
+  DEFAULT_B2C_SOFA_BED_JOURNEY_SETTINGS,
+  isEligibleForB2CSofaBedJourney,
+} from "@/lib/crm-b2c-sofa-bed-journey";
 import type {
   JourneyEnrollmentTimeline,
   JourneyReportChannelRow,
@@ -37,6 +43,7 @@ import type {
 const JOURNEY_NAMES: Record<string, string> = {
   [B2B_SOFA_JOURNEY_CODE]: B2B_SOFA_JOURNEY.name,
   [B2C_ERGONOMIC_BED_JOURNEY_CODE]: B2C_ERGONOMIC_BED_JOURNEY.name,
+  [B2C_SOFA_BED_JOURNEY_CODE]: B2C_SOFA_BED_JOURNEY.name,
 };
 
 const STEP_META = new Map<string, { title: string; objective: string }>(
@@ -45,6 +52,9 @@ const STEP_META = new Map<string, { title: string; objective: string }>(
     { title: step.title, objective: step.objective },
   ] as const), ...B2C_ERGONOMIC_BED_JOURNEY.steps.map(step => [
     `${B2C_ERGONOMIC_BED_JOURNEY_CODE}:${step.id}`,
+    { title: step.title, objective: step.objective },
+  ] as const), ...B2C_SOFA_BED_JOURNEY.steps.map(step => [
+    `${B2C_SOFA_BED_JOURNEY_CODE}:${step.id}`,
     { title: step.title, objective: step.objective },
   ] as const)],
 );
@@ -525,6 +535,8 @@ async function countEligibleNow(filters: JourneyReportFilters): Promise<number> 
       && isEligibleForB2BSofaJourney(lead, DEFAULT_B2B_SOFA_JOURNEY_SETTINGS).eligible) eligible.add(lead.id);
     if ((!filters.journeyCode || filters.journeyCode === B2C_ERGONOMIC_BED_JOURNEY_CODE)
       && isEligibleForB2CErgonomicBedJourney(lead, DEFAULT_B2C_ERGONOMIC_BED_JOURNEY_SETTINGS).eligible) eligible.add(lead.id);
+    if ((!filters.journeyCode || filters.journeyCode === B2C_SOFA_BED_JOURNEY_CODE)
+      && isEligibleForB2CSofaBedJourney(lead, DEFAULT_B2C_SOFA_BED_JOURNEY_SETTINGS).eligible) eligible.add(lead.id);
   }
   return eligible.size;
 }
@@ -986,6 +998,7 @@ export async function getJourneyWorkflowReport(
   const workflowOptions = Array.from(new Set([
     B2B_SOFA_JOURNEY_CODE,
     B2C_ERGONOMIC_BED_JOURNEY_CODE,
+    B2C_SOFA_BED_JOURNEY_CODE,
     ...optionRows.map(row => String(row.journey_code || "")).filter(Boolean),
   ]));
   const sourceOptions = Array.from(new Set(optionRows.map(row => String(row.source || "")).filter(Boolean))).sort();

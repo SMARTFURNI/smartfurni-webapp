@@ -18,7 +18,7 @@ interface OperationsData {
 
 const scopeLabels: Record<string, string> = {
   rules: "Quy tắc tự động", sla: "SLA", auto_assign: "Phân công", contact_policy: "Chính sách liên hệ",
-  b2b_sofa: "B2B Sofa 90 ngày", b2c_ergonomic: "Khách lẻ Giường 90 ngày",
+  b2b_sofa: "B2B Sofa 90 ngày", b2c_ergonomic: "Khách lẻ Giường 90 ngày", b2c_sofa: "Khách lẻ Sofa Giường 90 ngày",
 };
 
 function dateLabel(value: string | null) {

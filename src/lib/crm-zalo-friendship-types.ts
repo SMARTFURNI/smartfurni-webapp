@@ -7,6 +7,7 @@ export type ZaloFriendshipStatus =
   | "pending"
   | "retry_scheduled"
   | "accepted"
+  | "disconnected"
   | "rejected"
   | "stopped"
   | "failed";
@@ -55,6 +56,7 @@ export const ZALO_FRIENDSHIP_STATUS_LABELS: Record<ZaloFriendshipStatus, string>
   pending: "Đã gửi · Chờ chấp nhận",
   retry_scheduled: "Đã thu hồi · Chờ gửi lại",
   accepted: "Đã kết bạn",
+  disconnected: "Mất kết nối Zalo",
   rejected: "Đã từ chối",
   stopped: "Đã dừng",
   failed: "Gửi lỗi · Sẽ thử lại",

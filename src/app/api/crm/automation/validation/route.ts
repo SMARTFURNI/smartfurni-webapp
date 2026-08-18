@@ -31,6 +31,19 @@ import {
   saveB2CErgonomicBedJourneySettings,
 } from "@/lib/crm-b2c-ergonomic-bed-journey-store";
 import { runB2CErgonomicBedJourney } from "@/lib/crm-b2c-ergonomic-bed-journey-engine";
+import {
+  B2C_SOFA_BED_JOURNEY_CODE,
+  buildB2CSofaBedJourneyContext,
+  isEligibleForB2CSofaBedJourney,
+  b2cSofaBedJourneyDefinitionWithOverrides,
+  type B2CSofaBedJourneySettings,
+} from "@/lib/crm-b2c-sofa-bed-journey";
+import {
+  enrollLeadInB2CSofaBedJourney,
+  getB2CSofaBedJourneyDashboard,
+  saveB2CSofaBedJourneySettings,
+} from "@/lib/crm-b2c-sofa-bed-journey-store";
+import { runB2CSofaBedJourney } from "@/lib/crm-b2c-sofa-bed-journey-engine";
 import { getZaloMediaAssets } from "@/lib/zalo-media-library-store";
 import { getAllGatewayStatuses, initZaloGateway } from "@/lib/zalo-gateway";
 import { getZaloOAConfig } from "@/lib/zalo-oa-store";
@@ -38,17 +51,23 @@ import { buildWorkflowValidation } from "@/lib/crm-workflow-validation";
 
 export const dynamic = "force-dynamic";
 
-type WorkflowKey = "b2b_sofa" | "b2c_ergonomic";
+type WorkflowKey = "b2b_sofa" | "b2c_ergonomic" | "b2c_sofa";
 
 async function requireAdmin() {
   if (!(await getAdminSession())) throw new Error("UNAUTHORIZED");
 }
 
 function workflowKey(value: unknown): WorkflowKey {
-  return value === "b2c_ergonomic" ? "b2c_ergonomic" : "b2b_sofa";
+  return value === "b2c_ergonomic" ? "b2c_ergonomic" : value === "b2c_sofa" ? "b2c_sofa" : "b2b_sofa";
 }
 
 async function loadWorkflow(key: WorkflowKey) {
+  if (key === "b2c_sofa") {
+    const dashboard = await getB2CSofaBedJourneyDashboard();
+    return { key, code: B2C_SOFA_BED_JOURNEY_CODE, settings: dashboard.settings,
+      definition: b2cSofaBedJourneyDefinitionWithOverrides(dashboard.settings), stats: dashboard.stats,
+      recentEnrollments: dashboard.recentEnrollments, recentActions: dashboard.recentActions };
+  }
   if (key === "b2c_ergonomic") {
     const dashboard = await getB2CErgonomicBedJourneyDashboard();
     return {
@@ -98,12 +117,16 @@ async function validationPayload(key: WorkflowKey, leadId?: string, enrolledAtVa
     email: Boolean(lead?.email && /^\S+@\S+\.\S+$/.test(lead.email.trim())),
   };
   const context = lead
-    ? key === "b2c_ergonomic"
+    ? key === "b2c_sofa"
+      ? buildB2CSofaBedJourneyContext(lead, workflow.settings as B2CSofaBedJourneySettings)
+      : key === "b2c_ergonomic"
       ? buildB2CErgonomicJourneyContext(lead, workflow.settings as B2CErgonomicBedJourneySettings)
       : buildJourneyContext(lead, workflow.settings as B2BSofaJourneySettings)
     : undefined;
   const eligibility = lead
-    ? key === "b2c_ergonomic"
+    ? key === "b2c_sofa"
+      ? isEligibleForB2CSofaBedJourney(lead, workflow.settings as B2CSofaBedJourneySettings)
+      : key === "b2c_ergonomic"
       ? isEligibleForB2CErgonomicBedJourney(lead, workflow.settings as B2CErgonomicBedJourneySettings)
       : isEligibleForB2BSofaJourney(lead, workflow.settings as B2BSofaJourneySettings)
     : null;
@@ -239,7 +262,9 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-      const settings = key === "b2c_ergonomic"
+      const settings = key === "b2c_sofa"
+        ? await saveB2CSofaBedJourneySettings({ canaryMode: Boolean(body.enabled), canaryLeadIds: leadIds })
+        : key === "b2c_ergonomic"
         ? await saveB2CErgonomicBedJourneySettings({ canaryMode: Boolean(body.enabled), canaryLeadIds: leadIds })
         : await saveB2BSofaJourneySettings({ canaryMode: Boolean(body.enabled), canaryLeadIds: leadIds });
       return NextResponse.json({ ok: true, settings, validation: await validationPayload(key, leadIds[0]) });
@@ -263,6 +288,23 @@ export async function POST(req: NextRequest) {
           error: `Canary bị chặn cho ${blocked.lead?.name || blocked.lead?.id || "lead"}: ${reasons.join(" ")}`,
           validation: blocked,
         }, { status: 422 });
+      }
+      if (key === "b2c_sofa") {
+        const settings = await saveB2CSofaBedJourneySettings({ canaryMode: true, canaryLeadIds: leadIds });
+        const enrollmentResults = [];
+        for (const leadId of leadIds) {
+          const lead = await getLead(leadId);
+          if (!lead) { enrollmentResults.push({ leadId, enrolled: false, error: "Không tìm thấy lead." }); continue; }
+          try {
+            const result = await enrollLeadInB2CSofaBedJourney(lead, settings);
+            enrollmentResults.push({ leadId, enrolled: result.created, existing: !result.created });
+          } catch (error) {
+            enrollmentResults.push({ leadId, enrolled: false, error: error instanceof Error ? error.message : "Lead không đủ điều kiện." });
+          }
+        }
+        await makeCanaryDayZeroActionsDue(B2C_SOFA_BED_JOURNEY_CODE, leadIds);
+        const result = await runB2CSofaBedJourney(Math.max(3, leadIds.length * 3));
+        return NextResponse.json({ ok: true, enrollmentResults, result, validation: await validationPayload(key, leadIds[0]) });
       }
       if (key === "b2c_ergonomic") {
         const settings = await saveB2CErgonomicBedJourneySettings({ canaryMode: true, canaryLeadIds: leadIds });

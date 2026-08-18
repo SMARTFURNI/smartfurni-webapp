@@ -18,6 +18,12 @@ import {
   initB2BSofaJourneySchema,
 } from "@/lib/crm-b2b-sofa-journey-store";
 import { getB2CErgonomicBedJourneySettings } from "@/lib/crm-b2c-ergonomic-bed-journey-store";
+import {
+  B2C_SOFA_BED_JOURNEY_CODE,
+  b2cSofaBedJourneyDefinitionWithOverrides,
+  buildB2CSofaBedJourneyContext,
+} from "@/lib/crm-b2c-sofa-bed-journey";
+import { getB2CSofaBedJourneySettings } from "@/lib/crm-b2c-sofa-bed-journey-store";
 import { initAutomationExecutionSchema } from "@/lib/crm-automation-execution-store";
 import type {
   UpcomingAutomationChannel,
@@ -319,7 +325,7 @@ export async function getUpcomingAutomationReport(
   const untilIso = new Date(`${addDays(filters.to, 1)}T00:00:00+07:00`).toISOString();
 
   await Promise.all([initB2BSofaJourneySchema(), initAutomationExecutionSchema()]);
-  const [journeyRows, emailRows, zaloRows, b2bSettings, b2cSettings] = await Promise.all([
+  const [journeyRows, emailRows, zaloRows, b2bSettings, b2cSettings, b2cSofaSettings] = await Promise.all([
     query<JourneyRow>(
       `SELECT a.id,a.lead_id,a.step_id,a.day_offset,a.scheduled_at,a.next_attempt_at,
               a.status,a.primary_channel,a.fallback_channels,a.attempts,a.error,a.updated_at,
@@ -352,19 +358,22 @@ export async function getUpcomingAutomationReport(
     ),
     getB2BSofaJourneySettings(),
     getB2CErgonomicBedJourneySettings(),
+    getB2CSofaBedJourneySettings(),
   ]);
 
   const b2bDefinition = journeyDefinitionWithOverrides(b2bSettings);
   const b2cDefinition = b2cErgonomicJourneyDefinitionWithOverrides(b2cSettings);
+  const b2cSofaDefinition = b2cSofaBedJourneyDefinitionWithOverrides(b2cSofaSettings);
   const journeyItems: UpcomingAutomationItem[] = journeyRows.map(row => {
     const lead = baseLead(row.lead_data, { id: row.lead_id, name: "Khách hàng" });
     const isB2c = row.journey_code === B2C_ERGONOMIC_BED_JOURNEY_CODE;
-    const definition = isB2c ? b2cDefinition : b2bDefinition;
+    const isB2cSofa = row.journey_code === B2C_SOFA_BED_JOURNEY_CODE;
+    const definition = isB2c ? b2cDefinition : isB2cSofa ? b2cSofaDefinition : b2bDefinition;
     const step = definition.steps.find(item => item.id === row.step_id);
     const extra = stringRecord(row.enrollment_context);
     const context = isB2c
       ? buildB2CErgonomicJourneyContext(lead, b2cSettings, extra)
-      : buildJourneyContext(lead, b2bSettings, extra);
+      : isB2cSofa ? buildB2CSofaBedJourneyContext(lead, b2cSofaSettings, extra) : buildJourneyContext(lead, b2bSettings, extra);
     const selectedChannel = channel(row.primary_channel);
     const recipient = recipientFor(lead, selectedChannel);
     const missing = step ? missingRequiredContext(step, context) : ["step_definition"];

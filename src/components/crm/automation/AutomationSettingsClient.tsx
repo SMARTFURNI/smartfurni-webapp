@@ -648,7 +648,7 @@ function AutoAssignTab({ config, onChange, staff }: { config: AutoAssignConfig; 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "reports" | "operations" | "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "upcoming" | "history";
+type TabId = "reports" | "operations" | "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "b2c_sofa_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "upcoming" | "history";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("reports");
@@ -764,6 +764,7 @@ export default function AutomationSettingsClient() {
   const WORKFLOW_TABS = [
     { id: "b2b_sofa_journey" as TabId, label: "B2B Sofa 90 ngày", icon: Building2 },
     { id: "b2c_ergonomic_journey" as TabId, label: "Khách lẻ · Giường 90 ngày", icon: BedDouble },
+    { id: "b2c_sofa_journey" as TabId, label: "Khách lẻ · Sofa 90 ngày", icon: MessageCircle },
     { id: "zalo_workflow" as TabId, label: "Zalo Workflow", icon: MessageCircle },
     { id: "email_workflow" as TabId, label: "Email Workflow", icon: Mail },
   ];
@@ -907,6 +908,10 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "b2c_ergonomic_journey" && (
         <B2BSofaJourneyAutomation variant="b2c_ergonomic" />
+      )}
+
+      {activeTab === "b2c_sofa_journey" && (
+        <B2BSofaJourneyAutomation variant="b2c_sofa" />
       )}
 
       {activeTab === "reports" && (

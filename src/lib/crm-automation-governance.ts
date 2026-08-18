@@ -3,7 +3,7 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { query, queryOne } from "@/lib/db";
 
-export type AutomationConfigScope = "rules" | "sla" | "auto_assign" | "contact_policy" | "b2b_sofa" | "b2c_ergonomic";
+export type AutomationConfigScope = "rules" | "sla" | "auto_assign" | "contact_policy" | "b2b_sofa" | "b2c_ergonomic" | "b2c_sofa";
 export type AutomationVersionStatus = "draft" | "published" | "archived";
 
 export interface AutomationConfigVersion {

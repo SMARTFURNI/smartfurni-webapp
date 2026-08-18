@@ -198,6 +198,17 @@ async function addEvent(row: FriendshipRow, eventType: string, detail: Record<st
   );
 }
 
+async function pauseSofaJourneyForLostFriendship(leadId: string): Promise<void> {
+  const [{ B2C_SOFA_BED_JOURNEY_CODE }, store] = await Promise.all([
+    import("@/lib/crm-b2c-sofa-bed-journey"),
+    import("@/lib/crm-b2b-sofa-journey-store"),
+  ]);
+  const enrollment = await store.getJourneyEnrollmentForCode(B2C_SOFA_BED_JOURNEY_CODE, leadId);
+  if (enrollment?.status === "active") {
+    await store.pauseJourneyEnrollment(enrollment.id, "Tạm dừng – mất kết nối Zalo");
+  }
+}
+
 function vietnamMinutes(date: Date) {
   return date.getUTCHours() * 60 + date.getUTCMinutes() + 7 * 60;
 }
@@ -362,19 +373,40 @@ async function processRow(row: FriendshipRow, settings: ZaloFriendshipSettings) 
   }
   await updateRow(row.lead_id, { last_checked_at: new Date().toISOString() });
   if (current.status.isFriend) {
-    await updateRow(row.lead_id, { status: "accepted", accepted_at: new Date().toISOString(), last_error: null, next_action_at: null, claimed_at: null });
-    await addEvent(row, "accepted");
+    const newlyAccepted = row.status !== "accepted";
+    await updateRow(row.lead_id, {
+      status: "accepted",
+      accepted_at: row.accepted_at || new Date().toISOString(),
+      last_error: null,
+      next_action_at: new Date(Date.now() + settings.reconciliationMinutes * 60_000).toISOString(),
+      claimed_at: null,
+    });
+    if (newlyAccepted) await addEvent(row, "accepted");
     return "accepted";
   }
   if (current.status.isRequesting) {
     const accepted = await acceptZaloFriendRequest(uid, account.id);
     if (accepted.success) {
-      await updateRow(row.lead_id, { status: "accepted", accepted_at: new Date().toISOString(), last_error: null, next_action_at: null, claimed_at: null });
+      await updateRow(row.lead_id, { status: "accepted", accepted_at: new Date().toISOString(), last_error: null, next_action_at: new Date(Date.now() + settings.reconciliationMinutes * 60_000).toISOString(), claimed_at: null });
       await addEvent(row, "incoming_accepted");
       return "accepted";
     }
     await updateRow(row.lead_id, { status: "failed", last_error: accepted.error || "Không chấp nhận được lời mời đến", next_action_at: new Date(Date.now() + 30 * 60_000).toISOString(), claimed_at: null });
     return "failed";
+  }
+
+  if (row.status === "accepted") {
+    await updateRow(row.lead_id, {
+      status: "disconnected",
+      last_error: "Khách hàng không còn trong danh sách bạn bè Zalo",
+      next_action_at: null,
+      claimed_at: null,
+    });
+    await addEvent(row, "friendship_disconnected");
+    await pauseSofaJourneyForLostFriendship(row.lead_id).catch(error =>
+      console.error("[ZaloFriendship] Không tạm dừng được workflow sau khi mất kết nối:", error),
+    );
+    return "disconnected";
   }
 
   if (row.status === "pending") {
@@ -448,7 +480,7 @@ export async function runZaloFriendshipAutomation(limit = 20) {
     `WITH due AS (
        SELECT lead_id, status FROM crm_zalo_friendships
        WHERE auto_enabled=TRUE
-         AND status IN ('queued','waiting_data','waiting_account','not_found','pending','retry_scheduled','failed','processing')
+         AND status IN ('queued','waiting_data','waiting_account','not_found','pending','retry_scheduled','failed','accepted','processing')
          AND (next_action_at IS NULL OR next_action_at <= NOW())
          AND (status <> 'processing' OR claimed_at < NOW() - INTERVAL '15 minutes')
        ORDER BY next_action_at NULLS FIRST, created_at ASC
@@ -567,6 +599,12 @@ export async function recordZaloFriendshipGatewayEvent(input: {
     } else if (input.type === "incoming" && row.auto_enabled && row.status !== "stopped") {
       await updateRow(row.lead_id, { status: "queued", next_action_at: new Date().toISOString(), last_error: null, claimed_at: null });
       await addEvent(row, "incoming_request_realtime");
+    } else if (row.status === "accepted") {
+      await updateRow(row.lead_id, { status: "disconnected", next_action_at: null, last_checked_at: new Date().toISOString(), last_error: "Khách hàng đã hủy kết bạn Zalo", claimed_at: null });
+      await addEvent(row, "friendship_disconnected_realtime");
+      await pauseSofaJourneyForLostFriendship(row.lead_id).catch(error =>
+        console.error("[ZaloFriendship] Không tạm dừng được workflow sau sự kiện mất kết nối:", error),
+      );
     } else if (row.status === "pending") {
       await updateRow(row.lead_id, { status: "rejected", next_action_at: null, last_checked_at: new Date().toISOString(), last_error: "Khách hàng đã từ chối lời mời", claimed_at: null });
       await addEvent(row, "rejected_realtime");

@@ -13,6 +13,7 @@ import type {
   JourneyStepOverride,
 } from "@/lib/crm-b2b-sofa-journey";
 import { B2C_ERGONOMIC_BED_JOURNEY_CODE } from "@/lib/crm-b2c-ergonomic-bed-journey";
+import { B2C_SOFA_BED_JOURNEY_CODE } from "@/lib/crm-b2c-sofa-bed-journey";
 import AutomationMediaField from "./AutomationMediaField";
 import AutomationTemplateTest from "./AutomationTemplateTest";
 
@@ -109,8 +110,17 @@ const RETAIL_CONTEXT_FIELDS = [
   ["objection_topic", "Vướng mắc cần xử lý"],
 ] as const;
 
+const RETAIL_SOFA_CONTEXT_FIELDS = [
+  ["use_space", "Không gian dự kiến đặt"],
+  ["available_dimensions", "Kích thước vị trí đặt"],
+  ["usage_frequency", "Tần suất sử dụng để ngủ"],
+  ["material_preference", "Ưu tiên chất liệu / vệ sinh"],
+  ["primary_priority", "Tiêu chí ưu tiên chính"],
+  ["purchase_timing", "Thời điểm dự kiến mua"],
+] as const;
+
 interface JourneyAutomationProps {
-  variant?: "b2b" | "b2c_ergonomic";
+  variant?: "b2b" | "b2c_ergonomic" | "b2c_sofa";
 }
 
 interface LeadOption { id: string; name: string; company?: string; phone?: string; email?: string; blocked?: boolean }
@@ -133,12 +143,14 @@ function statusLabel(status: string): string {
 }
 
 export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAutomationProps) {
-  const isRetailJourney = variant === "b2c_ergonomic";
-  const endpoint = isRetailJourney
+  const isErgonomicRetailJourney = variant === "b2c_ergonomic";
+  const isSofaRetailJourney = variant === "b2c_sofa";
+  const isRetailJourney = isErgonomicRetailJourney || isSofaRetailJourney;
+  const endpoint = isErgonomicRetailJourney
     ? "/api/crm/automation/b2c-ergonomic-bed-journey"
-    : "/api/crm/automation/b2b-sofa-journey";
-  const journeyCode = isRetailJourney ? B2C_ERGONOMIC_BED_JOURNEY_CODE : undefined;
-  const contextFields = isRetailJourney ? RETAIL_CONTEXT_FIELDS : PROJECT_CONTEXT_FIELDS;
+    : isSofaRetailJourney ? "/api/crm/automation/b2c-sofa-bed-journey" : "/api/crm/automation/b2b-sofa-journey";
+  const journeyCode = isErgonomicRetailJourney ? B2C_ERGONOMIC_BED_JOURNEY_CODE : isSofaRetailJourney ? B2C_SOFA_BED_JOURNEY_CODE : undefined;
+  const contextFields = isErgonomicRetailJourney ? RETAIL_CONTEXT_FIELDS : isSofaRetailJourney ? RETAIL_SOFA_CONTEXT_FIELDS : PROJECT_CONTEXT_FIELDS;
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [settings, setSettings] = useState<B2BSofaJourneySettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -337,7 +349,7 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
   }
 
   const demoStepHasAttachedMedia = Boolean(
-    data.definition.steps.find(step => ["D5_DEMO", "D4_DEMO_MEDIA"].includes(step.id))?.mediaAssetIds?.length,
+    data.definition.steps.find(step => ["D5_DEMO", "D4_DEMO_MEDIA", "D4_DEMO"].includes(step.id))?.mediaAssetIds?.length,
   );
   const missingAssets = [
     !settings.approvedDemoVideoUrl && !demoStepHasAttachedMedia && "video demo đã duyệt",
@@ -406,7 +418,7 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
             { key: "autoEnroll" as const, label: "Tự động thêm lead đủ điều kiện" },
             { key: "autoEnrollExisting" as const, label: "Cho phép thêm lead đã có trước khi bật" },
             isRetailJourney
-              ? { key: "requireRetailSignal" as const, label: "Bắt buộc là khách lẻ quan tâm Giường công thái học" }
+              ? { key: "requireRetailSignal" as const, label: isSofaRetailJourney ? "Bắt buộc là khách lẻ quan tâm Sofa Giường" : "Bắt buộc là khách lẻ quan tâm Giường công thái học" }
               : { key: "requireHospitalitySignal" as const, label: "Bắt buộc có tín hiệu homestay/BnB/phòng trọ" },
           ].map(item => (
             <label key={item.key} className="flex items-center justify-between gap-3 text-sm text-gray-700">
@@ -451,7 +463,9 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
             <h3 className="text-sm font-bold text-gray-900">Tài liệu đã duyệt</h3>
             <p className="text-xs text-gray-500 mt-1">Không có URL thì bước liên quan sẽ chờ, không tự bịa nội dung.</p>
           </div>
-          {(isRetailJourney ? [
+          {(isSofaRetailJourney ? [
+            ["approvedDemoVideoUrl", "Link video Sofa Giường đã duyệt"],
+          ] : isRetailJourney ? [
             ["surveyFormUrl", "Link hướng dẫn gửi ảnh/kích thước"],
             ["approvedDemoVideoUrl", "Link video trải nghiệm đã duyệt"],
             ["comparisonPackUrl", "Link so sánh nguyên bộ/khung nâng hạ"],
@@ -506,8 +520,8 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
       <div className="p-5 rounded-2xl bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-bold text-gray-900">{isRetailJourney ? "Chuỗi lợi ích 90 ngày · tập trung 30 ngày đầu" : "Chuỗi nội dung 90 ngày"}</h3>
-            <p className="text-xs text-gray-500 mt-1">Mỗi bước chỉ được ghi nhận gửi thành công trên một kênh; kênh dự phòng bị hủy khi đã gửi thành công.</p>
+            <h3 className="text-sm font-bold text-gray-900">{isSofaRetailJourney ? "Chuỗi Zalo cá nhân 90 ngày · tập trung 14 ngày đầu" : isRetailJourney ? "Chuỗi lợi ích 90 ngày · tập trung 30 ngày đầu" : "Chuỗi nội dung 90 ngày"}</h3>
+            <p className="text-xs text-gray-500 mt-1">{isSofaRetailJourney ? "Mỗi bước chỉ gửi qua Zalo cá nhân; không tự chuyển sang Zalo OA hoặc Email." : "Mỗi bước chỉ được ghi nhận gửi thành công trên một kênh; kênh dự phòng bị hủy khi đã gửi thành công."}</p>
           </div>
           <a href="https://www.smartfurni.com.vn/contact" target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">Thông tin liên hệ chuẩn <ExternalLink size={11} /></a>
@@ -553,16 +567,16 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
                 </div>
               </summary>
               <div className="border-t border-gray-200 p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 bg-white">
-                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-7 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div className={`lg:col-span-2 grid grid-cols-2 ${isSofaRetailJourney ? "md:grid-cols-5" : "md:grid-cols-7"} gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3`}>
                   <label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={editableStep.enabled} onChange={event => updateStep(step, { enabled: event.target.checked })} className="accent-[#0068ff]" />Bật bước</label>
                   <label className="text-[10px] text-gray-500">Ngày<input type="number" min={0} max={365} value={editableStep.day} onChange={event => updateStep(step, { day: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs" /></label>
                   <label className="text-[10px] text-gray-500">Giờ<input type="number" min={0} max={23} value={editableStep.sendHour} onChange={event => updateStep(step, { sendHour: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs" /></label>
                   <label className="text-[10px] text-gray-500">Phút<input type="number" min={0} max={59} value={editableStep.sendMinute} onChange={event => updateStep(step, { sendMinute: Number(event.target.value) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs" /></label>
-                  <label className="text-[10px] text-gray-500">Kênh chính<select value={editableStep.primaryChannel} onChange={event => updateStep(step, { primaryChannel: event.target.value as JourneyChannel })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs">{Object.entries(CHANNEL_LABELS).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <label className="text-[10px] text-gray-500">Dự phòng 1<select value={editableStep.fallbackChannels[0] || ""} onChange={event => updateStep(step, { fallbackChannels: event.target.value ? [event.target.value as JourneyChannel, ...editableStep.fallbackChannels.slice(1)] : editableStep.fallbackChannels.slice(1) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs"><option value="">Không dùng</option>{Object.entries(CHANNEL_LABELS).filter(([value]) => value !== editableStep.primaryChannel).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                  <label className="text-[10px] text-gray-500">Dự phòng 2<select value={editableStep.fallbackChannels[1] || ""} onChange={event => updateStep(step, { fallbackChannels: event.target.value ? [editableStep.fallbackChannels[0], event.target.value as JourneyChannel].filter(Boolean) as JourneyChannel[] : editableStep.fallbackChannels.slice(0, 1) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs"><option value="">Không dùng</option>{Object.entries(CHANNEL_LABELS).filter(([value]) => value !== editableStep.primaryChannel && value !== editableStep.fallbackChannels[0]).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  <label className="text-[10px] text-gray-500">Kênh chính<select disabled={isSofaRetailJourney} value={editableStep.primaryChannel} onChange={event => updateStep(step, { primaryChannel: event.target.value as JourneyChannel })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs disabled:bg-slate-100">{Object.entries(CHANNEL_LABELS).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  {!isSofaRetailJourney && <><label className="text-[10px] text-gray-500">Dự phòng 1<select value={editableStep.fallbackChannels[0] || ""} onChange={event => updateStep(step, { fallbackChannels: event.target.value ? [event.target.value as JourneyChannel, ...editableStep.fallbackChannels.slice(1)] : editableStep.fallbackChannels.slice(1) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs"><option value="">Không dùng</option>{Object.entries(CHANNEL_LABELS).filter(([value]) => value !== editableStep.primaryChannel).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                  <label className="text-[10px] text-gray-500">Dự phòng 2<select value={editableStep.fallbackChannels[1] || ""} onChange={event => updateStep(step, { fallbackChannels: event.target.value ? [editableStep.fallbackChannels[0], event.target.value as JourneyChannel].filter(Boolean) as JourneyChannel[] : editableStep.fallbackChannels.slice(0, 1) })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs"><option value="">Không dùng</option>{Object.entries(CHANNEL_LABELS).filter(([value]) => value !== editableStep.primaryChannel && value !== editableStep.fallbackChannels[0]).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label></>}
                 </div>
-                <div className="min-w-0">
+                <div className={`min-w-0 ${isSofaRetailJourney ? "lg:col-span-2" : ""}`}>
                   <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 mb-2"><MessageCircle size={13} /> Nội dung Zalo · có thể chỉnh sửa</div>
                   <textarea
                     value={editableStep.zaloBody}
@@ -579,7 +593,7 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
                     journeyCode={journeyCode}
                   />
                 </div>
-                <div className="min-w-0">
+                {!isSofaRetailJourney && <div className="min-w-0">
                   <div className="flex items-center gap-2 text-xs font-semibold text-violet-700 mb-2"><Mail size={13} /> Nội dung Email · có thể chỉnh sửa</div>
                   <label className="mb-2 block text-[10px] font-semibold text-gray-500">Tiêu đề email
                     <input
@@ -595,13 +609,13 @@ export default function B2BSofaJourneyAutomation({ variant = "b2b" }: JourneyAut
                     className="w-full resize-y rounded-xl border border-violet-200 bg-violet-50/40 p-3 font-sans text-xs leading-5 text-gray-700 outline-none focus:ring-2 focus:ring-violet-200"
                   />
                   <AutomationTemplateTest channel="email" subject={editableStep.emailSubject} body={editableStep.emailBody} mediaAssetIds={editableStep.mediaAssetIds} requiredVariables={step.requiredContext} journeyCode={journeyCode} emailFromName={isRetailJourney ? "SmartFurni" : "SmartFurni B2B"} />
-                </div>
+                </div>}
                 <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <AutomationMediaField
                     assetIds={editableStep.mediaAssetIds}
                     onChange={mediaAssetIds => updateStep(step, { mediaAssetIds })}
                   />
-                  <p className="mt-2 text-[10px] text-slate-500">Media đã chọn được dùng cho cả Zalo và Email của bước này. Khi fallback kênh, hệ thống giữ nguyên bộ media.</p>
+                  <p className="mt-2 text-[10px] text-slate-500">{isSofaRetailJourney ? "Media chỉ được gửi qua Zalo cá nhân của bước này." : "Media đã chọn được dùng cho cả Zalo và Email của bước này. Khi fallback kênh, hệ thống giữ nguyên bộ media."}</p>
                 </div>
                 {step.requiredContext?.length ? (
                   <div className="lg:col-span-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
