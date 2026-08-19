@@ -61,6 +61,19 @@ describe("Zalo Inbox durable sync", () => {
     expect(gateway).toContain("await Promise.all([");
   });
 
+  it("reuses media-library objects instead of duplicating them in Railway", () => {
+    const gateway = source("src/lib/zalo-gateway.ts");
+    const librarySend = source("src/app/api/crm/zalo-inbox/media-library/send/route.ts");
+
+    expect(librarySend).toContain("stableUrl: asset.url");
+    expect(librarySend).toContain("skipMirror: true");
+    expect(librarySend).toContain("media-library/thumbnail?id=");
+    expect(gateway).toContain('if (!params.skipMirror && attachType === "video"');
+    expect(gateway).toContain("url: params.stableUrl || persistentUrl");
+    expect(gateway).toContain("hasStableStoredAttachments");
+    expect(gateway).toContain("Không mirror được media gửi ngoài CRM");
+  });
+
   it("keeps a local attachment preview until the durable URL arrives", () => {
     const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
 

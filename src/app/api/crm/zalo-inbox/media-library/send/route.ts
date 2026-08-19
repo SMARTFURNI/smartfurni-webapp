@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
           height: asset.height || undefined,
           duration: asset.durationMs ? asset.durationMs / 1000 : undefined,
           stableUrl: asset.url,
-          stableThumb: asset.mediaKind === "file" ? "" : asset.url,
+          stableThumb: asset.mediaKind === "file"
+            ? ""
+            : `/api/crm/zalo-inbox/media-library/thumbnail?id=${encodeURIComponent(asset.id)}`,
           skipMirror: true,
         });
         if (!result.success) throw new Error(result.error || "Zalo từ chối gửi file");

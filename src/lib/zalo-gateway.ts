@@ -13,6 +13,7 @@ import { query, queryOne } from "./db";
 import { upsertConversation, incrementUnreadCount } from "./zalo-inbox-store";
 import {
   ensureCanonicalZaloMessageSchema,
+  getCanonicalZaloMessage,
   upsertCanonicalZaloMessage,
 } from "./zalo-inbox-message-store";
 import {
@@ -330,6 +331,25 @@ export async function saveMessage(msg: ZaloMessage & { accountId: string; sender
   });
 }
 
+function parseStoredAttachments(value: string | null | undefined): ZaloAttachment[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed as ZaloAttachment[] : [];
+  } catch {
+    return [];
+  }
+}
+
+function isStableStoredAttachment(attachment: ZaloAttachment): boolean {
+  return attachment.url.startsWith("/api/media/")
+    || attachment.url.startsWith("/api/crm/zalo-inbox/media-library/");
+}
+
+function hasStableStoredAttachments(attachments: ZaloAttachment[]): boolean {
+  return attachments.length > 0 && attachments.every(isStableStoredAttachment);
+}
+
 // ─── Message Processing ───────────────────────────────────────────────────────
 
 function parseAttachments(data: Record<string, unknown>): ZaloAttachment[] {
@@ -616,9 +636,21 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
       || ((message.data as any)?.params?.avt as string)
       || ((message.data as any)?.params?.avatar as string)
       || null;
+    // Khi Zalo phát lại event của chính tin vừa gửi từ thư viện, giữ URL media
+    // đã có trong PostgreSQL. Nếu ghi đè bằng URL CDN Zalo, bước mirror phía
+    // dưới sẽ tạo thêm một object không cần thiết trong Railway Bucket.
+    let messageToPersist = processed;
+    if (processed.isSelf && processed.attachments.length > 0) {
+      const existing = await getCanonicalZaloMessage(processed.msgId, runtime.accountId);
+      const existingAttachments = parseStoredAttachments(existing?.attachments);
+      if (hasStableStoredAttachments(existingAttachments)) {
+        messageToPersist = { ...processed, attachments: existingAttachments };
+      }
+    }
+
     // PostgreSQL là nguồn dữ liệu chuẩn. Chỉ cập nhật conversation/SSE sau
     // khi upsert tin nhắn thành công để tránh trạng thái "thấy rồi lại mất".
-    await saveMessage({ ...processed, accountId: runtime.accountId, threadId, senderName: senderName || undefined });
+    await saveMessage({ ...messageToPersist, accountId: runtime.accountId, threadId, senderName: senderName || undefined });
     try {
       // Chỉ cập nhật displayName khi có tên thật (không phải ID số thuần)
       const isNumericId = /^\d{8,}$/.test(senderName);
@@ -633,8 +665,8 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
         zaloUserId: threadId,
         displayName: displayNameToSave,
         avatarUrl: senderAvatar,
-        lastMessage: processed.content || "[Hình ảnh]",
-        lastMessageAt: processed.timestamp,
+        lastMessage: messageToPersist.content || "[Hình ảnh]",
+        lastMessageAt: messageToPersist.timestamp,
       });
       if (!processed.isSelf && !options.historical) {
         await incrementUnreadCount(threadId, runtime.accountId);
@@ -642,7 +674,7 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
     } catch (err) {
       console.error("[ZaloGateway] upsertConversation error:", err);
     }
-    if (!options.historical) broadcastSSE("message", { ...processed, threadId }, runtime.accountId);
+    if (!options.historical) broadcastSSE("message", { ...messageToPersist, threadId }, runtime.accountId);
 
     if (!processed.isSelf && !options.historical) {
       void notifyInboundZaloMessage({
@@ -651,30 +683,48 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
         conversationId: threadId,
         senderName,
         content: processed.content,
-        attachments: processed.attachments,
+        attachments: messageToPersist.attachments,
       }).catch((error) => {
         console.error("[ZaloGateway] Không gửi được PWA cho tin nhắn đến:", error);
       });
     }
 
-    // CDN của Zalo dùng URL có thể hết hạn hoặc yêu cầu phiên Zalo Web.
-    // Lưu bản gốc trước để không chặn text, sau đó mirror media vào Railway
-    // Bucket và upsert cùng msg_id. SSE lần hai cập nhật đúng message cũ.
-    if (processed.attachments.length > 0) {
+    const mirrorAndPersist = async (sourceMessage: ZaloMessage) => {
+      // Tác vụ gửi trong CRM có thể hoàn tất lưu URL thư viện ngay sau event
+      // realtime. Kiểm tra lại trước khi tải CDN Zalo để loại bỏ race condition.
+      if (sourceMessage.isSelf) {
+        const current = await getCanonicalZaloMessage(sourceMessage.msgId, runtime.accountId);
+        const currentAttachments = parseStoredAttachments(current?.attachments);
+        if (hasStableStoredAttachments(currentAttachments)) return;
+      }
       const mirroredAttachments = await mirrorIncomingAttachments(
         runtime.accountId,
         threadId,
-        processed.msgId,
-        processed.attachments,
+        sourceMessage.msgId,
+        sourceMessage.attachments,
       );
       const changed = mirroredAttachments.some((attachment, index) =>
-        attachment.url !== processed.attachments[index]?.url
-        || attachment.thumb !== processed.attachments[index]?.thumb
+        attachment.url !== sourceMessage.attachments[index]?.url
+        || attachment.thumb !== sourceMessage.attachments[index]?.thumb
       );
-      if (changed) {
-        const stableMessage = { ...processed, attachments: mirroredAttachments };
-        await saveMessage({ ...stableMessage, accountId: runtime.accountId, threadId, senderName: senderName || undefined });
-        if (!options.historical) broadcastSSE("message", { ...stableMessage, threadId }, runtime.accountId);
+      if (!changed) return;
+      const stableMessage = { ...sourceMessage, attachments: mirroredAttachments };
+      await saveMessage({ ...stableMessage, accountId: runtime.accountId, threadId, senderName: senderName || undefined });
+      if (!options.historical) broadcastSSE("message", { ...stableMessage, threadId }, runtime.accountId);
+    };
+
+    // CDN của Zalo dùng URL có thể hết hạn hoặc yêu cầu phiên Zalo Web.
+    // Media đến vẫn mirror ngay. Event tin gửi đi được trì hoãn ngắn để luồng
+    // gửi từ thư viện kịp ghi URL gốc và không nhân đôi dung lượng Railway.
+    if (messageToPersist.attachments.length > 0 && !hasStableStoredAttachments(messageToPersist.attachments)) {
+      if (messageToPersist.isSelf && !options.historical) {
+        setTimeout(() => {
+          void mirrorAndPersist(messageToPersist).catch((error) => {
+            console.error("[ZaloGateway] Không mirror được media gửi ngoài CRM:", error);
+          });
+        }, 1_500);
+      } else {
+        await mirrorAndPersist(messageToPersist);
       }
     }
   };
@@ -1340,7 +1390,7 @@ export async function sendZaloAttachment(params: {
     // URL download của Zalo có Content-Disposition: attachment nên một số
     // trình duyệt không phát được trong <video>. Giữ bản MP4 H.264/AAC đã
     // chuẩn hóa và thumbnail JPEG riêng trong Bucket để CRM phát ổn định.
-    if (attachType === "video" && normalizedVideo && isRailwayBucketConfigured()) {
+    if (!params.skipMirror && attachType === "video" && normalizedVideo && isRailwayBucketConfigured()) {
       try {
         const baseKey = `zalo-inbox/${sanitizeMediaSegment(params.conversationId)}/${sentAt}-${sanitizeMediaSegment(msgId)}`;
         const [storedVideo, storedThumbnail] = await Promise.all([
@@ -1383,8 +1433,8 @@ export async function sendZaloAttachment(params: {
       type: attachType,
       // Video native đã có URL bền vững trước khi gửi; ảnh/file tiếp tục dùng
       // blob preview trong lúc tác vụ mirror chạy nền.
-      url: attachType === "video" ? persistentUrl : params.stableUrl || persistentUrl,
-      thumb: attachType === "video" ? persistentThumb : params.stableThumb ?? persistentThumb,
+      url: params.stableUrl || persistentUrl,
+      thumb: params.stableThumb ?? persistentThumb,
       width,
       height,
       fileName: sentFileName,

@@ -222,6 +222,20 @@ export async function upsertCanonicalZaloMessage(
   return row;
 }
 
+export async function getCanonicalZaloMessage(
+  msgId: string,
+  accountId: string,
+): Promise<CanonicalZaloMessageRow | null> {
+  await ensureCanonicalZaloMessageSchema();
+  return queryOne<CanonicalZaloMessageRow>(
+    `SELECT account_id, msg_id, thread_id, from_id, to_id, sender_name, content, attachments,
+            msg_type, is_self, timestamp, created_at, updated_at
+     FROM zalo_inbox_messages_v2
+     WHERE account_id = $1 AND msg_id = $2`,
+    [accountId, msgId],
+  );
+}
+
 export async function getRecentCanonicalZaloMessages(
   threadId: string,
   limit = 100,
