@@ -6,6 +6,7 @@ import CrmSidebar from "@/components/crm/CrmSidebar";
 import DataPoolNotification from "@/components/crm/DataPoolNotification";
 import CrmPushNotifications from "@/components/crm/CrmPushNotifications";
 import ItySoftphone from "@/components/crm/ItySoftphone";
+import ZaloConnectionAlert from "@/components/crm/ZaloConnectionAlert";
 import PwaDocumentConfig from "@/components/PwaDocumentConfig";
 import type { Metadata, Viewport } from "next";
 import "./facebook-group-marketing.css";
@@ -281,6 +282,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         {/* Real-time notification khi có lead mới vào Data Pool */}
         <DataPoolNotification />
         <CrmPushNotifications staffName={staffName || (session.isAdmin ? "Quản trị viên" : "Nhân viên")} />
+        <ZaloConnectionAlert isAdmin={session.isAdmin} />
         {/* ITY Softphone — floating widget gọi điện trực tiếp trên CRM */}
         <ItySoftphone />
       </div>

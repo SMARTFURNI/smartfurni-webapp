@@ -27,6 +27,11 @@ import {
   getZaloMediaMaxBytes,
 } from "./zalo-media-policy";
 import { notifyInboundZaloMessage } from "./zalo-inbox-push";
+import {
+  notifyZaloAccountDisconnected,
+  notifyZaloFriendEvent,
+  resolveZaloAccountDisconnectAlert,
+} from "./zalo-inbox-alerts";
 import { normalizeVideoForZalo, type NormalizedZaloVideo } from "./zalo-video-normalizer";
 import {
   deleteZaloAccount,
@@ -104,6 +109,7 @@ interface ZaloGatewayRuntime {
   avatar: string;
   listenerRetrying: boolean;
   reconnectTimer: ReturnType<typeof setTimeout> | null;
+  manualDisconnecting: boolean;
 }
 
 // ─── SSE Event Broadcasting ───────────────────────────────────────────────────
@@ -165,6 +171,8 @@ export function clearIncomingFriendRequest(fromUid: string, accountId?: string) 
 // ─── Gateway State ────────────────────────────────────────────────────────────
 
 const gatewayRuntimes = new Map<string, ZaloGatewayRuntime>();
+const disconnectAlertTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const DISCONNECT_ALERT_GRACE_MS = 20_000;
 let defaultAccountId = "";
 // Cầu tương thích tạm thời cho các tính năng phụ chưa truyền accountId (nhóm,
 // nhãn, catalogue). Luồng hội thoại/gửi tin bên dưới luôn chọn runtime tường minh.
@@ -213,6 +221,73 @@ function syncDefaultCompatibilityRuntime(): void {
   currentUserId = runtime?.userId || "";
   currentUserDisplayName = runtime?.displayName || "";
   listenerRetrying = Boolean(runtime?.listenerRetrying);
+}
+
+function friendEventTimestamp(data: Record<string, unknown>): number {
+  for (const key of ["timestamp", "time", "ts", "eventTime"]) {
+    const raw = Number(data[key]);
+    if (!Number.isFinite(raw) || raw <= 0) continue;
+    return raw < 10_000_000_000 ? raw * 1000 : raw;
+  }
+  return Date.now();
+}
+
+function friendDisplayName(data: Record<string, unknown>, fallback: string): string {
+  for (const key of ["displayName", "display_name", "zaloName", "zalo_name", "dName", "name", "fromName"]) {
+    const value = data[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return fallback;
+}
+
+function cancelDisconnectAlert(accountId: string) {
+  const timer = disconnectAlertTimers.get(accountId);
+  if (timer) clearTimeout(timer);
+  disconnectAlertTimers.delete(accountId);
+}
+
+function markConnectionRestored(runtime: ZaloGatewayRuntime) {
+  runtime.manualDisconnecting = false;
+  cancelDisconnectAlert(runtime.accountId);
+  void resolveZaloAccountDisconnectAlert(runtime.accountId).catch(error => {
+    console.error(`[ZaloGateway:${runtime.accountId}] Không đóng được cảnh báo mất kết nối:`, error);
+  });
+  broadcastSSE("zalo_connection_restored", {
+    accountName: runtime.displayName,
+    restoredAt: new Date().toISOString(),
+  }, runtime.accountId);
+}
+
+function scheduleDisconnectAlert(input: {
+  accountId: string;
+  accountName?: string;
+  reason?: unknown;
+  runtime?: ZaloGatewayRuntime;
+}) {
+  if (input.runtime?.manualDisconnecting || disconnectAlertTimers.has(input.accountId)) return;
+  const reason = typeof input.reason === "string" ? input.reason : String(input.reason || "Phiên Zalo không còn phản hồi");
+  const disconnectedAt = new Date();
+  const timer = setTimeout(() => {
+    disconnectAlertTimers.delete(input.accountId);
+    const current = gatewayRuntimes.get(input.accountId);
+    if (current?.isConnected || current?.manualDisconnecting) return;
+    void notifyZaloAccountDisconnected({
+      accountId: input.accountId,
+      accountName: input.accountName || current?.displayName || input.accountId,
+      reason,
+      disconnectedAt,
+    }).then(result => {
+      if (result.deduplicated) return;
+      broadcastSSE("zalo_connection_alert", {
+        accountName: input.accountName || current?.displayName || input.accountId,
+        reason,
+        disconnectedAt: disconnectedAt.toISOString(),
+      }, input.accountId);
+    }).catch(error => {
+      console.error(`[ZaloGateway:${input.accountId}] Không gửi được cảnh báo mất kết nối:`, error);
+    });
+  }, DISCONNECT_ALERT_GRACE_MS);
+  disconnectAlertTimers.set(input.accountId, timer);
 }
 
 export function getZaloApi(accountId?: string) {
@@ -755,6 +830,7 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
   apiObj.listener.on("connected", () => {
     runtime.isConnected = true;
     runtime.listenerRetrying = false;
+    markConnectionRestored(runtime);
     broadcastSSE("connected", { userId: runtime.userId, displayName: runtime.displayName }, runtime.accountId);
     try {
       apiObj.listener.requestOldMessages(ThreadType?.User ?? 0, null);
@@ -767,7 +843,9 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
   apiObj.listener.on("friend_event", async (event: Record<string, unknown>) => {
     try {
       const eventType = (event.type as number);
-      const eventData = event.data as Record<string, unknown>;
+      const eventData = event.data && typeof event.data === "object"
+        ? event.data as Record<string, unknown>
+        : {};
       const isSelf = event.isSelf as boolean;
 
       // FriendEventType.REQUEST = 2
@@ -777,20 +855,26 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
         const toUid = (eventData.toUid as string) || "";
         const message = (eventData.message as string) || "";
         if (fromUid) {
+          const timestamp = friendEventTimestamp(eventData);
           const req: FriendRequest = {
             fromUid,
             toUid,
             message,
-            timestamp: Date.now(),
+            timestamp,
+            displayName: friendDisplayName(eventData, fromUid),
+            avatar: typeof eventData.avatar === "string" ? eventData.avatar : undefined,
           };
-          // Thử lấy thông tin user
-          try {
-            const api2 = runtime.api as { findUser: (phone: string) => Promise<{ display_name?: string; zalo_name?: string; avatar?: string; uid?: string }> };
-            // Không có phone, dùng uid để tìm nếu có thể
-            req.displayName = fromUid;
-          } catch { /* ignore */ }
           incomingFriendRequests.set(`${runtime.accountId}:${fromUid}`, req);
           broadcastSSE("friend_request", { type: "incoming", request: req }, runtime.accountId);
+          void notifyZaloFriendEvent({
+            kind: "incoming_request",
+            accountId: runtime.accountId,
+            accountName: runtime.displayName,
+            userId: fromUid,
+            customerName: req.displayName,
+            message,
+            eventAt: timestamp,
+          }).catch(error => console.error("[ZaloGateway] Không gửi được PWA lời mời kết bạn:", error));
           void import("./crm-zalo-friendship")
             .then(module => module.recordZaloFriendshipGatewayEvent({ type: "incoming", userId: fromUid, accountId: runtime.accountId }))
             .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái lời mời đến:", error));
@@ -799,11 +883,27 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
       }
       // FriendEventType.ADD = 0 (đã kết bạn thành công)
       else if (eventType === 0) {
-        const friendCandidates = typeof event.data === "string"
-          ? [event.data]
-          : [eventData.friendUid, eventData.userId, eventData.uid, eventData.fromUid, eventData.toUid].map(String).filter(value => value && value !== "undefined");
+        const rawFriendCandidates = typeof event.data === "string"
+          ? [event.data.trim()].filter(Boolean)
+          : [eventData.friendUid, eventData.userId, eventData.uid, eventData.fromUid, eventData.toUid]
+            .filter((value): value is string | number => typeof value === "string" || typeof value === "number")
+            .map(String)
+            .map(value => value.trim())
+            .filter(Boolean);
+        // Một số phiên bản thư viện trả cả fromUid và toUid. Loại ID của chính
+        // tài khoản đang vận hành để PWA luôn mở đúng hồ sơ người khách.
+        const ownIds = new Set([runtime.accountId, runtime.userId].filter(Boolean));
+        const friendCandidates = rawFriendCandidates.filter(candidate => !ownIds.has(candidate));
         const friendUid = friendCandidates[0] || "";
         broadcastSSE("friend_event", { type: "added", userId: friendUid, isSelf }, runtime.accountId);
+        if (friendUid) void notifyZaloFriendEvent({
+          kind: "became_friends",
+          accountId: runtime.accountId,
+          accountName: runtime.displayName,
+          userId: friendUid,
+          customerName: friendDisplayName(eventData, friendUid),
+          eventAt: friendEventTimestamp(eventData),
+        }).catch(error => console.error("[ZaloGateway] Không gửi được PWA đã kết bạn:", error));
         for (const candidate of new Set(friendCandidates)) void import("./crm-zalo-friendship")
           .then(module => module.recordZaloFriendshipGatewayEvent({ type: "accepted", userId: candidate, accountId: runtime.accountId }))
           .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái đã kết bạn:", error));
@@ -836,6 +936,12 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
     runtime.listenerRetrying = true;
     if (defaultAccountId === runtime.accountId) syncDefaultCompatibilityRuntime();
     broadcastSSE("disconnected", { code, reason, retrying: true }, runtime.accountId);
+    scheduleDisconnectAlert({
+      accountId: runtime.accountId,
+      accountName: runtime.displayName,
+      reason,
+      runtime,
+    });
   });
 
   apiObj.listener.on("closed", (code: unknown, reason: unknown) => {
@@ -846,10 +952,19 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
     if (defaultAccountId === runtime.accountId) syncDefaultCompatibilityRuntime();
     broadcastSSE("disconnected", { code, reason, retrying: false }, runtime.accountId);
 
+    scheduleDisconnectAlert({
+      accountId: runtime.accountId,
+      accountName: runtime.displayName,
+      reason,
+      runtime,
+    });
+
     // Auto-reconnect after 5 seconds
-    runtime.reconnectTimer = setTimeout(() => {
-      void connectAccount(runtime.accountId).catch(error => console.error(`[ZaloGateway:${runtime.accountId}] reconnect failed`, error));
-    }, 5000);
+    if (!runtime.manualDisconnecting) {
+      runtime.reconnectTimer = setTimeout(() => {
+        void connectAccount(runtime.accountId).catch(error => console.error(`[ZaloGateway:${runtime.accountId}] reconnect failed`, error));
+      }, 5000);
+    }
   });
 
   apiObj.listener.on("error", (error: unknown) => {
@@ -868,7 +983,9 @@ async function connectRuntime(accountId: string, creds: StoredZaloCredentials): 
   const runtime: ZaloGatewayRuntime = existing || {
     accountId, api: null, isConnected: false, isConnecting: false,
     userId: accountId, displayName: accountId, avatar: "", listenerRetrying: false, reconnectTimer: null,
+    manualDisconnecting: false,
   };
+  runtime.manualDisconnecting = false;
   runtime.isConnecting = true;
   gatewayRuntimes.set(accountId, runtime);
   try {
@@ -885,6 +1002,7 @@ async function connectRuntime(accountId: string, creds: StoredZaloCredentials): 
     if (defaultAccountId === accountId) syncDefaultCompatibilityRuntime();
     setupListeners(runtime);
     await touchZaloAccountConnected(accountId);
+    markConnectionRestored(runtime);
     broadcastSSE("connected", { userId: runtime.userId, displayName: runtime.displayName }, accountId);
     console.log(`[ZaloGateway:${accountId}] Connected as ${runtime.displayName}`);
     return runtime;
@@ -977,11 +1095,13 @@ export async function startQRLogin(onQR: (qrBase64: string) => void): Promise<vo
           const runtime: ZaloGatewayRuntime = {
             accountId: userId, api, isConnected: true, isConnecting: false,
             userId, displayName, avatar, listenerRetrying: false, reconnectTimer: null,
+            manualDisconnecting: false,
           };
           gatewayRuntimes.set(userId, runtime);
           if (!defaultAccountId) defaultAccountId = userId;
           if (defaultAccountId === userId) syncDefaultCompatibilityRuntime();
           setupListeners(runtime);
+          markConnectionRestored(runtime);
           broadcastSSE("connected", { userId, displayName }, userId);
           qrLoginResult = { accountId: userId, displayName };
           qrLoginInProgress = false;
@@ -1003,16 +1123,26 @@ export async function disconnectZalo(accountId?: string, removeCredentials = fal
   const targetId = accountId || defaultAccountId;
   if (!targetId) return;
   const runtime = gatewayRuntimes.get(targetId);
+  if (runtime) runtime.manualDisconnecting = true;
+  cancelDisconnectAlert(targetId);
   if (runtime?.reconnectTimer) clearTimeout(runtime.reconnectTimer);
   if (runtime?.api?.listener?.stop) {
     try { runtime.api.listener.stop(); } catch { /* ignore */ }
   }
   gatewayRuntimes.delete(targetId);
   if (removeCredentials) await deleteZaloAccount(targetId);
+  // Admin chủ động ngắt/xóa tài khoản không phải sự cố. Xóa cảnh báo cũ để
+  // popup không còn treo và không gửi lại email cho một tài khoản đã tắt.
+  try {
+    await resolveZaloAccountDisconnectAlert(targetId);
+  } catch (error) {
+    console.error(`[ZaloGateway:${targetId}] Không đóng được cảnh báo khi ngắt thủ công:`, error);
+  }
   if (defaultAccountId === targetId) {
     defaultAccountId = Array.from(gatewayRuntimes.keys())[0] || "";
   }
   syncDefaultCompatibilityRuntime();
+  broadcastSSE("zalo_connection_alert_cleared", { reason: "manual" }, targetId);
   broadcastSSE("disconnected", { reason: "manual" }, targetId);
 }
 
@@ -1030,7 +1160,15 @@ export async function initZaloGateway() {
   defaultAccountId = accounts[0].id;
   const results = await Promise.allSettled(accounts.map(account => connectAccount(account.id)));
   results.forEach((result, index) => {
-    if (result.status === "rejected") console.error(`[ZaloGateway:${accounts[index].id}] Auto-connect failed:`, result.reason);
+    if (result.status === "rejected") {
+      console.error(`[ZaloGateway:${accounts[index].id}] Auto-connect failed:`, result.reason);
+      scheduleDisconnectAlert({
+        accountId: accounts[index].id,
+        accountName: accounts[index].displayName,
+        reason: result.reason instanceof Error ? result.reason.message : result.reason,
+        runtime: gatewayRuntimes.get(accounts[index].id),
+      });
+    }
   });
   syncDefaultCompatibilityRuntime();
 }

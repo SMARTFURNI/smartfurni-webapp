@@ -1535,9 +1535,16 @@ export default function ZaloInboxClient({
         if (requestedAccount && nextAccounts.some((account: ZaloAccountStatus) => account.id === requestedAccount)) {
           setSelectedAccountId(requestedAccount);
         }
+        if (isAdmin && params.get("reconnect") === "1") {
+          setShowSettings(true);
+          // Xóa cờ một lần để đóng modal không bị effect tải tài khoản mở lại.
+          params.delete("reconnect");
+          const query = params.toString();
+          window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+        }
       })
       .catch(() => undefined);
-  }, [showSettings]);
+  }, [isAdmin, showSettings]);
 
   useEffect(() => {
     setSelectedConv(null);
