@@ -377,10 +377,8 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden md:table-cell"
                   style={{ color: C.textMuted }}>NV Phụ trách</th>
                 {/* Sản phẩm quan tâm */}
-                <th className="min-w-[240px] px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest"
-                  style={{ color: C.goldDark }}>
-                  <span className="inline-flex items-center gap-1.5"><Star size={12} fill="currentColor" /> Sản phẩm</span>
-                </th>
+                <th className="min-w-[220px] px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: C.textMuted }}>Sản phẩm</th>
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest hidden xl:table-cell"
                   style={{ color: C.textMuted }}>Kết bạn Zalo</th>
                 {/* Tương tác */}
@@ -516,22 +514,20 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </td>
 
                     {/* Interested products */}
-                    <td className="min-w-[240px] px-4 py-2.5">
+                    <td className="min-w-[220px] px-4 py-2.5">
                       {lead.interestedProducts?.length ? (
                         <div
-                          className="inline-flex max-w-[320px] items-center gap-2 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-violet-50 px-2.5 py-1.5 shadow-sm"
+                          className="inline-flex max-w-[300px] items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/70 px-2.5 py-1"
                           title={lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(" · ")}
                         >
-                          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-                            <Star size={12} fill="currentColor" />
-                          </span>
-                          <span className="truncate whitespace-nowrap text-[11px] font-bold text-indigo-700">
+                          <Star size={11} className="flex-shrink-0 text-indigo-500" />
+                          <span className="truncate whitespace-nowrap text-[10px] font-semibold text-indigo-600">
                             {lead.interestedProducts.map(product => PRODUCT_LABELS[product]).join(" · ")}
                           </span>
                         </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-400">
-                          <Star size={11} /> Chưa xác định
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-400">
+                          <Star size={10} /> Chưa xác định
                         </span>
                       )}
                     </td>
