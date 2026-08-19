@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifySessionToken } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import {
   getHomepageProductConfigAsync,
   saveHomepageProductConfig,
@@ -8,11 +7,7 @@ import {
 import { getAllProducts } from "@/lib/product-store";
 
 async function checkAuth() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("sf_admin_session")?.value;
-  if (!token) return false;
-  const session = verifySessionToken(token);
-  return !!session;
+  return getAdminPortalSession();
 }
 
 // GET — lấy config + danh sách tất cả sản phẩm để admin chọn

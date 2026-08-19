@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getAllOrders, getOrderDashboardStats, createOrder, refreshOrdersFromDatabase } from "@/lib/order-store";
 import { initDbOnce } from "@/lib/db-init";
 
 export async function GET(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await refreshOrdersFromDatabase();
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await refreshOrdersFromDatabase();
 

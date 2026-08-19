@@ -1,7 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import {
   headMediaObject,
   isRailwayBucketConfigured,
@@ -82,7 +82,7 @@ async function copyAndVerify(file: LegacyFile): Promise<number> {
 }
 
 export async function GET() {
-  if (!(await getAdminSession())) {
+  if (!(await getAdminPortalSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const files = await legacyFiles();
@@ -95,7 +95,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) {
+  if (!(await getAdminPortalSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!isRailwayBucketConfigured()) {

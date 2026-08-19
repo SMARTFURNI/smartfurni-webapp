@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { verifySessionToken } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import {
   getThemeAsync,
   updateTheme,
@@ -15,8 +15,7 @@ import {
 
 // GET /api/admin/theme — lấy theme hiện tại + presets
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get("sf_admin_session")?.value;
-  if (!token || !verifySessionToken(token)) {
+  if (!(await getAdminPortalSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,8 +30,7 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/theme — cập nhật toàn bộ hoặc một section
 export async function PATCH(request: NextRequest) {
-  const token = request.cookies.get("sf_admin_session")?.value;
-  if (!token || !verifySessionToken(token)) {
+  if (!(await getAdminPortalSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { verifySessionToken } from "@/lib/admin-auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { getSidebarStats } from "@/lib/sidebar-stats";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
@@ -13,9 +11,7 @@ export const metadata = { title: "Cài đặt trang chủ | SmartFurni Admin" };
 
 export default async function HomepageProductsPage() {
   await initDbOnce();
-  const cookieStore = await cookies();
-  const token = cookieStore.get("sf_admin_session")?.value;
-  if (!token || !verifySessionToken(token)) redirect("/admin/login");
+  await requireAdmin();
 
   const sidebarStats = getSidebarStats();
   const config = await getHomepageProductConfigAsync();

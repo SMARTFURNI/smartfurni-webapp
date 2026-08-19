@@ -522,7 +522,7 @@ export default function CrmSidebar({ isAdmin = false, staffRole = "sales", staff
             )}
           </Link>
         )}
-        {isAdmin && (
+        {(isAdmin || rolePermissions?.admin_portal_access) && (
           <Link
             href="/admin"
             prefetch={false}

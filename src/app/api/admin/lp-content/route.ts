@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
+import { getAdminPortalSession, getStaffSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { parseLpFacebookPixelIds } from "@/lib/lp-facebook-pixel";
 import {
@@ -57,7 +57,7 @@ const BUILTIN_LANDING_PAGES = [
 ];
 
 async function checkAuth(): Promise<boolean> {
-  const isAdmin = await getAdminSession();
+  const isAdmin = await getAdminPortalSession();
   if (isAdmin) return true;
   const staff = await getStaffSession();
   return !!staff;

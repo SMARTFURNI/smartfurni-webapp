@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getProductById, updateProduct } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
 import { deleteImageAsset, storeImageAsset } from "@/lib/media-assets";
@@ -8,7 +8,7 @@ import { deleteImageAsset, storeImageAsset } from "@/lib/media-assets";
 // GitHub remains a temporary compatibility fallback until the bucket is configured.
 export async function POST(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 // DELETE /api/admin/products-mgmt/images — remove image reference and GitHub file
 export async function DELETE(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
@@ -124,7 +124,7 @@ export async function DELETE(request: NextRequest) {
 // PATCH /api/admin/products-mgmt/images — set cover image
 export async function PATCH(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {

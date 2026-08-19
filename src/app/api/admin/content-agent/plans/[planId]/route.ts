@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { initDbOnce } from "@/lib/db-init";
 import { updateContentPlanItem } from "@/lib/content-agent-store";
 
@@ -10,7 +10,7 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ planId: string }> }) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   try {
     const { planId } = await params;

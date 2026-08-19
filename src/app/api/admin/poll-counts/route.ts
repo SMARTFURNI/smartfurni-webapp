@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { initDbOnce } from "@/lib/db-init";
 import { getAllOrders } from "@/lib/order-store";
 import { getRawLeadStats } from "@/lib/crm-raw-lead-store";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     await initDbOnce();
     const orders = getAllOrders();

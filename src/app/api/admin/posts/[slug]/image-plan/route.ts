@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getPostById, updatePost } from "@/lib/admin-store";
 import { initDbOnce } from "@/lib/db-init";
 import { dbSaveOneAndWait } from "@/lib/db-store";
@@ -17,7 +17,7 @@ async function persist(slug: string, patch: Record<string, unknown>) {
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { slug } = await params;
   const post = getPostById(slug);
@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function POST(_req: NextRequest, { params }: Params) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { slug } = await params;
   const post = getPostById(slug);
@@ -46,7 +46,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { slug } = await params;
   const body = await req.json() as { images?: BlogArticleImage[] };

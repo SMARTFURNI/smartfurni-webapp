@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { createFirmwareRelease, listFirmwareReleases, sendPushNotification } from "@/lib/pwa-server";
 
 export async function GET() {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Không có quyền" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Không có quyền" }, { status: 401 });
   return NextResponse.json({ releases: await listFirmwareReleases() });
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Không có quyền" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Không có quyền" }, { status: 401 });
   const body = await request.json() as {
     profileId?: string;
     version?: string;

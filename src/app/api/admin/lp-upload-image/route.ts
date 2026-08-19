@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
+import { getAdminPortalSession, getStaffSession } from "@/lib/admin-auth";
 import { storeImageAsset } from "@/lib/media-assets";
 
 async function checkAuth(): Promise<boolean> {
-  return Boolean(await getAdminSession() || await getStaffSession());
+  return Boolean(await getAdminPortalSession() || await getStaffSession());
 }
 
 export async function POST(request: NextRequest) {

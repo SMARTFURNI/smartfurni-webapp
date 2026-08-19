@@ -60,6 +60,7 @@ export interface RolePermissions {
   reports_export: boolean;
   crm_settings_view: boolean;
   crm_settings_edit: boolean;
+  admin_portal_access: boolean;
 
   // ── Tự động hóa & Bảo mật ──
   ai_agent_view: boolean;
@@ -99,10 +100,10 @@ export interface CustomRole {
 
 export const PERMISSION_LABELS: Record<keyof RolePermissions, string> = {
   // Tổng quan
-  dashboard_view: "Xem Dashboard",
-  kanban_view: "Xem Bảng Kanban",
-  twelve_week_plan_view: "Xem Kế hoạch 12 Tuần",
-  plans_management_view: "Quản lý Kế hoạch",
+  dashboard_view: "Dashboard điều hành",
+  kanban_view: "Bảng Kanban khách hàng",
+  twelve_week_plan_view: "Kế hoạch 12 tuần",
+  plans_management_view: "Quản lý kế hoạch 12 tuần",
   // Khách hàng
   data_pool_view: "Xem Data Pool",
   leads_view_all: "Xem tất cả Khách hàng",
@@ -112,26 +113,26 @@ export const PERMISSION_LABELS: Record<keyof RolePermissions, string> = {
   leads_delete: "Xóa Khách hàng",
   leads_assign: "Phân công Khách hàng",
   leads_export: "Xuất danh sách KH",
-  lead_segmentation_view: "Phân loại Lead",
+  lead_segmentation_view: "Phân loại & phân nhóm Lead",
   quotes_view_all: "Xem tất cả Báo giá",
   quotes_view_own: "Xem Báo giá của mình",
   quotes_create: "Tạo Báo giá",
   quotes_approve: "Duyệt Báo giá",
   quotes_give_discount: "Chiết khấu thêm",
-  call_logs_view: "Xem Cuộc gọi",
+  call_logs_view: "Xem lịch sử cuộc gọi",
   call_logs_create: "Ghi nhận Cuộc gọi",
   tasks_view: "Xem Việc cần làm",
   tasks_create: "Tạo Việc cần làm",
   calendar_view: "Xem Lịch hẹn",
   // Marketing & CS
-  email_marketing_view: "Email Marketing",
+  email_marketing_view: "Trung tâm Email Marketing",
   content_marketing_view: "Content Marketing AI",
   content_marketing_settings: "Cài đặt AI Content",
   contracts_view: "Hợp đồng điện tử",
   contracts_create: "Tạo Hợp đồng",
   nps_view: "Khảo sát NPS",
-  notifications_view: "Nhắc nhở Zalo/SMS",
-  zalo_oa_view: "Zalo OA",
+  notifications_view: "Trung tâm thông báo",
+  zalo_oa_view: "Quản lý Zalo OA",
   zalo_inbox_view: "Truy cập Zalo Inbox",
   zalo_inbox_send: "Gửi/trả lời tin nhắn & quản lý Media Zalo Inbox",
   business_brain_view: "Xem Bộ não doanh nghiệp",
@@ -141,21 +142,22 @@ export const PERMISSION_LABELS: Record<keyof RolePermissions, string> = {
   business_brain_delete: "Lưu trữ tài liệu doanh nghiệp",
   business_brain_agent_manage: "Quản lý AI Agent doanh nghiệp",
   // Sản phẩm
-  products_view: "Xem Sản phẩm",
-  products_edit: "Chỉnh sửa Sản phẩm",
+  products_view: "Xem danh mục sản phẩm CRM",
+  products_edit: "Quản lý danh mục sản phẩm CRM",
   // Quản lý & Báo cáo
   staff_view: "Xem Nhân viên",
   staff_manage: "Quản lý Nhân viên",
-  reports_view: "Xem Báo cáo",
+  reports_view: "Xem Báo cáo & Phân tích",
   reports_export: "Xuất Báo cáo",
   crm_settings_view: "Xem Cài đặt CRM",
   crm_settings_edit: "Chỉnh sửa Cài đặt CRM",
+  admin_portal_access: "Truy cập trang Quản trị Website (Admin)",
   // Tự động hóa & Bảo mật
-  ai_agent_view: "AI Agent",
+  ai_agent_view: "AI Agent vận hành",
   ai_command_view: "Sử dụng Trợ lý Điều hành AI",
   ai_command_execute: "Phê duyệt tác vụ AI",
-  automation_view: "Automation Rules",
-  facebook_scheduler_view: "Lịch đăng bài FB",
+  automation_view: "Trung tâm tự động hóa",
+  facebook_scheduler_view: "Lịch đăng Facebook",
   facebook_group_marketing_view: "Xem Facebook Group Marketing",
   facebook_group_manage: "Quản lý Facebook Group/Fanpage",
   facebook_group_campaign_manage: "Quản lý chiến dịch Group",
@@ -167,8 +169,8 @@ export const PERMISSION_LABELS: Record<keyof RolePermissions, string> = {
   facebook_group_reports: "Xem báo cáo Facebook Group",
   facebook_group_settings: "Cấu hình Facebook Group Marketing",
   audit_logs_view: "Nhật ký hoạt động",
-  permissions_manage: "Phân quyền & API Keys",
-  import_export_view: "Import / Export",
+  permissions_manage: "Quản lý vai trò & API Keys",
+  import_export_view: "Nhập / Xuất dữ liệu",
 };
 
 export const PERMISSION_GROUPS: {
@@ -179,13 +181,13 @@ export const PERMISSION_GROUPS: {
 }[] = [
   {
     label: "Tổng quan",
-    icon: "📊",
+    icon: "layout-dashboard",
     color: "#6366f1",
     keys: ["dashboard_view", "kanban_view", "twelve_week_plan_view", "plans_management_view"],
   },
   {
     label: "Khách hàng",
-    icon: "👥",
+    icon: "contact-round",
     color: "#22c55e",
     keys: [
       "data_pool_view", "leads_view_all", "leads_view_own", "leads_create",
@@ -196,8 +198,8 @@ export const PERMISSION_GROUPS: {
     ],
   },
   {
-    label: "Marketing & CS",
-    icon: "📣",
+    label: "Marketing, Nội dung & CSKH",
+    icon: "messages-square",
     color: "#f59e0b",
     keys: [
       "email_marketing_view", "content_marketing_view", "content_marketing_settings",
@@ -208,20 +210,23 @@ export const PERMISSION_GROUPS: {
     ],
   },
   {
-    label: "Sản phẩm",
-    icon: "📦",
+    label: "Sản phẩm & Tài liệu bán hàng",
+    icon: "package-check",
     color: "#06b6d4",
     keys: ["products_view", "products_edit"],
   },
   {
     label: "Quản lý & Báo cáo",
-    icon: "📈",
+    icon: "chart-no-axes-combined",
     color: "#8b5cf6",
-    keys: ["staff_view", "staff_manage", "reports_view", "reports_export", "crm_settings_view", "crm_settings_edit"],
+    keys: [
+      "staff_view", "staff_manage", "reports_view", "reports_export",
+      "crm_settings_view", "crm_settings_edit", "admin_portal_access",
+    ],
   },
   {
-    label: "Tự động hóa & Bảo mật",
-    icon: "🔐",
+    label: "AI, Tự động hóa & Bảo mật",
+    icon: "shield-ellipsis",
     color: "#ef4444",
     keys: [
       "ai_agent_view", "ai_command_view", "ai_command_execute", "automation_view", "facebook_scheduler_view",
@@ -250,6 +255,7 @@ const ALL_FALSE: RolePermissions = {
   business_brain_publish: false, business_brain_delete: false, business_brain_agent_manage: false,
   products_view: false, products_edit: false, staff_view: false, staff_manage: false,
   reports_view: false, reports_export: false, crm_settings_view: false, crm_settings_edit: false,
+  admin_portal_access: false,
   ai_agent_view: false, ai_command_view: false, ai_command_execute: false,
   automation_view: false, facebook_scheduler_view: false,
   facebook_group_marketing_view: false, facebook_group_manage: false,
@@ -264,14 +270,14 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
   super_admin: {
     name: "Quản trị viên",
     color: "#C9A84C",
-    icon: "👑",
+    icon: "crown",
     description: "Toàn quyền hệ thống",
     permissions: Object.fromEntries(Object.keys(ALL_FALSE).map(k => [k, true])) as unknown as RolePermissions,
   },
   leader: {
     name: "Leader / Trưởng nhóm",
     color: "#8b5cf6",
-    icon: "⭐",
+    icon: "badge-check",
     description: "Quản lý nhóm, xem báo cáo toàn bộ",
     permissions: {
       ...ALL_FALSE,
@@ -295,7 +301,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
   sales: {
     name: "Kinh doanh",
     color: "#22c55e",
-    icon: "💼",
+    icon: "briefcase-business",
     description: "Quản lý KH, tạo báo giá, theo dõi pipeline",
     permissions: {
       ...ALL_FALSE,
@@ -314,7 +320,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
   marketing: {
     name: "Marketing",
     color: "#f59e0b",
-    icon: "📣",
+    icon: "megaphone",
     description: "Quản lý nội dung, email, Zalo, kịch bản video",
     permissions: {
       ...ALL_FALSE,
@@ -336,7 +342,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
   accountant: {
     name: "Kế toán",
     color: "#06b6d4",
-    icon: "💰",
+    icon: "landmark",
     description: "Xem báo giá, hợp đồng, báo cáo doanh thu",
     permissions: {
       ...ALL_FALSE,
@@ -352,7 +358,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
   intern: {
     name: "Thực tập sinh",
     color: "#6b7280",
-    icon: "🎓",
+    icon: "graduation-cap",
     description: "Quyền hạn cơ bản, chỉ xem và tạo KH của mình",
     permissions: {
       ...ALL_FALSE,
@@ -375,7 +381,7 @@ export async function initRolesSchema(): Promise<void> {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       color TEXT NOT NULL DEFAULT '#6b7280',
-      icon TEXT NOT NULL DEFAULT '👤',
+      icon TEXT NOT NULL DEFAULT 'user-round-cog',
       description TEXT NOT NULL DEFAULT '',
       permissions JSONB NOT NULL DEFAULT '{}',
       is_system BOOLEAN NOT NULL DEFAULT false,

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getAllContacts } from "@/lib/admin-store";
 import { initDbOnce } from "@/lib/db-init";
 
 export async function GET(req: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const url = new URL(req.url);

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getSmartBedAdminCustomers, getSmartBedAppFunnelStats, resetSmartBedUserPassword } from "@/lib/smart-bed-auth";
 
 export async function GET() {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const [customers, funnelStats] = await Promise.all([
     getSmartBedAdminCustomers(),
     getSmartBedAppFunnelStats(),
@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await request.json() as { action?: string; userId?: string };
     if (body.action !== "reset_password" || !body.userId) {

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getUserById, updateUser, deleteUser, blockUser, unblockUser } from "@/lib/user-store";
 import { initDbOnce } from "@/lib/db-init";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { id } = await params;
@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { id } = await params;
@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { id } = await params;

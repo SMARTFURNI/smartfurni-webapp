@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getAllContacts, markContactRead, deleteContact, addContact } from "@/lib/admin-store";
 import { sendContactNotification } from "@/lib/email-notify";
 import { initDbOnce } from "@/lib/db-init";
 
 export async function GET() {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json(getAllContacts());
 }
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Support both query params (from client) and JSON body
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const url = new URL(req.url);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { initDbOnce } from "@/lib/db-init";
 import { createPost } from "@/lib/admin-store";
 import { dbSaveOneAndWait } from "@/lib/db-store";
@@ -36,7 +36,7 @@ function productSlugsForFamily(familySlug: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   try {
     const { planId, itemId } = requestSchema.parse(await req.json());

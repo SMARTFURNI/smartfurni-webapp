@@ -32,7 +32,8 @@ export function middleware(request: NextRequest) {
     const hasStaffSession = Boolean(request.cookies.get(STAFF_SESSION_COOKIE)?.value);
 
     // Trang chọn không gian làm việc dùng chung cho quản trị viên và nhân viên CRM.
-    // Các trang /admin còn lại vẫn chỉ chấp nhận phiên quản trị viên.
+    // Với các trang Admin khác, middleware chỉ kiểm tra có phiên; quyền vai trò
+    // được xác thực ở server bằng admin_portal_access.
     if (pathname === "/admin/choose-module") {
       if (!hasAdminSession && !hasStaffSession) {
         const loginPath = request.nextUrl.searchParams.get("entry") === "crm"
@@ -40,7 +41,7 @@ export function middleware(request: NextRequest) {
           : "/admin/login";
         return NextResponse.redirect(new URL(loginPath, request.url), { status: 302 });
       }
-    } else if (!hasAdminSession) {
+    } else if (!hasAdminSession && !hasStaffSession) {
       return NextResponse.redirect(new URL("/admin/login", request.url), { status: 302 });
     }
   }

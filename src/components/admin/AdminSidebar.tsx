@@ -91,7 +91,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         href: "/crm",
-        label: "CRM B2B",
+        label: "SmartFurni CRM",
         icon: Store,
         exact: false,
       },

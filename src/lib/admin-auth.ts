@@ -149,9 +149,29 @@ export async function getAdminSession(): Promise<boolean> {
   return verifySessionToken(token);
 }
 
+/**
+ * Quyền vào khu vực quản trị website. Admin hệ thống luôn được phép; nhân viên
+ * CRM chỉ được phép khi vai trò có admin_portal_access. Hàm này không nâng
+ * nhân viên thành super admin trong các mô-đun CRM khác.
+ */
+export async function getAdminPortalSession(): Promise<boolean> {
+  if (await getAdminSession()) return true;
+  const staff = await getStaffSession();
+  if (!staff?.role) return false;
+  try {
+    const { getRoleById } = await import("./crm-roles-store");
+    const role = await getRoleById(staff.role);
+    return role?.permissions?.admin_portal_access === true;
+  } catch (error) {
+    console.error("[AdminAuth] Failed to check admin portal permission", error);
+    return false;
+  }
+}
+
 export async function requireAdmin(): Promise<void> {
-  const isAuthenticated = await getAdminSession();
-  if (!isAuthenticated) redirect("/admin/login");
+  if (await getAdminPortalSession()) return;
+  const staff = await getStaffSession();
+  redirect(staff ? "/crm" : "/admin/login");
 }
 
 // ─── CRM Auth helpers ─────────────────────────────────────────────────────────

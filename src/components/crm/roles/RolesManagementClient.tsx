@@ -1,367 +1,334 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type CSSProperties } from "react";
 import {
-  Plus, Save, Trash2, Shield, ChevronDown, ChevronRight,
-  Users, CheckCircle2, X, Edit3, AlertCircle, RefreshCw,
+  AlertCircle,
+  BadgeCheck,
+  BriefcaseBusiness,
+  ChartNoAxesCombined,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ContactRound,
+  Crown,
+  Edit3,
+  GraduationCap,
+  Landmark,
+  LayoutDashboard,
+  Megaphone,
+  MessagesSquare,
+  PackageCheck,
+  Plus,
+  RefreshCw,
+  Rocket,
+  Save,
+  ShieldCheck,
+  ShieldEllipsis,
+  Sparkles,
+  Target,
+  Trash2,
+  UserRoundCog,
+  Users,
+  Wrench,
+  X,
 } from "lucide-react";
 import type { CustomRole, RolePermissions } from "@/lib/crm-roles-store";
-import { PERMISSION_LABELS, PERMISSION_GROUPS, ROLE_TEMPLATES } from "@/lib/crm-roles-store";
+import { PERMISSION_GROUPS, PERMISSION_LABELS, ROLE_TEMPLATES } from "@/lib/crm-roles-store";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+type IconComponent = ComponentType<{ size?: number; className?: string; style?: CSSProperties; strokeWidth?: number }>;
 
-const ICON_OPTIONS = ["👑", "⭐", "💼", "📣", "💰", "🎓", "🔧", "📊", "🛡️", "🎯", "💡", "🚀"];
-const COLOR_OPTIONS = [
-  "#C9A84C", "#8b5cf6", "#22c55e", "#f59e0b", "#06b6d4",
-  "#ef4444", "#3b82f6", "#ec4899", "#6b7280", "#14b8a6",
-];
+const ROLE_ICONS: Record<string, IconComponent> = {
+  crown: Crown,
+  "badge-check": BadgeCheck,
+  "briefcase-business": BriefcaseBusiness,
+  megaphone: Megaphone,
+  landmark: Landmark,
+  "graduation-cap": GraduationCap,
+  "user-round-cog": UserRoundCog,
+  target: Target,
+  sparkles: Sparkles,
+  rocket: Rocket,
+  wrench: Wrench,
+  "chart-no-axes-combined": ChartNoAxesCombined,
+};
 
-const EMPTY_PERMISSIONS: RolePermissions = Object.fromEntries(
-  Object.keys(PERMISSION_LABELS).map(k => [k, false])
+const LEGACY_ROLE_ICONS: Record<string, string> = {
+  "👑": "crown",
+  "⭐": "badge-check",
+  "💼": "briefcase-business",
+  "📣": "megaphone",
+  "💰": "landmark",
+  "🎓": "graduation-cap",
+  "🔧": "wrench",
+  "📊": "chart-no-axes-combined",
+  "🛡️": "user-round-cog",
+  "🎯": "target",
+  "💡": "sparkles",
+  "🚀": "rocket",
+};
+
+const GROUP_ICONS: Record<string, IconComponent> = {
+  "layout-dashboard": LayoutDashboard,
+  "contact-round": ContactRound,
+  "messages-square": MessagesSquare,
+  "package-check": PackageCheck,
+  "chart-no-axes-combined": ChartNoAxesCombined,
+  "shield-ellipsis": ShieldEllipsis,
+};
+
+const ROLE_ICON_OPTIONS = Object.keys(ROLE_ICONS);
+const COLOR_OPTIONS = ["#b9851c", "#6d5bd0", "#128d68", "#d56b35", "#2978b5", "#c34a65", "#64748b", "#0f8f98"];
+const EMPTY_PERMISSIONS = Object.fromEntries(
+  Object.keys(PERMISSION_LABELS).map((key) => [key, false]),
 ) as unknown as RolePermissions;
 
-// ─── Permission Toggle Cell ───────────────────────────────────────────────────
+function normalizeIcon(icon?: string) {
+  return (icon && (LEGACY_ROLE_ICONS[icon] || icon)) || "user-round-cog";
+}
 
-function PermToggle({
-  value, onChange, disabled,
-}: { value: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
+function RoleIcon({ icon, size = 18, color }: { icon?: string; size?: number; color?: string }) {
+  const Icon = ROLE_ICONS[normalizeIcon(icon)] || UserRoundCog;
+  return <Icon size={size} strokeWidth={1.8} style={{ color: color || "currentColor" }} />;
+}
+
+function PermissionSwitch({ value, disabled, onChange }: { value: boolean; disabled?: boolean; onChange: () => void }) {
   return (
     <button
-      onClick={() => !disabled && onChange(!value)}
+      type="button"
+      role="switch"
+      aria-checked={value}
       disabled={disabled}
-      className="w-7 h-7 rounded-lg flex items-center justify-center mx-auto transition-all"
+      onClick={onChange}
+      className="relative h-6 w-11 flex-shrink-0 rounded-full transition-all disabled:cursor-not-allowed disabled:opacity-60"
       style={{
-        background: value ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.04)",
-        border: `1px solid ${value ? "rgba(201,168,76,0.4)" : "rgba(255,255,255,0.08)"}`,
-        cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.6 : 1,
+        background: value ? "linear-gradient(135deg,#d8b447,#b9851c)" : "#d9e1eb",
+        boxShadow: value ? "0 4px 12px rgba(185,133,28,.22)" : "inset 0 0 0 1px #c7d1de",
       }}
     >
-      {value ? (
-        <CheckCircle2 size={13} style={{ color: "#C9A84C" }} />
-      ) : (
-        <div className="w-2.5 h-2.5 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-      )}
+      <span
+        className="absolute top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-all"
+        style={{ left: value ? 22 : 2 }}
+      >
+        {value && <Check size={11} strokeWidth={3} style={{ color: "#a47112" }} />}
+      </span>
     </button>
   );
 }
 
-// ─── Role Card (sidebar list) ─────────────────────────────────────────────────
-
-function RoleCard({
-  role, selected, onClick,
-}: { role: CustomRole; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full text-left p-3 rounded-xl transition-all"
-      style={{
-        background: selected ? `${role.color}15` : "rgba(255,255,255,0.03)",
-        border: `1px solid ${selected ? `${role.color}40` : "rgba(255,255,255,0.07)"}`,
-        outline: "none",
-      }}
-    >
-      <div className="flex items-center gap-2.5">
-        <span className="text-xl">{role.icon}</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold truncate" style={{ color: "#f5edd6" }}>{role.name}</span>
-            {role.isSystem && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}>
-                Hệ thống
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1 mt-0.5">
-            <Users size={10} style={{ color: "rgba(255,255,255,0.3)" }} />
-            <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-              {role.staffCount ?? 0} nhân viên
-            </span>
-          </div>
-        </div>
-        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: role.color }} />
-      </div>
-    </button>
-  );
-}
-
-// ─── Permission Matrix Editor ─────────────────────────────────────────────────
-
-function PermissionEditor({
-  role, roles, onChange,
-}: {
+function RoleCard({ role, selected, onSelect, onEdit, onDelete }: {
   role: CustomRole;
-  roles: CustomRole[];
-  onChange: (perms: RolePermissions) => void;
+  selected: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
-    Object.fromEntries(PERMISSION_GROUPS.map(g => [g.label, true]))
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="w-full rounded-2xl p-3.5 pr-20 text-left transition-all"
+        style={{
+          background: selected ? `linear-gradient(135deg,${role.color}14,#ffffff)` : "#ffffff",
+          border: `1px solid ${selected ? `${role.color}55` : "#dce4ee"}`,
+          boxShadow: selected ? "0 10px 28px rgba(37,52,78,.09)" : "0 4px 14px rgba(37,52,78,.035)",
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl" style={{ background: `${role.color}12`, border: `1px solid ${role.color}28` }}>
+            <RoleIcon icon={role.icon} size={19} color={role.color} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5">
+              <span className="truncate text-sm font-bold" style={{ color: "#17233c" }}>{role.name}</span>
+              {role.isSystem && <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">Hệ thống</span>}
+            </span>
+            <span className="mt-1 flex items-center gap-1 text-[11px]" style={{ color: "#8190a5" }}>
+              <Users size={11} /> {role.staffCount ?? 0} nhân viên
+            </span>
+          </span>
+        </div>
+      </button>
+      {!role.isSystem && (
+        <div className="absolute right-2.5 top-1/2 flex -translate-y-1/2 gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+          <button type="button" onClick={onEdit} aria-label={`Sửa ${role.name}`} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-amber-300 hover:text-amber-700">
+            <Edit3 size={13} />
+          </button>
+          <button type="button" onClick={onDelete} aria-label={`Xóa ${role.name}`} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-red-200 hover:text-red-600">
+            <Trash2 size={13} />
+          </button>
+        </div>
+      )}
+    </div>
   );
+}
 
-  const toggle = (key: keyof RolePermissions) => {
-    if (role.isSystem) return;
-    onChange({ ...role.permissions, [key]: !role.permissions[key] });
-  };
-
-  const toggleGroup = (groupLabel: string, value: boolean) => {
-    if (role.isSystem) return;
-    const group = PERMISSION_GROUPS.find(g => g.label === groupLabel);
-    if (!group) return;
-    const updates: Partial<RolePermissions> = {};
-    group.keys.forEach(k => { updates[k] = value; });
-    onChange({ ...role.permissions, ...updates });
-  };
-
-  const isGroupAllOn = (groupLabel: string) => {
-    const group = PERMISSION_GROUPS.find(g => g.label === groupLabel);
-    return group?.keys.every(k => role.permissions[k]) ?? false;
-  };
+function PermissionEditor({ role, permissions, onChange }: { role: CustomRole; permissions: RolePermissions; onChange: (permissions: RolePermissions) => void }) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => Object.fromEntries(PERMISSION_GROUPS.map((group) => [group.label, true])));
 
   return (
-    <div className="space-y-2">
-      {PERMISSION_GROUPS.map(group => {
-        const isExpanded = expandedGroups[group.label];
-        const allOn = isGroupAllOn(group.label);
-        const onCount = group.keys.filter(k => role.permissions[k]).length;
+    <div className="space-y-3">
+      {PERMISSION_GROUPS.map((group) => {
+        const GroupIcon = GROUP_ICONS[group.icon] || ShieldCheck;
+        const isExpanded = expanded[group.label];
+        const enabledCount = group.keys.filter((key) => permissions[key]).length;
+        const allEnabled = enabledCount === group.keys.length;
+
         return (
-          <div key={group.label} className="rounded-xl overflow-hidden"
-            style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
-            {/* Group header */}
-            <div className="flex items-center gap-3 px-4 py-3 cursor-pointer"
-              onClick={() => setExpandedGroups(prev => ({ ...prev, [group.label]: !prev[group.label] }))}>
-              <span className="text-base">{group.icon}</span>
-              <span className="text-sm font-semibold flex-1" style={{ color: group.color }}>{group.label}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: `${group.color}15`, color: group.color, border: `1px solid ${group.color}30` }}>
-                {onCount}/{group.keys.length}
+          <section key={group.label} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_7px_24px_rgba(37,52,78,.045)]">
+            <div className="flex cursor-pointer items-center gap-3 px-4 py-3.5" onClick={() => setExpanded((current) => ({ ...current, [group.label]: !isExpanded }))}>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${group.color}12`, color: group.color }}>
+                <GroupIcon size={18} strokeWidth={1.8} />
               </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold" style={{ color: "#26344d" }}>{group.label}</h3>
+                <p className="mt-0.5 text-[11px]" style={{ color: "#8a98aa" }}>{enabledCount}/{group.keys.length} quyền đang bật</p>
+              </div>
               {!role.isSystem && (
                 <button
-                  onClick={e => { e.stopPropagation(); toggleGroup(group.label, !allOn); }}
-                  className="text-[10px] px-2 py-1 rounded-lg transition-all"
-                  style={{
-                    background: allOn ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.05)",
-                    color: allOn ? "#C9A84C" : "rgba(255,255,255,0.4)",
-                    border: `1px solid ${allOn ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.08)"}`,
-                  }}>
-                  {allOn ? "Bỏ tất cả" : "Chọn tất cả"}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const next = { ...permissions };
+                    group.keys.forEach((key) => { next[key] = !allEnabled; });
+                    onChange(next);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+                >
+                  {allEnabled ? "Bỏ chọn nhóm" : "Bật cả nhóm"}
                 </button>
               )}
-              {isExpanded ? (
-                <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-              ) : (
-                <ChevronRight size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-              )}
+              {isExpanded ? <ChevronDown size={17} className="text-slate-400" /> : <ChevronRight size={17} className="text-slate-400" />}
             </div>
-            {/* Permission rows */}
             {isExpanded && (
-              <div className="border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-                {group.keys.map((key, idx) => (
-                  <div key={key}
-                    className="flex items-center gap-3 px-4 py-2.5 transition-all"
+              <div className="grid border-t border-slate-100 md:grid-cols-2">
+                {group.keys.map((key, index) => (
+                  <div
+                    key={key}
+                    className="flex min-h-14 items-center gap-3 px-4 py-3"
                     style={{
-                      borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined,
-                      background: role.permissions[key] ? "rgba(201,168,76,0.03)" : "transparent",
-                    }}>
-                    <PermToggle
-                      value={role.permissions[key]}
-                      onChange={() => toggle(key)}
+                      background: permissions[key] ? `${group.color}06` : "#ffffff",
+                      borderTop: index > 1 ? "1px solid #eef2f6" : undefined,
+                      borderLeft: index % 2 === 1 ? "1px solid #eef2f6" : undefined,
+                    }}
+                  >
+                    <PermissionSwitch
+                      value={permissions[key]}
                       disabled={role.isSystem}
+                      onChange={() => !role.isSystem && onChange({ ...permissions, [key]: !permissions[key] })}
                     />
-                    <span className="text-sm flex-1" style={{ color: role.permissions[key] ? "#f5edd6" : "rgba(255,255,255,0.45)" }}>
-                      {PERMISSION_LABELS[key]}
-                    </span>
+                    <span className="text-[13px] font-medium" style={{ color: permissions[key] ? "#28364e" : "#748399" }}>{PERMISSION_LABELS[key]}</span>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         );
       })}
     </div>
   );
 }
 
-// ─── Create/Edit Role Modal ───────────────────────────────────────────────────
-
-function RoleFormModal({
-  initial, onSave, onClose,
-}: {
-  initial?: Partial<CustomRole>;
+function RoleFormModal({ initial, onSave, onClose }: {
+  initial?: CustomRole;
   onSave: (data: { name: string; color: string; icon: string; description: string; permissions: RolePermissions }) => Promise<void>;
   onClose: () => void;
 }) {
-  const [name, setName] = useState(initial?.name ?? "");
-  const [color, setColor] = useState(initial?.color ?? "#22c55e");
-  const [icon, setIcon] = useState(initial?.icon ?? "💼");
-  const [description, setDescription] = useState(initial?.description ?? "");
-  const [template, setTemplate] = useState<string>("sales");
+  const [name, setName] = useState(initial?.name || "");
+  const [color, setColor] = useState(initial?.color || "#b9851c");
+  const [icon, setIcon] = useState(normalizeIcon(initial?.icon || "briefcase-business"));
+  const [description, setDescription] = useState(initial?.description || "");
+  const [template, setTemplate] = useState("sales");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = async () => {
+  const submit = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    const tpl = ROLE_TEMPLATES[template];
-    await onSave({
-      name: name.trim(),
-      color,
-      icon,
-      description: description.trim(),
-      permissions: tpl?.permissions ?? EMPTY_PERMISSIONS,
-    });
-    setSaving(false);
+    setError(null);
+    try {
+      await onSave({
+        name: name.trim(),
+        color,
+        icon,
+        description: description.trim(),
+        permissions: initial?.permissions || ROLE_TEMPLATES[template]?.permissions || EMPTY_PERMISSIONS,
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể lưu vai trò");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(10,15,30,0.75)", backdropFilter: "blur(8px)" }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md rounded-2xl p-6 space-y-5"
-        style={{
-          background: "linear-gradient(145deg, #1a1200, #0f0d00)",
-          border: "1px solid rgba(201,168,76,0.25)",
-          boxShadow: "0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.1)",
-        }}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white bg-white shadow-[0_30px_90px_rgba(15,23,42,.28)]">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur">
           <div>
-            <h3 className="text-base font-bold" style={{ color: "#f5edd6" }}>
-              {initial ? "Chỉnh sửa vai trò" : "Tạo vai trò mới"}
-            </h3>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Quyền sẽ được thiết lập sau khi tạo
-            </p>
+            <h2 className="text-lg font-bold text-slate-900">{initial ? "Chỉnh sửa vai trò" : "Tạo vai trò mới"}</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Đặt tên rõ ràng theo chức năng thực tế trong CRM.</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-all">
-            <X size={16} style={{ color: "rgba(255,255,255,0.5)" }} />
-          </button>
+          <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"><X size={17} /></button>
         </div>
 
-        {/* Icon + Color */}
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="text-[10px] font-bold uppercase tracking-widest mb-2 block" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Icon
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {ICON_OPTIONS.map(ic => (
-                <button key={ic} onClick={() => setIcon(ic)}
-                  className="w-8 h-8 rounded-lg text-base flex items-center justify-center transition-all"
-                  style={{
-                    background: icon === ic ? "rgba(201,168,76,0.2)" : "rgba(255,255,255,0.05)",
-                    border: `1px solid ${icon === ic ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.08)"}`,
-                  }}>
-                  {ic}
-                </button>
-              ))}
+        <div className="space-y-5 p-6">
+          {error && <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"><AlertCircle size={15} />{error}</div>}
+
+          <div className="grid gap-4 sm:grid-cols-[1fr_150px]">
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Biểu tượng</label>
+              <div className="grid grid-cols-6 gap-2">
+                {ROLE_ICON_OPTIONS.map((option) => (
+                  <button key={option} type="button" onClick={() => setIcon(option)} className="flex h-10 items-center justify-center rounded-xl transition-all" style={{ color: icon === option ? color : "#718096", background: icon === option ? `${color}12` : "#f8fafc", border: `1px solid ${icon === option ? `${color}55` : "#e2e8f0"}` }}>
+                    <RoleIcon icon={option} size={18} />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Màu nhận diện</label>
+              <div className="grid grid-cols-4 gap-2">
+                {COLOR_OPTIONS.map((option) => (
+                  <button key={option} type="button" onClick={() => setColor(option)} className="h-10 rounded-xl transition-transform hover:scale-105" style={{ background: option, boxShadow: color === option ? `0 0 0 3px #fff,0 0 0 5px ${option}66` : undefined }} aria-label={`Chọn màu ${option}`} />
+                ))}
+              </div>
             </div>
           </div>
+
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest mb-2 block" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Màu
-            </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {COLOR_OPTIONS.map(c => (
-                <button key={c} onClick={() => setColor(c)}
-                  className="w-8 h-8 rounded-lg transition-all"
-                  style={{
-                    background: c,
-                    border: `2px solid ${color === c ? "#fff" : "transparent"}`,
-                    boxShadow: color === c ? `0 0 8px ${c}80` : undefined,
-                  }} />
-              ))}
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tên vai trò *</label>
+            <input value={name} onChange={(event) => setName(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-amber-400 focus:bg-white" placeholder="Ví dụ: Chăm sóc khách hàng" />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Mô tả phạm vi công việc</label>
+            <textarea value={description} onChange={(event) => setDescription(event.target.value)} className="min-h-20 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-amber-400 focus:bg-white" placeholder="Vai trò này chịu trách nhiệm gì trong CRM?" />
+          </div>
+
+          {!initial && (
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Mẫu quyền khởi tạo</label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {Object.entries(ROLE_TEMPLATES).filter(([key]) => key !== "super_admin").map(([key, roleTemplate]) => (
+                  <button key={key} type="button" onClick={() => setTemplate(key)} className="flex items-center gap-3 rounded-xl p-3 text-left" style={{ background: template === key ? `${roleTemplate.color}0e` : "#f8fafc", border: `1px solid ${template === key ? `${roleTemplate.color}55` : "#e2e8f0"}` }}>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${roleTemplate.color}12`, color: roleTemplate.color }}><RoleIcon icon={roleTemplate.icon} size={18} /></span>
+                    <span><span className="block text-sm font-bold text-slate-800">{roleTemplate.name}</span><span className="mt-0.5 block text-[11px] text-slate-500">{roleTemplate.description}</span></span>
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: `${color}12`, color }}><RoleIcon icon={icon} size={21} /></span>
+            <div className="min-w-0"><p className="truncate text-sm font-bold" style={{ color }}>{name || "Tên vai trò"}</p><p className="truncate text-xs text-slate-500">{description || "Mô tả phạm vi công việc"}</p></div>
           </div>
         </div>
 
-        {/* Name */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 block" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Tên vai trò *
-          </label>
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="VD: Kinh doanh, Marketing, Kế toán..."
-            className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
-            style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "#f5edd6",
-            }}
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 block" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Mô tả
-          </label>
-          <input
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Mô tả ngắn về vai trò này..."
-            className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
-            style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "#f5edd6",
-            }}
-          />
-        </div>
-
-        {/* Template */}
-        {!initial && (
-          <div>
-            <label className="text-[10px] font-bold uppercase tracking-widest mb-1.5 block" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Khởi tạo quyền từ mẫu
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(ROLE_TEMPLATES).filter(([k]) => k !== "super_admin").map(([key, tpl]) => (
-                <button key={key} onClick={() => setTemplate(key)}
-                  className="flex items-center gap-2 p-2.5 rounded-xl text-left transition-all"
-                  style={{
-                    background: template === key ? `${tpl.color}15` : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${template === key ? `${tpl.color}40` : "rgba(255,255,255,0.07)"}`,
-                  }}>
-                  <span className="text-base">{tpl.icon}</span>
-                  <div>
-                    <div className="text-xs font-semibold" style={{ color: template === key ? tpl.color : "#f5edd6" }}>{tpl.name}</div>
-                    <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>{tpl.description}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Preview badge */}
-        <div className="flex items-center gap-2 p-3 rounded-xl"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <span className="text-xl">{icon}</span>
-          <div>
-            <span className="text-sm font-bold" style={{ color: color }}>{name || "Tên vai trò"}</span>
-            <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{description || "Mô tả vai trò"}</p>
-          </div>
-          <div className="ml-auto w-3 h-3 rounded-full" style={{ background: color }} />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            Hủy
-          </button>
-          <button onClick={handleSave} disabled={!name.trim() || saving}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
-            style={{
-              background: name.trim() ? "linear-gradient(135deg, #d97706, #b45309)" : "rgba(255,255,255,0.06)",
-              color: name.trim() ? "#fff" : "rgba(255,255,255,0.3)",
-              boxShadow: name.trim() ? "0 4px 16px rgba(217,119,6,0.3)" : undefined,
-            }}>
-            {saving ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
-            {initial ? "Lưu thay đổi" : "Tạo vai trò"}
+        <div className="sticky bottom-0 flex gap-3 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur">
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Hủy</button>
+          <button type="button" onClick={submit} disabled={saving || !name.trim()} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#d8b447] to-[#b9851c] py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-900/10 disabled:cursor-not-allowed disabled:opacity-50">
+            {saving ? <RefreshCw size={15} className="animate-spin" /> : <Save size={15} />}{initial ? "Lưu thay đổi" : "Tạo vai trò"}
           </button>
         </div>
       </div>
@@ -369,311 +336,143 @@ function RoleFormModal({
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function RolesManagementClient() {
   const [roles, setRoles] = useState<CustomRole[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editedPerms, setEditedPerms] = useState<RolePermissions | null>(null);
+  const [editedPermissions, setEditedPermissions] = useState<RolePermissions | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<CustomRole | null>(null);
 
-  const load = useCallback(async () => {
+  const loadRoles = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/crm/roles");
-    const data = await res.json();
-    setRoles(data);
-    setLoading(false);
-    if (!selectedId && data.length > 0) {
-      setSelectedId(data[0].id);
-      setEditedPerms({ ...data[0].permissions });
+    setError(null);
+    try {
+      const response = await fetch("/api/crm/roles", { cache: "no-store" });
+      if (!response.ok) throw new Error("Không thể tải danh sách vai trò");
+      const data = await response.json() as CustomRole[];
+      setRoles(data);
+      setSelectedId((currentId) => {
+        const active = data.find((role) => role.id === currentId) || data[0];
+        setEditedPermissions(active ? { ...active.permissions } : null);
+        return active?.id || null;
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể tải dữ liệu phân quyền");
+    } finally {
+      setLoading(false);
     }
-  }, [selectedId]);
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void loadRoles(); }, [loadRoles]);
 
-  const selectedRole = roles.find(r => r.id === selectedId) ?? null;
-  const currentPerms = editedPerms ?? selectedRole?.permissions ?? null;
+  const selectedRole = useMemo(() => roles.find((role) => role.id === selectedId) || null, [roles, selectedId]);
+  const currentPermissions = editedPermissions || selectedRole?.permissions || null;
+  const enabledCount = currentPermissions ? Object.values(currentPermissions).filter(Boolean).length : 0;
+  const totalPermissions = Object.keys(PERMISSION_LABELS).length;
 
   const selectRole = (role: CustomRole) => {
     setSelectedId(role.id);
-    setEditedPerms({ ...role.permissions });
+    setEditedPermissions({ ...role.permissions });
     setSaved(false);
   };
 
-  const handlePermChange = (perms: RolePermissions) => {
-    setEditedPerms(perms);
-    setSaved(false);
-  };
-
-  const handleSavePerms = async () => {
-    if (!selectedRole || !editedPerms) return;
+  const savePermissions = async () => {
+    if (!selectedRole || !editedPermissions) return;
     setSaving(true);
-    const res = await fetch(`/api/crm/roles/${selectedRole.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ permissions: editedPerms }),
-    });
-    if (res.ok) {
+    setError(null);
+    try {
+      const response = await fetch(`/api/crm/roles/${selectedRole.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ permissions: editedPermissions }) });
+      if (!response.ok) throw new Error((await response.json()).error || "Không thể lưu quyền");
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-      await load();
+      await loadRoles();
+      window.setTimeout(() => setSaved(false), 2200);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Không thể lưu quyền");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
-  const handleCreate = async (data: { name: string; color: string; icon: string; description: string; permissions: RolePermissions }) => {
-    const res = await fetch("/api/crm/roles", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const created = await res.json();
+  const createRole = async (data: { name: string; color: string; icon: string; description: string; permissions: RolePermissions }) => {
+    const response = await fetch("/api/crm/roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Không thể tạo vai trò");
     setShowCreateModal(false);
-    await load();
-    setSelectedId(created.id);
-    setEditedPerms({ ...created.permissions });
+    await loadRoles();
+    setSelectedId(result.id);
+    setEditedPermissions({ ...result.permissions });
   };
 
-  const handleEditMeta = async (data: { name: string; color: string; icon: string; description: string; permissions: RolePermissions }) => {
+  const editRole = async (data: { name: string; color: string; icon: string; description: string; permissions: RolePermissions }) => {
     if (!editingRole) return;
-    await fetch(`/api/crm/roles/${editingRole.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: data.name, color: data.color, icon: data.icon, description: data.description }),
-    });
+    const response = await fetch(`/api/crm/roles/${editingRole.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: data.name, color: data.color, icon: data.icon, description: data.description }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Không thể cập nhật vai trò");
     setEditingRole(null);
-    await load();
+    await loadRoles();
   };
 
-  const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/crm/roles/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (!data.ok) {
-      setError(data.error);
-      setTimeout(() => setError(null), 4000);
-    } else {
+  const deleteRole = async () => {
+    if (!deleteConfirm) return;
+    const response = await fetch(`/api/crm/roles/${deleteConfirm.id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      setError(result.error || "Không thể xóa vai trò");
       setDeleteConfirm(null);
-      if (selectedId === id) setSelectedId(null);
-      await load();
+      return;
     }
+    setDeleteConfirm(null);
+    await loadRoles();
   };
-
-  const permCount = currentPerms
-    ? Object.values(currentPerms).filter(Boolean).length
-    : 0;
-  const totalPerms = Object.keys(PERMISSION_LABELS).length;
 
   return (
-    <div className="min-h-full p-6">
-      {/* Header */}
-      <div className="crm-admin-page-header flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(145deg, rgba(215,185,87,.22), rgba(49,70,110,.15))", border: "1px solid rgba(224,197,111,.22)" }}>
-            <Shield size={20} style={{ color: "#ead899" }} />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold" style={{ color: "#f5edd6" }}>Quản lý Vai trò & Phân quyền</h1>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Tạo và cấu hình quyền truy cập cho từng nhóm nhân viên
-            </p>
-          </div>
+    <div className="min-h-full bg-[linear-gradient(145deg,#f8fafc_0%,#f1f5f9_55%,#f8f6ef_100%)] p-4 text-slate-900 md:p-6">
+      <header className="mb-5 flex flex-col gap-4 rounded-3xl border border-amber-200/80 bg-[linear-gradient(120deg,#fffdf8_0%,#ffffff_60%,#f5f9ff_100%)] p-5 shadow-[0_15px_45px_rgba(37,52,78,.07)] lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-4">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white text-amber-700 shadow-sm"><ShieldCheck size={25} strokeWidth={1.7} /></span>
+          <div><p className="text-[11px] font-extrabold uppercase tracking-[.22em] text-amber-700">Bảo mật & vận hành</p><h1 className="mt-1 text-xl font-extrabold tracking-tight text-slate-900 md:text-2xl">Quản lý vai trò & phân quyền</h1><p className="mt-1 text-sm text-slate-500">Phân quyền đúng theo chức năng CRM và quyền truy cập khu vực quản trị website.</p></div>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-          style={{
-            background: "linear-gradient(110deg, #e3c65f, #b88822)",
-            color: "#1a1200",
-            boxShadow: "0 12px 30px rgba(187,135,31,.18)",
-          }}>
-          <Plus size={15} /> Tạo vai trò mới
-        </button>
-      </div>
+        <button type="button" onClick={() => setShowCreateModal(true)} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#d8b447] to-[#b9851c] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-amber-900/10 hover:brightness-105"><Plus size={17} />Tạo vai trò mới</button>
+      </header>
 
-      {/* Error banner */}
-      {error && (
-        <div className="mb-4 flex items-center gap-2 p-3 rounded-xl"
-          style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}>
-          <AlertCircle size={14} />
-          <span className="text-sm">{error}</span>
-        </div>
-      )}
+      {error && <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span className="flex items-center gap-2"><AlertCircle size={16} />{error}</span><button type="button" onClick={() => setError(null)}><X size={15} /></button></div>}
 
       {loading ? (
-        <div className="flex items-center justify-center h-64" style={{ color: "rgba(255,255,255,0.4)" }}>
-          <RefreshCw size={20} className="animate-spin mr-2" /> Đang tải...
-        </div>
+        <div className="flex h-72 items-center justify-center rounded-3xl border border-slate-200 bg-white text-sm text-slate-500"><RefreshCw size={18} className="mr-2 animate-spin" />Đang tải vai trò...</div>
       ) : (
-        <div className="flex gap-5">
-          {/* Left: Role list */}
-          <div className="w-64 flex-shrink-0 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest px-1 mb-3"
-              style={{ color: "rgba(255,255,255,0.3)" }}>
-              {roles.length} vai trò
-            </p>
-            {roles.map(role => (
-              <div key={role.id} className="relative group">
-                <RoleCard role={role} selected={selectedId === role.id} onClick={() => selectRole(role)} />
-                {/* Action buttons on hover */}
-                {!role.isSystem && (
-                  <div className="absolute top-2 right-2 hidden group-hover:flex gap-1">
-                    <button
-                      onClick={e => { e.stopPropagation(); setEditingRole(role); }}
-                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all"
-                      style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                      <Edit3 size={11} style={{ color: "rgba(255,255,255,0.6)" }} />
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); setDeleteConfirm(role.id); }}
-                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-all"
-                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                      <Trash2 size={11} style={{ color: "#f87171" }} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="grid gap-5 xl:grid-cols-[310px_minmax(0,1fr)]">
+          <aside className="self-start rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_12px_38px_rgba(37,52,78,.055)] xl:sticky xl:top-4">
+            <div className="mb-3 flex items-center justify-between px-1"><div><p className="text-xs font-extrabold uppercase tracking-[.16em] text-slate-500">Danh sách vai trò</p><p className="mt-1 text-xs text-slate-400">{roles.length} vai trò · {roles.reduce((sum, role) => sum + (role.staffCount || 0), 0)} nhân viên</p></div><Users size={19} className="text-amber-600" /></div>
+            <div className="space-y-2">{roles.map((role) => <RoleCard key={role.id} role={role} selected={role.id === selectedId} onSelect={() => selectRole(role)} onEdit={() => setEditingRole(role)} onDelete={() => setDeleteConfirm(role)} />)}</div>
+          </aside>
 
-          {/* Right: Permission editor */}
-          {selectedRole && currentPerms ? (
-            <div className="flex-1 min-w-0">
-              {/* Role header */}
-              <div className="flex items-center justify-between mb-4 p-4 rounded-2xl"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{selectedRole.icon}</span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold" style={{ color: selectedRole.color }}>{selectedRole.name}</h2>
-                      {selectedRole.isSystem && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                          style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}>
-                          Hệ thống
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{selectedRole.description}</p>
-                  </div>
+          <main className="min-w-0">
+            {selectedRole && currentPermissions ? (
+              <>
+                <div className="mb-4 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_12px_38px_rgba(37,52,78,.055)] md:flex-row md:items-center md:justify-between">
+                  <div className="flex min-w-0 items-center gap-4"><span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl" style={{ background: `${selectedRole.color}12`, border: `1px solid ${selectedRole.color}32` }}><RoleIcon icon={selectedRole.icon} size={22} color={selectedRole.color} /></span><div className="min-w-0"><div className="flex items-center gap-2"><h2 className="truncate text-lg font-extrabold" style={{ color: selectedRole.color }}>{selectedRole.name}</h2>{selectedRole.isSystem && <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">Hệ thống</span>}</div><p className="mt-1 truncate text-sm text-slate-500">{selectedRole.description || "Chưa có mô tả phạm vi công việc"}</p></div></div>
+                  <div className="flex items-center gap-3"><div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right"><p className="text-sm font-extrabold text-slate-800">{enabledCount}/{totalPermissions}</p><p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">quyền đang bật</p></div>{!selectedRole.isSystem && <button type="button" onClick={savePermissions} disabled={saving} className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/10 disabled:opacity-60">{saving ? <RefreshCw size={15} className="animate-spin" /> : saved ? <Check size={16} /> : <Save size={15} />}{saved ? "Đã lưu" : "Lưu quyền"}</button>}</div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-sm font-bold" style={{ color: "#f5edd6" }}>{permCount}/{totalPerms}</div>
-                    <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>quyền được bật</div>
-                  </div>
-                  {!selectedRole.isSystem && (
-                    <button
-                      onClick={handleSavePerms}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all"
-                      style={{
-                        background: saved
-                          ? "linear-gradient(135deg, #22c55e, #16a34a)"
-                          : "linear-gradient(135deg, #d97706, #b45309)",
-                        color: "#fff",
-                        boxShadow: saved
-                          ? "0 4px 16px rgba(34,197,94,0.3)"
-                          : "0 4px 16px rgba(217,119,6,0.3)",
-                      }}>
-                      {saving ? (
-                        <RefreshCw size={13} className="animate-spin" />
-                      ) : saved ? (
-                        <CheckCircle2 size={13} />
-                      ) : (
-                        <Save size={13} />
-                      )}
-                      {saved ? "Đã lưu!" : "Lưu quyền"}
-                    </button>
-                  )}
-                </div>
-              </div>
 
-              {selectedRole.isSystem && (
-                <div className="mb-4 flex items-center gap-2 p-3 rounded-xl"
-                  style={{ background: "rgba(201,168,76,0.05)", border: "1px solid rgba(201,168,76,0.15)" }}>
-                  <Shield size={13} style={{ color: "#C9A84C" }} />
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-                    Vai trò <strong style={{ color: "#C9A84C" }}>{selectedRole.name}</strong> là vai trò hệ thống — không thể chỉnh sửa quyền.
-                  </p>
-                </div>
-              )}
+                {selectedRole.isSystem && <div className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900"><ShieldCheck size={17} className="flex-shrink-0" /><span>Vai trò <strong>{selectedRole.name}</strong> có toàn quyền hệ thống và không thể chỉnh sửa. Quyền vào trang Admin đã được bật sẵn.</span></div>}
 
-              <PermissionEditor
-                role={{ ...selectedRole, permissions: currentPerms }}
-                roles={roles}
-                onChange={handlePermChange}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center" style={{ color: "rgba(255,255,255,0.3)" }}>
-              <div className="text-center">
-                <Shield size={40} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Chọn một vai trò để xem và chỉnh sửa quyền</p>
-              </div>
-            </div>
-          )}
+                <PermissionEditor role={selectedRole} permissions={currentPermissions} onChange={(permissions) => { setEditedPermissions(permissions); setSaved(false); }} />
+              </>
+            ) : <div className="flex h-72 items-center justify-center rounded-3xl border border-slate-200 bg-white text-sm text-slate-500">Chưa có vai trò để hiển thị.</div>}
+          </main>
         </div>
       )}
 
-      {/* Create modal */}
-      {showCreateModal && (
-        <RoleFormModal
-          onSave={handleCreate}
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
-
-      {/* Edit meta modal */}
-      {editingRole && (
-        <RoleFormModal
-          initial={editingRole}
-          onSave={handleEditMeta}
-          onClose={() => setEditingRole(null)}
-        />
-      )}
-
-      {/* Delete confirm */}
+      {showCreateModal && <RoleFormModal onSave={createRole} onClose={() => setShowCreateModal(false)} />}
+      {editingRole && <RoleFormModal initial={editingRole} onSave={editRole} onClose={() => setEditingRole(null)} />}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(10,15,30,0.75)", backdropFilter: "blur(8px)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 space-y-4"
-            style={{
-              background: "linear-gradient(145deg, #1a1200, #0f0d00)",
-              border: "1px solid rgba(239,68,68,0.3)",
-              boxShadow: "0 40px 80px rgba(0,0,0,0.6)",
-            }}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
-                <Trash2 size={18} style={{ color: "#f87171" }} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold" style={{ color: "#f5edd6" }}>Xóa vai trò?</h3>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  Hành động này không thể hoàn tác
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                Hủy
-              </button>
-              <button onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold"
-                style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#fff" }}>
-                Xóa vai trò
-              </button>
-            </div>
-          </div>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl border border-white bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,.28)]"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600"><Trash2 size={19} /></span><h3 className="mt-4 text-lg font-bold text-slate-900">Xóa vai trò “{deleteConfirm.name}”?</h3><p className="mt-2 text-sm leading-6 text-slate-500">Chỉ có thể xóa khi không còn nhân viên sử dụng vai trò này. Hành động không thể hoàn tác.</p><div className="mt-5 flex gap-3"><button type="button" onClick={() => setDeleteConfirm(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600">Hủy</button><button type="button" onClick={() => void deleteRole()} className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white">Xóa vai trò</button></div></div>
         </div>
       )}
     </div>

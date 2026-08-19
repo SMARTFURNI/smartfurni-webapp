@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getPostById, updatePost } from "@/lib/admin-store";
 import { initDbOnce } from "@/lib/db-init";
 import { dbSaveOneAndWait } from "@/lib/db-store";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 180;
 
 export async function POST(req: NextRequest, { params }: Params) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await initDbOnce();
   const { slug } = await params;
   const body = await req.json() as { image?: BlogArticleImage; finalize?: boolean };

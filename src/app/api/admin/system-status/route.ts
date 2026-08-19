@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { query } from "@/lib/db";
 import { isRailwayBucketConfigured } from "@/lib/media-storage";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await getAdminPortalSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let database = false;
   try {

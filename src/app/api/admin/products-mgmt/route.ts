@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { getAllProducts, getProductDashboardStats, createProduct } from "@/lib/product-store";
 import { initDbOnce } from "@/lib/db-init";
 
 export async function POST(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const body = await request.json();
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   await initDbOnce();
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);

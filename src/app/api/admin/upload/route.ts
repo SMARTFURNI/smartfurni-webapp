@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession, getStaffSession } from "@/lib/admin-auth";
+import { getAdminPortalSession, getStaffSession } from "@/lib/admin-auth";
 import { storeImageAsset } from "@/lib/media-assets";
 
 async function checkAuth(): Promise<boolean> {
-  const isAdmin = await getAdminSession();
+  const isAdmin = await getAdminPortalSession();
   if (isAdmin) return true;
   const staff = await getStaffSession();
   return !!staff;

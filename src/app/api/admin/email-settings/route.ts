@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminPortalSession } from "@/lib/admin-auth";
 import { dbGetSetting, dbSaveSetting } from "@/lib/db-store";
 
 type EmailSettings = {
@@ -23,14 +23,14 @@ async function getSettings(): Promise<EmailSettings> {
 }
 
 export async function GET() {
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const settings = await getSettings();
   return NextResponse.json({ ...settings, smtpPass: (process.env.SMTP_PASS || process.env.SMTP_PASSWORD) ? "••••••••" : "" });
 }
 
 export async function POST(req: NextRequest) {
-  const ok = await getAdminSession();
+  const ok = await getAdminPortalSession();
   if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
