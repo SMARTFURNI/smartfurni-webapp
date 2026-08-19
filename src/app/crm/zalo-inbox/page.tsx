@@ -8,5 +8,5 @@ export default async function ZaloInboxPage() {
   const session = await requireCrmAccess();
   if (!await canAccessZaloInbox(session)) redirect("/crm");
   const canSendMessages = await canSendZaloInboxMessages(session);
-  return <ZaloInboxClient canSendMessages={canSendMessages} />;
+  return <ZaloInboxClient canSendMessages={canSendMessages} isAdmin={session.isAdmin} />;
 }

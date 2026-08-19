@@ -127,6 +127,51 @@ interface ZaloAccountStatus {
   isConnected: boolean;
   status: string;
 }
+
+function ZaloAccountScope({
+  accounts,
+  accountId,
+  onChange,
+  label,
+}: {
+  accounts: ZaloAccountStatus[];
+  accountId: string;
+  onChange: (accountId: string) => void;
+  label: string;
+}) {
+  const selected = accounts.find(account => account.id === accountId);
+  return (
+    <div className={styles.accountScope}>
+      <div className={styles.accountScopeCopy}>
+        <span className={styles.accountScopeIcon}><User size={16} /></span>
+        <span>
+          <strong>Tài khoản Zalo đang xem</strong>
+          <small>{label} được tách riêng theo từng tài khoản Zalo cá nhân.</small>
+        </span>
+      </div>
+      {accounts.length > 0 ? (
+        <label className={styles.accountScopeField}>
+          <span className="sr-only">Chọn tài khoản Zalo cho {label}</span>
+          <select value={accountId} onChange={event => onChange(event.target.value)}>
+            {accounts.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.isConnected ? "●" : "○"} {account.label || account.displayName || account.id}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={15} aria-hidden="true" />
+        </label>
+      ) : (
+        <span className={styles.accountScopeEmpty}>Chưa có tài khoản Zalo</span>
+      )}
+      {selected && (
+        <span className={styles.accountScopeStatus} data-connected={String(selected.isConnected)}>
+          {selected.isConnected ? "Đang kết nối" : "Mất kết nối"}
+        </span>
+      )}
+    </div>
+  );
+}
 interface ReplyContext {
   messageId: string;
   senderName: string;
@@ -1287,7 +1332,13 @@ function ZaloSettingsModal({
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────────────
-export default function ZaloInboxClient({ canSendMessages = false }: { canSendMessages?: boolean }) {
+export default function ZaloInboxClient({
+  canSendMessages = false,
+  isAdmin = false,
+}: {
+  canSendMessages?: boolean;
+  isAdmin?: boolean;
+}) {
   const [mainView, setMainView] = useState<"messages" | "friends" | "groups" | "auto-reply" | "media-library" | "catalog">("messages");
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
   const [conversations, setConversations] = useState<ZaloConversation[]>([]);
@@ -1995,6 +2046,9 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
   });
 
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+  const selectedSubAccountId = selectedAccountId === "all"
+    ? accounts[0]?.id || ""
+    : selectedAccountId;
 
   const workspaceTabs = [
     { id: "messages" as const, label: "Hội thoại", icon: MessageCircle, badge: totalUnread },
@@ -2020,7 +2074,7 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
             <span>{gatewayStatus.connected ? "Đã kết nối" : "Chưa kết nối"}</span>
           </div>
           <button className={styles.secondaryAction} onClick={loadConversations}><RefreshCw size={16} /><span>Làm mới</span></button>
-          <button className={styles.primaryAction} onClick={() => setShowSettings(true)}><Settings size={16} /><span>Cài đặt</span></button>
+          {isAdmin && <button className={styles.primaryAction} onClick={() => setShowSettings(true)}><Settings size={16} /><span>Cài đặt</span></button>}
         </div>
       </div>
       <nav className={styles.workspaceNav} aria-label="Chức năng Zalo Inbox">
@@ -2047,49 +2101,69 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
   };
 
   if (mainView !== "messages") {
+    const accountScopedView = mainView === "friends" || mainView === "groups" || mainView === "auto-reply" || mainView === "catalog";
     return (
       <div className={styles.page}>
         {workspaceHeader}
         <div className={styles.subView} aria-label={subViewTitles[mainView]}>
-          {mainView === "friends" && <ZaloFriendsPanel
-            accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId}
-            onClose={() => setMainView("messages")}
-            onOpenChat={async (userId: string, displayName: string) => {
-              // Chuyển sang view messages trước
-              setMainView("messages");
-              // Tìm conversation đã tồn tại trong danh sách
-              const existing = conversations.find(c => c.id === userId || c.phone === userId);
-              if (existing) {
-                handleSelectConv(existing);
-              } else {
-                // Tạo conversation stub để mở chat ngay lập tức
-                const stub: ZaloConversation = {
-                  accountId: selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId,
-                  id: userId,
-                  zaloUserId: userId,
-                  phone: null,
-                  displayName,
-                  avatarUrl: null,
-                  lastMessage: null,
-                  lastMessageAt: new Date().toISOString(),
-                  unreadCount: 0,
-                  leadId: null,
-                  lead: null,
-                };
-                setSelectedConv(stub);
-                setMessages([]);
-                setReplyContext(null);
-                setMsgSearchQuery("");
-                setShowMsgSearch(false);
-                // Load lịch sử tin nhắn nếu có
-                loadMessages(userId, true, stub.accountId);
-              }
-            }}
-          />}
-          {mainView === "groups" && <ZaloGroupsPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
-          {mainView === "auto-reply" && <ZaloAutoReplyPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
-          {canSendMessages && mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
-          {mainView === "catalog" && <ZaloCatalogPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
+          <div className={styles.subViewContent}>
+            {accountScopedView && (
+              <ZaloAccountScope
+                accounts={accounts}
+                accountId={selectedSubAccountId}
+                onChange={setSelectedAccountId}
+                label={subViewTitles[mainView]}
+              />
+            )}
+            <div className={styles.subViewPanel}>
+              {mainView === "friends" && selectedSubAccountId && <ZaloFriendsPanel
+                accountId={selectedSubAccountId}
+                onClose={() => setMainView("messages")}
+                onOpenChat={async (userId: string, displayName: string) => {
+                  // Chuyển sang view messages trước
+                  setMainView("messages");
+                  // Tìm conversation đã tồn tại trong danh sách
+                  const existing = conversations.find(c => c.id === userId || c.phone === userId);
+                  if (existing) {
+                    handleSelectConv(existing);
+                  } else {
+                    // Tạo conversation stub để mở chat ngay lập tức
+                    const stub: ZaloConversation = {
+                      accountId: selectedSubAccountId,
+                      id: userId,
+                      zaloUserId: userId,
+                      phone: null,
+                      displayName,
+                      avatarUrl: null,
+                      lastMessage: null,
+                      lastMessageAt: new Date().toISOString(),
+                      unreadCount: 0,
+                      leadId: null,
+                      lead: null,
+                    };
+                    setSelectedConv(stub);
+                    setMessages([]);
+                    setReplyContext(null);
+                    setMsgSearchQuery("");
+                    setShowMsgSearch(false);
+                    // Load lịch sử tin nhắn nếu có
+                    loadMessages(userId, true, stub.accountId);
+                  }
+                }}
+              />}
+              {mainView === "groups" && selectedSubAccountId && <ZaloGroupsPanel accountId={selectedSubAccountId} onClose={() => setMainView("messages")} />}
+              {mainView === "auto-reply" && selectedSubAccountId && <ZaloAutoReplyPanel accountId={selectedSubAccountId} onClose={() => setMainView("messages")} />}
+              {canSendMessages && mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
+              {mainView === "catalog" && selectedSubAccountId && <ZaloCatalogPanel accountId={selectedSubAccountId} onClose={() => setMainView("messages")} />}
+              {accountScopedView && !selectedSubAccountId && (
+                <div className={styles.noAccountState}>
+                  <WifiOff size={30} />
+                  <strong>Chưa có tài khoản Zalo để hiển thị</strong>
+                  <span>Vui lòng liên hệ quản trị viên để kết nối tài khoản.</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -2232,10 +2306,10 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <RefreshCw size={15} />
               </button>
-              <button onClick={() => setShowSettings(true)} title="Cài đặt Zalo"
+              {isAdmin && <button onClick={() => setShowSettings(true)} title="Cài đặt Zalo"
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <Settings size={15} />
-              </button>
+              </button>}
             </div>
           </div>
 
@@ -2272,7 +2346,7 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
               ⚠️ {gatewayStatus.message}
             </div>
           )}
-          {!loading && !gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
+          {isAdmin && !loading && !gatewayStatus.connected && !gatewayStatus.message?.includes("quyền") && (
             <button onClick={() => setShowSettings(true)}
               style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "none", background: T.accent, color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer", marginBottom: 8, boxShadow: "0 2px 8px rgba(59,130,246,0.3)" }}>
               Đăng nhập Zalo
@@ -2391,7 +2465,8 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
                 <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
                 <div style={{ fontWeight: 600, color: T.textSecondary, marginBottom: 6 }}>Chưa có tin nhắn nào</div>
                 <div style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.6 }}>
-                  Tin nhắn sẽ xuất hiện ở đây.<br />Nhấn ⚙️ → <strong>Đăng nhập Zalo</strong> để bắt đầu.
+                  Tin nhắn sẽ xuất hiện ở đây.<br />
+                  {isAdmin ? <>Nhấn ⚙️ → <strong>Đăng nhập Zalo</strong> để bắt đầu.</> : <>Vui lòng liên hệ quản trị viên để kết nối tài khoản Zalo.</>}
                 </div>
               </div>
             ) : (
@@ -2700,7 +2775,7 @@ export default function ZaloInboxClient({ canSendMessages = false }: { canSendMe
       )}
 
       {/* Settings modal */}
-      {showSettings && (
+      {isAdmin && showSettings && (
         <ZaloSettingsModal
           soundPreferences={{ soundEnabled, ringtoneId, volume: soundVolume }}
           onSoundPreferencesChange={updateSoundPreferences}

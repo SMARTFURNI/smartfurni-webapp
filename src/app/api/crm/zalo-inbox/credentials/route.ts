@@ -4,14 +4,13 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
 import { disconnectZalo, getGatewayStatus } from "@/lib/zalo-gateway";
 import { listZaloAccounts } from "@/lib/zalo-account-store";
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
-  if (!await canAccessZaloInbox(session)) {
-    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!session?.isAdmin) {
+    return NextResponse.json({ error: "Chỉ quản trị viên được xem cấu hình Zalo" }, { status: session ? 403 : 401 });
   }
 
   try {

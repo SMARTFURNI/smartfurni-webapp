@@ -211,6 +211,136 @@
   background: var(--zi-surface) !important;
 }
 
+.subViewContent {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.subViewPanel {
+  min-height: 0;
+  flex: 1;
+}
+
+.subViewPanel > div {
+  height: 100%;
+}
+
+.accountScope {
+  display: flex;
+  min-height: 66px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--zi-border);
+  background: linear-gradient(90deg, #f8fbff, #fffdf7);
+}
+
+.accountScopeCopy {
+  display: flex;
+  min-width: 240px;
+  align-items: center;
+  gap: 10px;
+}
+
+.accountScopeCopy > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.accountScopeCopy strong {
+  color: var(--zi-text);
+  font-size: 12px;
+}
+
+.accountScopeCopy small {
+  color: var(--zi-muted);
+  font-size: 10px;
+}
+
+.accountScopeIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #ead48f;
+  border-radius: 10px;
+  color: var(--zi-gold);
+  background: #fff8df;
+}
+
+.accountScopeField {
+  position: relative;
+  display: flex;
+  width: min(360px, 45vw);
+  margin-left: auto;
+  align-items: center;
+}
+
+.accountScopeField select {
+  width: 100%;
+  min-height: 40px;
+  appearance: none;
+  padding: 0 38px 0 13px;
+  border: 1px solid #cfd9e6;
+  border-radius: 11px;
+  outline: none;
+  color: #26354a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accountScopeField select:focus {
+  border-color: #d2a729;
+  box-shadow: 0 0 0 3px rgba(210, 167, 41, .14);
+}
+
+.accountScopeField svg {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: #758398;
+}
+
+.accountScopeStatus,
+.accountScopeEmpty {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.accountScopeStatus {
+  color: #087d56;
+  background: #e8fbf3;
+}
+
+.accountScopeStatus[data-connected="false"],
+.accountScopeEmpty {
+  color: #a15d0b;
+  background: #fff3dc;
+}
+
+.noAccountState {
+  display: grid;
+  height: 100%;
+  place-content: center;
+  justify-items: center;
+  gap: 7px;
+  color: var(--zi-muted);
+  text-align: center;
+}
+
+.noAccountState strong { color: var(--zi-text); }
+.noAccountState span { font-size: 12px; }
+
 .emptyState {
   max-width: 360px;
   text-align: center;
@@ -256,6 +386,10 @@
     box-shadow: -18px 0 44px rgba(15,23,42,.18);
   }
   .subView > div { height: 100% !important; }
+  .accountScope { min-height: 58px; padding: 8px 10px; }
+  .accountScopeCopy { min-width: 0; }
+  .accountScopeCopy small, .accountScopeStatus { display: none; }
+  .accountScopeField { width: min(58vw, 300px); }
 }
 
 @media (max-width: 520px) {
