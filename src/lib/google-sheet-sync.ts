@@ -202,6 +202,8 @@ async function syncOneSheet(
           sheetRowId: dedupKey,
           syncedFrom: "google_sheet",
           sheetSourceId: sheetCfg.id,
+          sheetSourceLabel: sheetCfg.label,
+          sheetTabName: sheetCfg.sheetName,
           spreadsheetId: sheetCfg.spreadsheetId,
           originalId: rowId,
           ...(marketScope ? { marketScope } : {}),

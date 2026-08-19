@@ -502,6 +502,84 @@ export const DEFAULT_SETTINGS: CrmSettings = {
   emailRules: [],
 };
 
+const GOOGLE_SHEET_SOURCE_TYPES = new Set<SheetSourceConfig["source"]>([
+  "facebook_lead",
+  "tiktok_lead",
+  "website",
+  "other",
+]);
+
+const GOOGLE_SHEET_SOURCE_COLORS: Record<SheetSourceConfig["source"], string> = {
+  facebook_lead: "#1877f2",
+  tiktok_lead: "#010101",
+  website: "#f97316",
+  other: "#64748b",
+};
+
+function normalizeGoogleSheetConfig(
+  value?: Partial<GoogleSheetConfig> | null,
+): GoogleSheetConfig {
+  const defaults = DEFAULT_SETTINGS.googleSheet;
+  const rawSources = Array.isArray(value?.sources) ? value.sources : defaults.sources;
+  const seenIds = new Set<string>();
+
+  const sources = rawSources.map((rawSource, index): SheetSourceConfig => {
+    const raw = rawSource as Partial<SheetSourceConfig>;
+    const source = GOOGLE_SHEET_SOURCE_TYPES.has(raw.source as SheetSourceConfig["source"])
+      ? raw.source as SheetSourceConfig["source"]
+      : "other";
+    const baseId = typeof raw.id === "string" && raw.id.trim()
+      ? raw.id.trim()
+      : `sheet_${index + 1}`;
+    let id = baseId;
+    let suffix = 2;
+    while (seenIds.has(id)) {
+      id = `${baseId}_${suffix}`;
+      suffix += 1;
+    }
+    seenIds.add(id);
+
+    return {
+      id,
+      label: typeof raw.label === "string" && raw.label.trim()
+        ? raw.label.trim()
+        : `Nguồn Sheet ${index + 1}`,
+      enabled: raw.enabled === true,
+      spreadsheetId: typeof raw.spreadsheetId === "string" ? raw.spreadsheetId.trim() : "",
+      sheetName: typeof raw.sheetName === "string" && raw.sheetName.trim()
+        ? raw.sheetName.trim()
+        : "Trang tính1",
+      source,
+      color: typeof raw.color === "string" && raw.color.trim()
+        ? raw.color
+        : GOOGLE_SHEET_SOURCE_COLORS[source],
+      lastSyncedAt: typeof raw.lastSyncedAt === "string" ? raw.lastSyncedAt : "",
+      totalSynced: Number.isFinite(Number(raw.totalSynced)) ? Number(raw.totalSynced) : 0,
+    };
+  });
+
+  const textValue = <K extends keyof GoogleSheetConfig>(key: K): string => {
+    const raw = value?.[key];
+    return typeof raw === "string" ? raw : String(defaults[key] ?? "");
+  };
+
+  return {
+    enabled: value?.enabled === true,
+    serviceAccountKey: textValue("serviceAccountKey"),
+    sources,
+    idColumn: textValue("idColumn"),
+    nameColumn: textValue("nameColumn"),
+    phoneColumn: textValue("phoneColumn"),
+    emailColumn: textValue("emailColumn"),
+    adNameColumn: textValue("adNameColumn"),
+    campaignNameColumn: textValue("campaignNameColumn"),
+    formNameColumn: textValue("formNameColumn"),
+    messageColumn: textValue("messageColumn"),
+    customerRoleColumn: textValue("customerRoleColumn"),
+    totalSynced: Number.isFinite(Number(value?.totalSynced)) ? Number(value?.totalSynced) : 0,
+  };
+}
+
 // ─── DB Init ──────────────────────────────────────────────────────────────────
 
 async function initSettingsTable() {
@@ -535,9 +613,9 @@ export async function getCrmSettings(): Promise<CrmSettings> {
     leadTypes:     CRM_LEAD_TYPE_OPTIONS.map(item => ({ ...item })),
     discountTiers: (stored.discountTiers as DiscountTierConfig[]) ?? DEFAULT_SETTINGS.discountTiers,
     webhook:       (stored.webhook       as WebhookConfig)     ?? DEFAULT_SETTINGS.webhook,
-    googleSheet: stored.googleSheet
-      ? { ...DEFAULT_SETTINGS.googleSheet, ...(stored.googleSheet as GoogleSheetConfig) }
-      : DEFAULT_SETTINGS.googleSheet,
+    googleSheet: normalizeGoogleSheetConfig(
+      stored.googleSheet as Partial<GoogleSheetConfig> | undefined,
+    ),
     notifications: (stored.notifications as NotificationConfig) ?? DEFAULT_SETTINGS.notifications,
     quote:         (stored.quote         as QuoteConfig)       ?? DEFAULT_SETTINGS.quote,
     email: stored.email
@@ -556,11 +634,14 @@ export async function updateCrmSetting<K extends keyof CrmSettings>(
   value: CrmSettings[K]
 ): Promise<void> {
   await initSettingsTable();
+  const persistedValue = key === "googleSheet"
+    ? normalizeGoogleSheetConfig(value as GoogleSheetConfig)
+    : value;
   await query(
     `INSERT INTO crm_settings (key, value, updated_at)
      VALUES ($1, $2::jsonb, NOW())
      ON CONFLICT (key) DO UPDATE SET value = $2::jsonb, updated_at = NOW()`,
-    [key, JSON.stringify(value)]
+    [key, JSON.stringify(persistedValue)]
   );
 }
 

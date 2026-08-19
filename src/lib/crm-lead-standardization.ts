@@ -41,6 +41,7 @@ export const CRM_FOUNDATION_PROFILE = {
 export const SOURCE_LABELS: Record<RawLeadSource, string> = {
   facebook_lead: "Facebook Ads",
   tiktok_lead: "TikTok Ads",
+  website: "Website / Landing Page",
   manual: "Nhập tay",
   other: "Khác",
 };

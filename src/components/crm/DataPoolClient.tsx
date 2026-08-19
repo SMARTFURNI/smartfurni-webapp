@@ -110,6 +110,14 @@ const SOURCE_OPTIONS: { value: RawLeadSource; label: string; desc: string; color
     border: "#E5E7EB",
   },
   {
+    value: "website",
+    label: "Website",
+    desc: "Từ Website / Landing Page",
+    color: "#F97316",
+    bg: "#FFF7ED",
+    border: "#FED7AA",
+  },
+  {
     value: "manual",
     label: "Nhập tay",
     desc: "Data nhập trực tiếp",

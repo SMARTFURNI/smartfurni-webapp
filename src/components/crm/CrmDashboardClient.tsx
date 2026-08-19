@@ -1925,7 +1925,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                         {" — "}{poolStats.bySource.slice(0, 2).map((s, i) => (
                           <span key={s.source}>{i > 0 && ", "}
                             <span style={{ color: "#475569" }}>
-                              {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "manual" ? "Nhập tay" : s.source}
+                              {s.source === "facebook_lead" ? "Facebook" : s.source === "tiktok_lead" ? "TikTok" : s.source === "website" ? "Website" : s.source === "manual" ? "Nhập tay" : s.source}
                             </span> ({s.count})
                           </span>
                         ))}

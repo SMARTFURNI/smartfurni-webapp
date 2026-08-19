@@ -20,38 +20,12 @@ import {
   Play,
   AlertCircle,
 } from "lucide-react";
+import type { GoogleSheetConfig, SheetSourceConfig } from "@/lib/crm-settings-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SourceType = "facebook_lead" | "tiktok_lead" | "website" | "other";
-
-interface SheetSource {
-  id: string;
-  label: string;
-  enabled: boolean;
-  spreadsheetId: string;
-  sheetName: string;
-  source: SourceType;
-  color: string;
-  lastSyncedAt: string;
-  totalSynced: number;
-}
-
-interface GoogleSheetConfig {
-  enabled: boolean;
-  serviceAccountKey: string;
-  sources: SheetSource[];
-  idColumn: string;
-  nameColumn: string;
-  phoneColumn: string;
-  emailColumn: string;
-  adNameColumn: string;
-  campaignNameColumn: string;
-  formNameColumn: string;
-  messageColumn: string;
-  customerRoleColumn: string;
-  totalSynced: number;
-}
+type SourceType = SheetSourceConfig["source"];
+type SheetSource = SheetSourceConfig;
 
 interface SyncSheetResult {
   sheetId: string;
@@ -111,9 +85,17 @@ function extractSpreadsheetId(input: string): string {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function GoogleSheetClient() {
-  const [config, setConfig] = useState<GoogleSheetConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+interface GoogleSheetClientProps {
+  value?: GoogleSheetConfig;
+  onChange?: (value: GoogleSheetConfig) => void;
+  embedded?: boolean;
+}
+
+export default function GoogleSheetClient({ value, onChange, embedded = false }: GoogleSheetClientProps) {
+  const isControlled = value !== undefined;
+  const [internalConfig, setInternalConfig] = useState<GoogleSheetConfig | null>(value ?? null);
+  const config = isControlled ? value : internalConfig;
+  const [loading, setLoading] = useState(!isControlled);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null); // sheetId or "all"
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
@@ -122,64 +104,73 @@ export default function GoogleSheetClient() {
   const [showGuide, setShowGuide] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
+  const commitConfig = useCallback((next: GoogleSheetConfig) => {
+    if (onChange) onChange(next);
+    else setInternalConfig(next);
+  }, [onChange]);
+
   const fetchConfig = useCallback(async () => {
     try {
-      console.log("[GoogleSheetClient] Fetching config...");
-      const res = await fetch("/api/crm/google-sheet-sync");
-      if (res.ok) {
-        const data = await res.json();
-        // Merge với settings đầy đủ
-        const settingsRes = await fetch("/api/crm/settings");
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          console.log("[GoogleSheetClient] Loaded config:", settings.googleSheet);
-          setConfig(settings.googleSheet);
-        } else {
-          console.error("[GoogleSheetClient] Failed to fetch settings:", settingsRes.status);
-        }
+      const settingsRes = await fetch("/api/crm/settings");
+      if (settingsRes.ok) {
+        const settings = await settingsRes.json();
+        commitConfig(settings.googleSheet);
+      } else {
+        console.error("[GoogleSheetClient] Failed to fetch settings:", settingsRes.status);
       }
     } catch (e) {
       console.error("[GoogleSheetClient] Error fetching config:", e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [commitConfig]);
 
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+  useEffect(() => {
+    if (isControlled) {
+      setLoading(false);
+      return;
+    }
+    void fetchConfig();
+  }, [fetchConfig, isControlled]);
+
+  const persistConfig = async (nextConfig: GoogleSheetConfig) => {
+    const res = await fetch("/api/crm/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "googleSheet", value: nextConfig }),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || "Không thể lưu cấu hình Google Sheet");
+    }
+  };
 
   const saveConfig = async () => {
     if (!config) return;
     setSaving(true);
     setSaveMsg(null);
     try {
-      console.log("[GoogleSheetClient] Saving config:", config);
-      const res = await fetch("/api/crm/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "googleSheet", value: config }),
-      });
-      console.log("[GoogleSheetClient] Response status:", res.status);
-      if (res.ok) {
-        setSaveMsg("✅ Đã lưu cấu hình");
-        setTimeout(() => setSaveMsg(null), 3000);
-      } else {
-        const error = await res.json();
-        console.error("[GoogleSheetClient] Error response:", error);
-        setSaveMsg(`❌ Lỗi khi lưu: ${error.error || JSON.stringify(error)}`);
-      }
+      await persistConfig(config);
+      setSaveMsg("✅ Đã lưu cấu hình");
+      await fetchConfig();
+      setTimeout(() => setSaveMsg(null), 3000);
     } catch (err) {
       console.error("[GoogleSheetClient] Exception:", err);
-      setSaveMsg(`❌ Lỗi kết nối: ${String(err)}`);
+      setSaveMsg(`❌ ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleSync = async (sheetId?: string) => {
+    if (!config) return;
     const key = sheetId || "all";
     setSyncing(key);
     setSyncResult(null);
     try {
+      // Đồng bộ luôn dùng đúng bản cấu hình đang hiển thị, kể cả khi người dùng
+      // vừa thêm/sửa nguồn Sheet mà chưa bấm nút lưu ở đầu trang.
+      await persistConfig(config);
       const url = sheetId
         ? `/api/crm/google-sheet-sync?id=${sheetId}`
         : "/api/crm/google-sheet-sync";
@@ -196,6 +187,7 @@ export default function GoogleSheetClient() {
         totalSkipped: 0,
         syncedAt: new Date().toISOString(),
       });
+      setSaveMsg(`❌ ${e instanceof Error ? e.message : "Không thể đồng bộ Google Sheet"}`);
     } finally {
       setSyncing(null);
     }
@@ -205,7 +197,7 @@ export default function GoogleSheetClient() {
     if (!config) return;
     const newSheet: SheetSource = {
       id: `sheet_${Date.now()}`,
-      label: "Sheet mới",
+      label: "Nguồn Google Sheet mới",
       enabled: false,
       spreadsheetId: "",
       sheetName: "Trang tính1",
@@ -214,18 +206,18 @@ export default function GoogleSheetClient() {
       lastSyncedAt: "",
       totalSynced: 0,
     };
-    setConfig({ ...config, sources: [...config.sources, newSheet] });
+    commitConfig({ ...config, sources: [...config.sources, newSheet] });
     setExpandedSheet(newSheet.id);
   };
 
   const removeSheet = (id: string) => {
     if (!config) return;
-    setConfig({ ...config, sources: config.sources.filter(s => s.id !== id) });
+    commitConfig({ ...config, sources: config.sources.filter(s => s.id !== id) });
   };
 
   const updateSheet = (id: string, updates: Partial<SheetSource>) => {
     if (!config) return;
-    setConfig({
+    commitConfig({
       ...config,
       sources: config.sources.map(s => s.id === id ? { ...s, ...updates } : s),
     });
@@ -248,7 +240,7 @@ export default function GoogleSheetClient() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className={`${embedded ? "" : "max-w-4xl mx-auto p-6"} space-y-6`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -319,7 +311,7 @@ export default function GoogleSheetClient() {
               type="checkbox"
               className="sr-only peer"
               checked={config.enabled}
-              onChange={e => setConfig({ ...config, enabled: e.target.checked })}
+              onChange={e => commitConfig({ ...config, enabled: e.target.checked })}
             />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500" />
           </label>
@@ -337,7 +329,7 @@ export default function GoogleSheetClient() {
               placeholder='{"type": "service_account", "project_id": "...", "private_key": "...", ...}'
               value={showServiceKey ? config.serviceAccountKey : (config.serviceAccountKey ? "••••••••••••••••••••••••••••••••" : "")}
               onChange={e => {
-                if (showServiceKey) setConfig({ ...config, serviceAccountKey: e.target.value });
+                if (showServiceKey) commitConfig({ ...config, serviceAccountKey: e.target.value });
               }}
               readOnly={!showServiceKey}
             />
@@ -382,7 +374,7 @@ export default function GoogleSheetClient() {
                     type="text"
                     className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
                     value={(config as unknown as Record<string, unknown>)[key] as string || ""}
-                    onChange={e => setConfig({ ...config, [key]: e.target.value })}
+                    onChange={e => commitConfig({ ...config, [key]: e.target.value })}
                   />
                 </div>
               ))}
@@ -400,7 +392,7 @@ export default function GoogleSheetClient() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-green-700 border border-green-200 hover:bg-green-50 transition-colors"
           >
             <Plus size={14} />
-            Thêm sheet
+            Thêm nguồn Sheet
           </button>
         </div>
 
@@ -443,7 +435,7 @@ export default function GoogleSheetClient() {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={e => { e.stopPropagation(); handleSync(sheet.id); }}
-                  disabled={syncing !== null || !sheet.enabled || !sheet.spreadsheetId}
+                  disabled={syncing !== null || !sheet.enabled || !sheet.spreadsheetId || !sheet.sheetName.trim()}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors disabled:opacity-30"
                   title="Sync sheet này"
                 >
@@ -558,10 +550,12 @@ export default function GoogleSheetClient() {
                 </div>
 
                 {/* Validation warning */}
-                {!sheet.spreadsheetId && (
+                {(!sheet.spreadsheetId || !sheet.sheetName.trim()) && (
                   <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                     <AlertCircle size={12} />
-                    Chưa có Spreadsheet ID — sheet này sẽ bị bỏ qua khi sync
+                    {!sheet.spreadsheetId
+                      ? "Chưa có Spreadsheet ID — nguồn này sẽ bị bỏ qua khi sync"
+                      : "Chưa có tên tab Sheet — nguồn này sẽ bị bỏ qua khi sync"}
                   </div>
                 )}
               </div>
@@ -572,7 +566,7 @@ export default function GoogleSheetClient() {
         {config.sources.length === 0 && (
           <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
             <Sheet size={32} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Chưa có sheet nào. Nhấn "Thêm sheet" để bắt đầu.</p>
+            <p className="text-sm">Chưa có nguồn nào. Nhấn "Thêm nguồn Sheet" để bắt đầu.</p>
           </div>
         )}
       </div>
@@ -613,8 +607,8 @@ export default function GoogleSheetClient() {
         </div>
       </div>
 
-      {/* Save button */}
-      <div className="flex items-center justify-between pt-2">
+      {/* Standalone route owns its save button; CRM Settings uses the parent save controls. */}
+      {!embedded && <div className="flex items-center justify-between pt-2">
         {saveMsg && (
           <span className={`text-sm font-medium ${saveMsg.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
             {saveMsg}
@@ -631,7 +625,7 @@ export default function GoogleSheetClient() {
             {saving ? "Đang lưu..." : "Lưu cấu hình"}
           </button>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

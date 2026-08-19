@@ -10,7 +10,7 @@ import {
   AlertCircle, Settings, Copy, RefreshCw, Palette, Sheet,
   Lock,
 } from "lucide-react";
-import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme, DashboardSectionId, KpiCardId, ChartType, FunnelStyle, ChartPalette, DensityMode, FontFamily, KpiSize, KpiColumns, RefreshInterval } from "@/lib/crm-settings-store";
+import type { CrmSettings, PipelineStage, LeadSource, LeadTypeConfig, DiscountTierConfig, DashboardTheme, DashboardSectionId, KpiCardId, ChartType, FunnelStyle, ChartPalette, DensityMode, FontFamily, KpiSize, KpiColumns, RefreshInterval, GoogleSheetConfig } from "@/lib/crm-settings-store";
 import { CRM_B2B_GROUP_OPTIONS, CRM_B2B_SUBTYPE_OPTIONS, CRM_CONTACT_ROLE_OPTIONS } from "@/lib/crm-taxonomy";
 
 const GoogleSheetClient = dynamic(() => import("@/app/crm/integrations/google-sheet/GoogleSheetClient"), { ssr: false });
@@ -1919,6 +1919,10 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const updateGoogleSheet = useCallback((value: GoogleSheetConfig) => {
+    updateSection("googleSheet", value);
+  }, [updateSection]);
+
   const saveSection = async (key: keyof CrmSettings) => {
     setSaving(true);
     setError("");
@@ -2080,7 +2084,13 @@ export default function CrmSettingsClient({ initialSettings }: Props) {
           {activeTab === "quote"         && <QuoteTab         data={settings.quote}         onChange={v => updateSection("quote", v)} />}
           {activeTab === "email"         && <EmailTab         data={settings.email}         onChange={v => updateSection("email", v)} />}
           {activeTab === "dashboardtheme" && <DashboardThemeTab data={settings.dashboardTheme} onChange={v => updateSection("dashboardTheme", v)} />}
-          {activeTab === "googlesheet" && <GoogleSheetClient />}
+          {activeTab === "googlesheet" && (
+            <GoogleSheetClient
+              value={settings.googleSheet}
+              onChange={updateGoogleSheet}
+              embedded
+            />
+          )}
         </div>
       </div>
     </div>
