@@ -1442,7 +1442,7 @@ export default function ZaloInboxClient({
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSoundSettings, setShowSoundSettings] = useState(false);
-  const [showInfoPanel, setShowInfoPanel] = useState(true);
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [showLeadLink, setShowLeadLink] = useState(false);
   const [convFilter, setConvFilter] = useState<"all" | "unread" | "crm" | "unlinked">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1530,7 +1530,8 @@ export default function ZaloInboxClient({
       .then(data => {
         const nextAccounts = Array.isArray(data?.accounts) ? data.accounts : [];
         setAccounts(nextAccounts);
-        const requestedAccount = new URLSearchParams(window.location.search).get("account");
+        const params = new URLSearchParams(window.location.search);
+        const requestedAccount = params.get("account") || params.get("accountId");
         if (requestedAccount && nextAccounts.some((account: ZaloAccountStatus) => account.id === requestedAccount)) {
           setSelectedAccountId(requestedAccount);
         }
@@ -1582,10 +1583,14 @@ export default function ZaloInboxClient({
   // A notification click opens the exact conversation instead of leaving the
   // user at the generic Inbox screen.
   useEffect(() => {
-    const requestedId = new URLSearchParams(window.location.search).get("conversation");
-    const requestedAccount = new URLSearchParams(window.location.search).get("account");
+    const params = new URLSearchParams(window.location.search);
+    const requestedId = params.get("conversation") || params.get("conversationId");
+    const requestedAccount = params.get("account") || params.get("accountId");
     const requestedKey = `${requestedAccount || ""}:${requestedId || ""}`;
     if (!requestedId || openedPushConversationRef.current === requestedKey) return;
+    // Account discovery is asynchronous. Wait for the requested account before
+    // resolving the conversation so the account switch cannot clear the chat.
+    if (requestedAccount && selectedAccountId !== requestedAccount) return;
     const requestedConversation = conversations.find(item => item.id === requestedId && (!requestedAccount || item.accountId === requestedAccount));
     if (!requestedConversation) return;
     openedPushConversationRef.current = requestedKey;
@@ -1593,8 +1598,9 @@ export default function ZaloInboxClient({
     setMessages([]);
     setReplyContext(null);
     setMainView("messages");
+    setShowInfoPanel(typeof window !== "undefined" && window.innerWidth > 860);
     void loadMessages(requestedId, true, requestedConversation.accountId);
-  }, [conversations, loadMessages]);
+  }, [conversations, loadMessages, selectedAccountId]);
 
   const mergeSentMessage = useCallback((message: ZaloMessage | undefined) => {
     if (!message?.id) return;
@@ -2483,7 +2489,7 @@ export default function ZaloInboxClient({
       {selectedConv ? (
         <div className={styles.chatArea} style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: T.chatBg, backgroundImage: T.chatBgPattern }}>
           {/* Chat header */}
-          <div style={{
+          <div className={styles.chatHeader} style={{
             padding: "12px 20px", background: T.headerBg, borderBottom: `1px solid ${T.headerBorder}`,
             display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
             backdropFilter: "blur(12px)",
@@ -2493,26 +2499,26 @@ export default function ZaloInboxClient({
               <ChevronLeft size={18} />
             </button>
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={40} />
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div className={styles.chatIdentity} style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary }}>{selectedConv.displayName}</div>
               <div className={!selectedConv.phone ? styles.phoneUnknown : undefined} style={{ fontSize: 12, color: selectedConv.phone ? T.textMuted : undefined }}>{selectedConv.phone || "Chưa đối soát số điện thoại"}</div>
             </div>
-            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            <div className={styles.chatHeaderActions} style={{ display: "flex", gap: 4, alignItems: "center" }}>
               <button onClick={() => { setShowMsgSearch(s => !s); setMsgSearchQuery(""); }}
                 title="Tìm kiếm trong hội thoại"
                 style={{ width: 34, height: 34, borderRadius: 8, background: showMsgSearch ? "rgba(59,130,246,0.15)" : "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: showMsgSearch ? T.accent : T.textMuted }}>
                 <Search size={17} />
               </button>
               {selectedConv.lead && (
-                <a href={`/crm/leads/${selectedConv.lead.id}`}
+                <a className={styles.crmHeaderAction} href={`/crm/leads/${selectedConv.lead.id}`}
                   style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(59,130,246,0.1)", borderRadius: 8, textDecoration: "none", color: T.accent, fontSize: 12, fontWeight: 600, border: `1px solid rgba(59,130,246,0.2)` }}>
-                  <User size={12} /> Hồ sơ KH
+                  <User size={12} /> <span>Hồ sơ KH</span>
                 </a>
               )}
               {!selectedConv.lead && (
-                <button onClick={() => setShowLeadLink(true)}
+                <button className={styles.crmHeaderAction} onClick={() => setShowLeadLink(true)}
                   style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", cursor: "pointer", background: "#fff8df", borderRadius: 8, color: "#86630f", fontSize: 12, fontWeight: 700, border: "1px solid #ead076" }}>
-                  <UserPlus size={12} /> Gắn CRM
+                  <UserPlus size={12} /> <span>Gắn CRM</span>
                 </button>
               )}
               {/* Toggle info panel - giống Zalo Web */}
@@ -2536,7 +2542,7 @@ export default function ZaloInboxClient({
           )}
 
           {/* Messages */}
-          <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div ref={messagesContainerRef} className={styles.messagesPane} style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
             {messages.length === 0 ? (
               <div style={{ textAlign: "center", marginTop: 60 }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
@@ -2573,7 +2579,7 @@ export default function ZaloInboxClient({
           </div>
 
           {/* Input area */}
-          <div style={{ flexShrink: 0, background: T.headerBg, borderTop: `1px solid ${T.headerBorder}`, backdropFilter: "blur(12px)" }}>
+          <div className={styles.composer} style={{ flexShrink: 0, background: T.headerBg, borderTop: `1px solid ${T.headerBorder}`, backdropFilter: "blur(12px)" }}>
             {canSendMessages && replyContext && <ReplyBar reply={replyContext} onCancel={() => setReplyContext(null)} />}
             {pendingFiles.length > 0 && (
               <MediaPreviewBar files={pendingFiles}
@@ -2598,7 +2604,7 @@ export default function ZaloInboxClient({
                 <Info size={14} /> Bạn có quyền xem hội thoại nhưng chưa được cấp quyền gửi tin nhắn Zalo Inbox.
               </div>
             )}
-            <div style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end", opacity: canSendMessages ? 1 : 0.58 }}>
+            <div className={styles.composerRow} style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end", opacity: canSendMessages ? 1 : 0.58 }}>
               <input
                 ref={documentInputRef}
                 type="file"
@@ -2615,6 +2621,7 @@ export default function ZaloInboxClient({
                 onChange={handleMultiMediaSelect}
               />
 
+              <div className={styles.composerTools}>
               {/* Emoji */}
               <div ref={emojiRef} style={{ position: "relative" }}>
                 <button onClick={() => setShowEmoji(s => !s)} disabled={!canSendMessages || !selectedConv} title="Emoji"
@@ -2654,9 +2661,11 @@ export default function ZaloInboxClient({
                 style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.textMuted, cursor: !canSendMessages || uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: !canSendMessages || uploadingFile ? 0.5 : 1 }}>
                 <Paperclip size={16} />
               </button>
+              </div>
 
+              <div className={styles.composerMessageRow}>
               {/* Textarea */}
-              <textarea ref={textareaRef} value={inputText} disabled={!canSendMessages}
+              <textarea className={styles.composerTextarea} ref={textareaRef} value={inputText} disabled={!canSendMessages}
                 onChange={e => {
                   setInputText(e.target.value);
                   e.target.style.height = "40px";
@@ -2683,7 +2692,7 @@ export default function ZaloInboxClient({
               />
 
               {/* Send */}
-              <button onClick={handleSend} disabled={!canSendMessages || !inputText.trim() || sending}
+              <button className={styles.composerSend} onClick={handleSend} disabled={!canSendMessages || !inputText.trim() || sending}
                 style={{
                   width: 40, height: 40, borderRadius: 12, border: "none",
                   background: canSendMessages && inputText.trim() ? T.accent : T.sidebarHover,
@@ -2695,6 +2704,7 @@ export default function ZaloInboxClient({
                 }}>
                 <Send size={16} />
               </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2716,6 +2726,9 @@ export default function ZaloInboxClient({
           width: 300, background: T.sidebarBg, borderLeft: `1px solid ${T.sidebarBorder}`,
           display: "flex", flexDirection: "column", overflowY: "auto", flexShrink: 0,
         }}>
+          <button className={styles.infoPanelClose} type="button" onClick={() => setShowInfoPanel(false)}>
+            <ChevronLeft size={18} /> Trở lại hội thoại
+          </button>
           {/* Header */}
           <div style={{ padding: "16px", borderBottom: `1px solid ${T.sidebarBorder}`, textAlign: "center" }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, marginBottom: 16 }}>Thông tin hội thoại</div>

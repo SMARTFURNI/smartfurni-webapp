@@ -12,6 +12,7 @@
  * - Ghi chú nhanh sau cuộc gọi
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import {
   Phone, PhoneOff, PhoneCall, PhoneIncoming, PhoneOutgoing,
   Mic, MicOff, Volume2, VolumeX, X, Minimize2, Maximize2,
@@ -95,6 +96,7 @@ export default function ItySoftphone({
   onCallStarted,
   onCallEnded,
 }: SoftphoneProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [callState, setCallState] = useState<CallState>("idle");
@@ -691,7 +693,7 @@ export default function ItySoftphone({
   if (!isOpen) {
     return (
       <button
-        className="ity-softphone-trigger"
+        className={`ity-softphone-trigger${pathname?.startsWith("/crm/zalo-inbox") ? " ity-softphone-trigger--zalo-inbox" : ""}`}
         onClick={() => setIsOpen(true)}
         title="Mở softphone ITY"
         style={{
@@ -712,7 +714,17 @@ export default function ItySoftphone({
             background: T.green, border: `2px solid ${T.dark}`,
           }} />
         )}
-        <style>{`@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }`}</style>
+        <style>{`
+          @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+          @media (max-width: 860px) {
+            .ity-softphone-trigger--zalo-inbox {
+              width: 46px !important;
+              height: 46px !important;
+              right: 10px !important;
+              bottom: 86px !important;
+            }
+          }
+        `}</style>
       </button>
     );
   }
