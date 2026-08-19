@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getCrmSession } from "@/lib/admin-auth";
-import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
+import { canSendZaloInboxMessages } from "@/lib/zalo-inbox-access";
 import { getMediaObject, setMediaRetained, storeMediaObject } from "@/lib/media-storage";
 import { getZaloMediaAsset } from "@/lib/zalo-media-library-store";
 import {
@@ -27,8 +27,8 @@ async function objectBytes(key: string): Promise<Buffer> {
 
 export async function GET(req: NextRequest) {
   const session = await getCrmSession();
-  if (!(await canAccessZaloInbox(session))) {
-    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!(await canSendZaloInboxMessages(session))) {
+    return NextResponse.json({ error: "Không có quyền sử dụng thư viện Media Zalo Inbox" }, { status: session ? 403 : 401 });
   }
 
   const id = req.nextUrl.searchParams.get("id") || "";

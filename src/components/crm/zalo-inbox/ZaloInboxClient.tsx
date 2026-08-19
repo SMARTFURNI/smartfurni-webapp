@@ -733,7 +733,7 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvat
   message: ZaloMessage;
   searchQuery: string;
   onOpenLightbox: (images: string[], startIdx: number) => void;
-  onReply: (ctx: ReplyContext) => void;
+  onReply?: (ctx: ReplyContext) => void;
   convAvatarUrl?: string | null;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -899,20 +899,22 @@ function MessageBubble({ message, searchQuery, onOpenLightbox, onReply, convAvat
       </div>
 
       {/* Reply button */}
-      <div style={{
-        opacity: hovered ? 1 : 0, transition: "opacity 0.15s",
-        display: "flex", alignItems: "center", alignSelf: "center",
-      }}>
-        <button onClick={() => onReply({ messageId: message.id, senderName: message.senderName, content: message.content || "", isPhoto: photoAttachments.length > 0 })}
-          title="Trả lời"
-          style={{
-            background: T.sidebarHover, border: `1px solid ${T.inputBorder}`, borderRadius: 8,
-            width: 30, height: 30, cursor: "pointer", display: "flex", alignItems: "center",
-            justifyContent: "center", color: T.textSecondary,
-          }}>
-          <Reply size={13} />
-        </button>
-      </div>
+      {onReply && (
+        <div style={{
+          opacity: hovered ? 1 : 0, transition: "opacity 0.15s",
+          display: "flex", alignItems: "center", alignSelf: "center",
+        }}>
+          <button onClick={() => onReply({ messageId: message.id, senderName: message.senderName, content: message.content || "", isPhoto: photoAttachments.length > 0 })}
+            title="Trả lời"
+            style={{
+              background: T.sidebarHover, border: `1px solid ${T.inputBorder}`, borderRadius: 8,
+              width: 30, height: 30, cursor: "pointer", display: "flex", alignItems: "center",
+              justifyContent: "center", color: T.textSecondary,
+            }}>
+            <Reply size={13} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1201,7 +1203,7 @@ function ZaloSettingsModal({ onClose, onDisconnect }: { onClose: () => void; onD
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────────────
-export default function ZaloInboxClient() {
+export default function ZaloInboxClient({ canSendMessages = false }: { canSendMessages?: boolean }) {
   const [mainView, setMainView] = useState<"messages" | "friends" | "groups" | "auto-reply" | "media-library" | "catalog">("messages");
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
   const [conversations, setConversations] = useState<ZaloConversation[]>([]);
@@ -1588,7 +1590,7 @@ export default function ZaloInboxClient() {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || !selectedConv || sendingRef.current) return;
+    if (!canSendMessages || !inputText.trim() || !selectedConv || sendingRef.current) return;
     const text = inputText.trim();
     const reply = replyContext;
     const conversationId = selectedConv.id;
@@ -1639,8 +1641,8 @@ export default function ZaloInboxClient() {
 
   const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedConv) return;
     e.target.value = "";
+    if (!canSendMessages || !file || !selectedConv) return;
     const conversationId = selectedConv.id;
     const accountId = selectedConv.accountId;
     const previewUrl = URL.createObjectURL(file);
@@ -1666,13 +1668,13 @@ export default function ZaloInboxClient() {
 
   const handleMultiMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (!files.length) return;
     e.target.value = "";
+    if (!canSendMessages || !files.length) return;
     setPendingFiles(prev => [...prev, ...files.map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))]);
   };
 
   const handleSendPendingMedia = async () => {
-    if (!selectedConv || !pendingFiles.length || uploadingFile) return;
+    if (!canSendMessages || !selectedConv || !pendingFiles.length || uploadingFile) return;
     setUploadingFile(true); setUploadError(null);
     const toSend = [...pendingFiles];
     const conversationId = selectedConv.id;
@@ -1698,7 +1700,7 @@ export default function ZaloInboxClient() {
   };
 
   const handleSendLibraryAssets = async (assetIds: string[]) => {
-    if (!selectedConv || !assetIds.length || sendingLibrary) return;
+    if (!canSendMessages || !selectedConv || !assetIds.length || sendingLibrary) return;
     const conversationId = selectedConv.id;
     const accountId = selectedConv.accountId;
     setSendingLibrary(true);
@@ -1842,7 +1844,7 @@ export default function ZaloInboxClient() {
     { id: "friends" as const, label: "Danh bạ", icon: UserPlus, badge: pendingFriendCount },
     { id: "groups" as const, label: "Nhóm", icon: Users },
     { id: "auto-reply" as const, label: "Tự động", icon: Bot },
-    { id: "media-library" as const, label: "Thư viện", icon: FolderOpen },
+    ...(canSendMessages ? [{ id: "media-library" as const, label: "Thư viện", icon: FolderOpen }] : []),
     { id: "catalog" as const, label: "Catalogue", icon: CatalogIcon },
   ];
 
@@ -1929,7 +1931,7 @@ export default function ZaloInboxClient() {
           />}
           {mainView === "groups" && <ZaloGroupsPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
           {mainView === "auto-reply" && <ZaloAutoReplyPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
-          {mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
+          {canSendMessages && mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
           {mainView === "catalog" && <ZaloCatalogPanel accountId={selectedAccountId === "all" ? accounts[0]?.id || "" : selectedAccountId} onClose={() => setMainView("messages")} />}
         </div>
       </div>
@@ -2026,7 +2028,7 @@ export default function ZaloInboxClient() {
           </div>
         </InfoDialog>
       )}
-      {showMediaLibraryPicker && (
+      {canSendMessages && showMediaLibraryPicker && (
         <ZaloMediaLibraryPanel
           mode="picker"
           sending={sendingLibrary}
@@ -2245,7 +2247,7 @@ export default function ZaloInboxClient() {
                     <MessageBubble
                       message={msg} searchQuery={msgSearchQuery}
                       onOpenLightbox={(images, startIdx) => setLightbox({ images, currentIndex: startIdx })}
-                      onReply={ctx => setReplyContext(ctx)}
+                      onReply={canSendMessages ? ctx => setReplyContext(ctx) : undefined}
                       convAvatarUrl={selectedConv?.avatarUrl}
                     />
                   </div>
@@ -2263,7 +2265,7 @@ export default function ZaloInboxClient() {
 
           {/* Input area */}
           <div style={{ flexShrink: 0, background: T.headerBg, borderTop: `1px solid ${T.headerBorder}`, backdropFilter: "blur(12px)" }}>
-            {replyContext && <ReplyBar reply={replyContext} onCancel={() => setReplyContext(null)} />}
+            {canSendMessages && replyContext && <ReplyBar reply={replyContext} onCancel={() => setReplyContext(null)} />}
             {pendingFiles.length > 0 && (
               <MediaPreviewBar files={pendingFiles}
                 onRemove={idx => { URL.revokeObjectURL(pendingFiles[idx].previewUrl); setPendingFiles(prev => prev.filter((_, i) => i !== idx)); }}
@@ -2282,7 +2284,12 @@ export default function ZaloInboxClient() {
               </div>
             )}
 
-            <div style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end" }}>
+            {!canSendMessages && (
+              <div style={{ padding: "9px 16px", background: "rgba(245,158,11,0.08)", color: "#92400E", fontSize: 12, borderTop: "1px solid rgba(245,158,11,0.18)", display: "flex", alignItems: "center", gap: 7 }}>
+                <Info size={14} /> Bạn có quyền xem hội thoại nhưng chưa được cấp quyền gửi tin nhắn Zalo Inbox.
+              </div>
+            )}
+            <div style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "flex-end", opacity: canSendMessages ? 1 : 0.58 }}>
               <input
                 ref={documentInputRef}
                 type="file"
@@ -2301,8 +2308,8 @@ export default function ZaloInboxClient() {
 
               {/* Emoji */}
               <div ref={emojiRef} style={{ position: "relative" }}>
-                <button onClick={() => setShowEmoji(s => !s)} disabled={!selectedConv} title="Emoji"
-                  style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${showEmoji ? T.accent : T.inputBorder}`, background: showEmoji ? "rgba(59,130,246,0.1)" : T.inputBg, color: showEmoji ? T.accent : T.textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <button onClick={() => setShowEmoji(s => !s)} disabled={!canSendMessages || !selectedConv} title="Emoji"
+                  style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${showEmoji ? T.accent : T.inputBorder}`, background: showEmoji ? "rgba(59,130,246,0.1)" : T.inputBg, color: showEmoji ? T.accent : T.textMuted, cursor: canSendMessages ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Smile size={16} />
                 </button>
                 {showEmoji && (
@@ -2322,25 +2329,25 @@ export default function ZaloInboxClient() {
               </div>
 
               {/* Image / video */}
-              <button onClick={() => mediaInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi ảnh/video"
-                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.accent, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
+              <button onClick={() => mediaInputRef.current?.click()} disabled={!canSendMessages || uploadingFile || !selectedConv} title="Gửi ảnh/video"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.accent, cursor: !canSendMessages || uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: !canSendMessages || uploadingFile ? 0.5 : 1 }}>
                 <ImageIcon size={16} />
               </button>
 
               {/* Shared media library */}
-              <button onClick={() => setShowMediaLibraryPicker(true)} disabled={uploadingFile || sendingLibrary || !selectedConv} title="Chọn từ thư viện media"
-                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: "#A77B12", cursor: uploadingFile || sendingLibrary ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile || sendingLibrary ? 0.5 : 1 }}>
+              <button onClick={() => setShowMediaLibraryPicker(true)} disabled={!canSendMessages || uploadingFile || sendingLibrary || !selectedConv} title="Chọn từ thư viện media"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: "#A77B12", cursor: !canSendMessages || uploadingFile || sendingLibrary ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: !canSendMessages || uploadingFile || sendingLibrary ? 0.5 : 1 }}>
                 <FolderOpen size={16} />
               </button>
 
               {/* Document */}
-              <button onClick={() => documentInputRef.current?.click()} disabled={uploadingFile || !selectedConv} title="Gửi tài liệu"
-                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.textMuted, cursor: uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: uploadingFile ? 0.5 : 1 }}>
+              <button onClick={() => documentInputRef.current?.click()} disabled={!canSendMessages || uploadingFile || !selectedConv} title="Gửi tài liệu"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.textMuted, cursor: !canSendMessages || uploadingFile ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: !canSendMessages || uploadingFile ? 0.5 : 1 }}>
                 <Paperclip size={16} />
               </button>
 
               {/* Textarea */}
-              <textarea ref={textareaRef} value={inputText}
+              <textarea ref={textareaRef} value={inputText} disabled={!canSendMessages}
                 onChange={e => {
                   setInputText(e.target.value);
                   e.target.style.height = "40px";
@@ -2352,7 +2359,7 @@ export default function ZaloInboxClient() {
                     handleSend();
                   }
                 }}
-                placeholder={replyContext ? `Trả lời ${replyContext.senderName}...` : "Nhập tin nhắn... (Enter để gửi)"}
+                placeholder={!canSendMessages ? "Chưa được cấp quyền gửi tin nhắn" : replyContext ? `Trả lời ${replyContext.senderName}...` : "Nhập tin nhắn... (Enter để gửi)"}
                 rows={1}
                 style={{
                   flex: 1, padding: "10px 14px", borderRadius: 12,
@@ -2367,14 +2374,14 @@ export default function ZaloInboxClient() {
               />
 
               {/* Send */}
-              <button onClick={handleSend} disabled={!inputText.trim() || sending}
+              <button onClick={handleSend} disabled={!canSendMessages || !inputText.trim() || sending}
                 style={{
                   width: 40, height: 40, borderRadius: 12, border: "none",
-                  background: inputText.trim() ? T.accent : T.sidebarHover,
-                  color: inputText.trim() ? "#fff" : T.textMuted,
-                  cursor: inputText.trim() ? "pointer" : "not-allowed",
+                  background: canSendMessages && inputText.trim() ? T.accent : T.sidebarHover,
+                  color: canSendMessages && inputText.trim() ? "#fff" : T.textMuted,
+                  cursor: canSendMessages && inputText.trim() ? "pointer" : "not-allowed",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  boxShadow: inputText.trim() ? "0 2px 8px rgba(59,130,246,0.35)" : "none",
+                  boxShadow: canSendMessages && inputText.trim() ? "0 2px 8px rgba(59,130,246,0.35)" : "none",
                   transition: "all 0.15s",
                 }}>
                 <Send size={16} />

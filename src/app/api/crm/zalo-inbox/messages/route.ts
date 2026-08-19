@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
+import { getAuthorizedZaloInboxSendSession, getAuthorizedZaloInboxSession } from "@/lib/zalo-inbox-access";
 import { getRecentCanonicalZaloMessages } from "@/lib/zalo-inbox-message-store";
 import {
   recallZaloMessage,
@@ -68,8 +68,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!await getAuthorizedZaloInboxSession()) {
-    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: 403 });
+  if (!await getAuthorizedZaloInboxSendSession()) {
+    return NextResponse.json({ error: "Không có quyền gửi tin nhắn Zalo Inbox" }, { status: 403 });
   }
   try {
     const body = await request.json();

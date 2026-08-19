@@ -41,6 +41,7 @@ export interface RolePermissions {
   notifications_view: boolean;
   zalo_oa_view: boolean;
   zalo_inbox_view: boolean;
+  zalo_inbox_send: boolean;
   business_brain_view: boolean;
   business_brain_edit: boolean;
   business_brain_review: boolean;
@@ -131,7 +132,8 @@ export const PERMISSION_LABELS: Record<keyof RolePermissions, string> = {
   nps_view: "Khảo sát NPS",
   notifications_view: "Nhắc nhở Zalo/SMS",
   zalo_oa_view: "Zalo OA",
-  zalo_inbox_view: "Zalo Inbox",
+  zalo_inbox_view: "Truy cập Zalo Inbox",
+  zalo_inbox_send: "Gửi/trả lời tin nhắn & quản lý Media Zalo Inbox",
   business_brain_view: "Xem Bộ não doanh nghiệp",
   business_brain_edit: "Biên soạn tài liệu doanh nghiệp",
   business_brain_review: "Kiểm duyệt tài liệu doanh nghiệp",
@@ -200,7 +202,7 @@ export const PERMISSION_GROUPS: {
     keys: [
       "email_marketing_view", "content_marketing_view", "content_marketing_settings",
       "contracts_view", "contracts_create", "nps_view",
-      "notifications_view", "zalo_oa_view", "zalo_inbox_view",
+      "notifications_view", "zalo_oa_view", "zalo_inbox_view", "zalo_inbox_send",
       "business_brain_view", "business_brain_edit", "business_brain_review",
       "business_brain_publish", "business_brain_delete", "business_brain_agent_manage",
     ],
@@ -243,6 +245,7 @@ const ALL_FALSE: RolePermissions = {
   calendar_view: false, email_marketing_view: false, content_marketing_view: false,
   content_marketing_settings: false, contracts_view: false, contracts_create: false,
   nps_view: false, notifications_view: false, zalo_oa_view: false, zalo_inbox_view: false,
+  zalo_inbox_send: false,
   business_brain_view: false, business_brain_edit: false, business_brain_review: false,
   business_brain_publish: false, business_brain_delete: false, business_brain_agent_manage: false,
   products_view: false, products_edit: false, staff_view: false, staff_manage: false,
@@ -279,7 +282,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       quotes_create: true, quotes_approve: true, quotes_give_discount: true,
       call_logs_view: true, call_logs_create: true, tasks_view: true, tasks_create: true,
       calendar_view: true, content_marketing_view: true, contracts_view: true,
-      notifications_view: true, zalo_inbox_view: true, products_view: true,
+      notifications_view: true, zalo_inbox_view: true, zalo_inbox_send: true, products_view: true,
       staff_view: true, reports_view: true, reports_export: true,
       facebook_group_marketing_view: true, facebook_group_manage: true,
       facebook_group_campaign_manage: true, facebook_group_content_approve: true,
@@ -302,7 +305,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       quotes_view_own: true, quotes_create: true,
       call_logs_view: true, call_logs_create: true, tasks_view: true, tasks_create: true,
       calendar_view: true, contracts_view: true, contracts_create: true,
-      notifications_view: true, zalo_inbox_view: true, products_view: true,
+      notifications_view: true, zalo_inbox_view: true, zalo_inbox_send: true, products_view: true,
       facebook_group_marketing_view: true, facebook_group_sales: true,
       ai_command_view: true, ai_command_execute: true,
       business_brain_view: true,
@@ -320,6 +323,7 @@ export const ROLE_TEMPLATES: Record<string, { name: string; color: string; icon:
       leads_export: true, lead_segmentation_view: true,
       email_marketing_view: true, content_marketing_view: true,
       nps_view: true, notifications_view: true, zalo_oa_view: true, zalo_inbox_view: true,
+      zalo_inbox_send: true,
       products_view: true, reports_view: true, facebook_scheduler_view: true,
       facebook_group_marketing_view: true, facebook_group_manage: true,
       facebook_group_campaign_manage: true, facebook_group_content_create: true,

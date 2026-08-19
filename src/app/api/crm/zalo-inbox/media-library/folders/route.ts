@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
+import { canSendZaloInboxMessages } from "@/lib/zalo-inbox-access";
 import {
   createZaloMediaFolder,
   deleteZaloMediaFolder,
@@ -12,12 +12,12 @@ export const runtime = "nodejs";
 
 async function sessionWithAccess() {
   const session = await getCrmSession();
-  return { session, allowed: await canAccessZaloInbox(session) };
+  return { session, allowed: await canSendZaloInboxMessages(session) };
 }
 
 export async function POST(req: NextRequest) {
   const { session, allowed } = await sessionWithAccess();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền quản lý thư mục Media Zalo Inbox" }, { status: session ? 403 : 401 });
   const body = await req.json().catch(() => ({})) as { name?: string };
   const name = body.name?.trim() || "";
   if (!name) return NextResponse.json({ error: "Tên thư mục không được để trống" }, { status: 400 });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const { session, allowed } = await sessionWithAccess();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền quản lý thư mục Media Zalo Inbox" }, { status: session ? 403 : 401 });
   const body = await req.json().catch(() => ({})) as { id?: string; name?: string };
   if (!body.id || !body.name?.trim()) return NextResponse.json({ error: "Dữ liệu không hợp lệ" }, { status: 400 });
   await renameZaloMediaFolder(body.id, body.name.trim().slice(0, 80));
@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const { session, allowed } = await sessionWithAccess();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền quản lý thư mục Media Zalo Inbox" }, { status: session ? 403 : 401 });
   const id = req.nextUrl.searchParams.get("id") || "";
   if (!id) return NextResponse.json({ error: "Thiếu thư mục" }, { status: 400 });
   await deleteZaloMediaFolder(id);

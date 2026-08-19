@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
+import { canSendZaloInboxMessages } from "@/lib/zalo-inbox-access";
 import {
   createZaloMediaThumbnail,
   createZaloVideoThumbnail,
@@ -51,12 +51,12 @@ function positiveNumberHeader(req: NextRequest, name: string): number | undefine
 
 async function authorized() {
   const session = await getCrmSession();
-  return { session, allowed: await canAccessZaloInbox(session) };
+  return { session, allowed: await canSendZaloInboxMessages(session) };
 }
 
 export async function GET(req: NextRequest) {
   const { session, allowed } = await authorized();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền sử dụng thư viện Media Zalo Inbox" }, { status: session ? 403 : 401 });
 
   try {
     const params = req.nextUrl.searchParams;
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { session, allowed } = await authorized();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền sử dụng thư viện Media Zalo Inbox" }, { status: session ? 403 : 401 });
 
   let storedKey = "";
   let storedThumbnailKey = "";
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const { session, allowed } = await authorized();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền sử dụng thư viện Media Zalo Inbox" }, { status: session ? 403 : 401 });
   try {
     const body = await req.json() as { id?: string; name?: string; folderId?: string | null };
     if (!body.id) return NextResponse.json({ error: "Thiếu tài liệu" }, { status: 400 });
@@ -202,7 +202,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const { session, allowed } = await authorized();
-  if (!allowed) return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!allowed) return NextResponse.json({ error: "Không có quyền sử dụng thư viện Media Zalo Inbox" }, { status: session ? 403 : 401 });
   try {
     const id = req.nextUrl.searchParams.get("id") || "";
     if (!id) return NextResponse.json({ error: "Thiếu tài liệu" }, { status: 400 });

@@ -72,11 +72,32 @@ describe("Zalo Inbox durable sync", () => {
   it("clears the composer immediately and prevents duplicate text sends", () => {
     const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
 
-    expect(client).toContain("if (!inputText.trim() || !selectedConv || sendingRef.current) return");
+    expect(client).toContain("if (!canSendMessages || !inputText.trim() || !selectedConv || sendingRef.current) return");
     expect(client).toContain("sendingRef.current = true");
     expect(client).toContain('setInputText("")');
     expect(client).toContain("if (data.sent !== true) setInputText(current => current.trim() ? current : text)");
     expect(client).toContain("tránh gửi trùng");
+  });
+
+  it("separates Zalo Inbox view and send permissions at the UI and API boundaries", () => {
+    const roles = source("src/lib/crm-roles-store.ts");
+    const access = source("src/lib/zalo-inbox-access.ts");
+    const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
+    const sendRoute = source("src/app/api/crm/zalo-inbox/send/route.ts");
+    const attachmentRoute = source("src/app/api/crm/zalo-inbox/send-attachment/route.ts");
+    const mediaRoute = source("src/app/api/crm/zalo-inbox/media-library/route.ts");
+    const mediaFolderRoute = source("src/app/api/crm/zalo-inbox/media-library/folders/route.ts");
+
+    expect(roles).toContain("zalo_inbox_view: boolean");
+    expect(roles).toContain("zalo_inbox_send: boolean");
+    expect(access).toContain('hasRolePermission(session, "zalo_inbox_view")');
+    expect(access).toContain('hasRolePermission(session, "zalo_inbox_send")');
+    expect(client).toContain("Bạn có quyền xem hội thoại nhưng chưa được cấp quyền gửi tin nhắn Zalo Inbox");
+    expect(sendRoute).toContain("canSendZaloInboxMessages");
+    expect(attachmentRoute).toContain("canSendZaloInboxMessages");
+    expect(mediaRoute).toContain("canSendZaloInboxMessages");
+    expect(mediaFolderRoute).toContain("canSendZaloInboxMessages");
+    expect(client).toContain('...(canSendMessages ? [{ id: "media-library"');
   });
 
   it("pushes each inbound realtime message to all CRM and Admin PWA accounts", () => {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
-import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
+import { canSendZaloInboxMessages } from "@/lib/zalo-inbox-access";
 import { getMediaObject } from "@/lib/media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage } from "@/lib/zalo-media-library-store";
 import { sendZaloAttachment } from "@/lib/zalo-gateway";
@@ -15,8 +15,8 @@ async function objectToBuffer(object: Awaited<ReturnType<typeof getMediaObject>>
 
 export async function POST(req: NextRequest) {
   const session = await getCrmSession();
-  if (!await canAccessZaloInbox(session)) {
-    return NextResponse.json({ error: "Không có quyền truy cập Zalo Inbox" }, { status: session ? 403 : 401 });
+  if (!await canSendZaloInboxMessages(session)) {
+    return NextResponse.json({ error: "Không có quyền gửi tin nhắn Zalo Inbox" }, { status: session ? 403 : 401 });
   }
   try {
     const body = await req.json() as { accountId?: string; conversationId?: string; assetIds?: string[] };
