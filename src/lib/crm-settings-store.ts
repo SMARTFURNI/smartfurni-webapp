@@ -86,6 +86,8 @@ export interface SheetSourceConfig {
   spreadsheetId: string;
   /** Tên sheet tab, ví dụ: Trang tính1 */
   sheetName: string;
+  /** Danh sách các tab cần đồng bộ trong cùng một Google Spreadsheet */
+  sheetNames: string[];
   /** Nguồn kênh cố định cho sheet này */
   source: "facebook_lead" | "tiktok_lead" | "website" | "other";
   /** Màu badge hiển thị */
@@ -354,6 +356,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
         enabled: false,
         spreadsheetId: "",
         sheetName: "Trang tính1",
+        sheetNames: ["Trang tính1"],
         source: "facebook_lead",
         color: "#1877f2",
         lastSyncedAt: "",
@@ -365,6 +368,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
         enabled: false,
         spreadsheetId: "",
         sheetName: "Trang tính1",
+        sheetNames: ["Trang tính1"],
         source: "tiktok_lead",
         color: "#010101",
         lastSyncedAt: "",
@@ -376,6 +380,7 @@ export const DEFAULT_SETTINGS: CrmSettings = {
         enabled: false,
         spreadsheetId: "",
         sheetName: "Trang tính1",
+        sheetNames: ["Trang tính1"],
         source: "website",
         color: "#f97316",
         lastSyncedAt: "",
@@ -538,6 +543,16 @@ function normalizeGoogleSheetConfig(
       suffix += 1;
     }
     seenIds.add(id);
+    const legacySheetName = typeof raw.sheetName === "string" && raw.sheetName.trim()
+      ? raw.sheetName.trim()
+      : "Trang tính1";
+    const sheetNames = Array.from(new Set(
+      (Array.isArray(raw.sheetNames) ? raw.sheetNames : [legacySheetName])
+        .filter((item): item is string => typeof item === "string")
+        .map(item => item.trim())
+        .filter(Boolean),
+    )).slice(0, 50);
+    if (sheetNames.length === 0) sheetNames.push(legacySheetName);
 
     return {
       id,
@@ -546,9 +561,8 @@ function normalizeGoogleSheetConfig(
         : `Nguồn Sheet ${index + 1}`,
       enabled: raw.enabled === true,
       spreadsheetId: typeof raw.spreadsheetId === "string" ? raw.spreadsheetId.trim() : "",
-      sheetName: typeof raw.sheetName === "string" && raw.sheetName.trim()
-        ? raw.sheetName.trim()
-        : "Trang tính1",
+      sheetName: sheetNames[0],
+      sheetNames,
       source,
       color: typeof raw.color === "string" && raw.color.trim()
         ? raw.color

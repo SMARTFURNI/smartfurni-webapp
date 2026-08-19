@@ -4,7 +4,7 @@
  * Luồng:
  * 1. Đọc cấu hình: danh sách sheet (Facebook / TikTok / Website)
  * 2. Với mỗi sheet đang bật: đọc dữ liệu qua Sheets API v4
- * 3. Dedup bằng composite key: spreadsheetId + row ID
+ * 3. Dedup bằng composite key: spreadsheetId + tab + row ID
  * 4. Tạo RawLead với source cố định theo cấu hình sheet
  * 5. Cập nhật lastSyncedAt và totalSynced cho từng sheet
  */
@@ -17,6 +17,14 @@ import type { RawLeadSource } from "./crm-raw-lead-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface SheetTabSyncResult {
+  tabName: string;
+  success: boolean;
+  newLeads: number;
+  skipped: number;
+  errors: string[];
+}
+
 export interface SheetSyncResult {
   sheetId: string;
   label: string;
@@ -24,6 +32,7 @@ export interface SheetSyncResult {
   newLeads: number;
   skipped: number;
   errors: string[];
+  tabs: SheetTabSyncResult[];
   syncedAt: string;
 }
 
@@ -42,9 +51,26 @@ function cleanPhone(raw: string): string {
   return raw.replace(/^p:/i, "").trim();
 }
 
-/** Tạo dedup key từ spreadsheetId + rowId */
-function makeDedupKey(spreadsheetId: string, rowId: string): string {
+/** Dedup key cũ, dùng để tránh nhập lại tab chính sau khi nâng cấp. */
+function makeLegacyDedupKey(spreadsheetId: string, rowId: string): string {
   return `gsheet:${spreadsheetId}:${rowId}`;
+}
+
+/** Tạo dedup key từ spreadsheetId + tab + rowId. */
+function makeDedupKey(spreadsheetId: string, tabName: string, rowId: string): string {
+  return `gsheet:${spreadsheetId}:${encodeURIComponent(tabName)}:${rowId}`;
+}
+
+function getConfiguredSheetTabs(sheetCfg: SheetSourceConfig): string[] {
+  const rawTabs = Array.isArray(sheetCfg.sheetNames) && sheetCfg.sheetNames.length > 0
+    ? sheetCfg.sheetNames
+    : [sheetCfg.sheetName];
+
+  return Array.from(new Set(rawTabs.map(tab => tab.trim()).filter(Boolean)));
+}
+
+function makeSheetRange(tabName: string): string {
+  return `'${tabName.replace(/'/g, "''")}'!A:Z`;
 }
 
 /** Kiểm tra có phải test lead không */
@@ -65,10 +91,11 @@ function getAliasedValue(row: Record<string, string>, aliases: string[]): string
   return "";
 }
 
-// ─── Sync một sheet ───────────────────────────────────────────────────────────
+// ─── Sync một trang tính ──────────────────────────────────────────────────────
 
-async function syncOneSheet(
+async function syncOneTab(
   sheetCfg: SheetSourceConfig,
+  tabName: string,
   globalCfg: {
     idColumn: string;
     nameColumn: string;
@@ -81,25 +108,23 @@ async function syncOneSheet(
     customerRoleColumn: string;
   },
   sheetsClient: ReturnType<typeof google.sheets>,
-  existingIds: Set<string>
-): Promise<SheetSyncResult> {
-  const result: SheetSyncResult = {
-    sheetId: sheetCfg.id,
-    label: sheetCfg.label,
+  existingIds: Set<string>,
+  primaryTabName: string
+): Promise<SheetTabSyncResult> {
+  const result: SheetTabSyncResult = {
+    tabName,
     success: false,
     newLeads: 0,
     skipped: 0,
     errors: [],
-    syncedAt: new Date().toISOString(),
   };
 
   // Đọc dữ liệu từ sheet
   let rows: string[][];
   try {
-    const range = sheetCfg.sheetName ? `${sheetCfg.sheetName}!A:Z` : "A:Z";
     const response = await sheetsClient.spreadsheets.values.get({
       spreadsheetId: sheetCfg.spreadsheetId,
-      range,
+      range: makeSheetRange(tabName),
     });
     rows = (response.data.values as string[][]) || [];
   } catch (e) {
@@ -159,8 +184,9 @@ async function syncOneSheet(
       console.debug(`[gsheet-sync] Generated ID for row ${rowNumber}: ${rowId}`);
     }
 
-    const dedupKey = makeDedupKey(sheetCfg.spreadsheetId, rowId);
-    if (existingIds.has(dedupKey)) {
+    const dedupKey = makeDedupKey(sheetCfg.spreadsheetId, tabName, rowId);
+    const legacyDedupKey = makeLegacyDedupKey(sheetCfg.spreadsheetId, rowId);
+    if (existingIds.has(dedupKey) || (tabName === primaryTabName && existingIds.has(legacyDedupKey))) {
       console.debug(`[gsheet-sync] Skipping duplicate row ${rowNumber} (ID: ${rowId})`);
       result.skipped++;
       continue;
@@ -203,7 +229,7 @@ async function syncOneSheet(
           syncedFrom: "google_sheet",
           sheetSourceId: sheetCfg.id,
           sheetSourceLabel: sheetCfg.label,
-          sheetTabName: sheetCfg.sheetName,
+          sheetTabName: tabName,
           spreadsheetId: sheetCfg.spreadsheetId,
           originalId: rowId,
           ...(marketScope ? { marketScope } : {}),
@@ -223,6 +249,61 @@ async function syncOneSheet(
   }
 
   result.success = true;
+  return result;
+}
+
+// ─── Sync toàn bộ trang tính của một nguồn ────────────────────────────────────
+
+async function syncOneSheet(
+  sheetCfg: SheetSourceConfig,
+  globalCfg: {
+    idColumn: string;
+    nameColumn: string;
+    phoneColumn: string;
+    emailColumn: string;
+    adNameColumn: string;
+    campaignNameColumn: string;
+    formNameColumn: string;
+    messageColumn: string;
+    customerRoleColumn: string;
+  },
+  sheetsClient: ReturnType<typeof google.sheets>,
+  existingIds: Set<string>
+): Promise<SheetSyncResult> {
+  const result: SheetSyncResult = {
+    sheetId: sheetCfg.id,
+    label: sheetCfg.label,
+    success: false,
+    newLeads: 0,
+    skipped: 0,
+    errors: [],
+    tabs: [],
+    syncedAt: new Date().toISOString(),
+  };
+  const tabNames = getConfiguredSheetTabs(sheetCfg);
+
+  if (tabNames.length === 0) {
+    result.errors.push("Chưa cấu hình trang tính cần đồng bộ");
+    return result;
+  }
+
+  // Chạy tuần tự để hạn chế rate limit của Google Sheets API.
+  for (const tabName of tabNames) {
+    const tabResult = await syncOneTab(
+      sheetCfg,
+      tabName,
+      globalCfg,
+      sheetsClient,
+      existingIds,
+      tabNames[0]
+    );
+    result.tabs.push(tabResult);
+    result.newLeads += tabResult.newLeads;
+    result.skipped += tabResult.skipped;
+    result.errors.push(...tabResult.errors.map(error => `[${tabName}] ${error}`));
+  }
+
+  result.success = result.tabs.every(tab => tab.success);
   return result;
 }
 
@@ -249,6 +330,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
       newLeads: 0,
       skipped: 0,
       errors: ["Không thể tải CRM settings: " + String(e)],
+      tabs: [],
       syncedAt: overall.syncedAt,
     });
     return overall;
@@ -264,6 +346,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
       newLeads: 0,
       skipped: 0,
       errors: ["Google Sheet sync chưa được bật"],
+      tabs: [],
       syncedAt: overall.syncedAt,
     });
     return overall;
@@ -277,6 +360,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
       newLeads: 0,
       skipped: 0,
       errors: ["Chưa cấu hình Service Account Key"],
+      tabs: [],
       syncedAt: overall.syncedAt,
     });
     return overall;
@@ -299,6 +383,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
       newLeads: 0,
       skipped: 0,
       errors: ["Lỗi khởi tạo Google Sheets API: " + String(e)],
+      tabs: [],
       syncedAt: overall.syncedAt,
     });
     return overall;
@@ -308,11 +393,19 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
   let existingIds: Set<string>;
   try {
     const existing = await getRawLeads({ limit: 50000 });
-    existingIds = new Set(
-      existing.items
-        .filter(l => l.rawData && (l.rawData as Record<string, unknown>).sheetRowId)
-        .map(l => String((l.rawData as Record<string, unknown>).sheetRowId))
-    );
+    existingIds = new Set<string>();
+    for (const lead of existing.items) {
+      const rawData = lead.rawData as Record<string, unknown> | undefined;
+      if (!rawData) continue;
+      if (rawData.sheetRowId) existingIds.add(String(rawData.sheetRowId));
+      if (rawData.spreadsheetId && rawData.sheetTabName && rawData.originalId) {
+        existingIds.add(makeDedupKey(
+          String(rawData.spreadsheetId),
+          String(rawData.sheetTabName),
+          String(rawData.originalId)
+        ));
+      }
+    }
   } catch {
     existingIds = new Set();
   }
@@ -321,6 +414,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
   const activeSources = cfg.sources.filter(s =>
     s.enabled &&
     s.spreadsheetId &&
+    getConfiguredSheetTabs(s).length > 0 &&
     (!sheetIdFilter || s.id === sheetIdFilter)
   );
 
@@ -371,7 +465,7 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
     console.error("[gsheet-sync] Failed to update sync stats:", e);
   }
 
-  overall.success = true;
+  overall.success = overall.sheets.every(sheet => sheet.success);
   console.log(`[gsheet-sync] ✅ Sync done: ${overall.totalNew} new, ${overall.totalSkipped} skipped across ${activeSources.length} sheet(s)`);
   return overall;
 }

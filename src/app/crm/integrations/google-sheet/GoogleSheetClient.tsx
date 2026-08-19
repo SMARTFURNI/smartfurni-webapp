@@ -35,6 +35,15 @@ interface SyncSheetResult {
   skipped: number;
   errors: string[];
   syncedAt: string;
+  tabs?: SyncTabResult[];
+}
+
+interface SyncTabResult {
+  tabName: string;
+  success: boolean;
+  newLeads: number;
+  skipped: number;
+  errors: string[];
 }
 
 interface SyncResult {
@@ -81,6 +90,21 @@ function extractSpreadsheetId(input: string): string {
   const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
   if (match) return match[1];
   return input.trim();
+}
+
+function getEditableSheetTabs(sheet: SheetSource): string[] {
+  const names = Array.isArray(sheet.sheetNames) && sheet.sheetNames.length > 0
+    ? sheet.sheetNames
+    : [sheet.sheetName || ""];
+  return names.length > 0 ? names : [""];
+}
+
+function getConfiguredSheetTabs(sheet: SheetSource): string[] {
+  return Array.from(new Set(
+    getEditableSheetTabs(sheet)
+      .map(tab => tab.trim())
+      .filter(Boolean),
+  ));
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -201,6 +225,7 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
       enabled: false,
       spreadsheetId: "",
       sheetName: "Trang tính1",
+      sheetNames: ["Trang tính1"],
       source: "other",
       color: "#64748b",
       lastSyncedAt: "",
@@ -221,6 +246,23 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
       ...config,
       sources: config.sources.map(s => s.id === id ? { ...s, ...updates } : s),
     });
+  };
+
+  const updateSheetTabs = (sheet: SheetSource, nextTabs: string[]) => {
+    const editableTabs = nextTabs.length > 0 ? nextTabs : [""];
+    const primaryTab = editableTabs.find(tab => tab.trim())?.trim() || "";
+    updateSheet(sheet.id, { sheetNames: editableTabs, sheetName: primaryTab });
+  };
+
+  const addSheetTab = (sheet: SheetSource) => {
+    updateSheetTabs(sheet, [...getEditableSheetTabs(sheet), ""]);
+  };
+
+  const removeSheetTab = (sheet: SheetSource, index: number) => {
+    updateSheetTabs(
+      sheet,
+      getEditableSheetTabs(sheet).filter((_, tabIndex) => tabIndex !== index),
+    );
   };
 
   if (loading) {
@@ -291,9 +333,20 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
             </span>
           </div>
           {syncResult.sheets.map(s => (
-            <div key={s.sheetId} className="text-xs text-gray-600 ml-6">
-              <span className="font-medium">{s.label}:</span>{" "}
-              {s.success ? `+${s.newLeads} mới` : `Lỗi: ${s.errors[0] || "unknown"}`}
+            <div key={s.sheetId} className="ml-6">
+              <div className="text-xs text-gray-600">
+                <span className="font-medium">{s.label}:</span>{" "}
+                {s.success
+                  ? `+${s.newLeads} mới, ${s.skipped} bỏ qua`
+                  : `Lỗi: ${s.errors[0] || "không xác định"}`}
+              </div>
+              {s.tabs?.map(tab => (
+                <div key={tab.tabName} className="ml-3 text-[11px] text-gray-500">
+                  • {tab.tabName}: {tab.success
+                    ? `+${tab.newLeads} mới, ${tab.skipped} bỏ qua`
+                    : `Lỗi: ${tab.errors[0] || "không xác định"}`}
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -430,12 +483,15 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
                   <span className="text-xs text-gray-400">
                     {sheet.totalSynced} lead đã sync
                   </span>
+                  <span className="text-xs text-gray-400">
+                    {getConfiguredSheetTabs(sheet).length} trang tính
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={e => { e.stopPropagation(); handleSync(sheet.id); }}
-                  disabled={syncing !== null || !sheet.enabled || !sheet.spreadsheetId || !sheet.sheetName.trim()}
+                  disabled={syncing !== null || !sheet.enabled || !sheet.spreadsheetId || getConfiguredSheetTabs(sheet).length === 0}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors disabled:opacity-30"
                   title="Sync sheet này"
                 >
@@ -522,20 +578,55 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
                     </p>
                   </div>
 
-                  {/* Sheet name */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Tên tab sheet</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Trang tính1"
-                      value={sheet.sheetName}
-                      onChange={e => updateSheet(sheet.id, { sheetName: e.target.value })}
-                    />
+                  {/* Sheet tabs */}
+                  <div className="col-span-2">
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="block text-xs font-medium text-gray-700">Trang tính cần đồng bộ</label>
+                      <button
+                        type="button"
+                        onClick={() => addSheetTab(sheet)}
+                        className="flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-800"
+                      >
+                        <Plus size={12} />
+                        Thêm trang tính
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {getEditableSheetTabs(sheet).map((tabName, index) => (
+                        <div key={`${sheet.id}-tab-${index}`} className="flex items-center gap-2">
+                          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-green-50 text-xs font-semibold text-green-700">
+                            {index + 1}
+                          </span>
+                          <input
+                            type="text"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder={`Tên trang tính ${index + 1}`}
+                            value={tabName}
+                            onChange={e => {
+                              const nextTabs = [...getEditableSheetTabs(sheet)];
+                              nextTabs[index] = e.target.value;
+                              updateSheetTabs(sheet, nextTabs);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeSheetTab(sheet, index)}
+                            disabled={getEditableSheetTabs(sheet).length === 1}
+                            className="p-2 rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Xóa trang tính"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Nhập đúng tên từng tab trong cùng Google Spreadsheet. Mỗi tab được đồng bộ độc lập vào Data Pool.
+                    </p>
                   </div>
 
                   {/* Enable toggle */}
-                  <div className="flex items-center gap-3 pt-4">
+                  <div className="col-span-2 flex items-center gap-3">
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -550,12 +641,12 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
                 </div>
 
                 {/* Validation warning */}
-                {(!sheet.spreadsheetId || !sheet.sheetName.trim()) && (
+                {(!sheet.spreadsheetId || getConfiguredSheetTabs(sheet).length === 0) && (
                   <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                     <AlertCircle size={12} />
                     {!sheet.spreadsheetId
                       ? "Chưa có Spreadsheet ID — nguồn này sẽ bị bỏ qua khi sync"
-                      : "Chưa có tên tab Sheet — nguồn này sẽ bị bỏ qua khi sync"}
+                      : "Chưa có tên trang tính — nguồn này sẽ bị bỏ qua khi sync"}
                   </div>
                 )}
               </div>
@@ -584,7 +675,7 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
           <li><span className="font-bold">4.</span> Trong Service Account → Keys → Add Key → JSON → Tải file JSON về</li>
           <li><span className="font-bold">5.</span> Mở file JSON → Copy toàn bộ nội dung → Dán vào ô Service Account Key ở trên</li>
           <li><span className="font-bold">6.</span> Mở Google Sheet → Share → Thêm email của Service Account (trong file JSON, trường <code>client_email</code>) với quyền <strong>Viewer</strong></li>
-          <li><span className="font-bold">7.</span> Điền Spreadsheet ID cho từng sheet → Bật toggle → Lưu → Sync</li>
+          <li><span className="font-bold">7.</span> Điền Spreadsheet ID, thêm các tên trang tính cần đồng bộ → Bật toggle → Lưu → Sync</li>
         </ol>
       </div>
 
