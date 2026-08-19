@@ -1061,19 +1061,117 @@ function LeadInfoPanel({ lead }: { lead: LeadInfo }) {
   );
 }
 
-// ─── ZaloSettingsModal ────────────────────────────────────────────────────────
-function ZaloSettingsModal({
+// ─── ZaloSoundPreferencesModal ───────────────────────────────────────────────
+function ZaloSoundPreferencesModal({
   onClose,
-  onDisconnect,
   soundPreferences,
   onSoundPreferencesChange,
   onPreviewSound,
 }: {
   onClose: () => void;
-  onDisconnect: () => void;
   soundPreferences: ZaloSoundPreferences;
   onSoundPreferencesChange: (next: Partial<ZaloSoundPreferences>) => void;
   onPreviewSound: (ringtoneId?: ZaloRingtoneId, volume?: number) => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="zalo-personal-sound-title"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      style={{ position: "fixed", inset: 0, padding: 16, background: "rgba(15,23,42,0.62)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}
+    >
+      <div style={{ boxSizing: "border-box", width: "min(590px, 100%)", maxHeight: "90dvh", overflowY: "auto", padding: 22, border: `1px solid ${T.sidebarBorder}`, borderRadius: 18, background: "#fff", boxShadow: "0 25px 65px rgba(15,23,42,.2)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <span style={{ width: 42, height: 42, display: "grid", placeItems: "center", flex: "0 0 auto", borderRadius: 13, color: T.accent, background: "linear-gradient(135deg,#dbeafe,#eff6ff)", border: "1px solid #bfdbfe" }}><Volume2 size={20} /></span>
+            <div>
+              <div id="zalo-personal-sound-title" style={{ color: T.textPrimary, fontSize: 16, fontWeight: 800 }}>Cài đặt Zalo</div>
+              <div style={{ marginTop: 3, color: T.textMuted, fontSize: 11, lineHeight: 1.45 }}>Cài đặt cá nhân cho tài khoản nhân viên đang đăng nhập.</div>
+            </div>
+          </div>
+          <button type="button" aria-label="Đóng cài đặt chuông" onClick={onClose} style={{ width: 34, height: 34, display: "grid", placeItems: "center", cursor: "pointer", border: `1px solid ${T.sidebarBorder}`, borderRadius: 10, color: T.textMuted, background: "#fff" }}><X size={17} /></button>
+        </div>
+
+        <section style={{ padding: 16, border: `1px solid ${T.sidebarBorder}`, borderRadius: 15, background: "linear-gradient(135deg,#f8fbff,#fffaf0)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 14 }}>
+            <div>
+              <div style={{ color: T.textPrimary, fontSize: 13, fontWeight: 800 }}>Chuông tin nhắn đến</div>
+              <div style={{ marginTop: 3, color: T.textMuted, fontSize: 10 }}>Có thể thay đổi bất cứ lúc nào, hệ thống tự lưu lựa chọn.</div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Bật hoặc tắt chuông tin nhắn Zalo"
+              aria-checked={soundPreferences.soundEnabled}
+              onClick={() => onSoundPreferencesChange({ soundEnabled: !soundPreferences.soundEnabled })}
+              style={{ width: 48, height: 27, flex: "0 0 auto", padding: 3, cursor: "pointer", border: 0, borderRadius: 999, background: soundPreferences.soundEnabled ? T.accent : "#cbd5e1", transition: "background .2s" }}
+            >
+              <span style={{ display: "block", width: 21, height: 21, borderRadius: "50%", background: "#fff", boxShadow: "0 2px 5px rgba(15,23,42,.22)", transform: soundPreferences.soundEnabled ? "translateX(21px)" : "translateX(0)", transition: "transform .2s" }} />
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 8 }}>
+            {ZALO_RINGTONES.map(ringtone => {
+              const selected = soundPreferences.ringtoneId === ringtone.id;
+              return (
+                <button
+                  key={ringtone.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => {
+                    onSoundPreferencesChange({ ringtoneId: ringtone.id, soundEnabled: true });
+                    onPreviewSound(ringtone.id, soundPreferences.volume);
+                  }}
+                  style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0, padding: "10px 11px", cursor: "pointer", textAlign: "left", border: `1px solid ${selected ? ringtone.accent : T.sidebarBorder}`, borderRadius: 11, background: selected ? `${ringtone.accent}0D` : "#fff", boxShadow: selected ? `0 0 0 2px ${ringtone.accent}18` : "none" }}
+                >
+                  <span style={{ width: 30, height: 30, display: "grid", placeItems: "center", flex: "0 0 auto", borderRadius: 9, color: selected ? "#fff" : ringtone.accent, background: selected ? ringtone.accent : `${ringtone.accent}16` }}>
+                    <Play size={13} fill="currentColor" />
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", color: T.textPrimary, fontSize: 12 }}>{ringtone.name}</strong>
+                    <small style={{ display: "block", marginTop: 2, overflow: "hidden", color: T.textMuted, fontSize: 10, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ringtone.description}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 15 }}>
+            <VolumeX size={15} color={T.textMuted} />
+            <input
+              aria-label="Âm lượng chuông Zalo cá nhân"
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={soundPreferences.volume}
+              onChange={event => onSoundPreferencesChange({ volume: Number(event.target.value) })}
+              style={{ flex: 1, accentColor: T.accent }}
+            />
+            <Volume2 size={16} color={T.accent} />
+            <span style={{ width: 34, color: T.textSecondary, fontSize: 11, fontWeight: 700, textAlign: "right" }}>{soundPreferences.volume}%</span>
+            <button type="button" onClick={() => onPreviewSound()} style={{ padding: "7px 10px", cursor: "pointer", border: `1px solid ${T.sidebarBorder}`, borderRadius: 9, color: T.accent, background: "#fff", fontSize: 11, fontWeight: 700 }}>Nghe thử</button>
+          </div>
+        </section>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 13, color: T.textMuted, fontSize: 10, lineHeight: 1.45 }}>
+          <CheckCircle size={13} color={T.success} /> Mẫu chuông và âm lượng được lưu riêng, không làm thay đổi cài đặt Zalo của người khác.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ZaloSettingsModal ────────────────────────────────────────────────────────
+function ZaloSettingsModal({
+  onClose,
+  onDisconnect,
+}: {
+  onClose: () => void;
+  onDisconnect: () => void;
 }) {
   const [qrData, setQrData] = useState<{ qr: string; status: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1201,69 +1299,6 @@ function ZaloSettingsModal({
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 4 }}><X size={18} /></button>
         </div>
 
-        <section style={{ marginBottom: 18, padding: 16, border: `1px solid ${T.sidebarBorder}`, borderRadius: 14, background: "linear-gradient(135deg,#f8fbff,#fffaf0)" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, marginBottom: 13 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.textPrimary, fontSize: 14, fontWeight: 800 }}>
-                <span style={{ width: 30, height: 30, display: "grid", placeItems: "center", borderRadius: 9, color: T.accent, background: "#dbeafe" }}><Volume2 size={16} /></span>
-                Chuông tin nhắn đến
-              </div>
-              <div style={{ marginTop: 5, color: T.textMuted, fontSize: 11, lineHeight: 1.5 }}>Lựa chọn được lưu riêng cho tài khoản nhân viên đang đăng nhập.</div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={soundPreferences.soundEnabled}
-              onClick={() => onSoundPreferencesChange({ soundEnabled: !soundPreferences.soundEnabled })}
-              style={{ width: 48, height: 27, flex: "0 0 auto", padding: 3, cursor: "pointer", border: 0, borderRadius: 999, background: soundPreferences.soundEnabled ? T.accent : "#cbd5e1", transition: "background .2s" }}
-            >
-              <span style={{ display: "block", width: 21, height: 21, borderRadius: "50%", background: "#fff", boxShadow: "0 2px 5px rgba(15,23,42,.22)", transform: soundPreferences.soundEnabled ? "translateX(21px)" : "translateX(0)", transition: "transform .2s" }} />
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 8 }}>
-            {ZALO_RINGTONES.map(ringtone => {
-              const selected = soundPreferences.ringtoneId === ringtone.id;
-              return (
-                <button
-                  key={ringtone.id}
-                  type="button"
-                  onClick={() => {
-                    onSoundPreferencesChange({ ringtoneId: ringtone.id, soundEnabled: true });
-                    onPreviewSound(ringtone.id, soundPreferences.volume);
-                  }}
-                  style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0, padding: "10px 11px", cursor: "pointer", textAlign: "left", border: `1px solid ${selected ? ringtone.accent : T.sidebarBorder}`, borderRadius: 11, background: selected ? `${ringtone.accent}0D` : "#fff", boxShadow: selected ? `0 0 0 2px ${ringtone.accent}18` : "none" }}
-                >
-                  <span style={{ width: 30, height: 30, display: "grid", placeItems: "center", flex: "0 0 auto", borderRadius: 9, color: selected ? "#fff" : ringtone.accent, background: selected ? ringtone.accent : `${ringtone.accent}16` }}>
-                    <Play size={13} fill="currentColor" />
-                  </span>
-                  <span style={{ minWidth: 0 }}>
-                    <strong style={{ display: "block", color: T.textPrimary, fontSize: 12 }}>{ringtone.name}</strong>
-                    <small style={{ display: "block", marginTop: 2, overflow: "hidden", color: T.textMuted, fontSize: 10, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ringtone.description}</small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 14 }}>
-            <VolumeX size={15} color={T.textMuted} />
-            <input
-              aria-label="Âm lượng chuông Zalo"
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={soundPreferences.volume}
-              onChange={event => onSoundPreferencesChange({ volume: Number(event.target.value) })}
-              style={{ flex: 1, accentColor: T.accent }}
-            />
-            <Volume2 size={16} color={T.accent} />
-            <span style={{ width: 34, color: T.textSecondary, fontSize: 11, fontWeight: 700, textAlign: "right" }}>{soundPreferences.volume}%</span>
-            <button type="button" onClick={() => onPreviewSound()} style={{ padding: "7px 10px", cursor: "pointer", border: `1px solid ${T.sidebarBorder}`, borderRadius: 9, color: T.accent, background: "#fff", fontSize: 11, fontWeight: 700 }}>Nghe thử</button>
-          </div>
-        </section>
-
         {status && (
           <div style={{ padding: "12px 14px", borderRadius: 10, background: status.connected ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${status.connected ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: status.connected ? T.success : T.error }} />
@@ -1352,6 +1387,7 @@ export default function ZaloInboxClient({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
   const [showInfoPanel, setShowInfoPanel] = useState(true);
   const [showLeadLink, setShowLeadLink] = useState(false);
   const [convFilter, setConvFilter] = useState<"all" | "unread" | "crm" | "unlinked">("all");
@@ -2015,10 +2051,6 @@ export default function ZaloInboxClient({
     }
   }, [selectedConv]);
 
-  const toggleSound = useCallback(() => {
-    updateSoundPreferences({ soundEnabled: !soundPreferencesRef.current.soundEnabled });
-  }, [updateSoundPreferences]);
-
   const conversationMedia = useMemo(() => messages.flatMap(message =>
     (message.attachments || [])
       .filter(attachment => (attachment.type === "image" || attachment.type === "video") && (attachment.url || attachment.thumb))
@@ -2074,7 +2106,7 @@ export default function ZaloInboxClient({
             <span>{gatewayStatus.connected ? "Đã kết nối" : "Chưa kết nối"}</span>
           </div>
           <button className={styles.secondaryAction} onClick={loadConversations}><RefreshCw size={16} /><span>Làm mới</span></button>
-          {isAdmin && <button className={styles.primaryAction} onClick={() => setShowSettings(true)}><Settings size={16} /><span>Cài đặt</span></button>}
+          <button className={styles.primaryAction} onClick={() => isAdmin ? setShowSettings(true) : setShowSoundSettings(true)}><Settings size={16} /><span>Cài đặt</span></button>
         </div>
       </div>
       <nav className={styles.workspaceNav} aria-label="Chức năng Zalo Inbox">
@@ -2294,7 +2326,7 @@ export default function ZaloInboxClient({
               )}
             </div>
             <div style={{ display: "flex", gap: 2 }}>
-              <button onClick={toggleSound} title={soundEnabled ? `Tắt chuông · ${ZALO_RINGTONES.find(item => item.id === ringtoneId)?.name || "SmartFurni"}` : "Bật âm thanh"}
+              <button onClick={() => setShowSoundSettings(true)} title={`Chuông cá nhân · ${ZALO_RINGTONES.find(item => item.id === ringtoneId)?.name || "SmartFurni"}${soundEnabled ? "" : " · Đang tắt"}`}
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: soundEnabled ? T.accent : T.textMuted }}>
                 {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
               </button>
@@ -2306,10 +2338,10 @@ export default function ZaloInboxClient({
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <RefreshCw size={15} />
               </button>
-              {isAdmin && <button onClick={() => setShowSettings(true)} title="Cài đặt Zalo"
+              <button onClick={() => isAdmin ? setShowSettings(true) : setShowSoundSettings(true)} title="Cài đặt Zalo"
                 style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>
                 <Settings size={15} />
-              </button>}
+              </button>
             </div>
           </div>
 
@@ -2774,12 +2806,19 @@ export default function ZaloInboxClient({
         </div>
       )}
 
-      {/* Settings modal */}
-      {isAdmin && showSettings && (
-        <ZaloSettingsModal
+      {/* Personal sound preferences are available to every signed-in employee. */}
+      {showSoundSettings && (
+        <ZaloSoundPreferencesModal
           soundPreferences={{ soundEnabled, ringtoneId, volume: soundVolume }}
           onSoundPreferencesChange={updateSoundPreferences}
           onPreviewSound={(nextRingtoneId, nextVolume) => playNotifSound(nextRingtoneId, nextVolume, true)}
+          onClose={() => setShowSoundSettings(false)}
+        />
+      )}
+
+      {/* Zalo account and connection settings remain admin-only. */}
+      {isAdmin && showSettings && (
+        <ZaloSettingsModal
           onClose={() => setShowSettings(false)}
           onDisconnect={() => {
             setGatewayStatus({ connected: false, phone: null });
