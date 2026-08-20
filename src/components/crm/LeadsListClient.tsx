@@ -3,20 +3,20 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
-  Plus, Search, Filter, AlertCircle, Phone, Star, X,
+  Plus, Search, Filter, Phone, Star, X,
   ChevronUp, ChevronDown, Users, DollarSign,
   Award, Eye, Edit3, Trash2, Loader2, UserCheck,
 } from "lucide-react";
 import type { Lead, LeadType, LeadStage, InterestedProduct } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS,
-  formatVND, isOverdue,
+  formatVND,
 } from "@/lib/crm-types";
 import AddLeadModal from "./AddLeadModal";
 import CustomerContactActions from "./high-performance-features/CustomerContactActions";
 import { ItyCallButton } from "./ItySoftphone";
 import CrmFoundationHeader from "./CrmFoundationHeader";
-import { PRODUCT_LABELS, TEMPERATURE_LABELS } from "@/lib/crm-lead-standardization";
+import { PRODUCT_LABELS } from "@/lib/crm-lead-standardization";
 import customerStyles from "./CustomerWorkspace.module.css";
 import { CRM_LEAD_TYPE_OPTIONS, CRM_PRODUCT_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
 import { ZaloFriendshipBadge } from "./ZaloFriendshipStatus";
@@ -127,11 +127,10 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const activeFilters = [filterStage, filterType, filterProduct, filterAssigned].filter(Boolean).length;
 
-  const overdueCount = leads.filter(isOverdue).length;
   const wonCount = leads.filter(l => l.stage === "won").length;
   const totalValue = leads.reduce((s, l) => s + (l.expectedValue || 0), 0);
   const winRate = leads.length > 0 ? Math.round((wonCount / leads.length) * 100) : 0;
-  const statThemes = [customerStyles.statBlue, customerStyles.statGold, customerStyles.statGreen, customerStyles.statRose];
+  const statThemes = [customerStyles.statBlue, customerStyles.statGold, customerStyles.statGreen];
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -177,9 +176,6 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
             <h1 className="text-base font-bold" style={{ color: C.text }}>Danh sách khách hàng</h1>
             <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>
               {filtered.length} / {leads.length} khách hàng
-              {overdueCount > 0 && (
-                <span className="ml-2 font-semibold" style={{ color: C.red }}>· {overdueCount} quá hạn</span>
-              )}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -280,12 +276,11 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
       </div>
 
       {/* ── Summary Stats ── */}
-      <div className="crm-leads-stats flex-shrink-0 px-3 sm:px-5 py-2 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div className="crm-leads-stats flex-shrink-0 px-3 sm:px-5 py-2 grid grid-cols-2 md:grid-cols-3 gap-2.5">
         {[
           { icon: Users,       label: "Tổng khách hàng", value: String(leads.length),    color: C.blue,   bg: C.blueBg,   sub: `${leads.filter(l => !["won","lost"].includes(l.stage)).length} đang theo dõi` },
           { icon: DollarSign,  label: "Tổng giá trị",    value: formatVND(totalValue),   color: C.gold,   bg: C.goldBg,   sub: "Pipeline" },
           { icon: Award,       label: "Tỷ lệ chốt",      value: `${winRate}%`,           color: C.green,  bg: C.greenBg,  sub: `${wonCount} đơn thành công` },
-          { icon: AlertCircle, label: "Cần liên hệ",     value: String(overdueCount),    color: C.red,    bg: C.redBg,    sub: "Quá 3 ngày" },
         ].map(({ icon: Icon, label, value, color, bg, sub }, index) => (
           <div key={label} className={`crm-leads-stat-card ${customerStyles.statCard} ${statThemes[index]} rounded-xl px-3 py-2 flex items-center gap-2.5`}
             style={{ background: C.surface, border: `1px solid ${C.border}` }}>
@@ -309,21 +304,20 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
               <div className="py-12 text-center text-sm" style={{ color: C.textMuted }}>Không có khách hàng nào</div>
             )}
             {paginated.map(lead => {
-              const overdue = isOverdue(lead);
               const typeInfo = getTypeInfo(lead.type);
               const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
               return (
                 <article key={lead.id} className="rounded-2xl border bg-white p-4 shadow-sm"
-                  style={{ borderColor: overdue ? "#fecdd3" : C.border, borderLeft: `4px solid ${overdue ? C.red : C.gold}` }}>
+                  style={{ borderColor: C.border, borderLeft: `4px solid ${C.gold}` }}>
                   <Link href={`/crm/leads/${lead.id}`} className="block">
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                        style={{ background: `linear-gradient(135deg, ${overdue ? C.red : avatarColor(lead.name)}, ${overdue ? "#dc2626" : avatarColor(lead.name) + "bb"})` }}>
+                        style={{ background: `linear-gradient(135deg, ${avatarColor(lead.name)}, ${avatarColor(lead.name)}bb)` }}>
                         {lead.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1 truncate text-sm font-bold" style={{ color: overdue ? C.red : C.text }}>
-                          {overdue && <AlertCircle size={13} className="flex-shrink-0" />}{lead.name}
+                        <div className="flex items-center gap-1 truncate text-sm font-bold" style={{ color: C.text }}>
+                          {lead.name}
                         </div>
                         <div className="truncate text-xs" style={{ color: C.textMuted }}>{lead.company || lead.phone}</div>
                       </div>
@@ -338,7 +332,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
                       <div><span className="block text-[10px] text-slate-400">Điện thoại</span><b className="mt-0.5 block text-slate-700">{lead.phone || "—"}</b></div>
-                      <div><span className="block text-[10px] text-slate-400">Tương tác cuối</span><b className="mt-0.5 block" style={{ color: overdue ? C.red : C.textDim }}>{daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}</b></div>
+                      <div><span className="block text-[10px] text-slate-400">Tương tác cuối</span><b className="mt-0.5 block" style={{ color: C.textDim }}>{daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}</b></div>
                     </div>
                   </Link>
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
@@ -414,7 +408,6 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                 </tr>
               )}
               {paginated.map((lead, idx) => {
-                const overdue = isOverdue(lead);
                 const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
                 const typeInfo = getTypeInfo(lead.type);
                 const isOwnLead = lead.assignedTo === currentUserName;
@@ -423,7 +416,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     key={lead.id}
                     style={{
                       borderBottom: `1px solid ${C.rowBorder}`,
-                      borderLeft: overdue ? `3px solid ${C.red}` : `3px solid ${isOwnLead ? C.gold : "#e2e8f0"}`,
+                      borderLeft: `3px solid ${isOwnLead ? C.gold : "#e2e8f0"}`,
                       background: idx % 2 === 0 ? "transparent" : "#fbfdff",
                       transition: "background 0.15s",
                     }}
@@ -437,17 +430,14 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                             style={{
-                              background: overdue
-                                ? `linear-gradient(135deg, ${C.red}, #dc2626)`
-                                : `linear-gradient(135deg, ${avatarColor(lead.name)}, ${avatarColor(lead.name)}bb)`,
-                              boxShadow: `0 2px 8px ${overdue ? C.red : avatarColor(lead.name)}40`,
+                              background: `linear-gradient(135deg, ${avatarColor(lead.name)}, ${avatarColor(lead.name)}bb)`,
+                              boxShadow: `0 2px 8px ${avatarColor(lead.name)}40`,
                             }}>
                             {lead.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <div className="font-semibold truncate max-w-[150px] flex items-center gap-1"
-                              style={{ color: overdue ? C.red : C.text }}>
-                              {overdue && <AlertCircle size={11} style={{ color: C.red, flexShrink: 0 }} />}
+                              style={{ color: C.text }}>
                               {lead.name}
                             </div>
                             {lead.company && (
@@ -471,11 +461,6 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                           style={{ background: `${typeInfo.color}20`, color: typeInfo.color, border: `1px solid ${typeInfo.color}30` }}>
                           {typeInfo.label}
                         </span>
-                        {lead.leadTemperature && (
-                          <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${lead.leadTemperature === "hot" ? "bg-[#fff1f2] text-[#e11d48]" : lead.leadTemperature === "warm" ? "bg-[#fff7ed] text-[#ea580c]" : "bg-[#f1f5f9] text-[#64748b]"}`}>
-                            {TEMPERATURE_LABELS[lead.leadTemperature]} · {lead.leadScore ?? 0}đ
-                          </span>
-                        )}
                       </div>
                     </td>
 
@@ -540,7 +525,7 @@ export default function LeadsListClient({ initialLeads, isAdmin = false, current
                     {/* Last contact */}
                     <td className="px-4 py-2.5 hidden xl:table-cell">
                       <span className={`text-xs whitespace-nowrap font-medium`}
-                        style={{ color: overdue ? C.red : daysAgo <= 1 ? C.green : C.textDim }}>
+                        style={{ color: daysAgo <= 1 ? C.green : C.textDim }}>
                         {daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}
                       </span>
                     </td>
