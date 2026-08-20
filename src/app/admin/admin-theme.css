@@ -149,11 +149,17 @@
 
 /* Trang chọn hệ thống: để CSS trong stylesheet tải sẵn nhằm tránh FOUC trên iOS. */
 .module-hub {
+  --module-display-font: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --module-ui-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   position: relative;
   min-height: 100dvh;
   overflow-x: hidden;
   isolation: isolate;
-  color: #f8f3e7;
+  color: #eee5cf;
+  font-family: var(--module-ui-font);
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   background-color: #080d15;
   background-image:
     radial-gradient(circle at 8% 4%, rgba(44, 76, 128, .24), transparent 31rem),
@@ -220,11 +226,11 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: rgba(248, 243, 231, .62);
+  color: rgba(225, 216, 195, .74);
   background: rgba(255, 255, 255, .025);
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: .02em;
+  font-weight: 500;
+  letter-spacing: .035em;
 }
 
 .module-secure svg { color: #d8bd68; }
@@ -239,27 +245,31 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #dfc66f;
+  color: #d8bd68;
   font-size: 10px;
-  font-weight: 750;
-  letter-spacing: .18em;
+  font-weight: 600;
+  letter-spacing: .22em;
   text-transform: uppercase;
 }
 
 .module-heading h1 {
   margin: 0;
-  color: #fbf6e9;
-  font-size: clamp(34px, 5vw, 52px);
-  font-weight: 650;
-  line-height: 1.04;
-  letter-spacing: -.035em;
+  color: #f3ead3;
+  font-family: var(--module-display-font);
+  font-size: clamp(42px, 5.4vw, 60px);
+  font-weight: 600;
+  line-height: .98;
+  letter-spacing: -.022em;
+  text-wrap: balance;
 }
 
 .module-heading p {
   margin: 10px 0 0;
-  color: rgba(248, 243, 231, .58);
-  font-size: 15px;
+  color: rgba(216, 207, 187, .72);
+  font-size: 14px;
+  font-weight: 400;
   line-height: 1.5;
+  letter-spacing: .012em;
 }
 
 .module-card-grid {
@@ -329,10 +339,10 @@
   padding: 6px 9px;
   border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 999px;
-  color: rgba(248, 243, 231, .46);
+  color: rgba(214, 204, 181, .62);
   background: rgba(255, 255, 255, .03);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
   letter-spacing: .14em;
 }
@@ -341,9 +351,9 @@
 
 .module-eyebrow {
   margin: 0;
-  color: #d9bd61;
+  color: #d2b55b;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.4;
   letter-spacing: .17em;
   text-transform: uppercase;
@@ -351,19 +361,22 @@
 
 .module-card h2 {
   margin: 7px 0 0;
-  color: #fbf5e6;
-  font-size: 27px;
-  font-weight: 650;
-  line-height: 1.2;
-  letter-spacing: -.025em;
+  color: #f1e6ce;
+  font-family: var(--module-display-font);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -.012em;
 }
 
 .module-description {
   min-height: 48px;
   margin: 8px 0 0;
-  color: rgba(248, 243, 231, .62);
-  font-size: 13px;
+  color: rgba(215, 207, 189, .76);
+  font-size: 12.5px;
+  font-weight: 400;
   line-height: 1.65;
+  letter-spacing: .008em;
 }
 
 .module-features {
@@ -382,10 +395,11 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: rgba(248, 243, 231, .58);
+  color: rgba(213, 204, 184, .72);
   background: rgba(255, 255, 255, .025);
   font-size: 10.5px;
-  font-weight: 650;
+  font-weight: 500;
+  letter-spacing: .008em;
 }
 
 .module-feature svg { color: #d7b957; flex: 0 0 auto; }
@@ -399,11 +413,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #1a1200;
+  color: #201706;
   background: linear-gradient(110deg, #e5c861, #bf8d27);
   box-shadow: 0 12px 30px rgba(187, 135, 31, .18);
-  font-size: 13.5px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .01em;
 }
 
 .module-action svg { transition: transform .2s ease; }
@@ -416,8 +431,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  color: rgba(248, 243, 231, .34);
+  color: rgba(196, 186, 164, .48);
   font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: .012em;
 }
 
 .module-footer-security { display: inline-flex; align-items: center; gap: 6px; }
@@ -526,15 +543,15 @@
   .module-secure span { display: none; }
   .module-heading { margin: 24px 0 18px; }
   .module-kicker { margin-bottom: 7px; font-size: 9px; }
-  .module-heading h1 { font-size: 30px; }
-  .module-heading p { margin-top: 7px; font-size: 13px; }
+  .module-heading h1 { font-size: 38px; line-height: 1; }
+  .module-heading p { margin-top: 7px; font-size: 12.5px; }
   .module-card-grid { grid-template-columns: 1fr; gap: 12px; }
   .module-card { padding: 17px; border-radius: 20px; }
   .module-icon { width: 43px; height: 43px; border-radius: 14px; }
   .module-icon svg { width: 21px; height: 21px; }
   .module-card-copy { margin-top: 15px; }
   .module-eyebrow { font-size: 9px; }
-  .module-card h2 { margin-top: 5px; font-size: 22px; }
+  .module-card h2 { margin-top: 5px; font-size: 27px; }
   .module-description { min-height: 0; margin-top: 5px; font-size: 12px; line-height: 1.5; }
   .module-features { margin-top: 12px; }
   .module-feature { min-height: 36px; padding: 7px 8px; font-size: 9.5px; }
@@ -547,7 +564,7 @@
 @media (max-width: 370px) {
   .module-shell { padding-inline: 12px; }
   .module-heading { margin-block: 19px 14px; }
-  .module-heading h1 { font-size: 27px; }
+  .module-heading h1 { font-size: 35px; }
   .module-card { padding: 14px; }
   .module-card-copy { margin-top: 12px; }
   .module-features { grid-template-columns: 1fr 1fr; gap: 6px; }
