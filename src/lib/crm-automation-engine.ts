@@ -12,7 +12,9 @@ import { getAutomationRules, getAutoAssignConfig, getSlaConfig, saveAutomationRu
 import { getNotificationRules, logNotification } from "./crm-notifications-store";
 import type { Lead } from "./crm-types";
 import type { AutomationRule, AutomationAction } from "./crm-automation-store";
-import { findZaloUserByPhone, sendZaloAttachment, sendZaloMessage, isZaloConnected, initZaloGateway, sendZaloFriendRequest } from "./zalo-gateway";
+import { findZaloUserByPhone, sendZaloAttachment, sendZaloMessage, isZaloConnected, initZaloGateway, ensureZaloConnected, sendZaloFriendRequest } from "./zalo-gateway";
+import { linkConversationToLead } from "./zalo-inbox-store";
+import { resolveAutomationZaloAccount } from "./crm-zalo-account-routing";
 import { getMediaObject } from "./media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage } from "./zalo-media-library-store";
 import { sendAutomationEmail } from "./crm-automation-email";
@@ -28,6 +30,7 @@ import {
   markAutomationEmailSent,
   markAutomationZaloFailed,
   markAutomationZaloSent,
+  pinAutomationZaloAccount,
 } from "./crm-automation-execution-store";
 import { automationTriggerKey, isAutomationTriggerStageAllowed } from "./crm-automation-trigger";
 import { evaluateAutomationContact } from "./crm-automation-policy";
@@ -37,17 +40,20 @@ import { prepareAutomationTrackedMessage } from "./crm-automation-link-tracking"
 
 // Module-level init flag cho Zalo gateway
 let zaloGatewayInitialized = false;
-async function ensureZaloGateway(): Promise<boolean> {
+async function ensureZaloGateway(accountId?: string): Promise<boolean> {
   if (!zaloGatewayInitialized) {
     zaloGatewayInitialized = true;
     await initZaloGateway().catch(() => {});
   }
+  if (accountId && !isZaloConnected(accountId)) {
+    await ensureZaloConnected(accountId).catch(() => {});
+  }
   let waited = 0;
-  while (!isZaloConnected() && waited < 5000) {
+  while (!isZaloConnected(accountId) && waited < 5000) {
     await new Promise((r) => setTimeout(r, 300));
     waited += 300;
   }
-  return isZaloConnected();
+  return isZaloConnected(accountId);
 }
 
 const STAGE_LABELS_VI: Record<string, string> = {
@@ -147,16 +153,31 @@ async function sendAutomationZaloNow(input: {
   message: string;
   fallbackToAddFriend: boolean;
   mediaAssetIds: string[];
+  accountId?: string;
+  queueId?: string;
 }): Promise<string> {
-  const connected = await ensureZaloGateway();
+  const routing = await resolveAutomationZaloAccount({
+    lead: input.lead,
+    pinnedAccountId: input.accountId,
+  });
+  if (!routing) throw new Error("Chưa có tài khoản Zalo Personal đang hoạt động.");
+  if (input.queueId && input.accountId !== routing.accountId) {
+    await pinAutomationZaloAccount(input.queueId, routing.accountId);
+  }
+  const connected = await ensureZaloGateway(routing.accountId);
   if (!connected) throw new Error("Zalo Personal chưa kết nối.");
   const normalizedPhone = input.recipient.replace(/\s+/g, "").replace(/^\+84/, "0").replace(/^84/, "0");
-  const findResult = await findZaloUserByPhone(normalizedPhone);
-  if (!findResult.success || !findResult.user?.uid) {
+  let uid = routing.conversationId || "";
+  if (!uid) {
+    const findResult = await findZaloUserByPhone(normalizedPhone, routing.accountId);
+    if (findResult.success && findResult.user?.uid) uid = findResult.user.uid;
+  }
+  if (!uid) {
     if (input.fallbackToAddFriend) {
       const request = await sendZaloFriendRequest({
         userId: normalizedPhone,
         message: `Xin chào ${input.lead.name}! Tôi là nhân viên SmartFurni.`,
+        accountId: routing.accountId,
       }).catch(error => ({ success: false, error: error instanceof Error ? error.message : "unknown" }));
       if (request.success) return `Đã gửi lời mời kết bạn Zalo đến ${normalizedPhone}`;
       throw new Error(`Không tìm thấy tài khoản Zalo và không gửi được lời mời kết bạn: ${request.error || "unknown"}`);
@@ -164,7 +185,6 @@ async function sendAutomationZaloNow(input: {
     throw new Error(`Không tìm thấy tài khoản Zalo với số ${normalizedPhone}.`);
   }
 
-  const { uid } = findResult.user;
   const trackedMessage = await prepareAutomationTrackedMessage({
     message: input.message,
     ruleId: input.ruleId,
@@ -176,15 +196,17 @@ async function sendAutomationZaloNow(input: {
     console.error("[Automation Zalo tracking]", error);
     return input.message;
   });
-  const sendResult = await sendZaloMessage({ conversationId: uid, content: trackedMessage });
+  const sendResult = await sendZaloMessage({ accountId: routing.accountId, conversationId: uid, content: trackedMessage });
   if (!sendResult.success) {
     throw new Error(`Không gửi được Zalo: ${sendResult.error || "unknown"}`);
   }
+  await linkConversationToLead(uid, input.lead.id, normalizedPhone, routing.accountId).catch(() => undefined);
 
   const media = await loadAutomationMedia(input.mediaAssetIds);
   const sentMediaIds: string[] = [];
   for (const item of media) {
     const attachment = await sendZaloAttachment({
+      accountId: routing.accountId,
       conversationId: uid,
       fileBuffer: item.buffer,
       fileName: item.asset.name,
@@ -359,9 +381,12 @@ async function executeAction(
       const delayMinutes = Math.max(0, action.zaloDelayMinutes ?? 0);
       if (delayMinutes > 0 || policy.code === "quiet_hours") {
         const scheduledAt = policy.retryAt ? new Date(policy.retryAt) : new Date(Date.now() + delayMinutes * 60_000);
+        const routing = await resolveAutomationZaloAccount({ lead });
+        if (!routing) throw new Error("Chưa có tài khoản Zalo Personal đang hoạt động.");
         const queued = await enqueueAutomationZalo({
           dedupeKey: `${ruleId}:${lead.id}:${execution?.triggerKey || "manual"}:${execution?.actionIndex ?? 0}`,
-          ruleId, ruleName, leadId: lead.id, leadName: lead.name, recipient: normalizedPhone, message,
+          ruleId, ruleName, leadId: lead.id, leadName: lead.name, recipient: normalizedPhone,
+          accountId: routing.accountId, message,
           fallbackToAddFriend: Boolean(action.zaloFallbackToAddFriend), mediaAssetIds: action.mediaAssetIds || [], scheduledAt,
         });
         if (queued.queued) await logNotification({
@@ -544,6 +569,7 @@ async function processDueAutomationZalo(): Promise<AutomationRunLog[]> {
       const result = await sendAutomationZaloNow({
         lead, ruleId: job.ruleId, ruleName: job.ruleName, recipient: job.recipient, message: job.message,
         fallbackToAddFriend: job.fallbackToAddFriend, mediaAssetIds: job.mediaAssetIds,
+        accountId: job.accountId, queueId: job.id,
       });
       await markAutomationZaloSent(job.id);
       logs.push({ ruleId: job.ruleId, ruleName: job.ruleName, leadId: job.leadId, leadName: job.leadName,

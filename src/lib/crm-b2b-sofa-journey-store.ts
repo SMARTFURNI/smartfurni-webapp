@@ -813,6 +813,19 @@ export async function updateJourneyContext(
   return row ? mapEnrollment(row) : null;
 }
 
+export async function setJourneyEnrollmentAutomationAccount(
+  enrollmentId: string,
+  accountId: string,
+): Promise<void> {
+  await initB2BSofaJourneySchema();
+  await query(
+    `UPDATE crm_journey_enrollments
+     SET automation_account_id=$2,updated_at=NOW()
+     WHERE id=$1 AND automation_account_id IS DISTINCT FROM $2`,
+    [enrollmentId, accountId],
+  );
+}
+
 export async function pauseJourneyEnrollment(id: string, reason: string, until?: Date | null): Promise<void> {
   await initB2BSofaJourneySchema();
   const enrollment = await getEnrollmentById(id);

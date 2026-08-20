@@ -27,6 +27,7 @@ export { buildZaloFriendRequestMessage, getLeadProductLabel, normalizeZaloFriend
 
 const DEFAULT_SETTINGS: ZaloFriendshipSettings = {
   enabled: true,
+  defaultAccountId: "",
   initialDelayMinutes: 0,
   retryAfterHours: 72,
   resendDelayMinutes: 15,
@@ -143,6 +144,13 @@ export async function updateZaloFriendshipSettings(
   updates: Partial<ZaloFriendshipSettings>,
 ): Promise<ZaloFriendshipSettings> {
   const next = { ...(await getZaloFriendshipSettings()), ...updates };
+  next.defaultAccountId = cleanZaloFriendshipText(next.defaultAccountId || "").slice(0, 200);
+  if (next.defaultAccountId) {
+    const accountIsActive = (await listZaloAccounts()).some(
+      account => account.isActive && account.id === next.defaultAccountId,
+    );
+    if (!accountIsActive) throw new Error("Tài khoản Zalo mặc định không còn hoạt động.");
+  }
   next.initialDelayMinutes = Math.max(0, Math.min(60, Number(next.initialDelayMinutes) || 0));
   next.retryAfterHours = Math.max(12, Math.min(720, Number(next.retryAfterHours) || 72));
   next.resendDelayMinutes = Math.max(5, Math.min(1440, Number(next.resendDelayMinutes) || 15));
@@ -273,16 +281,16 @@ function normalizeMatch(value: string) {
   return cleanZaloFriendshipText(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-async function resolveAccount(lead: Lead, row: FriendshipRow): Promise<ZaloAccountRecord | null> {
+async function resolveAccount(
+  _lead: Lead,
+  row: FriendshipRow,
+  settings: ZaloFriendshipSettings,
+): Promise<ZaloAccountRecord | null> {
   const accounts = (await listZaloAccounts()).filter(account => account.isActive);
   if (row.account_id) return accounts.find(account => account.id === row.account_id) || null;
-  const assignee = normalizeMatch(lead.assignedTo);
-  if (assignee) {
-    const assigned = accounts.find(account => {
-      const haystack = normalizeMatch(`${account.label} ${account.displayName}`);
-      return haystack.includes(assignee) || assignee.includes(haystack);
-    });
-    if (assigned) return assigned;
+  if (settings.defaultAccountId) {
+    const configured = accounts.find(account => account.id === settings.defaultAccountId);
+    if (configured) return configured;
   }
   return accounts.find(account => normalizeMatch(`${account.label} ${account.displayName}`).includes("smartfurni")) || accounts[0] || null;
 }
@@ -344,7 +352,7 @@ async function processRow(row: FriendshipRow, settings: ZaloFriendshipSettings) 
     return "waiting_data";
   }
 
-  const account = await resolveAccount(lead, row);
+  const account = await resolveAccount(lead, row, settings);
   if (!account) {
     await updateRow(row.lead_id, { status: "waiting_account", last_error: "Chưa có tài khoản Zalo cá nhân đang hoạt động", next_action_at: new Date(Date.now() + 30 * 60_000).toISOString(), claimed_at: null });
     return "waiting_account";

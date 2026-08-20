@@ -3,8 +3,9 @@ import "server-only";
 import { query, queryOne } from "@/lib/db";
 import { createActivityOnce, createTask, getLead } from "@/lib/crm-store";
 import { logNotification } from "@/lib/crm-notifications-store";
-import { listZaloAccounts } from "@/lib/zalo-account-store";
 import { findZaloUserByPhone, initZaloGateway, sendZaloAttachment as sendPersonalAttachment, sendZaloMessage } from "@/lib/zalo-gateway";
+import { linkConversationToLead } from "@/lib/zalo-inbox-store";
+import { resolveAutomationZaloAccount } from "@/lib/crm-zalo-account-routing";
 import { getZaloConversation, initZaloOASchema, sendZaloAttachment as sendOaAttachment, sendZaloConsultation } from "@/lib/zalo-oa-store";
 import { getMediaObject } from "@/lib/media-storage";
 import { getZaloMediaAssets, incrementZaloMediaUsage, type ZaloMediaAsset } from "@/lib/zalo-media-library-store";
@@ -39,6 +40,7 @@ import {
   markJourneyActionWaitingContent,
   pauseJourneyEnrollment,
   resolveJourneyReplyReview,
+  setJourneyEnrollmentAutomationAccount,
   type JourneyActionRecord,
   type JourneyChannelAttempt,
   type JourneyEnrollmentRecord,
@@ -202,19 +204,6 @@ async function sendOaMedia(userId: string, media: PreparedMedia[]): Promise<stri
   return sentIds;
 }
 
-async function resolveAutomationAccountId(
-  settings: B2BSofaJourneySettings,
-  enrollment?: Pick<JourneyEnrollmentRecord, "automationAccountId">,
-): Promise<string> {
-  const requested = enrollment?.automationAccountId || settings.automationAccountId;
-  const accounts = (await listZaloAccounts()).filter(account => account.isActive);
-  if (requested && accounts.some(account => account.id === requested)) return requested;
-  const smartFurni = accounts.find(account =>
-    `${account.label} ${account.displayName}`.toLocaleLowerCase("vi").includes("smartfurni"),
-  );
-  return smartFurni?.id || accounts[0]?.id || "";
-}
-
 export async function sendAutomationTemplateToLead(input: {
   lead: Lead;
   channel: JourneyChannel;
@@ -262,9 +251,14 @@ export async function sendAutomationTemplateToLead(input: {
   }
   const renderedSubject = renderAutomationTestTemplate(input.subject || "", context);
   const renderedBody = renderAutomationTestTemplate(input.body, context);
-  const accountId = input.channel === "zalo_personal"
-    ? await resolveAutomationAccountId(settings)
-    : "";
+  const routing = input.channel === "zalo_personal"
+    ? await resolveAutomationZaloAccount({
+      lead: input.lead,
+      pinnedAccountId: enrollment?.lastOutboundAt ? enrollment.automationAccountId : undefined,
+      preferredAccountId: enrollment?.automationAccountId || settings.automationAccountId,
+    })
+    : null;
+  const accountId = routing?.accountId || "";
 
   if (input.channel === "zalo_personal") {
     await initZaloGateway().catch(() => undefined);
@@ -279,6 +273,8 @@ export async function sendAutomationTemplateToLead(input: {
     renderedBody,
     media,
     input.emailFromName,
+    undefined,
+    routing?.conversationId,
   );
 
   await logNotification({
@@ -320,6 +316,7 @@ async function sendPersonalZalo(
   content: string,
   accountId: string,
   media: PreparedMedia[],
+  conversationIdHint?: string,
 ): Promise<SendAttemptResult> {
   if (!accountId) {
     return { outcome: "definitive_failure", error: "Không có tài khoản Zalo Personal SmartFurni đang hoạt động.", recipient: lead.phone || "", preview: content };
@@ -332,7 +329,7 @@ async function sendPersonalZalo(
      ORDER BY last_message_at DESC LIMIT 1`,
     [accountId, lead.id],
   ).catch(() => null);
-  let userId = linkedConversation?.user_id || "";
+  let userId = conversationIdHint || linkedConversation?.user_id || "";
   if (phone) {
     const found = await findZaloUserByPhone(phone, accountId);
     if (found.success && found.user?.uid) userId = found.user.uid;
@@ -345,6 +342,7 @@ async function sendPersonalZalo(
   }
   const result = await sendZaloMessage({ accountId, conversationId: userId, content });
   if (result.success) {
+    await linkConversationToLead(userId, lead.id, phone || null, accountId).catch(() => undefined);
     try {
       await sendPersonalMedia(accountId, userId, media);
     } catch (error) {
@@ -410,9 +408,10 @@ async function executeChannel(
   media: PreparedMedia[],
   emailFromName?: string,
   emailTracking?: JourneyEmailTrackingLinks,
+  conversationIdHint?: string,
 ): Promise<SendAttemptResult> {
   const trackedZaloBody = emailTracking ? rewriteJourneyTrackedLinks(zaloBody, emailTracking.clickBaseUrl) : zaloBody;
-  if (channel === "zalo_personal") return sendPersonalZalo(lead, trackedZaloBody, accountId, media);
+  if (channel === "zalo_personal") return sendPersonalZalo(lead, trackedZaloBody, accountId, media, conversationIdHint);
   if (channel === "zalo_oa") return sendOaZalo(lead, trackedZaloBody, media);
   return sendEmail(lead, subject, emailBody, media, emailFromName, emailTracking);
 }
@@ -757,7 +756,12 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
   const subject = renderJourneyTemplate(step.emailSubject, context);
   const emailBody = renderJourneyTemplate(step.emailBody, context);
   const zaloBody = renderJourneyTemplate(step.zaloBody, context);
-  const accountId = await resolveAutomationAccountId(settings, enrollment);
+  const routing = await resolveAutomationZaloAccount({
+    lead,
+    pinnedAccountId: enrollment.lastOutboundAt ? enrollment.automationAccountId : undefined,
+    preferredAccountId: enrollment.automationAccountId || settings.automationAccountId,
+  });
+  const accountId = routing?.accountId || "";
   await initZaloGateway().catch(() => undefined);
 
   const attempts = [...action.attempts];
@@ -791,6 +795,9 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
         console.error("[Journey report] Không tạo được tracking link, vẫn tiếp tục gửi:", error);
         return undefined;
       });
+    if (channel === "zalo_personal" && accountId && enrollment.automationAccountId !== accountId) {
+      await setJourneyEnrollmentAutomationAccount(enrollment.id, accountId);
+    }
     const result = await executeChannel(
       channel,
       lead,
@@ -801,6 +808,7 @@ async function processAction<TSettings extends B2BSofaJourneySettings>(
       media,
       runtime.emailFromName,
       emailTracking,
+      routing?.conversationId,
     );
     attempts.push({
       channel,

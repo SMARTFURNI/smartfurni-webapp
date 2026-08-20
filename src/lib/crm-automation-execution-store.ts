@@ -26,6 +26,7 @@ export interface AutomationZaloQueueJob {
   leadId: string;
   leadName: string;
   recipient: string;
+  accountId: string;
   message: string;
   fallbackToAddFriend: boolean;
   mediaAssetIds: string[];
@@ -85,6 +86,7 @@ export async function initAutomationExecutionSchema(): Promise<void> {
       lead_id TEXT NOT NULL,
       lead_name TEXT NOT NULL,
       recipient TEXT NOT NULL,
+      account_id TEXT NOT NULL DEFAULT '',
       message TEXT NOT NULL,
       fallback_to_add_friend BOOLEAN NOT NULL DEFAULT FALSE,
       media_asset_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -106,6 +108,7 @@ export async function initAutomationExecutionSchema(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+  await query(`ALTER TABLE crm_automation_zalo_queue ADD COLUMN IF NOT EXISTS account_id TEXT NOT NULL DEFAULT ''`);
   schemaReady = true;
 }
 
@@ -315,6 +318,7 @@ export async function enqueueAutomationZalo(input: {
   leadId: string;
   leadName: string;
   recipient: string;
+  accountId: string;
   message: string;
   fallbackToAddFriend: boolean;
   mediaAssetIds: string[];
@@ -324,13 +328,13 @@ export async function enqueueAutomationZalo(input: {
   const id = `azalo-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const row = await queryOne<{ id: string }>(
     `INSERT INTO crm_automation_zalo_queue
-       (id,dedupe_key,rule_id,rule_name,lead_id,lead_name,recipient,message,
+       (id,dedupe_key,rule_id,rule_name,lead_id,lead_name,recipient,account_id,message,
         fallback_to_add_friend,media_asset_ids,scheduled_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12)
      ON CONFLICT (dedupe_key) DO NOTHING RETURNING id`,
     [
       id, input.dedupeKey, input.ruleId, input.ruleName, input.leadId, input.leadName,
-      input.recipient, input.message, input.fallbackToAddFriend,
+      input.recipient, input.accountId, input.message, input.fallbackToAddFriend,
       JSON.stringify([...new Set(input.mediaAssetIds)].slice(0, 10)), input.scheduledAt.toISOString(),
     ],
   );
@@ -355,10 +359,21 @@ export async function claimDueAutomationZalo(limit = 20): Promise<AutomationZalo
     id: String(row.id), dedupeKey: String(row.dedupe_key), ruleId: String(row.rule_id),
     ruleName: String(row.rule_name), leadId: String(row.lead_id), leadName: String(row.lead_name),
     recipient: String(row.recipient), message: String(row.message),
+    accountId: String(row.account_id || ""),
     fallbackToAddFriend: Boolean(row.fallback_to_add_friend),
     mediaAssetIds: (typeof row.media_asset_ids === "string" ? JSON.parse(row.media_asset_ids) : row.media_asset_ids || []) as string[],
     scheduledAt: String(row.scheduled_at), attempts: Number(row.attempts || 0),
   }));
+}
+
+export async function pinAutomationZaloAccount(id: string, accountId: string): Promise<void> {
+  await initAutomationExecutionSchema();
+  await query(
+    `UPDATE crm_automation_zalo_queue
+     SET account_id=$2,updated_at=NOW()
+     WHERE id=$1`,
+    [id, accountId],
+  );
 }
 
 export async function markAutomationZaloSent(id: string): Promise<void> {

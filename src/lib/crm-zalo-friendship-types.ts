@@ -33,6 +33,8 @@ export interface ZaloFriendshipSummary {
 
 export interface ZaloFriendshipSettings {
   enabled: boolean;
+  /** Tài khoản cố định dùng khi lead chưa có hội thoại/kết bạn trước đó. */
+  defaultAccountId: string;
   initialDelayMinutes: number;
   retryAfterHours: number;
   resendDelayMinutes: number;
