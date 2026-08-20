@@ -262,25 +262,6 @@ export async function GET(req: NextRequest) {
     const now = Date.now();
     const notifications = [];
 
-    // Overdue leads
-    const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
-    const overdue = leads.filter(l =>
-      !["won", "lost"].includes(l.stage) &&
-      new Date(l.lastContactAt) < threeDaysAgo
-    );
-    if (overdue.length > 0) {
-      notifications.push({
-        id: "overdue",
-        version: dashboardNotificationVersion(overdue.map(lead => lead.id)),
-        type: "warning",
-        title: `${overdue.length} khách hàng quá hạn liên hệ`,
-        body: overdue.slice(0, 3).map(l => l.name).join(", ") + (overdue.length > 3 ? "..." : ""),
-        href: "/crm/leads?filter=overdue",
-        time: new Date().toISOString(),
-        read: false,
-      });
-    }
-
     // Tasks due today
     try {
       const taskRows = await query<{ id: string }>(

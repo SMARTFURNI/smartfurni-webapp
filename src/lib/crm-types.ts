@@ -221,7 +221,6 @@ export interface CrmStats {
   totalExpectedValue: number;
   wonValue: number;
   conversionRate: number;
-  overdueLeads: number;
   todayTasks: number;
   recentActivities: Activity[];
   staffPerformance: StaffPerformance[];
@@ -423,12 +422,6 @@ export function formatDuration(seconds: number): string {
 
 export function formatVND(amount: number): string {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-}
-
-export function isOverdue(lead: Lead): boolean {
-  if (lead.stage === "won" || lead.stage === "lost") return false;
-  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-  return new Date(lead.lastContactAt) < threeDaysAgo;
 }
 
 export function calcQuoteTotal(items: QuoteItem[], extraDiscountPct: number): number {

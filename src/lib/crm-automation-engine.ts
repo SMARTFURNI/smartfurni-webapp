@@ -820,11 +820,6 @@ async function runNotificationRules(leads: Lead[]): Promise<AutomationRunLog[]> 
       let shouldTrigger = false;
 
       switch (rule.trigger) {
-        case "lead_overdue": {
-          const days = rule.config.overdueDays ?? 3;
-          shouldTrigger = daysSince(lead.lastContactAt) >= days;
-          break;
-        }
         case "task_due": {
           // Handled separately by task scheduler
           break;

@@ -124,7 +124,7 @@ export function createAiCommandTools() {
         );
         return {
           totalLeads: stats.totalLeads, byStage: stats.byStage, totalExpectedValue: stats.totalExpectedValue,
-          wonValue: stats.wonValue, conversionRate: stats.conversionRate, overdueLeads: stats.overdueLeads,
+          wonValue: stats.wonValue, conversionRate: stats.conversionRate,
           todayTasks: stats.todayTasks, newLeadsThisMonth: stats.newLeadsThisMonth,
         };
       }});

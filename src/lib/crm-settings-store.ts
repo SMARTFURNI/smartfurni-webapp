@@ -128,7 +128,6 @@ export interface GoogleSheetConfig {
 }
 
 export interface NotificationConfig {
-  overdueThresholdDays: number;
   reminderBeforeMeetingMinutes: number;
   dailyDigestEnabled: boolean;
   dailyDigestTime: string;
@@ -162,10 +161,10 @@ export type DashboardSectionId =
   | "pipeline" | "funnel" | "staleDeals" | "heatmap"
   | "staffPerformance" | "recentActivities" | "recentQuotes"
   | "tasks" | "quickStats" | "quickLinks"
-  | "overdue" | "leaderboard" | "teamOnline";
+  | "leaderboard" | "teamOnline";
 
 export type KpiCardId =
-  | "totalLeads" | "pipelineValue" | "wonRate" | "overdue"
+  | "totalLeads" | "pipelineValue" | "wonRate"
   | "revenueMonth" | "newLeadsMonth" | "wonLeadsMonth" | "totalQuotes";
 
 export type ChartType = "bar" | "line" | "area";
@@ -200,7 +199,6 @@ export interface DashboardTheme {
   kpiCustomerColor: string;
   kpiPipelineColor: string;
   kpiWonColor: string;
-  kpiOverdueColor: string;
   // Data Pool banner
   dataPoolBannerBg: string;
   dataPoolBannerText: string;
@@ -413,7 +411,6 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     fbPageName: "",
   },
   notifications: {
-    overdueThresholdDays: 3,
     reminderBeforeMeetingMinutes: 30,
     dailyDigestEnabled: false,
     dailyDigestTime: "08:00",
@@ -448,7 +445,6 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     kpiCustomerColor: "#4F46E5",
     kpiPipelineColor: "#C9A84C",
     kpiWonColor: "#059669",
-    kpiOverdueColor: "#DC2626",
     dataPoolBannerBg: "#FFFFFF",
     dataPoolBannerText: "#101828",
     dataPoolBtnBg: "#C9A84C",
@@ -473,12 +469,12 @@ export const DEFAULT_SETTINGS: CrmSettings = {
       "kpiCards", "dataPool", "monthSummary", "revenueChart",
       "pipeline", "funnel", "staleDeals", "staffPerformance",
       "recentActivities", "recentQuotes",
-      "tasks", "quickStats", "quickLinks", "overdue",
+      "tasks", "quickStats", "quickLinks",
       "leaderboard", "teamOnline", "heatmap",
     ],
     hiddenSections: [],
     kpiColumns: 4,
-    visibleKpiCards: ["totalLeads", "pipelineValue", "wonRate", "overdue"],
+    visibleKpiCards: ["totalLeads", "pipelineValue", "wonRate"],
     // Typography
     density: "default",
     fontFamily: "inter",

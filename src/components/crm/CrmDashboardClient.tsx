@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
-  Users, TrendingUp, FileText, CheckSquare, AlertCircle,
+  Users, TrendingUp, FileText, CheckSquare,
   Clock, ChevronRight, Target, Award, DollarSign,
   Phone, Mail, Calendar, ArrowUpRight, Zap, Activity,
   BarChart2, PieChart, Plus, Star, Trophy,
@@ -13,7 +13,7 @@ import {
   AlertTriangle, CheckCircle2, Info, X, Filter, Flag,
 } from "lucide-react";
 import type { Lead, CrmTask, Quote, CrmStats } from "@/lib/crm-types";
-import { STAGE_LABELS, STAGE_COLORS, formatVND, isOverdue } from "@/lib/crm-types";
+import { STAGE_LABELS, STAGE_COLORS, formatVND } from "@/lib/crm-types";
 import type { DashboardTheme, DashboardSectionId } from "@/lib/crm-settings-store";
 import { DEFAULT_SETTINGS } from "@/lib/crm-settings-store";
 import { CRM_LEAD_TYPE_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
@@ -621,8 +621,8 @@ function SharedPlanWidget({
 }
 
 // ── 12-Week KPI Row ──────────────────────────────────────────────────────────
-function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm, plan, loadingPlan, referenceNowMs }: {
-  leads: Lead[]; activeLeads: Lead[]; overdueLeads: Lead[]; wonLeads: Lead[];
+function TwelveWeekKpiRow({ leads, activeLeads, wonLeads, totalValue, wonValue, stats, theme, fmtVal, darkMode, dm, plan, loadingPlan, referenceNowMs }: {
+  leads: Lead[]; activeLeads: Lead[]; wonLeads: Lead[];
   totalValue: number; wonValue: number; stats: CrmStats;
   theme: DashboardTheme; fmtVal: (v: number) => string; darkMode: boolean;
   dm: { card: string; cardBorder: string; textPrimary: string; textMuted: string };
@@ -678,21 +678,10 @@ function TwelveWeekKpiRow({ leads, activeLeads, overdueLeads, wonLeads, totalVal
       badgeColor: "#22c55e",
       href: "/crm/leads",
     },
-    {
-      icon: AlertCircle,
-      label: "Cần liên hệ",
-      value: overdueLeads.length,
-      sub: "Quá 3 ngày không tương tác",
-      color: overdueLeads.length > 0 ? "#f87171" : "#22c55e",
-      colorBg: overdueLeads.length > 0 ? "rgba(248,113,113,0.12)" : "rgba(34,197,94,0.1)",
-      badge: overdueLeads.length > 0 ? "Cần xử lý" : "Tốt",
-      badgeColor: overdueLeads.length > 0 ? "#f87171" : "#22c55e",
-      href: "/crm/leads?filter=overdue",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
       {kpis.map(({ icon: Icon, label, value, sub, color, colorBg, badge, badgeColor, href }) => (
         <Link key={label} href={href}
           className="rounded-2xl p-3.5 md:p-5 relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 block"
@@ -1414,7 +1403,7 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     "kpiCards", "dataPool", "monthSummary", "revenueChart",
     "pipeline", "funnel", "staleDeals", "staffPerformance",
     "recentActivities", "recentQuotes",
-    "teamOnline", "tasks", "overdue", "quickStats", "quickLinks",
+    "teamOnline", "tasks", "quickStats", "quickLinks",
     "leaderboard", "heatmap",
   ];
   const effectiveSectionOrder: DashboardSectionId[] = (() => {
@@ -1600,7 +1589,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
     };
   }, [period, currentUser?.isAdmin]);
 
-  const overdueLeads = leads.filter(isOverdue);
   const wonLeads = leads.filter(l => l.stage === "won");
   const activeLeads = leads.filter(l => !["won", "lost"].includes(l.stage));
   const pendingTasks = tasks.filter(t => !t.done);
@@ -1635,11 +1623,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
   // Focus mode: top 3 priorities
   const focusItems = [
-    ...overdueLeads.slice(0, 2).map(l => ({
-      type: "overdue" as const, label: `Liên hệ ${l.name}`,
-      sub: `Quá ${Math.floor((renderNowMs - new Date(l.lastContactAt).getTime()) / 86400000)}n`,
-      href: `/crm/leads/${l.id}`, color: "#f87171", icon: Zap,
-    })),
     ...pendingTasks.slice(0, 2).map(t => ({
       type: "task" as const, label: t.title,
       sub: t.leadName, href: `/crm/leads/${t.leadId}`, color: T.gold, icon: CheckSquare,
@@ -1718,14 +1701,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
 
           {/* Notification bell */}
           <NotificationBell currentUser={currentUser} />
-
-          {overdueLeads.length > 0 && (
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
-              style={{ background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
-              <AlertCircle size={13} />
-              {overdueLeads.length} quá hạn
-            </div>
-          )}
 
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold text-white shadow-sm active:scale-[0.98] transition-all"
@@ -1843,7 +1818,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
         {isVisible("kpiCards") && <TwelveWeekKpiRow
           leads={leads}
           activeLeads={activeLeads}
-          overdueLeads={overdueLeads}
           wonLeads={wonLeads}
           totalValue={totalValue}
           wonValue={wonValue}
@@ -2236,14 +2210,12 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                     const totalPipeline = activeLeads.length;
                     const highValueLeads = activeLeads.filter(l => (l.expectedValue || 0) >= 500_000_000);
                     const staleCount = staleDeals.length;
-                    const overdueCount = overdueLeads.length;
                     const hotLeads = activeLeads.filter(l => ["negotiating", "quoted"].includes(l.stage));
                     // Health score 0-100
                     const staleRatio = totalPipeline > 0 ? staleCount / totalPipeline : 0;
-                    const overdueRatio = totalPipeline > 0 ? overdueCount / totalPipeline : 0;
                     const hotRatio = totalPipeline > 0 ? hotLeads.length / totalPipeline : 0;
                     const score = Math.max(0, Math.min(100, Math.round(
-                      100 - staleRatio * 40 - overdueRatio * 30 + hotRatio * 20
+                      100 - staleRatio * 40 + hotRatio * 20
                     )));
                     const scoreColor = score >= 70 ? "#22c55e" : score >= 40 ? T.gold : "#f87171";
                     const scoreLabel = score >= 70 ? "Tốt" : score >= 40 ? "Trung bình" : "Cần cải thiện";
@@ -2251,7 +2223,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                       { label: "Deal nóng (sắp chốt)", value: hotLeads.length, color: "#22c55e", icon: Flame },
                       { label: "Deal giá trị cao (>500tr)", value: highValueLeads.length, color: T.gold, icon: Star },
                       { label: "Deal có nguy cơ mất", value: staleCount, color: "#fb923c", icon: AlertTriangle },
-                      { label: "Quá hạn liên hệ", value: overdueCount, color: "#f87171", icon: Clock },
                     ];
                     return (
                       <>
@@ -2694,35 +2665,6 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
                 </div>
               </div>
             </Section>}
-
-            {/* Overdue Alert */}
-            {isVisible("overdue") && overdueLeads.length > 0 && (
-              <Section title="Cần liên hệ ngay" icon={Zap} iconColor={"#f87171"} iconBg={"rgba(248,113,113,0.12)"}
-                badge={`${overdueLeads.length}`}>
-                <div className="p-3 space-y-2">
-                  {overdueLeads.slice(0, 5).map(lead => {
-                    const daysAgo = Math.floor((renderNowMs - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
-                    return (
-                      <Link key={lead.id} href={`/crm/leads/${lead.id}`}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:opacity-90 transition-opacity"
-                        style={{ border: "1px solid rgba(248,113,113,0.2)" }}>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold truncate" style={{ color: "#17233c" }}>{lead.name}</div>
-                          <div className="text-[10px] truncate" style={{ color: "#94a3b8" }}>{lead.company || STAGE_LABELS[lead.stage]}</div>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md" style={{ background: "rgba(248,113,113,0.13)" }}>
-                            <Clock size={9} style={{ color: "#f87171" }} />
-                            <span className="text-[10px] font-black" style={{ color: "#f87171" }}>{daysAgo}n</span>
-                          </div>
-                          <ChevronRight size={12} style={{ color: "#94a3b8" }} />
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </Section>
-            )}
 
             {/* Quick Stats */}
             {isVisible("quickStats") && <Section title="Thống kê nhanh" icon={Eye} iconColor={"#8b5cf6"} iconBg={"rgba(139,92,246,0.12)"}>

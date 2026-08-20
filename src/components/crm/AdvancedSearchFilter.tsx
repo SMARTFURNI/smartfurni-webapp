@@ -42,7 +42,6 @@ export default function AdvancedSearchFilter({
     { id: 'today', label: '📅 Hôm nay', icon: '📅' },
     { id: 'this-week', label: '📆 Tuần này', icon: '📆' },
     { id: 'this-month', label: '📊 Tháng này', icon: '📊' },
-    { id: 'overdue', label: '⚠️ Quá hạn', icon: '⚠️' },
   ];
 
   const filterOptions = [

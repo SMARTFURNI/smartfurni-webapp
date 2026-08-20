@@ -8,7 +8,7 @@ import {
 interface NotificationRule {
   id: string;
   name: string;
-  trigger: "overdue" | "stage_change" | "new_lead" | "quote_sent" | "contract_signed";
+  trigger: "stage_change" | "new_lead" | "quote_sent" | "contract_signed";
   channel: "zalo" | "sms" | "both";
   delayHours: number;
   templateId: string;
@@ -27,7 +27,6 @@ interface NotificationLog {
 }
 
 const TRIGGER_LABELS: Record<string, string> = {
-  overdue: "KH quá hạn không tương tác",
   stage_change: "KH chuyển giai đoạn",
   new_lead: "Có lead mới",
   quote_sent: "Đã gửi báo giá",
@@ -41,7 +40,6 @@ const CHANNEL_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const DEFAULT_RULES: NotificationRule[] = [
-  { id: "r1", name: "Nhắc KH quá hạn 3 ngày", trigger: "overdue", channel: "zalo", delayHours: 72, templateId: "t3", isActive: true, sentCount: 0 },
   { id: "r2", name: "Chào hỏi lead mới", trigger: "new_lead", channel: "zalo", delayHours: 0, templateId: "t1", isActive: true, sentCount: 0 },
   { id: "r3", name: "Follow-up sau báo giá 2 ngày", trigger: "quote_sent", channel: "both", delayHours: 48, templateId: "t2", isActive: true, sentCount: 0 },
   { id: "r4", name: "Gửi NPS sau ký hợp đồng", trigger: "contract_signed", channel: "zalo", delayHours: 168, templateId: "t5", isActive: true, sentCount: 0 },
@@ -55,7 +53,7 @@ export default function NotificationsClient() {
   const [saving, setSaving] = useState(false);
   const [showAddRule, setShowAddRule] = useState(false);
   const [newRule, setNewRule] = useState<Partial<NotificationRule>>({
-    trigger: "overdue", channel: "zalo", delayHours: 24, isActive: true
+    trigger: "new_lead", channel: "zalo", delayHours: 0, isActive: true
   });
 
   const load = useCallback(async () => {
@@ -64,7 +62,9 @@ export default function NotificationsClient() {
       const res = await fetch("/api/crm/notifications");
       if (res.ok) {
         const data = await res.json();
-        if (data.rules?.length) setRules(data.rules);
+        if (data.rules?.length) {
+          setRules(data.rules.filter((rule: { trigger?: string }) => !["overdue", "lead_overdue"].includes(rule.trigger ?? "")));
+        }
         if (data.logs) setLogs(data.logs);
       }
     } finally { setLoading(false); }
@@ -88,7 +88,7 @@ export default function NotificationsClient() {
     const rule: NotificationRule = {
       id: `r${Date.now()}`,
       name: newRule.name || "",
-      trigger: newRule.trigger || "overdue",
+      trigger: newRule.trigger || "new_lead",
       channel: newRule.channel || "zalo",
       delayHours: newRule.delayHours || 24,
       templateId: "t1",
@@ -97,7 +97,7 @@ export default function NotificationsClient() {
     };
     setRules(r => [...r, rule]);
     setShowAddRule(false);
-    setNewRule({ trigger: "overdue", channel: "zalo", delayHours: 24, isActive: true });
+    setNewRule({ trigger: "new_lead", channel: "zalo", delayHours: 0, isActive: true });
   }
 
   const stats = {

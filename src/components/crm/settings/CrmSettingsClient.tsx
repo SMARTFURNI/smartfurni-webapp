@@ -30,7 +30,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType; desc: string }[
   { id: "leadtypes",     label: "Phân loại KH",        icon: Users,      desc: "5 nhóm B2B · 10 loại hình · vai trò liên hệ" },
   { id: "discount",      label: "Bậc chiết khấu",      icon: Percent,    desc: "Chiết khấu theo số lượng" },
   { id: "webhook",       label: "Webhook & API",       icon: Webhook,    desc: "Make.com, n8n, tích hợp tự động" },
-  { id: "notifications", label: "Thông báo",           icon: Bell,       desc: "Nhắc nhở quá hạn, lịch hẹn" },
+  { id: "notifications", label: "Thông báo",           icon: Bell,       desc: "Lịch hẹn và thông báo tự động" },
   { id: "quote",         label: "Cấu hình Báo giá",   icon: FileText,   desc: "Hiệu lực, điều khoản, ghi chú" },
   { id: "email",         label: "Email & SMTP",        icon: Mail,       desc: "Cấu hình gửi email marketing" },
   { id: "dashboardtheme", label: "Giao diện Dashboard",  icon: Palette,    desc: "Màu sắc các khối trên dashboard" },
@@ -888,30 +888,6 @@ Content-Type: application/json
 function NotificationsTab({ data, onChange }: { data: CrmSettings["notifications"]; onChange: (d: CrmSettings["notifications"]) => void }) {
   return (
     <div className="space-y-6">
-      <SectionCard title="Cảnh báo quá hạn" icon={AlertCircle}>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: "#6b7280" }}>
-              Ngưỡng quá hạn (ngày không tương tác)
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range" min={1} max={14} value={data.overdueThresholdDays}
-                onChange={e => onChange({ ...data, overdueThresholdDays: Number(e.target.value) })}
-                className="flex-1 accent-yellow-500"
-              />
-              <div className="w-16 text-center px-3 py-1.5 rounded-lg font-bold"
-                style={{ background: "rgba(201,168,76,0.15)", color: "#C9A84C", border: "1px solid rgba(201,168,76,0.3)" }}>
-                {data.overdueThresholdDays} ngày
-              </div>
-            </div>
-            <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>
-              Thẻ KH sẽ hiện viền đỏ nếu không tương tác quá {data.overdueThresholdDays} ngày
-            </p>
-          </div>
-        </div>
-      </SectionCard>
-
       <SectionCard title="Nhắc nhở lịch hẹn" icon={Bell}>
         <div className="space-y-4">
           <div>
@@ -1084,7 +1060,6 @@ const SECTION_LABELS: Record<DashboardSectionId, string> = {
   tasks: "Nhiệm vụ hôm nay",
   quickStats: "Thống kê nhanh",
   quickLinks: "Truy cập nhanh",
-  overdue: "Quá hạn liên hệ",
   leaderboard: "Xếp hạng nhân viên",
   teamOnline: "Team Online",
 };
@@ -1093,7 +1068,6 @@ const KPI_CARD_LABELS: Record<KpiCardId, string> = {
   totalLeads: "Tổng khách hàng",
   pipelineValue: "Pipeline giá trị",
   wonRate: "Tỷ lệ chốt đơn",
-  overdue: "Cần liên hệ ngay",
   revenueMonth: "Doanh thu tháng",
   newLeadsMonth: "KH mới tháng",
   wonLeadsMonth: "Đơn chốt tháng",
@@ -1104,12 +1078,12 @@ const ALL_SECTIONS: DashboardSectionId[] = [
   "kpiCards", "dataPool", "monthSummary", "revenueChart",
   "pipeline", "funnel", "staleDeals", "staffPerformance",
   "recentActivities", "recentQuotes",
-  "tasks", "quickStats", "quickLinks", "overdue",
+  "tasks", "quickStats", "quickLinks",
   "leaderboard", "teamOnline", "heatmap",
 ];
 
 const ALL_KPI_CARDS: KpiCardId[] = [
-  "totalLeads", "pipelineValue", "wonRate", "overdue",
+  "totalLeads", "pipelineValue", "wonRate",
   "revenueMonth", "newLeadsMonth", "wonLeadsMonth", "totalQuotes",
 ];
 
@@ -1120,7 +1094,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       pageBg: "#F7F8FA", kpiCardBg: "#FFFFFF", kpiCardBorder: "#EAECF0",
       kpiCardTitleColor: "#101828", kpiCardValueColor: "#101828", kpiCardMutedColor: "#667085",
       kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
-      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      kpiWonColor: "#059669",
       dataPoolBannerBg: "#FFFFFF", dataPoolBannerText: "#101828", dataPoolBtnBg: "#C9A84C", dataPoolBtnText: "#FFFFFF",
       summaryCardBg: "#FFFFFF", summaryCardBorder: "#EAECF0",
       sectionCardBg: "#FFFFFF", sectionCardBorder: "#EAECF0",
@@ -1135,7 +1109,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       pageBg: "#F0F2F5", kpiCardBg: "#FFFFFF", kpiCardBorder: "#E4E7EC",
       kpiCardTitleColor: "#101828", kpiCardValueColor: "#101828", kpiCardMutedColor: "#667085",
       kpiCustomerColor: "#4F46E5", kpiPipelineColor: "#C9A84C",
-      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      kpiWonColor: "#059669",
       dataPoolBannerBg: "#0F172A", dataPoolBannerText: "#F1F5F9", dataPoolBtnBg: "#C9A84C", dataPoolBtnText: "#FFFFFF",
       summaryCardBg: "#FFFFFF", summaryCardBorder: "#E4E7EC",
       sectionCardBg: "#FFFFFF", sectionCardBorder: "#E4E7EC",
@@ -1150,7 +1124,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       pageBg: "#EFF6FF", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BFDBFE",
       kpiCardTitleColor: "#1E3A5F", kpiCardValueColor: "#1E3A5F", kpiCardMutedColor: "#64748B",
       kpiCustomerColor: "#2563EB", kpiPipelineColor: "#0EA5E9",
-      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      kpiWonColor: "#059669",
       dataPoolBannerBg: "#FFFFFF", dataPoolBannerText: "#1E3A5F", dataPoolBtnBg: "#2563EB", dataPoolBtnText: "#FFFFFF",
       summaryCardBg: "#FFFFFF", summaryCardBorder: "#BFDBFE",
       sectionCardBg: "#FFFFFF", sectionCardBorder: "#BFDBFE",
@@ -1165,7 +1139,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       pageBg: "#0F172A", kpiCardBg: "#1E293B", kpiCardBorder: "#334155",
       kpiCardTitleColor: "#F1F5F9", kpiCardValueColor: "#F8FAFC", kpiCardMutedColor: "#94A3B8",
       kpiCustomerColor: "#818CF8", kpiPipelineColor: "#FBBF24",
-      kpiWonColor: "#34D399", kpiOverdueColor: "#F87171",
+      kpiWonColor: "#34D399",
       dataPoolBannerBg: "#1E293B", dataPoolBannerText: "#F1F5F9", dataPoolBtnBg: "#FBBF24", dataPoolBtnText: "#0F172A",
       sectionCardBg: "#1E293B", sectionCardBorder: "#334155",
       sectionHeaderColor: "#F1F5F9", sectionBodyColor: "#94A3B8",
@@ -1179,7 +1153,7 @@ const THEME_PRESETS: { name: string; theme: Partial<DashboardTheme> }[] = [
       pageBg: "#F0FDF4", kpiCardBg: "#FFFFFF", kpiCardBorder: "#BBF7D0",
       kpiCardTitleColor: "#14532D", kpiCardValueColor: "#14532D", kpiCardMutedColor: "#64748B",
       kpiCustomerColor: "#16A34A", kpiPipelineColor: "#CA8A04",
-      kpiWonColor: "#059669", kpiOverdueColor: "#DC2626",
+      kpiWonColor: "#059669",
       dataPoolBannerBg: "#FFFFFF", dataPoolBannerText: "#14532D", dataPoolBtnBg: "#16A34A", dataPoolBtnText: "#FFFFFF",
       summaryCardBg: "#FFFFFF", summaryCardBorder: "#BBF7D0",
       sectionCardBg: "#FFFFFF", sectionCardBorder: "#BBF7D0",
@@ -1206,7 +1180,6 @@ const COLOR_GROUPS: { title: string; fields: { key: keyof DashboardTheme; label:
       { key: "kpiCustomerColor",  label: "Icon Tổng KH" },
       { key: "kpiPipelineColor",  label: "Icon Pipeline" },
       { key: "kpiWonColor",       label: "Icon Chốt đơn" },
-      { key: "kpiOverdueColor",   label: "Icon Cần liên hệ" },
     ],
   },
   {
@@ -1333,6 +1306,10 @@ function SelectRow({ label, value, options, onChange }: {
 
 function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange: (d: DashboardTheme) => void }) {
   const [activeGroup, setActiveGroup] = useState<"colors" | "layout" | "typography" | "charts" | "widgets" | "behavior">("colors");
+  const sectionOrder = ((data.sectionOrder ?? ALL_SECTIONS) as string[])
+    .filter((id): id is DashboardSectionId => id !== "overdue" && ALL_SECTIONS.includes(id as DashboardSectionId));
+  const visibleKpiCards = ((data.visibleKpiCards ?? ALL_KPI_CARDS.slice(0, 4)) as string[])
+    .filter((id): id is KpiCardId => id !== "overdue" && ALL_KPI_CARDS.includes(id as KpiCardId));
 
   const set = <K extends keyof DashboardTheme>(key: K, value: DashboardTheme[K]) => {
     onChange({ ...data, [key]: value });
@@ -1352,7 +1329,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
   };
 
   const toggleKpiCard = (id: KpiCardId) => {
-    const visible = data.visibleKpiCards ?? ALL_KPI_CARDS.slice(0, 4);
+    const visible = visibleKpiCards;
     if (visible.includes(id)) {
       if (visible.length <= 1) return;
       set("visibleKpiCards", visible.filter(k => k !== id));
@@ -1364,13 +1341,13 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
 
   const moveSectionUp = (idx: number) => {
     if (idx === 0) return;
-    const order = [...(data.sectionOrder ?? ALL_SECTIONS)];
+    const order = [...sectionOrder];
     [order[idx - 1], order[idx]] = [order[idx], order[idx - 1]];
     set("sectionOrder", order);
   };
 
   const moveSectionDown = (idx: number) => {
-    const order = [...(data.sectionOrder ?? ALL_SECTIONS)];
+    const order = [...sectionOrder];
     if (idx >= order.length - 1) return;
     [order[idx], order[idx + 1]] = [order[idx + 1], order[idx]];
     set("sectionOrder", order);
@@ -1504,7 +1481,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
           <SectionCard title="Chọn KPI Cards hiển thị (tối đa 6)" icon={Palette}>
             <div className="grid grid-cols-2 gap-2 mt-1">
               {ALL_KPI_CARDS.map(id => {
-                const visible = data.visibleKpiCards ?? ALL_KPI_CARDS.slice(0, 4);
+                const visible = visibleKpiCards;
                 const isOn = visible.includes(id);
                 return (
                   <button
@@ -1530,7 +1507,7 @@ function DashboardThemeTab({ data, onChange }: { data: DashboardTheme; onChange:
 
           <SectionCard title="Sắp xếp & Ẩn/hiện các Section" icon={GripVertical}>
             <div className="space-y-1 mt-1">
-              {(data.sectionOrder ?? ALL_SECTIONS).map((id, idx) => {
+              {sectionOrder.map((id, idx) => {
                 const hidden = (data.hiddenSections ?? []).includes(id);
                 return (
                   <div

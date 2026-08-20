@@ -554,14 +554,12 @@ export async function getCrmStats(staffFilter?: { assignedTo?: string }): Promis
 
   const leads = await getLeads(staffFilter);
   const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
   const byStage: Record<string, number> = {};
   const bySourceMap: Record<string, { count: number; wonCount: number; totalValue: number }> = {};
   const byType: Record<string, number> = {};
   let totalExpectedValue = 0;
   let wonValue = 0;
-  let overdueLeads = 0;
 
   for (const lead of leads) {
     byStage[lead.stage] = (byStage[lead.stage] || 0) + 1;
@@ -572,13 +570,6 @@ export async function getCrmStats(staffFilter?: { assignedTo?: string }): Promis
     byType[lead.type] = (byType[lead.type] || 0) + 1;
     totalExpectedValue += lead.expectedValue || 0;
     if (lead.stage === "won") wonValue += lead.expectedValue || 0;
-    if (
-      lead.stage !== "won" &&
-      lead.stage !== "lost" &&
-      new Date(lead.lastContactAt) < threeDaysAgo
-    ) {
-      overdueLeads++;
-    }
   }
 
   const bySource: CrmSourceStat[] = Object.entries(bySourceMap)
@@ -654,7 +645,6 @@ export async function getCrmStats(staffFilter?: { assignedTo?: string }): Promis
     totalExpectedValue,
     wonValue,
     conversionRate,
-    overdueLeads,
     todayTasks: todayTaskRows.length,
     recentActivities: activityRows.map(r => typeof r.data === "string" ? JSON.parse(r.data) : r.data),
     staffPerformance,

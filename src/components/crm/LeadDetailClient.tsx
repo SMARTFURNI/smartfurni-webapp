@@ -6,7 +6,7 @@ import {
   ArrowLeft, Phone, Mail, MapPin, User,
   Calendar, Edit3, Trash2, Plus, CheckSquare, FileText,
   Clock, MessageSquare, Users, Send, FileCheck, Loader2,
-  ChevronDown, AlertCircle, Tag, DollarSign, Home, X,
+  ChevronDown, Tag, DollarSign, Home, X,
   ShoppingCart, ExternalLink, Star, Copy,
   PhoneCall, PhoneMissed, PhoneIncoming, Play, Pause, Save,
   MessageCircle, MoreHorizontal, ListChecks, Workflow, CirclePause, BriefcaseBusiness,
@@ -20,7 +20,7 @@ import type { FacebookGroupLeadSource } from "@/lib/facebook-group-marketing-typ
 import { formatDuration } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS, TYPE_LABELS, TYPE_COLORS,
-  ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND, isOverdue,
+  ACTIVITY_LABELS, DISTRICTS, SOURCES, formatVND,
 } from "@/lib/crm-types";
 import customerStyles from "./CustomerWorkspace.module.css";
 import {
@@ -274,7 +274,6 @@ export default function LeadDetailClient({
     }
   };
 
-  const overdue = isOverdue(lead);
   const openTasks = tasks
     .filter(task => !task.done)
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
@@ -347,12 +346,6 @@ export default function LeadDetailClient({
                 <span className="hidden lg:inline text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                   style={{ background: "#f8fafc", color: DL.textMuted, border: `1px solid ${DL.border}` }}>
                   {customerContactRoleLabel}
-                </span>
-              )}
-              {overdue && (
-                <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: "#fff1f2", color: "#dc2626", border: "1px solid #fecdd3" }}>
-                  <AlertCircle size={10} /> Quá hạn
                 </span>
               )}
             </div>

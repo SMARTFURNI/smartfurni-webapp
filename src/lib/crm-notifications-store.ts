@@ -1,6 +1,6 @@
 /**
  * CRM Notifications Store
- * Handles: Auto-assign rules, Zalo OA messaging, SMS reminders, overdue alerts
+ * Handles: Auto-assign rules, Zalo OA messaging and SMS reminders
  */
 import { query } from "@/lib/db";
 import { prepareAutomationTrackedMessage } from "@/lib/crm-automation-link-tracking";
@@ -9,7 +9,6 @@ import { prepareAutomationTrackedMessage } from "@/lib/crm-automation-link-track
 
 export type NotificationChannel = "zalo" | "sms" | "email" | "in_app";
 export type NotificationTrigger =
-  | "lead_overdue"        // KH không tương tác quá X ngày
   | "stage_changed"       // KH chuyển giai đoạn
   | "task_due"            // Việc cần làm đến hạn
   | "appointment_remind"  // Nhắc lịch hẹn
@@ -25,8 +24,6 @@ export interface NotificationRule {
   channels: NotificationChannel[];
   isActive: boolean;
   config: {
-    // For overdue: days threshold
-    overdueDays?: number;
     // For stage_changed: which stages
     stages?: string[];
     // For task_due: minutes before
@@ -162,7 +159,9 @@ export async function getNotificationRules(): Promise<NotificationRule[]> {
     await initNotificationsSchema();
     const rows = await query(
       `SELECT id, name, trigger, channels, is_active, config, created_at, updated_at
-       FROM crm_notification_rules ORDER BY created_at DESC`
+       FROM crm_notification_rules
+       WHERE trigger <> 'lead_overdue'
+       ORDER BY created_at DESC`
     );
     return rows.map(mapRule);
   } catch { return getDefaultRules(); }
@@ -204,18 +203,6 @@ function mapRule(r: Record<string, unknown>): NotificationRule {
 function getDefaultRules(): NotificationRule[] {
   const now = new Date().toISOString();
   return [
-    {
-      id: "rule-overdue-3d",
-      name: "Nhắc nhở KH quá hạn 3 ngày",
-      trigger: "lead_overdue",
-      channels: ["zalo", "in_app"],
-      isActive: true,
-      config: {
-        overdueDays: 3,
-        messageTemplate: "Xin chào {{assignedTo}}, khách hàng {{name}} chưa được liên hệ trong 3 ngày. Vui lòng follow-up sớm.",
-      },
-      createdAt: now, updatedAt: now,
-    },
     {
       id: "rule-task-due-30m",
       name: "Nhắc lịch hẹn trước 30 phút",
@@ -386,7 +373,9 @@ export async function getNotificationLogs(limit = 50): Promise<NotificationLog[]
   try {
     await initNotificationsSchema();
     const rows = await query(
-      `SELECT * FROM crm_notification_logs ORDER BY sent_at DESC LIMIT $1`, [limit]
+      `SELECT * FROM crm_notification_logs
+       WHERE rule_id <> 'rule-overdue-3d'
+       ORDER BY sent_at DESC LIMIT $1`, [limit]
     );
     return rows.map(r => ({
       id: r.id as string,

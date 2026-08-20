@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TrendingUp, TrendingDown, Users, DollarSign, Target, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, DollarSign, Target } from 'lucide-react';
 
 interface MetricCardProps {
   title: string;
@@ -93,7 +93,6 @@ interface EnhancedDashboardMetricsProps {
   totalCustomers: number;
   totalValue: number;
   conversionRate: number;
-  overdueLead: number;
   customersTrend?: number;
   valueTrend?: number;
   conversionTrend?: number;
@@ -103,7 +102,6 @@ export default function EnhancedDashboardMetrics({
   totalCustomers,
   totalValue,
   conversionRate,
-  overdueLead,
   customersTrend = 12,
   valueTrend = 8,
   conversionTrend = -3,
@@ -119,7 +117,7 @@ export default function EnhancedDashboardMetrics({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Total Customers */}
       <MetricCard
         title="Tổng Khách Hàng"
@@ -165,16 +163,6 @@ export default function EnhancedDashboardMetrics({
         iconBgColor="bg-purple-100"
       />
 
-      {/* Overdue Leads */}
-      <MetricCard
-        title="Cần Liên Hệ Ngay"
-        value={overdueLead}
-        unit="leads"
-        icon={<AlertCircle className="w-6 h-6" />}
-        gradient="bg-gradient-to-br from-red-500 to-orange-500"
-        backgroundColor="bg-gradient-to-br from-red-50 to-orange-50"
-        iconBgColor="bg-red-100"
-      />
     </div>
   );
 }

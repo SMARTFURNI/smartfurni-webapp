@@ -4,12 +4,12 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus, Filter, Search, Phone, MapPin, Calendar,
-  AlertCircle, Building2, User, Store, ChevronDown, ChevronLeft, ChevronRight, X, RefreshCw,
+  Building2, User, Store, ChevronDown, ChevronLeft, ChevronRight, X, RefreshCw,
 } from "lucide-react";
 import type { Lead, LeadStage, LeadType } from "@/lib/crm-types";
 import {
   STAGE_LABELS, STAGE_COLORS,
-  SOURCES, formatVND, isOverdue,
+  SOURCES, formatVND,
 } from "@/lib/crm-types";
 import { VIETNAM_PROVINCES } from "@/lib/crm-locations";
 import AddLeadModal from "./AddLeadModal";
@@ -169,7 +169,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
       <CrmFoundationHeader
         active="kanban"
         title="Bảng Kanban chăm sóc"
-        description={`${filtered.length} khách hàng · ${leads.filter(isOverdue).length} quá hạn tương tác`}
+        description={`${filtered.length} khách hàng trong pipeline`}
         variant="zalo"
       />
       {/* Header */}
@@ -178,7 +178,7 @@ export default function KanbanClient({ initialLeads, isAdmin = false, currentUse
           <div>
             <h2 className="text-base font-bold text-gray-900">Pipeline khách hàng</h2>
             <p className="text-sm mt-0.5" style={{ color: "#6b7280" }}>
-              {filtered.length} khách hàng · {leads.filter(isOverdue).length} quá hạn tương tác
+              {filtered.length} khách hàng
             </p>
           </div>
 
@@ -410,7 +410,6 @@ function LeadCard({
   getTypeInfo: (typeId: string) => { label: string; color: string };
   onMoveStage: (stage: LeadStage) => void;
 }) {
-  const overdue = isOverdue(lead);
   const daysAgo = Math.floor((Date.now() - new Date(lead.lastContactAt).getTime()) / (1000 * 60 * 60 * 24));
   const TypeIcon = lead.type === "architect" ? User : lead.type === "investor" ? Building2 : Store;
 
@@ -421,9 +420,9 @@ function LeadCard({
       onDragEnd={onDragEnd}
       className="rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing select-none hover:-translate-y-0.5"
       style={{
-        background: overdue ? "linear-gradient(145deg, #ffffff, #fff5f6)" : "linear-gradient(145deg, #ffffff, #fbfdff)",
-        border: overdue ? "1px solid #fecdd3" : "1px solid #dbe5f1",
-        boxShadow: isDragging ? "0 14px 30px rgba(33,82,150,0.18)" : overdue ? "0 8px 18px rgba(239,68,68,0.08)" : "0 6px 16px rgba(33,82,150,0.06)",
+        background: "linear-gradient(145deg, #ffffff, #fbfdff)",
+        border: "1px solid #dbe5f1",
+        boxShadow: isDragging ? "0 14px 30px rgba(33,82,150,0.18)" : "0 6px 16px rgba(33,82,150,0.06)",
         opacity: isDragging ? 0.4 : 1,
         transform: isDragging ? "rotate(1.5deg) scale(1.02)" : "none",
       }}
@@ -439,11 +438,6 @@ function LeadCard({
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {overdue && (
-                <div title="Quá 3 ngày chưa tương tác">
-                  <AlertCircle size={14} className="text-red-500" />
-                </div>
-              )}
               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                 style={{ background: `${getTypeInfo(lead.type).color}15`, color: getTypeInfo(lead.type).color }}>
                 {getTypeInfo(lead.type).label}
@@ -485,7 +479,7 @@ function LeadCard({
           <div className="flex items-center justify-between mt-2 pt-2"
             style={{ borderTop: "1px solid #f3f4f6" }}>
             <div className="flex items-center gap-1 text-[11px]"
-              style={{ color: overdue ? "#ef4444" : "#9ca3af" }}>
+              style={{ color: "#9ca3af" }}>
               <Calendar size={11} />
               <span>{daysAgo === 0 ? "Hôm nay" : daysAgo === 1 ? "Hôm qua" : `${daysAgo} ngày trước`}</span>
             </div>
