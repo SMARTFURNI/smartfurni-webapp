@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import styles from "./ZaloMediaLibraryPanel.module.css";
 
-type MediaKind = "image" | "video" | "file";
+export type MediaKind = "image" | "video" | "file";
 
 interface MediaFolder {
   id: string;
@@ -15,7 +15,7 @@ interface MediaFolder {
   assetCount: number;
 }
 
-interface MediaAsset {
+export interface MediaAsset {
   id: string;
   folderId: string | null;
   name: string;
@@ -31,6 +31,9 @@ interface Props {
   mode?: "manage" | "picker";
   onClose?: () => void;
   onSend?: (assetIds: string[]) => Promise<void>;
+  onSelect?: (assets: MediaAsset[]) => Promise<void> | void;
+  allowedKinds?: MediaKind[];
+  actionLabel?: string;
   sending?: boolean;
 }
 
@@ -100,7 +103,15 @@ function AssetPreview({ asset }: { asset: MediaAsset }) {
   );
 }
 
-export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend, sending = false }: Props) {
+export default function ZaloMediaLibraryPanel({
+  mode = "manage",
+  onClose,
+  onSend,
+  onSelect,
+  allowedKinds = ["image", "video", "file"],
+  actionLabel = "Gửi",
+  sending = false,
+}: Props) {
   const uploadRef = useRef<HTMLInputElement>(null);
   const [folders, setFolders] = useState<MediaFolder[]>([]);
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -164,7 +175,11 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
 
   useEffect(() => { void loadLibrary(); }, [loadLibrary]);
 
-  const selectedAssets = useMemo(() => assets.filter(asset => selected.has(asset.id)), [assets, selected]);
+  const visibleAssets = useMemo(
+    () => assets.filter(asset => allowedKinds.includes(asset.mediaKind)),
+    [allowedKinds, assets],
+  );
+  const selectedAssets = useMemo(() => visibleAssets.filter(asset => selected.has(asset.id)), [selected, visibleAssets]);
   const currentFolderId = folders.some(folder => folder.id === folderFilter) ? folderFilter : null;
 
   const toggleAsset = (id: string) => {
@@ -363,7 +378,7 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
           <div className={styles.toolbar}>
             <label className={styles.search}><Search size={17} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm theo tên tài liệu..." /></label>
             <div className={styles.kindTabs}>
-              {(["all", "image", "video", "file"] as const).map(kind => (
+              {(["all", "image", "video", "file"] as const).filter(kind => kind === "all" || allowedKinds.includes(kind)).map(kind => (
                 <button key={kind} data-active={String(kindFilter === kind)} onClick={() => setKindFilter(kind)}>
                   {kind === "all" ? "Tất cả" : kind === "image" ? "Ảnh" : kind === "video" ? "Video" : "File"}
                 </button>
@@ -388,11 +403,11 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
 
           {error && <div className={styles.error}>{error}<button onClick={() => setError(null)}><X size={15} /></button></div>}
           {loading ? <div className={styles.state}><Loader2 className={styles.spin} /><span>Đang tải thư viện...</span></div>
-            : assets.length === 0 ? (
+            : visibleAssets.length === 0 ? (
               <div className={styles.empty}><span><ImageIcon size={30} /></span><h3>Chưa có tài liệu trong thư mục</h3><p>Tải ảnh, video hoặc file lên một lần để dùng lại khi tư vấn.</p><button onClick={() => uploadRef.current?.click()}><Plus size={16} /> Thêm tài liệu</button></div>
             ) : (
               <div className={styles.grid}>
-                {assets.map(asset => (
+                {visibleAssets.map(asset => (
                   <article key={asset.id} className={styles.assetCard} data-selected={String(selected.has(asset.id))}>
                     <button className={styles.assetSelect} onClick={() => toggleAsset(asset.id)} title={asset.name}>
                       <span className={styles.check}>{selected.has(asset.id) ? <Check size={14} /> : null}</span>
@@ -418,9 +433,9 @@ export default function ZaloMediaLibraryPanel({ mode = "manage", onClose, onSend
 
       {mode === "picker" && (
         <footer className={styles.footer}>
-          <span>{selectedAssets.length ? `Đã chọn ${selectedAssets.length} tài liệu` : "Chọn ảnh, video hoặc file cần gửi"}</span>
-          <div><button className={styles.secondaryButton} onClick={onClose}>Hủy</button><button className={styles.sendButton} disabled={!selectedAssets.length || sending} onClick={() => onSend?.([...selected])}>
-            {sending ? <Loader2 className={styles.spin} size={16} /> : <Send size={16} />} Gửi {selectedAssets.length || ""}
+          <span>{selectedAssets.length ? `Đã chọn ${selectedAssets.length} tài liệu` : "Chọn tài liệu cần sử dụng"}</span>
+          <div><button className={styles.secondaryButton} onClick={onClose}>Hủy</button><button className={styles.sendButton} disabled={!selectedAssets.length || sending} onClick={() => onSelect ? onSelect(selectedAssets) : onSend?.([...selected])}>
+            {sending ? <Loader2 className={styles.spin} size={16} /> : <Send size={16} />} {actionLabel} {selectedAssets.length || ""}
           </button></div>
         </footer>
       )}

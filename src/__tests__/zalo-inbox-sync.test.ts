@@ -113,6 +113,27 @@ describe("Zalo Inbox durable sync", () => {
     expect(client).toContain('...(canSendMessages ? [{ id: "media-library"');
   });
 
+  it("provides permission-gated quick messages with reusable image and video attachments", () => {
+    const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
+    const panel = source("src/components/crm/zalo-inbox/ZaloQuickMessagesPanel.tsx");
+    const store = source("src/lib/zalo-quick-message-store.ts");
+    const route = source("src/app/api/crm/zalo-inbox/quick-messages/route.ts");
+    const sendRoute = source("src/app/api/crm/zalo-inbox/quick-messages/send/route.ts");
+
+    expect(client).toContain('id: "quick-messages" as const');
+    expect(client).toContain("showQuickMessagesPicker");
+    expect(client).toContain("handleSendQuickMessage");
+    expect(panel).toContain('allowedKinds={["image", "video"]}');
+    expect(panel).toContain("Chèn nội dung");
+    expect(panel).toContain("Gửi ngay");
+    expect(store).toContain("CREATE TABLE IF NOT EXISTS zalo_quick_messages");
+    expect(store).toContain("media_asset_ids JSONB");
+    expect(route).toContain("canSendZaloInboxMessages");
+    expect(sendRoute).toContain("canSendZaloInboxMessages");
+    expect(sendRoute).toContain("skipMirror: true");
+    expect(sendRoute).toContain("markZaloQuickMessageUsed");
+  });
+
   it("pushes each inbound realtime message to all CRM and Admin PWA accounts", () => {
     const gateway = source("src/lib/zalo-gateway.ts");
     const push = source("src/lib/zalo-inbox-push.ts");

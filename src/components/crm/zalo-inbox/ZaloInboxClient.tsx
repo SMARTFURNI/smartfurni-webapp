@@ -6,13 +6,14 @@ import {
   Download, ZoomIn, Reply, ChevronLeft, Play,
   Image as ImageIcon, Bell, BellOff, Volume2, VolumeX, Smile,
   ChevronDown, CheckCheck, CheckCircle, MoreVertical, Hash, Info,
-  File as FileIcon, Users, UserPlus, Bot, ShoppingBag as CatalogIcon, FolderOpen,
+  File as FileIcon, Users, UserPlus, Bot, ShoppingBag as CatalogIcon, FolderOpen, Zap,
 } from "lucide-react";
 import ZaloFriendsPanel from "./ZaloFriendsPanel";
 import ZaloGroupsPanel from "./ZaloGroupsPanel";
 import ZaloAutoReplyPanel from "./ZaloAutoReplyPanel";
 import ZaloCatalogPanel from "./ZaloCatalogPanel";
 import ZaloMediaLibraryPanel from "./ZaloMediaLibraryPanel";
+import ZaloQuickMessagesPanel, { type QuickMessageTemplate } from "./ZaloQuickMessagesPanel";
 import ZaloLeadLinkModal from "./ZaloLeadLinkModal";
 import styles from "./ZaloInboxClient.module.css";
 import {
@@ -1463,7 +1464,7 @@ export default function ZaloInboxClient({
   canSendMessages?: boolean;
   isAdmin?: boolean;
 }) {
-  const [mainView, setMainView] = useState<"messages" | "friends" | "groups" | "auto-reply" | "media-library" | "catalog">("messages");
+  const [mainView, setMainView] = useState<"messages" | "friends" | "groups" | "auto-reply" | "quick-messages" | "media-library" | "catalog">("messages");
   const [pendingFriendCount, setPendingFriendCount] = useState(0);
   const [conversations, setConversations] = useState<ZaloConversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<ZaloConversation | null>(null);
@@ -1489,6 +1490,8 @@ export default function ZaloInboxClient({
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [showMediaLibraryPicker, setShowMediaLibraryPicker] = useState(false);
   const [sendingLibrary, setSendingLibrary] = useState(false);
+  const [showQuickMessagesPicker, setShowQuickMessagesPicker] = useState(false);
+  const [sendingQuickMessageId, setSendingQuickMessageId] = useState<string | null>(null);
   const [replyContext, setReplyContext] = useState<ReplyContext | null>(null);
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [msgSearchQuery, setMsgSearchQuery] = useState("");
@@ -2115,6 +2118,51 @@ export default function ZaloInboxClient({
     }
   };
 
+  const handleInsertQuickMessage = (template: QuickMessageTemplate) => {
+    setInputText(template.content);
+    setShowQuickMessagesPicker(false);
+    setMainView("messages");
+    window.setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
+  const handleSendQuickMessage = async (templateId: string) => {
+    if (!canSendMessages || !selectedConv || sendingQuickMessageId) return;
+    const conversationId = selectedConv.id;
+    const accountId = selectedConv.accountId;
+    setSendingQuickMessageId(templateId);
+    setUploadError(null);
+    try {
+      const response = await fetch("/api/crm/zalo-inbox/quick-messages/send", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId, conversationId, templateId }),
+      });
+      const data = await response.json().catch(() => ({ error: "Phản hồi gửi tin nhắn nhanh không hợp lệ" }));
+      if (!response.ok) throw new Error(data.error || "Không gửi được tin nhắn nhanh");
+      const sentMessages = Array.isArray(data.messages) ? data.messages as ZaloMessage[] : [];
+      const failures = Array.isArray(data.failures) ? data.failures as Array<{ name?: string; error?: string }> : [];
+      sentMessages.forEach(message => mergeSentMessage(message));
+      if (sentMessages.length) {
+        const latest = sentMessages[sentMessages.length - 1];
+        setConversations(previous => previous.map(conversation => conversation.id === conversationId && conversation.accountId === accountId
+          ? { ...conversation, lastMessage: latest.content, lastMessageAt: latest.createdAt }
+          : conversation));
+        forceScrollToLatestRef.current = true;
+        if (!failures.length) setShowQuickMessagesPicker(false);
+        window.setTimeout(() => loadMessages(conversationId, true, accountId), 800);
+      }
+      if (failures.length) {
+        const failedNames = failures.map(failure => failure.name).filter(Boolean).join(", ");
+        setUploadError(`Mẫu đã được gửi một phần; chưa gửi được: ${failedNames || "một số ảnh/video"}.`);
+      }
+    } catch (cause) {
+      setUploadError(cause instanceof Error ? cause.message : "Không gửi được tin nhắn nhanh");
+    } finally {
+      setSendingQuickMessageId(null);
+    }
+  };
+
   const markUnread = useCallback(async (convId: string, accountId: string) => {
     setConversations(prev => prev.map(c => c.id === convId && c.accountId === accountId ? { ...c, unreadCount: Math.max(c.unreadCount || 0, 1) } : c));
     try { await fetch(`/api/crm/zalo-inbox/conversations/${convId}/unread?accountId=${encodeURIComponent(accountId || "")}`, { method: "POST", credentials: "include" }); } catch { }
@@ -2241,6 +2289,7 @@ export default function ZaloInboxClient({
     { id: "friends" as const, label: "Danh bạ", icon: UserPlus, badge: pendingFriendCount },
     { id: "groups" as const, label: "Nhóm", icon: Users },
     { id: "auto-reply" as const, label: "Tự động", icon: Bot },
+    ...(canSendMessages ? [{ id: "quick-messages" as const, label: "Tin nhắn nhanh", icon: Zap }] : []),
     ...(canSendMessages ? [{ id: "media-library" as const, label: "Thư viện", icon: FolderOpen }] : []),
     { id: "catalog" as const, label: "Catalogue", icon: CatalogIcon },
   ];
@@ -2282,6 +2331,7 @@ export default function ZaloInboxClient({
     friends: "Quản lý bạn bè",
     groups: "Quản lý nhóm",
     "auto-reply": "Trả lời tự động",
+    "quick-messages": "Tin nhắn nhanh dùng chung",
     "media-library": "Thư viện media dùng chung",
     catalog: "Catalog sản phẩm",
   };
@@ -2340,6 +2390,13 @@ export default function ZaloInboxClient({
               />}
               {mainView === "groups" && selectedSubAccountId && <ZaloGroupsPanel accountId={selectedSubAccountId} onClose={() => setMainView("messages")} />}
               {mainView === "auto-reply" && selectedSubAccountId && <ZaloAutoReplyPanel accountId={selectedSubAccountId} onClose={() => setMainView("messages")} />}
+              {canSendMessages && mainView === "quick-messages" && <ZaloQuickMessagesPanel
+                mode="manage"
+                canSendNow={Boolean(selectedConv)}
+                sendingTemplateId={sendingQuickMessageId}
+                onInsert={handleInsertQuickMessage}
+                onSend={handleSendQuickMessage}
+              />}
               {canSendMessages && mainView === "media-library" && <ZaloMediaLibraryPanel mode="manage" />}
               {mainView === "catalog" && selectedSubAccountId && <ZaloCatalogPanel accountId={selectedSubAccountId} onClose={() => setMainView("messages")} />}
               {accountScopedView && !selectedSubAccountId && (
@@ -2452,6 +2509,16 @@ export default function ZaloInboxClient({
           sending={sendingLibrary}
           onClose={() => setShowMediaLibraryPicker(false)}
           onSend={handleSendLibraryAssets}
+        />
+      )}
+      {canSendMessages && showQuickMessagesPicker && (
+        <ZaloQuickMessagesPanel
+          mode="picker"
+          canSendNow={Boolean(selectedConv)}
+          sendingTemplateId={sendingQuickMessageId}
+          onClose={() => setShowQuickMessagesPicker(false)}
+          onInsert={handleInsertQuickMessage}
+          onSend={handleSendQuickMessage}
         />
       )}
 
@@ -2750,6 +2817,12 @@ export default function ZaloInboxClient({
                   </div>
                 )}
               </div>
+
+              {/* Quick messages */}
+              <button onClick={() => setShowQuickMessagesPicker(true)} disabled={!canSendMessages || Boolean(sendingQuickMessageId) || !selectedConv} title="Tin nhắn nhanh"
+                style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: "#A77B12", cursor: !canSendMessages || sendingQuickMessageId || !selectedConv ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: !canSendMessages || sendingQuickMessageId || !selectedConv ? 0.5 : 1 }}>
+                <Zap size={16} />
+              </button>
 
               {/* Image / video */}
               <button onClick={() => mediaInputRef.current?.click()} disabled={!canSendMessages || uploadingFile || !selectedConv} title="Gửi ảnh/video"
