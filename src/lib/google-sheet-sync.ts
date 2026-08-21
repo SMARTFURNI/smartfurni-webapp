@@ -11,9 +11,10 @@
 
 import { google } from "googleapis";
 import { getCrmSettings, updateCrmSetting } from "./crm-settings-store";
-import type { SheetSourceConfig } from "./crm-settings-store";
-import { createRawLead, getRawLeads } from "./crm-raw-lead-store";
+import type { GoogleSheetConfig, SheetSourceConfig } from "./crm-settings-store";
+import { createRawLead, getRawLeads, updateRawLeadFromGoogleSheet } from "./crm-raw-lead-store";
 import type { RawLeadSource } from "./crm-raw-lead-store";
+import { collectGoogleFormAnswers, normalizeSheetHeader } from "./google-sheet-form-answers";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,30 @@ export interface SyncAllResult {
   syncedAt: string;
 }
 
+type GoogleSheetColumnConfig = Pick<GoogleSheetConfig,
+  | "idColumn"
+  | "nameColumn"
+  | "phoneColumn"
+  | "emailColumn"
+  | "adNameColumn"
+  | "campaignNameColumn"
+  | "formNameColumn"
+  | "messageColumn"
+  | "customerRoleColumn"
+  | "createdTimeColumn"
+  | "companyColumn"
+  | "addressColumn"
+  | "provinceColumn"
+  | "districtColumn"
+  | "productColumn"
+  | "customerTypeColumn"
+  | "quantityColumn"
+  | "budgetColumn"
+  | "purchaseTimelineColumn"
+  | "preferredContactTimeColumn"
+  | "additionalQuestionMappings"
+>;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Làm sạch số điện thoại — bỏ prefix "p:" của Facebook */
@@ -70,7 +95,8 @@ function getConfiguredSheetTabs(sheetCfg: SheetSourceConfig): string[] {
 }
 
 function makeSheetRange(tabName: string): string {
-  return `'${tabName.replace(/'/g, "''")}'!A:Z`;
+  // Google Form có thể vượt quá 26 câu hỏi; đọc tới ZZ để không bỏ sót cột.
+  return `'${tabName.replace(/'/g, "''")}'!A:ZZ`;
 }
 
 /** Kiểm tra có phải test lead không */
@@ -79,7 +105,7 @@ function isTestLead(row: Record<string, string>): boolean {
 }
 
 function foldHeader(value: string): string {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  return normalizeSheetHeader(value);
 }
 
 function getAliasedValue(row: Record<string, string>, aliases: string[]): string {
@@ -96,17 +122,7 @@ function getAliasedValue(row: Record<string, string>, aliases: string[]): string
 async function syncOneTab(
   sheetCfg: SheetSourceConfig,
   tabName: string,
-  globalCfg: {
-    idColumn: string;
-    nameColumn: string;
-    phoneColumn: string;
-    emailColumn: string;
-    adNameColumn: string;
-    campaignNameColumn: string;
-    formNameColumn: string;
-    messageColumn: string;
-    customerRoleColumn: string;
-  },
+  globalCfg: GoogleSheetColumnConfig,
   sheetsClient: ReturnType<typeof google.sheets>,
   existingIds: Set<string>,
   primaryTabName: string
@@ -137,16 +153,14 @@ async function syncOneTab(
     return result; // Sheet trống
   }
 
-  // Parse headers — lowercase + replace space/dash với _
-  const headers = rows[0].map(h =>
-    h.toLowerCase().trim().replace(/[\s\-]+/g, "_")
-  );
+  const originalHeaders = rows[0].map(header => String(header ?? "").trim());
+  const headers = originalHeaders.map(normalizeSheetHeader);
   const dataRows = rows.slice(1);
 
   // Helper lấy giá trị cột
   const getCol = (row: string[], colName: string): string => {
     if (!colName) return "";
-    const normalized = colName.toLowerCase().trim().replace(/[\s\-]+/g, "_");
+    const normalized = normalizeSheetHeader(colName);
     const idx = headers.indexOf(normalized);
     return idx >= 0 ? (row[idx] || "").trim() : "";
   };
@@ -179,32 +193,100 @@ async function syncOneTab(
     let rowId = getCol(row, globalCfg.idColumn) || rowObj["id"] || "";
     if (!rowId) {
       // Tạo ID từ created_time + row index nếu không có
-      const createdTime = getCol(row, "created_time") || rowObj["created_time"] || new Date().toISOString();
-      rowId = `auto_${createdTime}_${Math.random().toString(36).substr(2, 9)}`;
+      const createdTime = getCol(row, globalCfg.createdTimeColumn) || rowObj["created_time"] || "no_time";
+      rowId = `auto_${createdTime}_${rowNumber}`;
       console.debug(`[gsheet-sync] Generated ID for row ${rowNumber}: ${rowId}`);
     }
 
     const dedupKey = makeDedupKey(sheetCfg.spreadsheetId, tabName, rowId);
     const legacyDedupKey = makeLegacyDedupKey(sheetCfg.spreadsheetId, rowId);
-    if (existingIds.has(dedupKey) || (tabName === primaryTabName && existingIds.has(legacyDedupKey))) {
-      console.debug(`[gsheet-sync] Skipping duplicate row ${rowNumber} (ID: ${rowId})`);
-      result.skipped++;
-      continue;
-    }
+    const duplicateKeys = [dedupKey];
+    if (tabName === primaryTabName) duplicateKeys.push(legacyDedupKey);
+    const isDuplicate = duplicateKeys.some(key => existingIds.has(key));
 
     // Lấy thông tin lead - cho phép các trường tùy chọn trống
-    const rawName = getCol(row, globalCfg.nameColumn) || rowObj["tên_đầy_đủ"] || rowObj["full_name"] || rowObj["name"] || "";
-    const rawPhone = getCol(row, globalCfg.phoneColumn) || rowObj["số_điện_thoại"] || rowObj["phone_number"] || rowObj["phone"] || "";
+    const rawName = getCol(row, globalCfg.nameColumn) || getAliasedValue(rowObj, ["tên đầy đủ", "full_name", "name"]);
+    const rawPhone = getCol(row, globalCfg.phoneColumn) || getAliasedValue(rowObj, ["số điện thoại", "phone_number", "phone"]);
     const email = getCol(row, globalCfg.emailColumn) || rowObj["email"] || "";
     const adName = getCol(row, globalCfg.adNameColumn) || rowObj["ad_name"] || "";
     const campaignName = getCol(row, globalCfg.campaignNameColumn) || rowObj["campaign_name"] || "";
     const formName = getCol(row, globalCfg.formNameColumn) || rowObj["form_name"] || "";
     const message = globalCfg.messageColumn ? getCol(row, globalCfg.messageColumn) : "";
-    const customerRole = getCol(row, globalCfg.customerRoleColumn) || rowObj["vai_trò_hoặc_nhu_cầu_chính_của_anh/chị_là_gì_ạ"] || rowObj["customer_role"] || "";
+    const customerRole = getCol(row, globalCfg.customerRoleColumn) || getAliasedValue(rowObj, ["vai trò hoặc nhu cầu chính của anh/chị là gì ạ?", "customer_role"]) || "";
+    const createdTime = getCol(row, globalCfg.createdTimeColumn) || getAliasedValue(rowObj, ["created_time", "timestamp", "dấu thời gian"]);
+    const company = getCol(row, globalCfg.companyColumn) || getAliasedValue(rowObj, ["company", "công ty", "tên công ty"]);
+    const address = getCol(row, globalCfg.addressColumn) || getAliasedValue(rowObj, ["address", "địa chỉ"]);
+    const province = getCol(row, globalCfg.provinceColumn) || getAliasedValue(rowObj, ["province", "tỉnh/thành phố", "tỉnh thành"]);
+    const district = getCol(row, globalCfg.districtColumn) || getAliasedValue(rowObj, ["district", "quận/huyện", "quận huyện"]);
+    const productInterest = getCol(row, globalCfg.productColumn) || getAliasedValue(rowObj, ["product", "sản phẩm", "sản phẩm quan tâm"]);
+    const customerType = getCol(row, globalCfg.customerTypeColumn) || getAliasedValue(rowObj, ["customer_type", "loại khách hàng", "phân loại khách hàng"]);
+    const quantity = getCol(row, globalCfg.quantityColumn) || getAliasedValue(rowObj, ["quantity", "số lượng", "số căn/phòng", "số căn phòng"]);
+    const budget = getCol(row, globalCfg.budgetColumn) || getAliasedValue(rowObj, ["budget", "ngân sách", "mức ngân sách"]);
+    const purchaseTimeline = getCol(row, globalCfg.purchaseTimelineColumn) || getAliasedValue(rowObj, ["purchase_timeline", "thời gian dự kiến mua", "thời điểm mua"]);
+    const preferredContactTime = getCol(row, globalCfg.preferredContactTimeColumn) || getAliasedValue(rowObj, ["preferred_contact_time", "thời gian liên hệ", "khung giờ liên hệ"]);
     const marketScope = getAliasedValue(rowObj, ["market_scope", "pham_vi_khach_hang", "phạm vi khách hàng", "b2c_b2b"]);
     const b2bCustomerGroup = getAliasedValue(rowObj, ["b2b_group", "nhom_b2b", "nhóm b2b", "nhóm khách hàng b2b"]);
     const b2bCustomerSubtype = getAliasedValue(rowObj, ["b2b_subtype", "loai_hinh_b2b", "loại hình b2b", "doi_tuong_kh", "đối tượng khách hàng", "phan_loai_chi_tiet"]);
     const contactRole = getAliasedValue(rowObj, ["contact_role", "vai_tro_lien_he", "vai trò liên hệ", "customer_role"]);
+
+    const standardAnswers = Object.fromEntries([
+      ["Vai trò / nhu cầu chính", customerRole],
+      ["Công ty", company],
+      ["Địa chỉ", address],
+      ["Tỉnh / Thành phố", province],
+      ["Quận / Huyện", district],
+      ["Sản phẩm quan tâm", productInterest],
+      ["Loại khách hàng", customerType],
+      ["Số lượng / Số căn phòng", quantity],
+      ["Ngân sách", budget],
+      ["Thời gian dự kiến mua", purchaseTimeline],
+      ["Thời gian liên hệ phù hợp", preferredContactTime],
+      ["Ghi chú / Nhu cầu", message],
+    ].filter((entry): entry is [string, string] => Boolean(entry[1])));
+    const formAnswers = {
+      ...standardAnswers,
+      ...collectGoogleFormAnswers({
+        headers: originalHeaders,
+        row,
+        excludedColumns: [
+          globalCfg.idColumn,
+          globalCfg.nameColumn,
+          globalCfg.phoneColumn,
+          globalCfg.emailColumn,
+          globalCfg.adNameColumn,
+          globalCfg.campaignNameColumn,
+          globalCfg.formNameColumn,
+          globalCfg.messageColumn,
+          globalCfg.customerRoleColumn,
+          globalCfg.createdTimeColumn,
+          globalCfg.companyColumn,
+          globalCfg.addressColumn,
+          globalCfg.provinceColumn,
+          globalCfg.districtColumn,
+          globalCfg.productColumn,
+          globalCfg.customerTypeColumn,
+          globalCfg.quantityColumn,
+          globalCfg.budgetColumn,
+          globalCfg.purchaseTimelineColumn,
+          globalCfg.preferredContactTimeColumn,
+          "id", "created_time", "timestamp", "dấu thời gian",
+          "tên đầy đủ", "full_name", "name",
+          "số điện thoại", "phone_number", "phone", "email",
+          "ad_name", "campaign_name", "form_name",
+          "customer_role", "vai trò hoặc nhu cầu chính của anh/chị là gì ạ?",
+          "company", "công ty", "tên công ty",
+          "address", "địa chỉ", "province", "tỉnh/thành phố", "tỉnh thành",
+          "district", "quận/huyện", "quận huyện",
+          "product", "sản phẩm", "sản phẩm quan tâm",
+          "customer_type", "loại khách hàng", "phân loại khách hàng",
+          "quantity", "số lượng", "số căn/phòng", "số căn phòng",
+          "budget", "ngân sách", "mức ngân sách",
+          "purchase_timeline", "thời gian dự kiến mua", "thời điểm mua",
+          "preferred_contact_time", "thời gian liên hệ", "khung giờ liên hệ",
+        ],
+        customMappings: globalCfg.additionalQuestionMappings,
+      }),
+    };
 
     // Sử dụng giá trị mặc định cho name nếu trống
     const fullName = rawName || "Khách hàng từ Sheet";
@@ -212,18 +294,17 @@ async function syncOneTab(
 
     console.debug(`[gsheet-sync] Processing row ${rowNumber}: ID=${rowId}, Name=${fullName}, Phone=${phone || "(empty)"}, Email=${email || "(empty)"}, Role=${customerRole || "(empty)"}`);
 
-    try {
-      await createRawLead({
-        source,
-        fullName,
-        phone,
-        email: email || undefined,
-        adName: adName || undefined,
-        campaignName: campaignName || undefined,
-        formName: formName || undefined,
-        message: message || undefined,
-        customerRole: customerRole || undefined,
-        rawData: {
+    const rawLeadData = {
+      source,
+      fullName,
+      phone,
+      email: email || undefined,
+      adName: adName || undefined,
+      campaignName: campaignName || undefined,
+      formName: formName || undefined,
+      message: message || undefined,
+      customerRole: customerRole || undefined,
+      rawData: {
           ...rowObj,
           sheetRowId: dedupKey,
           syncedFrom: "google_sheet",
@@ -232,12 +313,34 @@ async function syncOneTab(
           sheetTabName: tabName,
           spreadsheetId: sheetCfg.spreadsheetId,
           originalId: rowId,
+          formAnswers,
+          ...(createdTime ? { createdTime } : {}),
+          ...(company ? { company } : {}),
+          ...(address ? { address } : {}),
+          ...(province ? { province } : {}),
+          ...(district ? { district } : {}),
+          ...(productInterest ? { productInterest } : {}),
+          ...(customerType ? { customerType } : {}),
+          ...(quantity ? { quantity } : {}),
+          ...(budget ? { budget } : {}),
+          ...(purchaseTimeline ? { purchaseTimeline } : {}),
+          ...(preferredContactTime ? { preferredContactTime } : {}),
           ...(marketScope ? { marketScope } : {}),
           ...(b2bCustomerGroup ? { b2bCustomerGroup } : {}),
           ...(b2bCustomerSubtype ? { b2bCustomerSubtype } : {}),
           ...(contactRole ? { contactRole } : {}),
-        },
-      });
+      },
+    };
+
+    try {
+      if (isDuplicate) {
+        await updateRawLeadFromGoogleSheet(duplicateKeys, rawLeadData);
+        console.debug(`[gsheet-sync] Updated duplicate row ${rowNumber} (ID: ${rowId})`);
+        result.skipped++;
+        continue;
+      }
+
+      await createRawLead(rawLeadData);
       console.info(`[gsheet-sync] ✅ Successfully synced row ${rowNumber} (ID: ${rowId})`);
       result.newLeads++;
       existingIds.add(dedupKey);
@@ -256,17 +359,7 @@ async function syncOneTab(
 
 async function syncOneSheet(
   sheetCfg: SheetSourceConfig,
-  globalCfg: {
-    idColumn: string;
-    nameColumn: string;
-    phoneColumn: string;
-    emailColumn: string;
-    adNameColumn: string;
-    campaignNameColumn: string;
-    formNameColumn: string;
-    messageColumn: string;
-    customerRoleColumn: string;
-  },
+  globalCfg: GoogleSheetColumnConfig,
   sheetsClient: ReturnType<typeof google.sheets>,
   existingIds: Set<string>
 ): Promise<SheetSyncResult> {
@@ -433,6 +526,18 @@ export async function syncAllGoogleSheets(sheetIdFilter?: string): Promise<SyncA
     formNameColumn: cfg.formNameColumn,
     messageColumn: cfg.messageColumn,
     customerRoleColumn: cfg.customerRoleColumn || "vai_trò_hoặc_nhu_cầu_chính_của_anh/chị_là_gì_ạ",
+    createdTimeColumn: cfg.createdTimeColumn,
+    companyColumn: cfg.companyColumn,
+    addressColumn: cfg.addressColumn,
+    provinceColumn: cfg.provinceColumn,
+    districtColumn: cfg.districtColumn,
+    productColumn: cfg.productColumn,
+    customerTypeColumn: cfg.customerTypeColumn,
+    quantityColumn: cfg.quantityColumn,
+    budgetColumn: cfg.budgetColumn,
+    purchaseTimelineColumn: cfg.purchaseTimelineColumn,
+    preferredContactTimeColumn: cfg.preferredContactTimeColumn,
+    additionalQuestionMappings: cfg.additionalQuestionMappings,
   };
 
   // Sync từng sheet tuần tự (tránh rate limit)

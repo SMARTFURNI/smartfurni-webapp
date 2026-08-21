@@ -328,7 +328,7 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
             )}
             <span className="font-semibold text-sm" style={{ color: syncResult.success ? "#15803d" : "#dc2626" }}>
               {syncResult.success
-                ? `Sync thành công — ${syncResult.totalNew} lead mới, ${syncResult.totalSkipped} bỏ qua`
+                ? `Sync thành công — ${syncResult.totalNew} lead mới, ${syncResult.totalSkipped} đã có/cập nhật`
                 : "Sync thất bại"}
             </span>
           </div>
@@ -337,13 +337,13 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
               <div className="text-xs text-gray-600">
                 <span className="font-medium">{s.label}:</span>{" "}
                 {s.success
-                  ? `+${s.newLeads} mới, ${s.skipped} bỏ qua`
+                  ? `+${s.newLeads} mới, ${s.skipped} đã có/cập nhật`
                   : `Lỗi: ${s.errors[0] || "không xác định"}`}
               </div>
               {s.tabs?.map(tab => (
                 <div key={tab.tabName} className="ml-3 text-[11px] text-gray-500">
                   • {tab.tabName}: {tab.success
-                    ? `+${tab.newLeads} mới, ${tab.skipped} bỏ qua`
+                    ? `+${tab.newLeads} mới, ${tab.skipped} đã có/cập nhật`
                     : `Lỗi: ${tab.errors[0] || "không xác định"}`}
                 </div>
               ))}
@@ -409,28 +409,141 @@ export default function GoogleSheetClient({ value, onChange, embedded = false }:
             Cấu hình ánh xạ cột
           </button>
           {showGuide && (
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-4 space-y-5 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
               {[
-                { key: "idColumn", label: "Cột ID (dedup)" },
-                { key: "nameColumn", label: "Cột tên đầy đủ" },
-                { key: "phoneColumn", label: "Cột số điện thoại" },
-                { key: "emailColumn", label: "Cột email" },
-                { key: "adNameColumn", label: "Cột tên quảng cáo" },
-                { key: "campaignNameColumn", label: "Cột tên campaign" },
-                { key: "formNameColumn", label: "Cột tên form" },
-                { key: "messageColumn", label: "Cột ghi chú (tùy chọn)" },
-                { key: "customerRoleColumn", label: "Cột vai trò / nhu cầu (tùy chọn)" },
-              ].map(({ key, label }) => (
-                <div key={key}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
-                  <input
-                    type="text"
-                    className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
-                    value={(config as unknown as Record<string, unknown>)[key] as string || ""}
-                    onChange={e => commitConfig({ ...config, [key]: e.target.value })}
-                  />
+                {
+                  title: "Thông tin cơ bản",
+                  description: "Dùng để nhận diện, chống trùng và lưu nguồn quảng cáo.",
+                  fields: [
+                    { key: "idColumn", label: "ID (chống trùng)" },
+                    { key: "createdTimeColumn", label: "Thời gian tạo" },
+                    { key: "nameColumn", label: "Họ và tên" },
+                    { key: "phoneColumn", label: "Số điện thoại" },
+                    { key: "emailColumn", label: "Email" },
+                    { key: "adNameColumn", label: "Tên quảng cáo" },
+                    { key: "campaignNameColumn", label: "Tên chiến dịch" },
+                    { key: "formNameColumn", label: "Tên form" },
+                  ],
+                },
+                {
+                  title: "Thông tin khách hàng & nhu cầu",
+                  description: "Các câu trả lời chuẩn được hiển thị trong Data Pool và chuyển vào hồ sơ CRM.",
+                  fields: [
+                    { key: "companyColumn", label: "Công ty" },
+                    { key: "addressColumn", label: "Địa chỉ" },
+                    { key: "provinceColumn", label: "Tỉnh / Thành phố" },
+                    { key: "districtColumn", label: "Quận / Huyện" },
+                    { key: "customerTypeColumn", label: "Loại khách hàng" },
+                    { key: "customerRoleColumn", label: "Vai trò / Nhu cầu chính" },
+                    { key: "productColumn", label: "Sản phẩm quan tâm" },
+                    { key: "quantityColumn", label: "Số lượng / Số căn phòng" },
+                    { key: "budgetColumn", label: "Ngân sách" },
+                    { key: "purchaseTimelineColumn", label: "Thời gian dự kiến mua" },
+                    { key: "preferredContactTimeColumn", label: "Thời gian liên hệ phù hợp" },
+                    { key: "messageColumn", label: "Ghi chú / Nhu cầu khác" },
+                  ],
+                },
+              ].map(section => (
+                <div key={section.title}>
+                  <div className="mb-3">
+                    <h3 className="text-sm font-semibold text-gray-800">{section.title}</h3>
+                    <p className="mt-0.5 text-xs text-gray-500">{section.description}</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {section.fields.map(({ key, label }) => (
+                      <div key={key}>
+                        <label className="mb-1 block text-xs font-medium text-gray-600">{label}</label>
+                        <input
+                          type="text"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                          placeholder="Tên cột trên Google Sheet"
+                          value={(config as unknown as Record<string, unknown>)[key] as string || ""}
+                          onChange={e => commitConfig({ ...config, [key]: e.target.value })}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
+
+              <div>
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-800">Câu hỏi bổ sung</h3>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      Đặt nhãn dễ đọc cho câu hỏi riêng của từng form. Cột chưa khai báo vẫn được tự động lưu bằng tiêu đề gốc.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => commitConfig({
+                      ...config,
+                      additionalQuestionMappings: [
+                        ...config.additionalQuestionMappings,
+                        { id: `question_${Date.now()}`, label: "", column: "" },
+                      ],
+                    })}
+                    className="inline-flex flex-shrink-0 items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50"
+                  >
+                    <Plus size={13} /> Thêm câu hỏi
+                  </button>
+                </div>
+
+                {config.additionalQuestionMappings.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-gray-300 bg-white px-4 py-3 text-center text-xs text-gray-500">
+                    Chưa có câu hỏi tùy chỉnh. Hệ thống vẫn tự lưu mọi cột chưa ánh xạ.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {config.additionalQuestionMappings.map((mapping, index) => (
+                      <div key={mapping.id} className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-white p-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-gray-600">Nhãn hiển thị</label>
+                          <input
+                            type="text"
+                            value={mapping.label}
+                            placeholder="Ví dụ: Phong cách yêu thích"
+                            onChange={e => commitConfig({
+                              ...config,
+                              additionalQuestionMappings: config.additionalQuestionMappings.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, label: e.target.value } : item
+                              ),
+                            })}
+                            className="w-full rounded-lg border border-gray-300 px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-gray-600">Tên cột trên Sheet</label>
+                          <input
+                            type="text"
+                            value={mapping.column}
+                            placeholder="Tiêu đề câu hỏi trong Google Form"
+                            onChange={e => commitConfig({
+                              ...config,
+                              additionalQuestionMappings: config.additionalQuestionMappings.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, column: e.target.value } : item
+                              ),
+                            })}
+                            className="w-full rounded-lg border border-gray-300 px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          title="Xóa câu hỏi"
+                          onClick={() => commitConfig({
+                            ...config,
+                            additionalQuestionMappings: config.additionalQuestionMappings.filter((_, itemIndex) => itemIndex !== index),
+                          })}
+                          className="inline-flex h-9 items-center justify-center rounded-lg border border-red-100 px-3 text-red-500 hover:bg-red-50 sm:w-9 sm:px-0"
+                        >
+                          <Trash2 size={14} />
+                          <span className="ml-1 text-xs sm:hidden">Xóa</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

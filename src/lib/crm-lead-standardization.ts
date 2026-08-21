@@ -24,6 +24,7 @@ import {
   normalizeCustomerContactRole,
   normalizeCustomerMarketScope,
 } from "./crm-taxonomy";
+import { formatGoogleFormAnswers } from "./google-sheet-form-answers";
 
 export { CUSTOMER_SEGMENT_LABELS, PRODUCT_LABELS, TEMPERATURE_LABELS } from "./crm-taxonomy";
 
@@ -197,8 +198,12 @@ export function classifyRawLead(rawLead: RawLead): {
 
 export function buildLeadFromRawLead(rawLead: RawLead, assignedTo: string): Omit<Lead, "id" | "createdAt" | "updatedAt"> {
   const classification = classifyRawLead(rawLead);
+  const formAnswers = formatGoogleFormAnswers(rawLead.rawData);
+  const company = String(rawLead.rawData?.company ?? "").trim();
+  const district = String(rawLead.rawData?.district ?? rawLead.rawData?.province ?? "").trim();
   const notes = [
     rawLead.message ? `Ghi chú từ form: ${rawLead.message}` : "",
+    formAnswers ? `Câu trả lời từ Google Form:\n${formAnswers}` : "",
     rawLead.adName ? `Quảng cáo: ${rawLead.adName}` : "",
     rawLead.campaignName ? `Chiến dịch: ${rawLead.campaignName}` : "",
     rawLead.formName ? `Form: ${rawLead.formName}` : "",
@@ -206,12 +211,12 @@ export function buildLeadFromRawLead(rawLead: RawLead, assignedTo: string): Omit
 
   return {
     name: rawLead.fullName || "Khách hàng mới",
-    company: "",
+    company,
     phone: normalizeCrmPhone(rawLead.phone),
     email: normalizeCrmEmail(rawLead.email),
     type: classification.legacyType,
     stage: "new",
-    district: "",
+    district,
     expectedValue: 0,
     source: classification.source,
     assignedTo,

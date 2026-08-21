@@ -98,6 +98,15 @@ export interface SheetSourceConfig {
   totalSynced: number;
 }
 
+export interface GoogleSheetQuestionMapping {
+  /** ID ổn định để chỉnh sửa/xóa trên giao diện */
+  id: string;
+  /** Nhãn hiển thị trong Data Pool và ghi chú CRM */
+  label: string;
+  /** Tên cột chính xác trên Google Sheet */
+  column: string;
+}
+
 export interface GoogleSheetConfig {
   /** Bật/tắt toàn bộ tích hợp Google Sheet */
   enabled: boolean;
@@ -123,6 +132,20 @@ export interface GoogleSheetConfig {
   messageColumn: string;
   /** Cột vai trò / nhu cầu chính (tùy chọn) */
   customerRoleColumn: string;
+  /** Các trường chuẩn thường gặp trong Google Form */
+  createdTimeColumn: string;
+  companyColumn: string;
+  addressColumn: string;
+  provinceColumn: string;
+  districtColumn: string;
+  productColumn: string;
+  customerTypeColumn: string;
+  quantityColumn: string;
+  budgetColumn: string;
+  purchaseTimelineColumn: string;
+  preferredContactTimeColumn: string;
+  /** Câu hỏi tùy chỉnh, không giới hạn theo một mẫu form cố định */
+  additionalQuestionMappings: GoogleSheetQuestionMapping[];
   /** Tổng số lead đã sync */
   totalSynced: number;
 }
@@ -394,6 +417,44 @@ export const DEFAULT_SETTINGS: CrmSettings = {
     formNameColumn: "form_name",
     messageColumn: "",
     customerRoleColumn: "",
+    createdTimeColumn: "created_time",
+    companyColumn: "",
+    addressColumn: "",
+    provinceColumn: "",
+    districtColumn: "",
+    productColumn: "",
+    customerTypeColumn: "",
+    quantityColumn: "",
+    budgetColumn: "",
+    purchaseTimelineColumn: "",
+    preferredContactTimeColumn: "",
+    additionalQuestionMappings: [
+      {
+        id: "sofa_need",
+        label: "Nhu cầu sử dụng sofa giường",
+        column: "anh/chị_đang_quan_tâm_sofa_giường_cho_nhu_cầu_nào?",
+      },
+      {
+        id: "sofa_quantity",
+        label: "Số bộ dự kiến",
+        column: "anh/chị_dự_kiến_cần_khoảng_bao_nhiêu_bộ?",
+      },
+      {
+        id: "implementation_timeline",
+        label: "Thời gian dự kiến triển khai",
+        column: "anh/chị_dự_kiến_triển_khai_khi_nào?",
+      },
+      {
+        id: "bed_option",
+        label: "Phương án giường quan tâm",
+        column: "anh/chị_đang_quan_tâm_phương_án_nào?",
+      },
+      {
+        id: "primary_use",
+        label: "Mục đích sử dụng chính",
+        column: "mục_đích_sử_dụng_chính_của_anh/chị_là_gì?",
+      },
+    ],
     totalSynced: 0,
   },
   webhook: {
@@ -573,6 +634,19 @@ function normalizeGoogleSheetConfig(
     return typeof raw === "string" ? raw : String(defaults[key] ?? "");
   };
 
+  const additionalQuestionMappings = (Array.isArray(value?.additionalQuestionMappings)
+    ? value.additionalQuestionMappings
+    : defaults.additionalQuestionMappings)
+    .map((item, index): GoogleSheetQuestionMapping => ({
+      id: typeof item?.id === "string" && item.id.trim()
+        ? item.id.trim()
+        : `question_${index + 1}`,
+      label: typeof item?.label === "string" ? item.label.trim() : "",
+      column: typeof item?.column === "string" ? item.column.trim() : "",
+    }))
+    .filter(item => item.label || item.column)
+    .slice(0, 100);
+
   return {
     enabled: value?.enabled === true,
     serviceAccountKey: textValue("serviceAccountKey"),
@@ -586,6 +660,18 @@ function normalizeGoogleSheetConfig(
     formNameColumn: textValue("formNameColumn"),
     messageColumn: textValue("messageColumn"),
     customerRoleColumn: textValue("customerRoleColumn"),
+    createdTimeColumn: textValue("createdTimeColumn"),
+    companyColumn: textValue("companyColumn"),
+    addressColumn: textValue("addressColumn"),
+    provinceColumn: textValue("provinceColumn"),
+    districtColumn: textValue("districtColumn"),
+    productColumn: textValue("productColumn"),
+    customerTypeColumn: textValue("customerTypeColumn"),
+    quantityColumn: textValue("quantityColumn"),
+    budgetColumn: textValue("budgetColumn"),
+    purchaseTimelineColumn: textValue("purchaseTimelineColumn"),
+    preferredContactTimeColumn: textValue("preferredContactTimeColumn"),
+    additionalQuestionMappings,
     totalSynced: Number.isFinite(Number(value?.totalSynced)) ? Number(value?.totalSynced) : 0,
   };
 }

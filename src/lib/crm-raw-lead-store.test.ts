@@ -11,7 +11,7 @@ vi.mock("@/lib/db", () => ({ query: queryMock, queryOne: queryOneMock }));
 vi.mock("@/lib/sse-emitter", () => ({ emitSSE: emitSSEMock }));
 vi.mock("@/lib/crm-raw-lead-push", () => ({ notifyNewDataPoolLead: notifyNewDataPoolLeadMock }));
 
-import { createRawLead } from "./crm-raw-lead-store";
+import { createRawLead, updateRawLeadFromGoogleSheet } from "./crm-raw-lead-store";
 
 describe("createRawLead notifications", () => {
   it("notifies only when the lead row is newly inserted", async () => {
@@ -40,5 +40,33 @@ describe("createRawLead notifications", () => {
     expect(notifyNewDataPoolLeadMock).toHaveBeenCalledTimes(1);
     expect(notifyNewDataPoolLeadMock).toHaveBeenCalledWith(expect.objectContaining({ id: "lead-dedup" }));
     expect(emitSSEMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates an existing Sheet lead with the latest mapped form answers", async () => {
+    queryMock.mockReset();
+    queryMock.mockResolvedValue([{ id: "lead-from-sheet" }]);
+
+    const updated = await updateRawLeadFromGoogleSheet(
+      ["gsheet:spreadsheet:Trang%20t%C3%ADnh1:l:123"],
+      {
+        source: "facebook_lead",
+        fullName: "Nguyễn An",
+        phone: "0901234567",
+        rawData: {
+          sheetRowId: "gsheet:spreadsheet:Trang%20t%C3%ADnh1:l:123",
+          formAnswers: {
+            "Phương án giường quan tâm": "Mua khung nâng hạ",
+          },
+        },
+      },
+    );
+
+    expect(updated).toBe(true);
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("raw_data->>'sheetRowId' = ANY"),
+      expect.arrayContaining([
+        expect.stringContaining('"Phương án giường quan tâm":"Mua khung nâng hạ"'),
+      ]),
+    );
   });
 });

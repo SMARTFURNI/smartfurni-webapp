@@ -143,6 +143,44 @@ export async function createRawLead(data: Partial<RawLead>): Promise<RawLead> {
   return lead;
 }
 
+/** Cập nhật lại nội dung một lead đã đồng bộ khi cấu hình ánh xạ Sheet thay đổi. */
+export async function updateRawLeadFromGoogleSheet(
+  sheetRowIds: string[],
+  data: Partial<RawLead>,
+): Promise<boolean> {
+  await initRawLeadSchema();
+  if (sheetRowIds.length === 0) return false;
+  const rows = await query<{ id: string }>(
+    `UPDATE crm_raw_leads
+     SET source = $1,
+         full_name = $2,
+         phone = $3,
+         email = $4,
+         ad_name = $5,
+         campaign_name = $6,
+         form_name = $7,
+         message = $8,
+         customer_role = $9,
+         raw_data = COALESCE(raw_data, '{}'::jsonb) || $10::jsonb
+     WHERE raw_data->>'sheetRowId' = ANY($11::text[])
+     RETURNING id`,
+    [
+      data.source || "other",
+      data.fullName || "",
+      data.phone || "",
+      data.email || "",
+      data.adName || null,
+      data.campaignName || null,
+      data.formName || null,
+      data.message || null,
+      data.customerRole || null,
+      JSON.stringify(data.rawData ?? {}),
+      sheetRowIds,
+    ],
+  );
+  return rows.length > 0;
+}
+
 /** Lấy danh sách raw leads với filter */
 export async function getRawLeads(filters?: {
   status?: RawLeadStatus;

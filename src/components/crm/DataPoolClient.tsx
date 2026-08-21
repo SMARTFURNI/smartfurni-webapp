@@ -9,6 +9,7 @@ import type { RawLead, RawLeadSource, RawLeadStatus } from "@/lib/crm-raw-lead-t
 import { SOURCE_LABELS, SOURCE_COLORS } from "@/lib/crm-raw-lead-types";
 import { classifyRawLead, PRODUCT_LABELS } from "@/lib/crm-lead-standardization";
 import { B2B_GROUP_LABELS, B2B_SUBTYPE_LABELS, CONTACT_ROLE_LABELS } from "@/lib/crm-taxonomy";
+import { getGoogleFormAnswers } from "@/lib/google-sheet-form-answers";
 import CrmFoundationHeader from "./CrmFoundationHeader";
 import styles from "./DataPoolClient.module.css";
 
@@ -604,6 +605,7 @@ function AssignModal({
 function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) {
   const [copied, setCopied] = useState<string | null>(null);
   const classification = classifyRawLead(lead);
+  const formAnswers = Object.entries(getGoogleFormAnswers(lead.rawData));
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
@@ -612,7 +614,7 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4" style={{ border: "1px solid #e5e7eb" }}>
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl mx-4" style={{ border: "1px solid #e5e7eb" }}>
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid #f3f4f6" }}>
           <h3 className="text-base font-bold text-gray-900">Chi tiết data</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
@@ -689,6 +691,20 @@ function DetailModal({ lead, onClose }: { lead: RawLead; onClose: () => void }) 
             <div className="p-3 rounded-xl" style={{ background: "#f8f9fb", border: "1px solid #e5e7eb" }}>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Ghi chú từ form</p>
               <p className="text-sm text-gray-700">{lead.message}</p>
+            </div>
+          )}
+
+          {formAnswers.length > 0 && (
+            <div className="rounded-xl p-3" style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700">Câu trả lời từ Google Form</p>
+              <div className="divide-y divide-amber-100">
+                {formAnswers.map(([label, answer]) => (
+                  <div key={label} className="grid grid-cols-1 gap-1 py-2 text-sm sm:grid-cols-[42%_1fr] sm:gap-3">
+                    <span className="text-gray-500">{label}</span>
+                    <span className="whitespace-pre-wrap break-words font-medium text-gray-900">{answer}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
