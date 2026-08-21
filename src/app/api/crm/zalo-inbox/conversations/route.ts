@@ -6,12 +6,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCrmSession } from "@/lib/admin-auth";
 import { getConversationCount, getConversations, linkConversationToLead, upsertConversation } from "@/lib/zalo-inbox-store";
 import { canAccessZaloInbox } from "@/lib/zalo-inbox-access";
-import { getAllGatewayStatuses, getGatewayStatus, ensureZaloConnected, getZaloUserProfiles } from "@/lib/zalo-gateway";
+import { getAllGatewayStatuses, getGatewayStatus, ensureZaloConnected, getZaloUserProfiles, getAllZaloFriends } from "@/lib/zalo-gateway";
+import { ensureZaloFriendshipSchema } from "@/lib/crm-zalo-friendship";
 import { getDb } from "@/lib/db";
 
 const avatarEnrichmentAttempts = new Map<string, number>();
 const AVATAR_RETRY_MS = 6 * 60 * 60 * 1000;
 const AVATAR_EXPIRY_BUFFER_SECONDS = 5 * 60;
+const FRIEND_CACHE_MS = 30 * 1000;
+const friendIdsByAccount = new Map<string, { expiresAt: number; ids: Set<string> }>();
+
+async function getCachedFriendIds(accountId: string): Promise<Set<string>> {
+  const cached = friendIdsByAccount.get(accountId);
+  if (cached && cached.expiresAt > Date.now()) return cached.ids;
+  const result = await getAllZaloFriends(undefined, accountId).catch(() => ({ success: false as const, friends: undefined }));
+  if (!result.success) return cached?.ids || new Set<string>();
+  const ids = new Set((result.friends || []).map(friend => String(friend.userId || "")).filter(Boolean));
+  friendIdsByAccount.set(accountId, { expiresAt: Date.now() + FRIEND_CACHE_MS, ids });
+  return ids;
+}
 
 function avatarNeedsRefresh(avatarUrl: string | null | undefined, now = Date.now()) {
   if (!avatarUrl) return true;
@@ -69,6 +82,15 @@ export async function GET(req: NextRequest) {
                   l.data->>'stage' AS stage,
                   l.data->>'type' AS type,
                   l.data->>'assignedTo' AS assigned_to,
+                  l.data->>'company' AS company,
+                  l.data->>'email' AS email,
+                  l.data->>'notes' AS notes,
+                  l.data->>'source' AS source,
+                  l.data->>'projectName' AS project_name,
+                  l.data->>'projectAddress' AS project_address,
+                  COALESCE(l.data->'interestedProducts', '[]'::jsonb) AS interested_products,
+                  COALESCE(l.data->'tags', '[]'::jsonb) AS tags,
+                  l.updated_at::text AS updated_at,
                   COALESCE((
                     SELECT json_agg(q ORDER BY q.created_at DESC)
                     FROM (
@@ -101,6 +123,34 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const conversationAccountIds = Array.from(new Set(conversations.map(conv => conv.accountId).filter(Boolean)));
+    const liveFriendIdsByAccount = new Map<string, Set<string>>();
+    await Promise.all(conversationAccountIds.map(async currentAccountId => {
+      liveFriendIdsByAccount.set(currentAccountId, await getCachedFriendIds(currentAccountId));
+    }));
+
+    // Dữ liệu accepted trong CRM là lớp dự phòng khi tài khoản Zalo đang mất
+    // kết nối và không thể đọc danh bạ thật tại thời điểm tải Inbox.
+    const acceptedFriendKeys = new Set<string>();
+    const acceptedLeadKeys = new Set<string>();
+    try {
+      await ensureZaloFriendshipSchema();
+      if (conversationAccountIds.length > 0) {
+        const acceptedResult = await db.query(
+          `SELECT account_id,lead_id,zalo_uid
+           FROM crm_zalo_friendships
+           WHERE status='accepted' AND account_id=ANY($1::text[])`,
+          [conversationAccountIds],
+        );
+        acceptedResult.rows.forEach(row => {
+          if (row.account_id && row.zalo_uid) acceptedFriendKeys.add(`${row.account_id}:${row.zalo_uid}`);
+          if (row.account_id && row.lead_id) acceptedLeadKeys.add(`${row.account_id}:${row.lead_id}`);
+        });
+      }
+    } catch (error) {
+      console.error("[zalo-inbox/conversations] Friendship enrichment failed", error);
+    }
+
     const enriched = conversations.map((conv) => {
         const rawPhone = String(conv.phone || "").replace(/\D/g, "");
         const lead = (conv.leadId ? leadsById.get(conv.leadId) : null)
@@ -119,8 +169,23 @@ export async function GET(req: NextRequest) {
           stage: lead.stage,
           type: lead.type,
           assignedTo: lead.assigned_to,
+          company: lead.company || "",
+          email: lead.email || "",
+          notes: lead.notes || "",
+          source: lead.source || "",
+          projectName: lead.project_name || "",
+          projectAddress: lead.project_address || "",
+          interestedProducts: Array.isArray(lead.interested_products) ? lead.interested_products : [],
+          tags: Array.isArray(lead.tags) ? lead.tags : [],
+          updatedAt: lead.updated_at || "",
           recent_quotes: lead.recent_quotes || [],
         } : null;
+        const zaloUserId = conv.zaloUserId || conv.id;
+        const isFriend = Boolean(
+          liveFriendIdsByAccount.get(conv.accountId)?.has(zaloUserId)
+          || acceptedFriendKeys.has(`${conv.accountId}:${zaloUserId}`)
+          || (lead?.id && acceptedLeadKeys.has(`${conv.accountId}:${lead.id}`)),
+        );
         return {
           accountId: conv.accountId,
           id: conv.id,
@@ -132,6 +197,7 @@ export async function GET(req: NextRequest) {
           lastMessage: conv.lastMessage,
           lastMessageAt: conv.lastMessageAt,
           unreadCount: conv.unreadCount,
+          isFriend,
           lead: normalizedLead,
         };
       });

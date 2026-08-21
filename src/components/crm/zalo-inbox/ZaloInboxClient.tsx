@@ -114,6 +114,15 @@ interface LeadInfo {
   stage: string;
   type: string;
   assignedTo: string | null;
+  company: string;
+  email: string;
+  notes: string;
+  source: string;
+  projectName: string;
+  projectAddress: string;
+  interestedProducts: string[];
+  tags: string[];
+  updatedAt: string;
   recent_quotes: Array<{ id: string; name: string; status: string; total_amount: number }> | null;
 }
 interface ZaloConversation {
@@ -127,6 +136,7 @@ interface ZaloConversation {
   lastMessageAt: string;
   unreadCount: number;
   leadId: string | null;
+  isFriend: boolean;
   lead: LeadInfo | null;
 }
 interface GatewayStatus {
@@ -672,12 +682,15 @@ function ConversationItem({ conv, isSelected, onClick, accountLabel }: {
       }}>
       <Avatar name={conv.displayName} avatarUrl={conv.avatarUrl} size={44} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-          <span style={{
-            fontWeight: hasUnread ? 700 : 500, fontSize: 14,
-            color: T.textPrimary,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160,
-          }}>{conv.displayName}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginBottom: 3 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+            <span style={{
+              fontWeight: hasUnread ? 700 : 500, fontSize: 14,
+              color: T.textPrimary,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: conv.isFriend ? 105 : 160,
+            }}>{conv.displayName}</span>
+            {conv.isFriend && <FriendBadge compact />}
+          </span>
           <span style={{ fontSize: 11, color: hasUnread ? T.accent : T.textMuted, flexShrink: 0, fontWeight: hasUnread ? 600 : 400 }}>
             {formatTime(conv.lastMessageAt)}
           </span>
@@ -708,6 +721,28 @@ function ConversationItem({ conv, isSelected, onClick, accountLabel }: {
       </div>
     </div>
   );
+}
+
+function FriendBadge({ compact = false }: { compact?: boolean }) {
+  return (
+    <span title="Khách hàng đã là bạn bè với tài khoản Zalo này" style={{
+      display: "inline-flex", alignItems: "center", gap: compact ? 2 : 4, flexShrink: 0,
+      padding: compact ? "2px 5px" : "4px 8px", borderRadius: 999,
+      border: "1px solid #A7F3D0", background: "#ECFDF5", color: "#047857",
+      fontSize: compact ? 9 : 11, lineHeight: 1, fontWeight: 700,
+    }}>
+      <CheckCircle size={compact ? 9 : 12} /> Đã kết bạn
+    </span>
+  );
+}
+
+function interestedProductLabel(products: string[]) {
+  const labels: Record<string, string> = {
+    sofa_bed: "Sofa giường",
+    ergonomic_bed: "Giường công thái học",
+    other: "Sản phẩm nội thất",
+  };
+  return products.map(product => labels[product] || product).join(", ");
 }
 
 function InlineZaloVideo({ attachment }: { attachment: ZaloAttachment }) {
@@ -1494,6 +1529,7 @@ export default function ZaloInboxClient({
   const [showRelatedGroups, setShowRelatedGroups] = useState(false);
   const [showAllConversationMedia, setShowAllConversationMedia] = useState(false);
   const [showAllConversationFiles, setShowAllConversationFiles] = useState(false);
+  const [crmSyncState, setCrmSyncState] = useState<{ loading: boolean; message: string; error: boolean }>({ loading: false, message: "", error: false });
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const forceScrollToLatestRef = useRef(false);
@@ -1709,7 +1745,12 @@ export default function ZaloInboxClient({
           } else {
             if (!hasBaseline && latestTs) lastConvTimestampRef.current = latestTs;
             setConversations(prev => {
-              const changed = convs.some((c, i) => c.unreadCount !== prev[i]?.unreadCount || c.lastMessage !== prev[i]?.lastMessage);
+              const changed = convs.length !== prev.length || convs.some((c, i) =>
+                c.unreadCount !== prev[i]?.unreadCount
+                || c.lastMessage !== prev[i]?.lastMessage
+                || c.isFriend !== prev[i]?.isFriend
+                || c.lead?.updatedAt !== prev[i]?.lead?.updatedAt,
+              );
               return changed ? convs : prev;
             });
           }
@@ -1792,10 +1833,33 @@ export default function ZaloInboxClient({
           try {
             const p = JSON.parse(e.data);
             if (p.type === "accepted" || p.type === "added") {
+              const friendId = String(p.userId || "");
+              const eventAccountId = String(p.accountId || "");
+              if (friendId) {
+                setConversations(previous => previous.map(conversation =>
+                  conversation.id === friendId && (!eventAccountId || conversation.accountId === eventAccountId)
+                    ? { ...conversation, isFriend: true }
+                    : conversation,
+                ));
+                setSelectedConv(previous => previous && previous.id === friendId && (!eventAccountId || previous.accountId === eventAccountId)
+                  ? { ...previous, isFriend: true }
+                  : previous);
+              }
               fetch("/api/crm/zalo-inbox/friend-requests", { credentials: "include" })
                 .then(r => r.ok ? r.json() : null)
                 .then(d => { if (d?.requests) setPendingFriendCount(d.requests.length); })
                 .catch(() => {});
+            } else if (p.type === "unfriended") {
+              const friendId = String(p.userId || "");
+              const eventAccountId = String(p.accountId || "");
+              setConversations(previous => previous.map(conversation =>
+                conversation.id === friendId && (!eventAccountId || conversation.accountId === eventAccountId)
+                  ? { ...conversation, isFriend: false }
+                  : conversation,
+              ));
+              setSelectedConv(previous => previous && previous.id === friendId && (!eventAccountId || previous.accountId === eventAccountId)
+                ? { ...previous, isFriend: false }
+                : previous);
             }
           } catch { }
         });
@@ -1809,6 +1873,15 @@ export default function ZaloInboxClient({
     connectSSE();
     return () => { es?.close(); if (retryTimer) clearTimeout(retryTimer); };
   }, [selectedAccountId]);
+
+  // Giữ hội thoại đang mở đồng bộ với dữ liệu CRM/trạng thái bạn bè vừa được
+  // làm mới trong danh sách mà không đóng cửa sổ chat hiện tại.
+  useEffect(() => {
+    setSelectedConv(previous => {
+      if (!previous) return previous;
+      return conversations.find(conversation => conversation.id === previous.id && conversation.accountId === previous.accountId) || previous;
+    });
+  }, [conversations]);
 
   // ─── Auto scroll ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1888,6 +1961,7 @@ export default function ZaloInboxClient({
     setInfoActionError(null);
     setProfileDetails(null);
     setRelatedGroups([]);
+    setCrmSyncState({ loading: false, message: "", error: false });
     loadMessages(conv.id, true, conv.accountId);
   };
 
@@ -2109,6 +2183,28 @@ export default function ZaloInboxClient({
     }
   }, [selectedConv]);
 
+  const syncCrmProfileToZalo = useCallback(async () => {
+    if (!selectedConv?.lead || !selectedConv.isFriend || !canSendMessages) return;
+    setCrmSyncState({ loading: true, message: "", error: false });
+    try {
+      const response = await fetch("/api/crm/zalo-inbox/crm-profile", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: selectedConv.accountId,
+          conversationId: selectedConv.id,
+          leadId: selectedConv.lead.id,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) throw new Error(data.error || "Không thể đồng bộ hồ sơ CRM");
+      setCrmSyncState({ loading: false, message: `Đã cập nhật tên gợi nhớ: ${data.alias}`, error: false });
+    } catch (error) {
+      setCrmSyncState({ loading: false, message: error instanceof Error ? error.message : "Không thể đồng bộ hồ sơ CRM", error: true });
+    }
+  }, [canSendMessages, selectedConv]);
+
   const conversationMedia = useMemo(() => messages.flatMap(message =>
     (message.attachments || [])
       .filter(attachment => (attachment.type === "image" || attachment.type === "video") && (attachment.url || attachment.thumb))
@@ -2229,6 +2325,7 @@ export default function ZaloInboxClient({
                       lastMessageAt: new Date().toISOString(),
                       unreadCount: 0,
                       leadId: null,
+                      isFriend: true,
                       lead: null,
                     };
                     setSelectedConv(stub);
@@ -2507,7 +2604,10 @@ export default function ZaloInboxClient({
             </button>
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={40} />
             <div className={styles.chatIdentity} style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary }}>{selectedConv.displayName}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedConv.displayName}</span>
+                {selectedConv.isFriend && <FriendBadge />}
+              </div>
               <div className={!selectedConv.phone ? styles.phoneUnknown : undefined} style={{ fontSize: 12, color: selectedConv.phone ? T.textMuted : undefined }}>{selectedConv.phone || "Chưa đối soát số điện thoại"}</div>
             </div>
             <div className={styles.chatHeaderActions} style={{ display: "flex", gap: 4, alignItems: "center" }}>
@@ -2742,6 +2842,7 @@ export default function ZaloInboxClient({
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={64} />
             <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary, marginTop: 10 }}>{selectedConv.displayName}</div>
             <div style={{ fontSize: 12, color: T.textMuted, marginTop: 3 }}>{selectedConv.phone || "Chưa đối soát SĐT"}</div>
+            {selectedConv.isFriend && <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}><FriendBadge /></div>}
             {/* Action icons */}
             <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14 }}>
               {[
@@ -2770,13 +2871,36 @@ export default function ZaloInboxClient({
                   { label: "Loại", value: selectedConv.lead.type },
                   { label: "Trạng thái", value: selectedConv.lead.stage },
                   { label: "Phụ trách", value: selectedConv.lead.assignedTo || "Chưa phân công" },
+                  { label: "Công ty", value: selectedConv.lead.company },
+                  { label: "Sản phẩm", value: interestedProductLabel(selectedConv.lead.interestedProducts || []) },
+                  { label: "Nguồn", value: selectedConv.lead.source },
                 ].map(row => (
+                  row.value ?
                   <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 12, color: T.textMuted }}>{row.label}</span>
                     <span style={{ fontSize: 12, color: T.textPrimary, fontWeight: 500, maxWidth: 160, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.value}</span>
-                  </div>
+                  </div> : null
                 ))}
               </div>
+              {selectedConv.lead.notes && (
+                <div style={{ marginTop: 12, padding: "10px 11px", borderRadius: 10, border: "1px solid #F3D58A", background: "#FFFBEB" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#8A6110", fontSize: 11, fontWeight: 700, marginBottom: 5 }}><FileText size={12} /> Ghi chú CRM</div>
+                  <div style={{ color: T.textSecondary, fontSize: 12, lineHeight: 1.55, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{selectedConv.lead.notes}</div>
+                </div>
+              )}
+              {canSendMessages && (
+                <div style={{ marginTop: 10 }}>
+                  <button type="button" onClick={syncCrmProfileToZalo} disabled={!selectedConv.isFriend || crmSyncState.loading}
+                    style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px", borderRadius: 8, border: selectedConv.isFriend ? "1px solid #A7F3D0" : `1px solid ${T.sidebarBorder}`, background: selectedConv.isFriend ? "#ECFDF5" : T.sidebarHover, color: selectedConv.isFriend ? "#047857" : T.textMuted, cursor: selectedConv.isFriend && !crmSyncState.loading ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 700 }}>
+                    {crmSyncState.loading ? <RefreshCw size={13} style={{ animation: "spin .8s linear infinite" }} /> : <RefreshCw size={13} />}
+                    Đồng bộ tên & ghi chú sang Zalo
+                  </button>
+                  <div style={{ marginTop: 5, color: T.textMuted, fontSize: 10, lineHeight: 1.45 }}>
+                    {selectedConv.isFriend ? "Zalo chỉ hỗ trợ tên gợi nhớ; ghi chú đầy đủ luôn hiển thị trong Inbox." : "Cần kết bạn trước khi đồng bộ tên gợi nhớ."}
+                  </div>
+                  {crmSyncState.message && <div role={crmSyncState.error ? "alert" : "status"} style={{ marginTop: 7, padding: "7px 8px", borderRadius: 8, background: crmSyncState.error ? "#FFF1F2" : "#ECFDF5", color: crmSyncState.error ? "#BE123C" : "#047857", fontSize: 10, lineHeight: 1.45 }}>{crmSyncState.message}</div>}
+                </div>
+              )}
               {selectedConv.lead.recent_quotes && selectedConv.lead.recent_quotes.length > 0 && (
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Báo giá gần đây</div>
