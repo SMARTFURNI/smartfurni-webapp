@@ -34,6 +34,7 @@ interface Props {
   onSelect?: (assets: MediaAsset[]) => Promise<void> | void;
   allowedKinds?: MediaKind[];
   actionLabel?: string;
+  overlayZIndex?: number;
   sending?: boolean;
 }
 
@@ -110,6 +111,7 @@ export default function ZaloMediaLibraryPanel({
   onSelect,
   allowedKinds = ["image", "video", "file"],
   actionLabel = "Gửi",
+  overlayZIndex,
   sending = false,
 }: Props) {
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -442,5 +444,5 @@ export default function ZaloMediaLibraryPanel({
     </section>
   );
 
-  return mode === "picker" ? <div className={styles.overlay} role="dialog" aria-modal="true">{content}</div> : content;
+  return mode === "picker" ? <div className={styles.overlay} style={overlayZIndex ? { zIndex: overlayZIndex } : undefined} role="dialog" aria-modal="true">{content}</div> : content;
 }

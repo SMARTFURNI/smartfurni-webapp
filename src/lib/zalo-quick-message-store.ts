@@ -8,6 +8,7 @@ export interface ZaloQuickMessage {
   title: string;
   category: string;
   content: string;
+  messageParts: string[];
   mediaAssetIds: string[];
   mediaAssets: ZaloMediaAsset[];
   usageCount: number;
@@ -23,6 +24,7 @@ type QuickMessageRow = {
   title: string;
   category: string;
   content: string;
+  message_parts: unknown;
   media_asset_ids: unknown;
   usage_count: string | number;
   last_used_at: Date | string | null;
@@ -42,6 +44,7 @@ export function ensureZaloQuickMessageSchema(): Promise<void> {
         title TEXT NOT NULL,
         category TEXT NOT NULL DEFAULT 'Tư vấn',
         content TEXT NOT NULL DEFAULT '',
+        message_parts JSONB NOT NULL DEFAULT '[]'::jsonb,
         media_asset_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
         usage_count INTEGER NOT NULL DEFAULT 0,
         last_used_at TIMESTAMPTZ,
@@ -51,6 +54,11 @@ export function ensureZaloQuickMessageSchema(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      ALTER TABLE zalo_quick_messages
+        ADD COLUMN IF NOT EXISTS message_parts JSONB NOT NULL DEFAULT '[]'::jsonb;
+      UPDATE zalo_quick_messages
+        SET message_parts = jsonb_build_array(content)
+        WHERE message_parts = '[]'::jsonb AND BTRIM(content) <> '';
       CREATE INDEX IF NOT EXISTS idx_zalo_quick_messages_active
         ON zalo_quick_messages(updated_at DESC) WHERE archived_at IS NULL;
     `).then(() => undefined).catch(error => {
@@ -70,19 +78,34 @@ function normalizeAssetIds(value: unknown): string[] {
   return [...new Set(parsed.map(item => String(item || "").trim()).filter(Boolean))].slice(0, 10);
 }
 
+function normalizeMessageParts(value: unknown, legacyContent = ""): string[] {
+  let parsed = value;
+  if (typeof value === "string") {
+    try { parsed = JSON.parse(value); } catch { parsed = []; }
+  }
+  const parts = Array.isArray(parsed)
+    ? parsed.map(item => String(item || "").trim().slice(0, 4000)).filter(Boolean)
+    : [];
+  if (parts.length) return parts.slice(0, 20);
+  const legacy = String(legacyContent || "").trim().slice(0, 4000);
+  return legacy ? [legacy] : [];
+}
+
 function normalizeInput(input: {
   title?: string;
   category?: string;
   content?: string;
+  messageParts?: string[];
   mediaAssetIds?: string[];
 }) {
   const title = String(input.title || "").trim().slice(0, 120);
   const category = String(input.category || "Tư vấn").trim().slice(0, 60) || "Tư vấn";
-  const content = String(input.content || "").trim().slice(0, 4000);
+  const messageParts = normalizeMessageParts(input.messageParts, input.content);
+  const content = messageParts.join("\n");
   const mediaAssetIds = normalizeAssetIds(input.mediaAssetIds);
   if (!title) throw new Error("Vui lòng nhập tên mẫu tin nhắn");
-  if (!content && mediaAssetIds.length === 0) throw new Error("Mẫu cần có nội dung hoặc ảnh/video");
-  return { title, category, content, mediaAssetIds };
+  if (!messageParts.length && mediaAssetIds.length === 0) throw new Error("Mẫu cần có nội dung hoặc ảnh/video");
+  return { title, category, content, messageParts, mediaAssetIds };
 }
 
 async function hydrateRows(rows: QuickMessageRow[]): Promise<ZaloQuickMessage[]> {
@@ -91,11 +114,13 @@ async function hydrateRows(rows: QuickMessageRow[]): Promise<ZaloQuickMessage[]>
   const assetsById = new Map(assets.map(asset => [asset.id, asset]));
   return rows.map(row => {
     const mediaAssetIds = normalizeAssetIds(row.media_asset_ids);
+    const messageParts = normalizeMessageParts(row.message_parts, row.content);
     return {
       id: row.id,
       title: row.title,
       category: row.category,
       content: row.content,
+      messageParts,
       mediaAssetIds,
       mediaAssets: mediaAssetIds.map(id => assetsById.get(id)).filter((asset): asset is ZaloMediaAsset => Boolean(asset)),
       usageCount: Number(row.usage_count || 0),
@@ -140,6 +165,7 @@ export async function createZaloQuickMessage(input: {
   title?: string;
   category?: string;
   content?: string;
+  messageParts?: string[];
   mediaAssetIds?: string[];
   actor?: string;
 }): Promise<ZaloQuickMessage> {
@@ -147,10 +173,10 @@ export async function createZaloQuickMessage(input: {
   const value = normalizeInput(input);
   const row = await queryOne<QuickMessageRow>(`
     INSERT INTO zalo_quick_messages
-      (id, title, category, content, media_asset_ids, created_by, updated_by)
-    VALUES ($1,$2,$3,$4,$5::jsonb,$6,$6)
+      (id, title, category, content, message_parts, media_asset_ids, created_by, updated_by)
+    VALUES ($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7,$7)
     RETURNING *
-  `, [crypto.randomUUID(), value.title, value.category, value.content, JSON.stringify(value.mediaAssetIds), input.actor || null]);
+  `, [crypto.randomUUID(), value.title, value.category, value.content, JSON.stringify(value.messageParts), JSON.stringify(value.mediaAssetIds), input.actor || null]);
   if (!row) throw new Error("Không thể lưu mẫu tin nhắn");
   return (await hydrateRows([row]))[0];
 }
@@ -160,6 +186,7 @@ export async function updateZaloQuickMessage(input: {
   title?: string;
   category?: string;
   content?: string;
+  messageParts?: string[];
   mediaAssetIds?: string[];
   actor?: string;
 }): Promise<ZaloQuickMessage | null> {
@@ -167,11 +194,11 @@ export async function updateZaloQuickMessage(input: {
   const value = normalizeInput(input);
   const row = await queryOne<QuickMessageRow>(`
     UPDATE zalo_quick_messages SET
-      title = $2, category = $3, content = $4, media_asset_ids = $5::jsonb,
-      updated_by = $6, updated_at = NOW()
+      title = $2, category = $3, content = $4, message_parts = $5::jsonb,
+      media_asset_ids = $6::jsonb, updated_by = $7, updated_at = NOW()
     WHERE id = $1 AND archived_at IS NULL
     RETURNING *
-  `, [input.id, value.title, value.category, value.content, JSON.stringify(value.mediaAssetIds), input.actor || null]);
+  `, [input.id, value.title, value.category, value.content, JSON.stringify(value.messageParts), JSON.stringify(value.mediaAssetIds), input.actor || null]);
   if (!row) return null;
   return (await hydrateRows([row]))[0];
 }

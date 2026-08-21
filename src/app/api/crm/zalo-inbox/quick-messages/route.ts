@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   const { session, allowed } = await authorized();
   if (!allowed) return NextResponse.json({ error: "Không có quyền tạo tin nhắn nhanh" }, { status: session ? 403 : 401 });
   try {
-    const body = await req.json() as { title?: string; category?: string; content?: string; mediaAssetIds?: string[] };
+    const body = await req.json() as { title?: string; category?: string; content?: string; messageParts?: string[]; mediaAssetIds?: string[] };
     const mediaAssetIds = await validateMediaAssetIds(body.mediaAssetIds);
     const template = await createZaloQuickMessage({ ...body, mediaAssetIds, actor: actorId(session) });
     return NextResponse.json({ success: true, template }, { status: 201 });
@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest) {
   const { session, allowed } = await authorized();
   if (!allowed) return NextResponse.json({ error: "Không có quyền sửa tin nhắn nhanh" }, { status: session ? 403 : 401 });
   try {
-    const body = await req.json() as { id?: string; title?: string; category?: string; content?: string; mediaAssetIds?: string[] };
+    const body = await req.json() as { id?: string; title?: string; category?: string; content?: string; messageParts?: string[]; mediaAssetIds?: string[] };
     if (!body.id) return NextResponse.json({ error: "Thiếu mẫu tin nhắn" }, { status: 400 });
     const mediaAssetIds = await validateMediaAssetIds(body.mediaAssetIds);
     const template = await updateZaloQuickMessage({ ...body, id: body.id, mediaAssetIds, actor: actorId(session) });

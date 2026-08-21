@@ -33,18 +33,25 @@ export async function POST(req: NextRequest) {
     const messages = [];
     const sentAssetIds: string[] = [];
     const failures: Array<{ id: string; name: string; error: string }> = [];
-    if (template.content) {
-      const textResult = await sendZaloMessage({
-        accountId,
-        conversationId,
-        content: template.content,
-        senderName: session?.isAdmin ? "Admin" : "Nhân viên",
-        senderId: session?.staffId || "admin",
-      });
-      if (!textResult.success) {
-        return NextResponse.json({ error: textResult.error || "Không gửi được nội dung mẫu" }, { status: 400 });
+    // Mỗi phần được gửi thành một tin chữ riêng và theo đúng thứ tự đã soạn.
+    for (const [index, content] of template.messageParts.entries()) {
+      try {
+        const textResult = await sendZaloMessage({
+          accountId,
+          conversationId,
+          content,
+          senderName: session?.isAdmin ? "Admin" : "Nhân viên",
+          senderId: session?.staffId || "admin",
+        });
+        if (!textResult.success) throw new Error(textResult.error || "Zalo từ chối gửi tin chữ");
+        if (textResult.message) messages.push(textResult.message);
+      } catch (error) {
+        failures.push({
+          id: `text-${index + 1}`,
+          name: `Tin chữ ${index + 1}`,
+          error: error instanceof Error ? error.message : "Gửi thất bại",
+        });
       }
-      if (textResult.message) messages.push(textResult.message);
     }
 
     for (const asset of template.mediaAssets) {

@@ -29,6 +29,10 @@
 .usage { color:#8995a7; font-size:10px; }
 .card h3 { margin:12px 0 7px; font-size:15px; }
 .card>p { display:-webkit-box; overflow:hidden; min-height:60px; margin:0; color:#526173; font-size:12px; line-height:1.6; white-space:pre-wrap; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
+.messagePartsPreview { display:grid; gap:6px; margin-bottom:9px; }
+.messagePartsPreview p { display:flex; overflow:hidden; align-items:flex-start; gap:7px; margin:0; border:1px solid #e3eaf2; border-radius:9px; padding:6px 8px; color:#526173; background:#f8fafc; font-size:11px; line-height:1.45; white-space:nowrap; text-overflow:ellipsis; }
+.messagePartsPreview p b { display:grid; width:18px; height:18px; flex:0 0 auto; place-items:center; border-radius:6px; color:#805c0c; background:#fff0b6; font-size:9px; }
+.messagePartsPreview>span { color:#8a96a7; font-size:10px; font-weight:700; }
 .mediaRow { display:flex; align-items:center; gap:6px; min-height:52px; margin-top:10px; }
 .mediaPreview { position:relative; display:block; width:50px; height:50px; flex:0 0 auto; overflow:hidden; border:1px solid #dbe3ee; border-radius:10px; background:#eef2f7; }
 .mediaPreview img { width:100%; height:100%; object-fit:cover; }
@@ -50,6 +54,22 @@
 .editor input,.editor textarea { width:100%; border:1px solid #cfd9e6; border-radius:11px; padding:10px 12px; outline:0; color:#172033; background:#fff; font:inherit; font-size:13px; font-weight:400; box-sizing:border-box; }
 .editor input:focus,.editor textarea:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
 .editor textarea { resize:vertical; line-height:1.55; }.editor label small { justify-self:end; color:#94a3b8; font-weight:500; }
+.messagePartsField { display:grid; gap:10px; }
+.messagePartsHeading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.messagePartsHeading>div { display:grid; gap:3px; }
+.messagePartsHeading span { color:#475569; font-size:12px; font-weight:800; }
+.messagePartsHeading small { color:#8a96a7; font-size:11px; }
+.messagePartsHeading>button { display:inline-flex; align-items:center; gap:5px; border:1px solid #d5be78; border-radius:9px; padding:7px 10px; color:#805c0c; background:#fffdf5; font-size:11px; font-weight:800; cursor:pointer; }
+.messagePartsHeading>button:disabled { cursor:not-allowed; opacity:.45; }
+.messagePartsEditor { display:grid; gap:9px; }
+.messagePartRow { display:grid; grid-template-columns:28px minmax(0,1fr) 34px; align-items:start; gap:8px; border:1px solid #dbe3ee; border-radius:12px; padding:9px; background:#f8fafc; }
+.messagePartNumber { display:grid; width:27px; height:27px; place-items:center; border-radius:8px; color:#805c0c; background:#fff0b6; font-size:11px; font-weight:900; }
+.messagePartRow label { gap:4px; }
+.messagePartRow textarea { min-height:70px; background:#fff; }
+.messagePartActions { display:grid; gap:4px; }
+.messagePartActions button { display:grid; width:30px; height:27px; place-items:center; border:1px solid #d8e1ec; border-radius:7px; color:#64748b; background:#fff; cursor:pointer; }
+.messagePartActions button:disabled { cursor:not-allowed; opacity:.35; }
+.messagePartActions .removePartButton { border-color:#fee2e2; color:#dc2626; }
 .mediaField { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px dashed #d5be78; border-radius:12px; padding:12px; background:#fffdf5; }
 .mediaField>div { display:grid; gap:3px; }.mediaField span { color:#475569; font-size:12px; font-weight:800; }.mediaField small { color:#8a96a7; font-size:11px; }
 .mediaField button { color:#805c0c; border-color:#ead189; background:#fff; }
@@ -61,4 +81,4 @@
 .editor>footer>button { display:inline-flex; align-items:center; gap:6px; border:1px solid #d5dee9; border-radius:10px; padding:9px 14px; color:#526173; background:#fff; font-size:12px; font-weight:750; cursor:pointer; }
 .editor>footer .primaryButton { color:#382807; border-color:#bd8f1a; background:linear-gradient(135deg,#ffe381,#d9a925); }
 .spin { animation:spin .8s linear infinite; }@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:700px){.header{align-items:flex-start;padding:14px}.heading p{display:none}.toolbar{padding:10px 14px}.body{padding:14px}.grid{grid-template-columns:1fr}.twoColumns{grid-template-columns:1fr}.editorOverlay{padding:8px}.mediaField{align-items:flex-start;flex-direction:column}.cardActions .dangerButton{margin-left:0}}
+@media(max-width:700px){.header{align-items:flex-start;padding:14px}.heading p{display:none}.toolbar{padding:10px 14px}.body{padding:14px}.grid{grid-template-columns:1fr}.twoColumns{grid-template-columns:1fr}.editorOverlay{padding:8px}.messagePartsHeading{align-items:flex-start;flex-direction:column}.mediaField{align-items:flex-start;flex-direction:column}.cardActions .dangerButton{margin-left:0}}

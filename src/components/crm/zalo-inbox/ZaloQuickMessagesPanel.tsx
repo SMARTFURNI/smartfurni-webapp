@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Image as ImageIcon, Loader2, MessageSquareText, Pencil, Plus, Search,
+  ArrowDown, ArrowUp, Image as ImageIcon, Loader2, MessageSquareText, Pencil, Plus, Search,
   Send, Sparkles, Trash2, Video, X, Zap,
 } from "lucide-react";
 import ZaloMediaLibraryPanel, { type MediaAsset } from "./ZaloMediaLibraryPanel";
@@ -13,6 +13,7 @@ export interface QuickMessageTemplate {
   title: string;
   category: string;
   content: string;
+  messageParts: string[];
   mediaAssetIds: string[];
   mediaAssets: MediaAsset[];
   usageCount: number;
@@ -34,7 +35,7 @@ type EditorState = {
   id?: string;
   title: string;
   category: string;
-  content: string;
+  messageParts: string[];
   mediaAssetIds: string[];
   mediaAssets: MediaAsset[];
 };
@@ -42,7 +43,7 @@ type EditorState = {
 const EMPTY_EDITOR: EditorState = {
   title: "",
   category: "Tư vấn",
-  content: "",
+  messageParts: [""],
   mediaAssetIds: [],
   mediaAssets: [],
 };
@@ -110,7 +111,7 @@ export default function ZaloQuickMessagesPanel({
     id: template.id,
     title: template.title,
     category: template.category,
-    content: template.content,
+    messageParts: template.messageParts?.length ? template.messageParts : template.content ? [template.content] : [""],
     mediaAssetIds: template.mediaAssetIds,
     mediaAssets: template.mediaAssets,
   });
@@ -128,7 +129,7 @@ export default function ZaloQuickMessagesPanel({
           id: editor.id,
           title: editor.title,
           category: editor.category,
-          content: editor.content,
+          messageParts: editor.messageParts,
           mediaAssetIds: editor.mediaAssetIds,
         }),
       });
@@ -166,6 +167,31 @@ export default function ZaloQuickMessagesPanel({
       mediaAssetIds: editor.mediaAssetIds.filter(assetId => assetId !== id),
       mediaAssets: editor.mediaAssets.filter(asset => asset.id !== id),
     });
+  };
+
+  const updateMessagePart = (index: number, value: string) => {
+    if (!editor) return;
+    setEditor({ ...editor, messageParts: editor.messageParts.map((part, partIndex) => partIndex === index ? value : part) });
+  };
+
+  const addMessagePart = () => {
+    if (!editor || editor.messageParts.length >= 20) return;
+    setEditor({ ...editor, messageParts: [...editor.messageParts, ""] });
+  };
+
+  const removeMessagePart = (index: number) => {
+    if (!editor) return;
+    const messageParts = editor.messageParts.filter((_, partIndex) => partIndex !== index);
+    setEditor({ ...editor, messageParts: messageParts.length ? messageParts : [""] });
+  };
+
+  const moveMessagePart = (index: number, direction: -1 | 1) => {
+    if (!editor) return;
+    const target = index + direction;
+    if (target < 0 || target >= editor.messageParts.length) return;
+    const messageParts = [...editor.messageParts];
+    [messageParts[index], messageParts[target]] = [messageParts[target], messageParts[index]];
+    setEditor({ ...editor, messageParts });
   };
 
   const content = (
@@ -214,7 +240,12 @@ export default function ZaloQuickMessagesPanel({
                   <span className={styles.usage}>Đã dùng {template.usageCount} lần</span>
                 </div>
                 <h3>{template.title}</h3>
-                {template.content && <p>{template.content}</p>}
+                {template.messageParts?.length > 0 ? (
+                  <div className={styles.messagePartsPreview}>
+                    {template.messageParts.slice(0, 3).map((part, index) => <p key={`${template.id}-${index}`}><b>{index + 1}</b>{part}</p>)}
+                    {template.messageParts.length > 3 && <span>+{template.messageParts.length - 3} tin chữ khác</span>}
+                  </div>
+                ) : template.content ? <p>{template.content}</p> : null}
                 {template.mediaAssets.length > 0 && (
                   <div className={styles.mediaRow}>
                     {template.mediaAssets.slice(0, 4).map(asset => <MediaPreview key={asset.id} asset={asset} />)}
@@ -240,20 +271,38 @@ export default function ZaloQuickMessagesPanel({
       {editor && (
         <div className={styles.editorOverlay} role="dialog" aria-modal="true" aria-label={editor.id ? "Sửa tin nhắn nhanh" : "Tạo tin nhắn nhanh"}>
           <div className={styles.editor}>
-            <header><div><h3>{editor.id ? "Sửa tin nhắn nhanh" : "Tạo tin nhắn nhanh"}</h3><p>Nội dung và media sẽ được gửi theo đúng thứ tự khi nhân viên chọn mẫu.</p></div><button onClick={() => setEditor(null)}><X size={19} /></button></header>
+            <header><div><h3>{editor.id ? "Sửa tin nhắn nhanh" : "Tạo tin nhắn nhanh"}</h3><p>Mỗi dòng nội dung bên dưới sẽ được gửi thành một tin chữ riêng, lần lượt từ trên xuống.</p></div><button onClick={() => setEditor(null)}><X size={19} /></button></header>
             <div className={styles.editorBody}>
               <div className={styles.twoColumns}>
                 <label><span>Tên mẫu *</span><input maxLength={120} value={editor.title} onChange={event => setEditor({ ...editor, title: event.target.value })} placeholder="Ví dụ: Giới thiệu sofa giường" /></label>
                 <label><span>Nhóm mẫu</span><input list="quick-message-categories" maxLength={60} value={editor.category} onChange={event => setEditor({ ...editor, category: event.target.value })} placeholder="Tư vấn" /><datalist id="quick-message-categories">{categories.map(category => <option key={category} value={category} />)}</datalist></label>
               </div>
-              <label><span>Nội dung tin nhắn</span><textarea rows={7} maxLength={4000} value={editor.content} onChange={event => setEditor({ ...editor, content: event.target.value })} placeholder="Nhập nội dung nhân viên thường gửi cho khách..." /><small>{editor.content.length}/4000 ký tự</small></label>
+              <div className={styles.messagePartsField}>
+                <div className={styles.messagePartsHeading}>
+                  <div><span>Các tin chữ gửi lần lượt</span><small>Tối đa 20 tin; mỗi ô là một tin nhắn riêng.</small></div>
+                  <button disabled={editor.messageParts.length >= 20} onClick={addMessagePart}><Plus size={15} /> Thêm tin chữ</button>
+                </div>
+                <div className={styles.messagePartsEditor}>
+                  {editor.messageParts.map((part, index) => (
+                    <div className={styles.messagePartRow} key={index}>
+                      <span className={styles.messagePartNumber}>{index + 1}</span>
+                      <label><textarea rows={3} maxLength={4000} value={part} onChange={event => updateMessagePart(index, event.target.value)} placeholder={`Nội dung tin chữ ${index + 1}...`} /><small>{part.length}/4000 ký tự</small></label>
+                      <div className={styles.messagePartActions}>
+                        <button disabled={index === 0} onClick={() => moveMessagePart(index, -1)} aria-label={`Đưa tin chữ ${index + 1} lên`}><ArrowUp size={14} /></button>
+                        <button disabled={index === editor.messageParts.length - 1} onClick={() => moveMessagePart(index, 1)} aria-label={`Đưa tin chữ ${index + 1} xuống`}><ArrowDown size={14} /></button>
+                        <button className={styles.removePartButton} onClick={() => removeMessagePart(index)} aria-label={`Xóa tin chữ ${index + 1}`}><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className={styles.mediaField}>
                 <div><span>Ảnh và video đi kèm</span><small>Tối đa 10 tài liệu từ thư viện dùng chung.</small></div>
                 <button onClick={() => setShowMediaPicker(true)}><ImageIcon size={15} /> Chọn ảnh/video</button>
               </div>
               {editor.mediaAssets.length > 0 && <div className={styles.selectedMedia}>{editor.mediaAssets.map(asset => <div key={asset.id}><MediaPreview asset={asset} /><button onClick={() => removeMedia(asset.id)} aria-label={`Bỏ ${asset.name}`}><X size={13} /></button><span>{asset.name}</span></div>)}</div>}
             </div>
-            <footer><button onClick={() => setEditor(null)}>Hủy</button><button className={styles.primaryButton} disabled={saving || !editor.title.trim() || (!editor.content.trim() && editor.mediaAssetIds.length === 0)} onClick={() => void saveTemplate()}>{saving ? <Loader2 className={styles.spin} size={15} /> : null}{editor.id ? "Lưu thay đổi" : "Lưu mẫu"}</button></footer>
+            <footer><button onClick={() => setEditor(null)}>Hủy</button><button className={styles.primaryButton} disabled={saving || !editor.title.trim() || (!editor.messageParts.some(part => part.trim()) && editor.mediaAssetIds.length === 0)} onClick={() => void saveTemplate()}>{saving ? <Loader2 className={styles.spin} size={15} /> : null}{editor.id ? "Lưu thay đổi" : "Lưu mẫu"}</button></footer>
           </div>
         </div>
       )}
@@ -263,6 +312,7 @@ export default function ZaloQuickMessagesPanel({
           mode="picker"
           allowedKinds={["image", "video"]}
           actionLabel="Gắn"
+          overlayZIndex={10040}
           onClose={() => setShowMediaPicker(false)}
           onSelect={assets => {
             const byId = new Map([...editor.mediaAssets, ...assets].map(asset => [asset.id, asset]));

@@ -124,6 +124,9 @@ describe("Zalo Inbox durable sync", () => {
     expect(client).toContain("showQuickMessagesPicker");
     expect(client).toContain("handleSendQuickMessage");
     expect(panel).toContain('allowedKinds={["image", "video"]}');
+    expect(panel).toContain("overlayZIndex={10040}");
+    expect(panel).toContain("Các tin chữ gửi lần lượt");
+    expect(panel).toContain("moveMessagePart");
     expect(panel).toContain("Chèn nội dung");
     expect(panel).toContain("Gửi ngay");
     expect(store).toContain("CREATE TABLE IF NOT EXISTS zalo_quick_messages");
@@ -131,6 +134,7 @@ describe("Zalo Inbox durable sync", () => {
     expect(route).toContain("canSendZaloInboxMessages");
     expect(sendRoute).toContain("canSendZaloInboxMessages");
     expect(sendRoute).toContain("skipMirror: true");
+    expect(sendRoute).toContain("template.messageParts.entries()");
     expect(sendRoute).toContain("markZaloQuickMessageUsed");
   });
 

@@ -2119,7 +2119,7 @@ export default function ZaloInboxClient({
   };
 
   const handleInsertQuickMessage = (template: QuickMessageTemplate) => {
-    setInputText(template.content);
+    setInputText(template.messageParts?.length ? template.messageParts.join("\n\n") : template.content);
     setShowQuickMessagesPicker(false);
     setMainView("messages");
     window.setTimeout(() => textareaRef.current?.focus(), 0);
