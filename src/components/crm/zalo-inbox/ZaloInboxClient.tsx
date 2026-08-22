@@ -30,6 +30,7 @@ import {
   type ZaloRingtoneId,
   type ZaloSoundPreferences,
 } from "@/lib/zalo-inbox-ringtones";
+import { getLeadTypeMeta } from "@/lib/crm-taxonomy";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -688,9 +689,8 @@ function ConversationItem({ conv, isSelected, onClick, accountLabel }: {
             <span style={{
               fontWeight: hasUnread ? 700 : 500, fontSize: 14,
               color: T.textPrimary,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: conv.isFriend ? 105 : 160,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160,
             }}>{conv.displayName}</span>
-            {conv.isFriend && <FriendBadge compact />}
           </span>
           <span style={{ fontSize: 11, color: hasUnread ? T.accent : T.textMuted, flexShrink: 0, fontWeight: hasUnread ? 600 : 400 }}>
             {formatTime(conv.lastMessageAt)}
@@ -699,6 +699,12 @@ function ConversationItem({ conv, isSelected, onClick, accountLabel }: {
         {accountLabel && (
           <div style={{ color: T.accent, fontSize: 10, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {accountLabel}
+          </div>
+        )}
+        {(conv.isFriend || conv.lead) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3, minWidth: 0, overflow: "hidden" }}>
+            {conv.isFriend && <FriendBadge compact />}
+            <LeadContextBadges lead={conv.lead} compact />
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -744,6 +750,43 @@ function interestedProductLabel(products: string[]) {
     other: "Sản phẩm nội thất",
   };
   return products.map(product => labels[product] || product).join(", ");
+}
+
+function LeadContextBadges({ lead, compact = false }: { lead: LeadInfo | null; compact?: boolean }) {
+  if (!lead) return null;
+  const product = interestedProductLabel(lead.interestedProducts || []);
+  const customerType = lead.type ? getLeadTypeMeta(lead.type) : null;
+  const iconSize = compact ? 9 : 11;
+  const sharedStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: compact ? 2 : 4,
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: compact ? 112 : 180,
+    padding: compact ? "2px 5px" : "4px 8px",
+    borderRadius: 999,
+    fontSize: compact ? 9 : 11,
+    lineHeight: 1,
+    fontWeight: 700,
+  } as const;
+
+  return (
+    <>
+      {product && (
+        <span title={`Sản phẩm: ${product}`} style={{ ...sharedStyle, border: "1px solid #C7D2FE", background: "#EEF2FF", color: "#4338CA" }}>
+          <ShoppingBag size={iconSize} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product}</span>
+        </span>
+      )}
+      {customerType && (
+        <span title={`Phân loại khách: ${customerType.label}`} style={{ ...sharedStyle, border: `1px solid ${customerType.color}55`, background: `${customerType.color}12`, color: customerType.color }}>
+          <User size={iconSize} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{customerType.label}</span>
+        </span>
+      )}
+    </>
+  );
 }
 
 function InlineZaloVideo({ attachment }: { attachment: ZaloAttachment }) {
@@ -2671,9 +2714,10 @@ export default function ZaloInboxClient({
             </button>
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={40} />
             <div className={styles.chatIdentity} style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, flexWrap: "wrap" }}>
                 <span style={{ fontWeight: 700, fontSize: 15, color: T.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedConv.displayName}</span>
                 {selectedConv.isFriend && <FriendBadge />}
+                <LeadContextBadges lead={selectedConv.lead} />
               </div>
               <div className={!selectedConv.phone ? styles.phoneUnknown : undefined} style={{ fontSize: 12, color: selectedConv.phone ? T.textMuted : undefined }}>{selectedConv.phone || "Chưa đối soát số điện thoại"}</div>
             </div>
@@ -2915,7 +2959,10 @@ export default function ZaloInboxClient({
             <Avatar name={selectedConv.displayName} avatarUrl={selectedConv.avatarUrl} size={64} />
             <div style={{ fontWeight: 700, fontSize: 16, color: T.textPrimary, marginTop: 10 }}>{selectedConv.displayName}</div>
             <div style={{ fontSize: 12, color: T.textMuted, marginTop: 3 }}>{selectedConv.phone || "Chưa đối soát SĐT"}</div>
-            {selectedConv.isFriend && <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}><FriendBadge /></div>}
+            {(selectedConv.isFriend || selectedConv.lead) && <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
+              {selectedConv.isFriend && <FriendBadge />}
+              <LeadContextBadges lead={selectedConv.lead} />
+            </div>}
             {/* Action icons */}
             <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14 }}>
               {[

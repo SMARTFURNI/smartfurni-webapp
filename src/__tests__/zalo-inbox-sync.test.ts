@@ -154,6 +154,18 @@ describe("Zalo Inbox durable sync", () => {
     expect(gateway).toContain('type: "auto_accept_failed"');
   });
 
+  it("shows CRM product and customer classification tags beside friendship status", () => {
+    const client = source("src/components/crm/zalo-inbox/ZaloInboxClient.tsx");
+
+    expect(client).toContain("function LeadContextBadges");
+    expect(client).toContain("interestedProductLabel(lead.interestedProducts || [])");
+    expect(client).toContain("getLeadTypeMeta(lead.type)");
+    expect(client).toContain("Sản phẩm: ${product}");
+    expect(client).toContain("Phân loại khách: ${customerType.label}");
+    expect(client).toContain("<LeadContextBadges lead={selectedConv.lead} />");
+    expect(client).toContain("<LeadContextBadges lead={conv.lead} compact />");
+  });
+
   it("pushes each inbound realtime message to all CRM and Admin PWA accounts", () => {
     const gateway = source("src/lib/zalo-gateway.ts");
     const push = source("src/lib/zalo-inbox-push.ts");
