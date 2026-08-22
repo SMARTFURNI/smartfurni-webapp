@@ -4,6 +4,7 @@ import { getLead, updateLead, deleteLead } from "@/lib/crm-store";
 import { triggerStageChangeAutomation } from "@/lib/crm-automation-engine";
 import { logAudit, getClientIp, resolveActorName } from "@/lib/audit-helper";
 import { isLeadProfileUpdate, validateLeadProfileForUpdate } from "@/lib/crm-lead-profile-validation";
+import { getNewLeadCallGate } from "@/lib/crm-new-lead-call-policy";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getCrmSession();
@@ -28,6 +29,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existingLead = await getLead(id);
   if (!existingLead) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const prevStage = existingLead.stage;
+
+  // Nhân viên không thể bỏ qua chuỗi gọi bằng một màn hình hoặc API khác.
+  // Admin vẫn có quyền xử lý ngoại lệ vận hành.
+  if (!session.isAdmin && existingLead.stage === "new" && updates.stage && updates.stage !== "new") {
+    const callGate = await getNewLeadCallGate(existingLead);
+    if (callGate.locked) {
+      return NextResponse.json({ error: callGate.reason, callGate }, { status: 409 });
+    }
+    if (callGate.success) {
+      // Việc đối soát lịch sử vừa tự động đưa khách sang "Đã báo giá";
+      // không ghi đè ngay bằng lựa chọn cũ từ trình duyệt.
+      return NextResponse.json(await getLead(id));
+    }
+  }
 
   if (isLeadProfileUpdate(updates)) {
     const validation = validateLeadProfileForUpdate({ ...existingLead, ...updates });

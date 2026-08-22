@@ -21,9 +21,10 @@
  * }
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createCallLog, updateCallLog, initCallLogSchema } from "@/lib/crm-store";
+import { createCallLog, getCallLog, initCallLogSchema } from "@/lib/crm-store";
 import { query } from "@/lib/db";
 import { enqueueCallAiAnalysis } from "@/lib/crm-call-ai";
+import { handleItyCallCompleted } from "@/lib/crm-new-lead-call-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -176,6 +177,12 @@ export async function POST(req: NextRequest) {
       if (mergedData.status === "answered" && mergedData.recordingUrl) {
         await enqueueCallAiAnalysis(existingId).catch(error => console.error("[ITY call-completed] AI queue error:", error));
       }
+      const completedCall = await getCallLog(existingId);
+      if (completedCall) {
+        await handleItyCallCompleted(completedCall).catch(error =>
+          console.error("[ITY call-completed] New lead call policy error:", error)
+        );
+      }
       console.log(`[ITY call-completed] MERGED into existing record ${existingId}, CallID: ${callid}`);
       return NextResponse.json({ status: "ok", id: existingId, callId: callid, merged: true });
     }
@@ -200,6 +207,9 @@ export async function POST(req: NextRequest) {
     if (callLog.status === "answered" && callLog.recordingUrl) {
       await enqueueCallAiAnalysis(callLog.id).catch(error => console.error("[ITY call-completed] AI queue error:", error));
     }
+    await handleItyCallCompleted(callLog).catch(error =>
+      console.error("[ITY call-completed] New lead call policy error:", error)
+    );
 
     return NextResponse.json({
       status: "ok",

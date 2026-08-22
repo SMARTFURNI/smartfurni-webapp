@@ -36,6 +36,7 @@ import {
   legacyLeadTypeForCustomerClassification,
 } from "@/lib/crm-taxonomy";
 import ZaloFriendshipStatus from "./ZaloFriendshipStatus";
+import type { NewLeadCallGate } from "@/lib/crm-new-lead-call-types";
 
 // ─── Light Zalo OA Theme Tokens ───────────────────────────────────────────────
 const DL = {
@@ -68,6 +69,7 @@ interface Props {
   isAdmin?: boolean;
   currentUserName?: string;
   staffList?: { id: string; fullName: string }[];
+  initialCallGate?: NewLeadCallGate;
 }
 
 const TABS = ["timeline", "calls", "tasks", "quotes", "info"] as const;
@@ -129,6 +131,7 @@ export default function LeadDetailClient({
   isAdmin = false,
   currentUserName = "",
   staffList = [],
+  initialCallGate,
 }: Props) {
   const [lead, setLead] = useState(initialLead);
   const [activities, setActivities] = useState(initialActivities);
@@ -157,6 +160,8 @@ export default function LeadDetailClient({
   const [interactionFilter, setInteractionFilter] = useState<InteractionFilter>("all");
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set());
   const [visibleActivityCount, setVisibleActivityCount] = useState(10);
+  const [callGate, setCallGate] = useState<NewLeadCallGate | undefined>(initialCallGate);
+  const [stageError, setStageError] = useState("");
 
   const handleContactCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -294,17 +299,30 @@ export default function LeadDetailClient({
   }
 
   async function changeStage(stage: LeadStage) {
+    if (!isAdmin && callGate?.locked && stage !== lead.stage) {
+      setStageError(callGate.reason);
+      setShowStageMenu(false);
+      return;
+    }
     setShowStageMenu(false);
+    setStageError("");
     const prev = lead.stage;
     setLead(l => ({ ...l, stage }));
     try {
-      await fetch(`/api/crm/leads/${lead.id}`, {
+      const response = await fetch(`/api/crm/leads/${lead.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage }),
       });
-    } catch {
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (payload.callGate) setCallGate(payload.callGate);
+        throw new Error(payload.error || "Không thể chuyển giai đoạn");
+      }
+      setLead(payload);
+    } catch (error) {
       setLead(l => ({ ...l, stage: prev }));
+      setStageError(error instanceof Error ? error.message : "Không thể chuyển giai đoạn");
     }
   }
 
@@ -381,8 +399,10 @@ export default function LeadDetailClient({
                   style={{ zIndex: 9999, background: DL.modalBg, border: `1px solid ${DL.border}` }}>
                   {(Object.keys(STAGE_LABELS) as LeadStage[]).map(s => (
                     <button key={s} onClick={() => changeStage(s)}
+                      disabled={!isAdmin && Boolean(callGate?.locked) && s !== lead.stage}
+                      title={!isAdmin && callGate?.locked && s !== lead.stage ? callGate.reason : undefined}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors"
-                      style={{ color: lead.stage === s ? DL.gold : DL.text }}
+                      style={{ color: lead.stage === s ? DL.gold : DL.text, opacity: !isAdmin && callGate?.locked && s !== lead.stage ? 0.45 : 1, cursor: !isAdmin && callGate?.locked && s !== lead.stage ? "not-allowed" : "pointer" }}
                       onMouseEnter={e => (e.currentTarget.style.background = DL.surfaceHover)}
                       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STAGE_COLORS[s] }} />
@@ -410,6 +430,20 @@ export default function LeadDetailClient({
           </div>
         </div>
       </div>
+
+      {lead.stage === "new" && callGate?.enabled && (
+        <div className="mx-3 sm:mx-5 mt-2 rounded-xl px-3 py-2.5 text-xs flex flex-wrap items-center gap-x-3 gap-y-1"
+          style={{ background: callGate.locked ? "#fff8e6" : "#ecfdf5", border: `1px solid ${callGate.locked ? "#f4c96b" : "#86efac"}`, color: callGate.locked ? "#8a5b00" : "#047857" }}>
+          <strong>{callGate.locked ? "Đang khóa chuyển giai đoạn" : "Đã đủ điều kiện chuyển giai đoạn"}</strong>
+          <span>{callGate.attempts}/{callGate.requiredAttempts} lần gọi · {callGate.qualifiedDays}/{callGate.requiredDays} ngày đạt tối thiểu</span>
+          {callGate.nextCallAt && <span>Lần kế tiếp: {new Date(callGate.nextCallAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}</span>}
+        </div>
+      )}
+      {stageError && (
+        <div className="mx-3 sm:mx-5 mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+          {stageError}
+        </div>
+      )}
 
       {/* ── Body ── */}
       <div className="flex-1 overflow-y-auto xl:overflow-hidden flex flex-col xl:flex-row gap-0 pb-20 md:pb-0">

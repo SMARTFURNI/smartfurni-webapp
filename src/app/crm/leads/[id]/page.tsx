@@ -4,6 +4,7 @@ import { getCrmSession } from "@/lib/admin-auth";
 import { getAllStaff, getStaffById } from "@/lib/crm-staff-store";
 import { getFacebookGroupLeadSources } from "@/lib/facebook-group-marketing-store";
 import LeadDetailClient from "@/components/crm/LeadDetailClient";
+import { getNewLeadCallGate } from "@/lib/crm-new-lead-call-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const staffList = allStaff.map(s => ({ id: s.id, fullName: s.fullName }));
 
   if (!lead) notFound();
+  const initialCallGate = await getNewLeadCallGate(lead);
 
   return (
     <LeadDetailClient
@@ -38,6 +40,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       isAdmin={session?.isAdmin ?? false}
       currentUserName={currentUserName}
       staffList={staffList}
+      initialCallGate={initialCallGate}
     />
   );
 }

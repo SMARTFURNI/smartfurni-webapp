@@ -8,6 +8,7 @@ import { getRawLeadStats } from "@/lib/crm-raw-lead-store";
 import CrmDashboardClient from "@/components/crm/CrmDashboardClient";
 import { redirect } from "next/navigation";
 import { dashboardPeriodWindow, vietnamDateKey } from "@/lib/crm-dashboard-period";
+import { getNewLeadCallDashboard } from "@/lib/crm-new-lead-call-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,10 @@ export default async function CrmDashboardPage({
   // canViewAll (admin hoặc leader): xem tất cả; còn lại chỉ xem leads được giao cho mình
   const staffFilter = (!canViewAll && staffName) ? { assignedTo: staffName } : undefined;
 
-  // Pre-load tất cả dữ liệu song song để giảm thời gian chờ
+  // Bảo đảm các phiếu gọi lại được tạo trước khi tải danh sách việc hôm nay.
+  const callFollowup = await getNewLeadCallDashboard(staffFilter?.assignedTo).catch(() => null);
+
+  // Pre-load tất cả dữ liệu còn lại song song để giảm thời gian chờ
   const [leads, tasks, quotes, stats, crmSettings, allPlans, poolStats] = await Promise.all([
     getLeads(staffFilter),
     getTasks({ dueToday: true, ...(staffFilter ?? {}) }),
@@ -138,6 +142,7 @@ export default async function CrmDashboardPage({
       initialSharedPlan={sharedPlan}
       initialPoolStats={poolStats}
       initialPeriodStats={periodStats}
+      initialCallFollowup={callFollowup}
       currentUser={{
         name: staffName,
         username: staffUsername,

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import {
   Zap, Plus, Trash2, Save, RefreshCw, ChevronDown, ChevronUp,
   CheckCircle2, AlertCircle, Clock, GitBranch, Users, ArrowRight,
-  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle, Mail, Building2, BedDouble, CalendarClock,
+  Play, Pause, BarChart2, Settings, Activity, Tag, Bell, MessageCircle, Mail, Building2, BedDouble, CalendarClock, PhoneCall,
 } from "lucide-react";
 import ZaloWorkflowAutomation from "./ZaloWorkflowAutomation";
 import EmailWorkflowAutomation from "./EmailWorkflowAutomation";
@@ -14,6 +14,7 @@ import B2BSofaJourneyAutomation from "./B2BSofaJourneyAutomation";
 import WorkflowReportsDashboard from "./WorkflowReportsDashboard";
 import WorkflowValidationCenter from "./WorkflowValidationCenter";
 import AutomationOperationsCenter from "./AutomationOperationsCenter";
+import NewLeadCallPolicySettings from "./NewLeadCallPolicySettings";
 import styles from "./AutomationSettingsClient.module.css";
 import type {
   AutomationRule, AutomationTrigger, AutomationAction,
@@ -648,7 +649,7 @@ function AutoAssignTab({ config, onChange, staff }: { config: AutoAssignConfig; 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-type TabId = "reports" | "operations" | "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "b2c_sofa_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "upcoming" | "history";
+type TabId = "reports" | "operations" | "new_lead_calls" | "rules" | "b2b_sofa_journey" | "b2c_ergonomic_journey" | "b2c_sofa_journey" | "sla" | "auto_assign" | "run" | "zalo_workflow" | "email_workflow" | "upcoming" | "history";
 
 export default function AutomationSettingsClient() {
   const [activeTab, setActiveTab] = useState<TabId>("reports");
@@ -773,6 +774,7 @@ export default function AutomationSettingsClient() {
   const TABS = [
     { id: "reports" as TabId, label: "Báo cáo Workflow", icon: BarChart2, count: null },
     { id: "operations" as TabId, label: "Vận hành & Chính sách", icon: Settings, count: null },
+    { id: "new_lead_calls" as TabId, label: "Chuỗi gọi lead mới", icon: PhoneCall, count: null },
     { id: "rules" as TabId, label: "Quy tắc tự động", icon: Zap, count: rules.filter(r => r.enabled).length },
     { id: "upcoming" as TabId, label: "Lịch sắp gửi", icon: CalendarClock, count: null },
     { id: "history" as TabId, label: "Lịch sử gửi", icon: Clock, count: null },
@@ -808,7 +810,7 @@ export default function AutomationSettingsClient() {
                 <CheckCircle2 size={14} /> Đã lưu
               </div>
             )}
-            {![...WORKFLOW_TAB_IDS, "reports", "operations", "run", "upcoming", "history"].includes(activeTab) && <>
+            {![...WORKFLOW_TAB_IDS, "reports", "operations", "new_lead_calls", "run", "upcoming", "history"].includes(activeTab) && <>
               <button onClick={saveDraft} disabled={saving} className={styles.secondaryButton}>Lưu bản nháp</button>
               <button onClick={save} disabled={saving} className={styles.primaryButton}>
                 {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
@@ -920,6 +922,10 @@ export default function AutomationSettingsClient() {
 
       {activeTab === "operations" && (
         <AutomationOperationsCenter />
+      )}
+
+      {activeTab === "new_lead_calls" && (
+        <NewLeadCallPolicySettings />
       )}
 
       {activeTab === "email_workflow" && (

@@ -191,6 +191,13 @@ export async function createLead(
     `INSERT INTO crm_leads (id, data, stage, last_contact_at, updated_at) VALUES ($1, $2, $3, $4, NOW())`,
     [lead.id, JSON.stringify(lead), lead.stage, lead.lastContactAt]
   );
+  try {
+    const { ensureNewLeadCallSequence } = await import("./crm-new-lead-call-policy");
+    await ensureNewLeadCallSequence(lead);
+  } catch (error) {
+    // Lead vẫn phải được tạo nếu phần lập lịch gọi tạm thời chưa sẵn sàng.
+    console.error("[crm] Cannot initialize new-lead call sequence:", error);
+  }
   if (!options?.suppressZaloFriendship) {
     try {
       const {
@@ -256,6 +263,16 @@ export async function updateLead(id: string, updates: Partial<Lead>): Promise<Le
     `UPDATE crm_leads SET data = $1, stage = $2, last_contact_at = $3, updated_at = NOW() WHERE id = $4`,
     [JSON.stringify(persistedLead), updated.stage, updated.lastContactAt, id]
   );
+  try {
+    const { cancelNewLeadCallSequence, ensureNewLeadCallSequence } = await import("./crm-new-lead-call-policy");
+    if (existing.stage === "new" && updated.stage !== "new") {
+      await cancelNewLeadCallSequence(id);
+    } else if (updated.stage === "new" && (existing.assignedTo !== updated.assignedTo || existing.phone !== updated.phone)) {
+      await ensureNewLeadCallSequence(updated);
+    }
+  } catch (error) {
+    console.error("[crm] Cannot synchronize new-lead call sequence:", error);
+  }
   let refreshedZaloFriendship = updated.zaloFriendship;
   try {
     const {
@@ -298,6 +315,13 @@ export async function updateLeadStage(id: string, stage: LeadStage, lostReason?:
 
 export async function deleteLead(id: string): Promise<void> {
   await initCrmSchema();
+  try {
+    await query(`DELETE FROM crm_new_lead_call_attempts WHERE lead_id = $1`, [id]);
+    await query(`DELETE FROM crm_new_lead_call_schedules WHERE lead_id = $1`, [id]);
+    await query(`DELETE FROM crm_new_lead_call_sequences WHERE lead_id = $1`, [id]);
+  } catch {
+    // Các bảng chuỗi gọi có thể chưa được khởi tạo ở hệ thống cũ.
+  }
   await query(`DELETE FROM crm_leads WHERE id = $1`, [id]);
   await query(`DELETE FROM crm_activities WHERE lead_id = $1`, [id]);
   await query(`DELETE FROM crm_quotes WHERE lead_id = $1`, [id]);

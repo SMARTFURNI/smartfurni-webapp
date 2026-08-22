@@ -190,6 +190,12 @@ export interface CrmTask {
   done: boolean;
   assignedTo: string;
   createdAt: string;
+  /** Thời điểm chính xác của việc gọi lại; dueDate được giữ để tương thích lịch công việc cũ. */
+  dueAt?: string;
+  kind?: "new_lead_callback";
+  scheduleId?: string;
+  sequenceDay?: number;
+  sequenceSlot?: number;
 }
 
 export interface CrmSourceStat {

@@ -20,6 +20,7 @@ import { CRM_LEAD_TYPE_OPTIONS, getLeadTypeMeta } from "@/lib/crm-taxonomy";
 import { dashboardNotificationDismissalKey } from "@/lib/crm-dashboard-notifications";
 import AddLeadModal from "./AddLeadModal";
 import { TwelveWeekReportDashboard, GoalDetailDashboard } from "./TwelveWeekReportWidgets";
+import type { NewLeadCallDashboard } from "@/lib/crm-new-lead-call-types";
 
 interface CurrentUser {
   name: string;
@@ -44,6 +45,7 @@ interface Props {
   initialSharedPlan?: any | null;
   initialPoolStats?: PoolStats | null;
   initialPeriodStats?: PeriodStats | null;
+  initialCallFollowup?: NewLeadCallDashboard | null;
   initialRenderTimestamp: number;
   initialGreeting: string;
   initialDateLabel: string;
@@ -1395,7 +1397,7 @@ function Section({ title, icon: Icon, iconColor, iconBg, children, defaultOpen =
 const DASHBOARD_DEFAULT_LEAD_TYPES: LeadTypeItem[] = [
   ...CRM_LEAD_TYPE_OPTIONS.map(({ id, label, color }) => ({ id, label, color })),
 ];
-export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialRenderTimestamp, initialGreeting, initialDateLabel }: Props) {
+export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, dashboardTheme: themeProp, currentUser, initialLeadTypes, initialTwelveWeekPlan, initialSharedPlan, initialPoolStats, initialPeriodStats, initialCallFollowup, initialRenderTimestamp, initialGreeting, initialDateLabel }: Props) {
   // Merge with defaults so all keys are always defined
   const theme: DashboardTheme = { ...DEFAULT_SETTINGS.dashboardTheme, ...(themeProp ?? {}) };
   // Section ordering & visibility helpers
@@ -1774,6 +1776,20 @@ export default function CrmDashboardClient({ leads, todayTasks, quotes, stats, d
             ))}
           </div>
         </section>
+
+        {initialCallFollowup && (
+          <Link href="/crm/tasks" className="flex flex-wrap items-center gap-4 rounded-[22px] border border-amber-200 bg-gradient-to-r from-amber-50 to-white px-5 py-4 shadow-sm transition hover:border-amber-300">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-700"><Phone size={20} /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Liên hệ khách hàng mới hôm nay</p>
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <strong className="text-2xl font-black text-slate-900">{initialCallFollowup.customerCount} khách hàng</strong>
+                <span className="text-xs text-slate-500">{initialCallFollowup.scheduledCallCount} lượt gọi · {initialCallFollowup.dueNowCount} khách đã đến giờ</span>
+              </div>
+            </div>
+            <span className="flex items-center gap-1 text-xs font-bold text-blue-600">Xem phiếu gọi <ChevronRight size={15} /></span>
+          </Link>
+        )}
 
         {/* ── Focus Mode ──────────────────────────────────────────────────── */}
         {focusItems.length > 0 && (
