@@ -20,6 +20,7 @@ interface Friend {
 
 interface FriendRequest {
   userId: string;
+  fromUid?: string;
   displayName: string;
   avatar: string;
   requestMessage?: string;
@@ -76,6 +77,7 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat, accountId }: Zal
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [pendingFriendAction, setPendingFriendAction] = useState<string | null>(null);
 
   // Add friend state
   const [phoneInput, setPhoneInput] = useState("");
@@ -146,6 +148,15 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat, accountId }: Zal
   // SSE for realtime friend events
   useEffect(() => {
     const es = new EventSource("/api/crm/zalo-inbox/sse");
+    es.addEventListener("friend_request", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.accountId && data.accountId !== accountId) return;
+        const request = data.request || {};
+        showToast(`${request.displayName || request.fromUid || "Ai đó"} muốn kết bạn với bạn!`);
+        loadIncoming();
+      } catch { /* ignore */ }
+    });
     es.addEventListener("friend_event", (e) => {
       try {
         const data = JSON.parse(e.data);
@@ -154,29 +165,52 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat, accountId }: Zal
           showToast(`${data.displayName || "Ai đó"} muốn kết bạn với bạn!`);
           if (tab === "incoming") loadIncoming();
         } else if (data.type === "accepted") {
-          showToast(`${data.displayName || "Ai đó"} đã chấp nhận lời mời kết bạn!`);
+          showToast("Đã chấp nhận lời mời kết bạn");
+          loadIncoming();
           if (tab === "friends") loadFriends();
           if (tab === "sent") loadSent();
+        } else if (data.type === "auto_accept_failed") {
+          showToast(data.error || "Không thể tự động chấp nhận lời mời kết bạn", "error");
+          loadIncoming();
         }
       } catch { /* ignore */ }
     });
     return () => es.close();
-  }, [tab, loadIncoming, loadFriends, loadSent]);
+  }, [accountId, tab, loadIncoming, loadFriends, loadSent]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
 
   const handleAccept = async (userId: string) => {
-    const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", userId, accountId }) });
-    const data = await res.json();
-    if (data.success) { showToast("Đã chấp nhận lời mời kết bạn"); loadIncoming(); }
-    else showToast(data.error || "Lỗi", "error");
+    if (!userId) return showToast("Không xác định được tài khoản gửi lời mời", "error");
+    setPendingFriendAction(`accept:${userId}`);
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "accept", userId, accountId }) });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Không thể chấp nhận lời mời");
+      setIncomingRequests(previous => previous.filter(request => (request.userId || request.fromUid) !== userId));
+      showToast("Đã chấp nhận lời mời kết bạn");
+      void loadFriends();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Không thể chấp nhận lời mời", "error");
+    } finally {
+      setPendingFriendAction(null);
+    }
   };
 
   const handleReject = async (userId: string) => {
-    const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reject", userId, accountId }) });
-    const data = await res.json();
-    if (data.success) { showToast("Đã từ chối lời mời"); loadIncoming(); }
-    else showToast(data.error || "Lỗi", "error");
+    if (!userId) return showToast("Không xác định được tài khoản gửi lời mời", "error");
+    setPendingFriendAction(`reject:${userId}`);
+    try {
+      const res = await fetch("/api/crm/zalo-inbox/friend-action", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reject", userId, accountId }) });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Không thể từ chối lời mời");
+      setIncomingRequests(previous => previous.filter(request => (request.userId || request.fromUid) !== userId));
+      showToast("Đã từ chối lời mời");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Không thể từ chối lời mời", "error");
+    } finally {
+      setPendingFriendAction(null);
+    }
   };
 
   const handleUndoRequest = async (userId: string) => {
@@ -335,24 +369,27 @@ export default function ZaloFriendsPanel({ onClose, onOpenChat, accountId }: Zal
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 <div className="px-4 py-2 text-xs text-gray-400">{incomingRequests.length} lời mời đang chờ</div>
-                {incomingRequests.map(req => (
-                  <div key={req.userId} className="flex items-start gap-3 px-4 py-3">
+                {incomingRequests.map(req => {
+                  const requestUserId = req.userId || req.fromUid || "";
+                  return (
+                  <div key={requestUserId} className="flex items-start gap-3 px-4 py-3">
                     <AvatarCircle name={req.displayName} avatar={req.avatar} size={42} />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm text-gray-900 dark:text-gray-900">{req.displayName}</div>
                       {req.requestMessage && <div className="text-xs text-gray-500 mt-0.5 italic">"{req.requestMessage}"</div>}
                       {req.sentAt && <div className="text-xs text-gray-400 mt-0.5">{new Date(req.sentAt).toLocaleDateString("vi-VN")}</div>}
                       <div className="flex gap-2 mt-2">
-                        <button onClick={() => handleAccept(req.userId)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg font-medium">
-                          <Check size={12} /> Chấp nhận
+                        <button onClick={() => handleAccept(requestUserId)} disabled={Boolean(pendingFriendAction)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium">
+                          {pendingFriendAction === `accept:${requestUserId}` ? <RefreshCw size={12} className="animate-spin" /> : <Check size={12} />} Chấp nhận
                         </button>
-                        <button onClick={() => handleReject(req.userId)} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-medium">
-                          <X size={12} /> Từ chối
+                        <button onClick={() => handleReject(requestUserId)} disabled={Boolean(pendingFriendAction)} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-medium">
+                          {pendingFriendAction === `reject:${requestUserId}` ? <RefreshCw size={12} className="animate-spin" /> : <X size={12} />} Từ chối
                         </button>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

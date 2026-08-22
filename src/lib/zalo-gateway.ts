@@ -150,6 +150,7 @@ export interface FriendRequest {
 
 // In-memory store for pending friend requests (incoming)
 const incomingFriendRequests: Map<string, FriendRequest> = new Map();
+const autoAcceptingFriendRequests = new Set<string>();
 
 export function getIncomingFriendRequests(accountId?: string): FriendRequest[] {
   const prefix = accountId ? `${accountId}:` : "";
@@ -876,8 +877,31 @@ function setupListeners(runtime: ZaloGatewayRuntime) {
             eventAt: timestamp,
           }).catch(error => console.error("[ZaloGateway] Không gửi được PWA lời mời kết bạn:", error));
           void import("./crm-zalo-friendship")
-            .then(module => module.recordZaloFriendshipGatewayEvent({ type: "incoming", userId: fromUid, accountId: runtime.accountId }))
-            .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái lời mời đến:", error));
+            .then(async module => {
+              void module.recordZaloFriendshipGatewayEvent({ type: "incoming", userId: fromUid, accountId: runtime.accountId })
+                .catch(error => console.error("[ZaloGateway] Không cập nhật được trạng thái lời mời đến:", error));
+
+              const settings = await module.getZaloFriendshipSettings();
+              if (!settings.enabled || !settings.autoAcceptIncomingRequests) return;
+
+              const requestKey = `${runtime.accountId}:${fromUid}`;
+              if (autoAcceptingFriendRequests.has(requestKey)) return;
+              autoAcceptingFriendRequests.add(requestKey);
+              try {
+                const accepted = await acceptZaloFriendRequest(fromUid, runtime.accountId);
+                if (!accepted.success) {
+                  broadcastSSE("friend_event", {
+                    type: "auto_accept_failed",
+                    userId: fromUid,
+                    error: accepted.error || "Không thể tự động chấp nhận lời mời kết bạn",
+                  }, runtime.accountId);
+                  console.error(`[ZaloGateway] Auto-accept friend request ${fromUid} failed: ${accepted.error || "unknown error"}`);
+                }
+              } finally {
+                autoAcceptingFriendRequests.delete(requestKey);
+              }
+            })
+            .catch(error => console.error("[ZaloGateway] Không xử lý được tự động chấp nhận lời mời đến:", error));
           console.log(`[ZaloGateway] Incoming friend request from ${fromUid}: ${message}`);
         }
       }

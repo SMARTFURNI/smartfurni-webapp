@@ -138,6 +138,10 @@ export default function AutomationOperationsCenter() {
         <div className="flex items-center gap-2"><MessageCircle size={18} className="text-blue-600" /><div><h3 className="text-sm font-bold text-gray-900">Tự động kết bạn Zalo khi có khách hàng mới</h3><p className="text-xs text-gray-500">Gửi lời mời theo sản phẩm, kiểm tra chấp nhận, thu hồi sau thời hạn và gửi lại có giới hạn.</p></div></div>
         <div className="flex items-center gap-3"><label className="flex items-center gap-2 text-xs font-semibold text-gray-700"><input type="checkbox" checked={friendSettings.enabled} onChange={event => setFriendSettings({ ...friendSettings, enabled: event.target.checked })} className="accent-[#0068ff]" />{friendSettings.enabled ? "Đang bật" : "Đang tắt"}</label><button onClick={saveFriendSettings} disabled={busy === "friendship"} className="inline-flex items-center gap-2 rounded-xl bg-[#0068ff] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">{busy === "friendship" ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}Lưu</button></div>
       </div>
+      <label className="mb-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-white/80 p-3 text-xs text-gray-700">
+        <input type="checkbox" checked={friendSettings.autoAcceptIncomingRequests} onChange={event => setFriendSettings({ ...friendSettings, autoAcceptIncomingRequests: event.target.checked })} className="mt-0.5 accent-[#0068ff]" />
+        <span><strong className="block text-gray-900">Tự động chấp nhận lời mời đến</strong>Khách chủ động gửi lời mời sẽ được chấp nhận ngay trên đúng tài khoản Zalo đang kết nối. Nếu Zalo trả lỗi, lời mời vẫn nằm trong Danh bạ để nhân viên xử lý thủ công.</span>
+      </label>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <label className="text-xs text-gray-600 md:col-span-2">Tài khoản mặc định cho kết bạn và workflow
           <select value={friendSettings.defaultAccountId} onChange={event => setFriendSettings({ ...friendSettings, defaultAccountId: event.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2">

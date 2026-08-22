@@ -138,6 +138,22 @@ describe("Zalo Inbox durable sync", () => {
     expect(sendRoute).toContain("markZaloQuickMessageUsed");
   });
 
+  it("normalizes incoming friend requests and auto-accepts them when enabled", () => {
+    const route = source("src/app/api/crm/zalo-inbox/friend-requests/route.ts");
+    const panel = source("src/components/crm/zalo-inbox/ZaloFriendsPanel.tsx");
+    const gateway = source("src/lib/zalo-gateway.ts");
+    const settings = source("src/lib/crm-zalo-friendship-types.ts");
+
+    expect(route).toContain("userId: friendRequest.fromUid");
+    expect(route).toContain("requestMessage: friendRequest.message");
+    expect(panel).toContain('addEventListener("friend_request"');
+    expect(panel).toContain("request.userId || request.fromUid");
+    expect(settings).toContain("autoAcceptIncomingRequests: boolean");
+    expect(gateway).toContain("settings.autoAcceptIncomingRequests");
+    expect(gateway).toContain("acceptZaloFriendRequest(fromUid, runtime.accountId)");
+    expect(gateway).toContain('type: "auto_accept_failed"');
+  });
+
   it("pushes each inbound realtime message to all CRM and Admin PWA accounts", () => {
     const gateway = source("src/lib/zalo-gateway.ts");
     const push = source("src/lib/zalo-inbox-push.ts");

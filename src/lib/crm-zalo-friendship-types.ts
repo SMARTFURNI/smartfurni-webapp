@@ -33,6 +33,8 @@ export interface ZaloFriendshipSummary {
 
 export interface ZaloFriendshipSettings {
   enabled: boolean;
+  /** Tự động chấp nhận khi khách chủ động gửi lời mời kết bạn đến tài khoản đang kết nối. */
+  autoAcceptIncomingRequests: boolean;
   /** Tài khoản cố định dùng khi lead chưa có hội thoại/kết bạn trước đó. */
   defaultAccountId: string;
   initialDelayMinutes: number;

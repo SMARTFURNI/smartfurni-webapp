@@ -27,6 +27,7 @@ export { buildZaloFriendRequestMessage, getLeadProductLabel, normalizeZaloFriend
 
 const DEFAULT_SETTINGS: ZaloFriendshipSettings = {
   enabled: true,
+  autoAcceptIncomingRequests: true,
   defaultAccountId: "",
   initialDelayMinutes: 0,
   retryAfterHours: 72,
@@ -144,6 +145,7 @@ export async function updateZaloFriendshipSettings(
   updates: Partial<ZaloFriendshipSettings>,
 ): Promise<ZaloFriendshipSettings> {
   const next = { ...(await getZaloFriendshipSettings()), ...updates };
+  next.autoAcceptIncomingRequests = next.autoAcceptIncomingRequests !== false;
   next.defaultAccountId = cleanZaloFriendshipText(next.defaultAccountId || "").slice(0, 200);
   if (next.defaultAccountId) {
     const accountIsActive = (await listZaloAccounts()).some(
