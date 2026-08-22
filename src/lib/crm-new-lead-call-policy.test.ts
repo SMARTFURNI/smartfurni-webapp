@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildNewLeadCallSlots, evaluateNewLeadCallUnlock, normalizeNewLeadCallPolicy } from "./crm-new-lead-call-policy";
+import { buildNewLeadCallSlots, evaluateNewLeadCallUnlock, isNewLeadCallPolicyEligible, normalizeNewLeadCallPolicy } from "./crm-new-lead-call-policy";
 
 describe("new lead call policy", () => {
   it("creates three calls per day, three hours apart, for three days", () => {
@@ -37,5 +37,11 @@ describe("new lead call policy", () => {
       unlockAt: "2026-08-25T13:00:00.000Z",
       now: new Date("2026-08-22T03:00:00.000Z"),
     })).toMatchObject({ unlocked: true, success: true });
+  });
+
+  it("does not backfill customers created before the rollout date", () => {
+    const policy = normalizeNewLeadCallPolicy();
+    expect(isNewLeadCallPolicyEligible({ createdAt: "2026-08-21T16:59:59.000Z", stage: "new", phone: "0909000000" }, policy)).toBe(false);
+    expect(isNewLeadCallPolicyEligible({ createdAt: "2026-08-21T17:00:00.000Z", stage: "new", phone: "0909000000" }, policy)).toBe(true);
   });
 });

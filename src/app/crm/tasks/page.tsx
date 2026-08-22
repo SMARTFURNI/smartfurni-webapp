@@ -5,9 +5,13 @@ import { getRoleById } from "@/lib/crm-roles-store";
 import { getTasks } from "@/lib/crm-store";
 import type { CrmTask } from "@/lib/crm-types";
 import TasksListClient from "@/components/crm/TasksListClient";
+import { migrateLegacyNewLeadCalls } from "@/lib/crm-new-lead-call-policy";
 
 export default async function CrmTasksPage() {
   const session = await requireCrmAccess();
+  await migrateLegacyNewLeadCalls().catch(error =>
+    console.error("[crm/tasks] Failed to migrate legacy new-lead calls:", error)
+  );
 
   let staffName: string | undefined;
   let canViewAll = session.isAdmin;

@@ -2,6 +2,8 @@ import type { LeadStage } from "./crm-types";
 
 export interface NewLeadCallPolicy {
   enabled: boolean;
+  /** Chỉ lead được tạo từ ngày này (múi giờ Việt Nam) mới vào chuỗi gọi. */
+  effectiveFrom: string;
   startHour: number;
   endHour: number;
   callsPerDay: number;
@@ -52,6 +54,7 @@ export interface NewLeadCallDashboard {
 
 export const DEFAULT_NEW_LEAD_CALL_POLICY: NewLeadCallPolicy = {
   enabled: true,
+  effectiveFrom: "2026-08-22",
   startHour: 9,
   endHour: 20,
   callsPerDay: 3,

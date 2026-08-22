@@ -77,6 +77,11 @@ export default function NewLeadCallPolicySettings() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <label className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <span className="block text-xs font-bold text-emerald-800">Áp dụng cho khách tạo từ ngày</span>
+          <input type="date" value={policy.effectiveFrom} readOnly className="mt-2 w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold text-slate-900" />
+          <span className="mt-1 block text-[11px] text-emerald-700">Khách cũ hơn mốc này không bị áp dụng chuỗi gọi.</span>
+        </label>
         {numberFields.map(field => (
           <label key={field.key} className="rounded-xl border border-slate-200 bg-white p-4">
             <span className="block text-xs font-bold text-slate-600">{field.label}</span>

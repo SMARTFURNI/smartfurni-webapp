@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { query, queryOne } from "./db";
 import type { CallLog, Lead } from "./crm-types";
 import {
@@ -38,6 +37,8 @@ export function normalizeNewLeadCallPolicy(value?: Partial<NewLeadCallPolicy> | 
   const allowedSuccessStages = new Set(["profile_sent", "surveyed", "quoted", "negotiating", "won", "lost"]);
   return {
     enabled: value?.enabled ?? DEFAULT_NEW_LEAD_CALL_POLICY.enabled,
+    // Đây là mốc rollout đã được chốt để tuyệt đối không backfill khách hàng cũ.
+    effectiveFrom: DEFAULT_NEW_LEAD_CALL_POLICY.effectiveFrom,
     startHour,
     endHour: clampInt(value?.endHour, DEFAULT_NEW_LEAD_CALL_POLICY.endHour, minimumEnd, 23),
     callsPerDay,
@@ -51,6 +52,13 @@ export function normalizeNewLeadCallPolicy(value?: Partial<NewLeadCallPolicy> | 
       ? value!.successStage!
       : DEFAULT_NEW_LEAD_CALL_POLICY.successStage,
   };
+}
+
+export function isNewLeadCallPolicyEligible(lead: Pick<Lead, "createdAt" | "stage" | "phone">, policy: NewLeadCallPolicy) {
+  if (!policy.enabled || lead.stage !== "new" || !lead.phone) return false;
+  const createdAt = new Date(lead.createdAt);
+  if (Number.isNaN(createdAt.getTime())) return false;
+  return vietnamDateKey(createdAt) >= policy.effectiveFrom;
 }
 
 function vnParts(date: Date) {
@@ -201,6 +209,7 @@ export async function saveNewLeadCallPolicy(value: Partial<NewLeadCallPolicy>) {
      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
     [POLICY_KEY, JSON.stringify(policy)],
   );
+  await migrateLegacyNewLeadCalls(policy);
   const activeLeads = await query<{ data: Lead | string }>(
     `SELECT l.data FROM crm_leads l JOIN crm_new_lead_call_sequences s ON s.lead_id = l.id
      WHERE l.stage = 'new' AND s.status = 'active' LIMIT 500`,
@@ -211,7 +220,7 @@ export async function saveNewLeadCallPolicy(value: Partial<NewLeadCallPolicy>) {
 
 export async function ensureNewLeadCallSequence(lead: Lead) {
   const policy = await getNewLeadCallPolicy();
-  if (!policy.enabled || lead.stage !== "new" || !lead.phone) return null;
+  if (!isNewLeadCallPolicyEligible(lead, policy)) return null;
   const existing = await queryOne<SequenceRow>(`SELECT * FROM crm_new_lead_call_sequences WHERE lead_id = $1`, [lead.id]);
   if (existing && existing.status !== "active") return existing;
   const plan = buildNewLeadCallSlots(lead.createdAt, policy);
@@ -275,6 +284,132 @@ export async function ensureNewLeadCallSequence(lead: Lead) {
     );
   }
   return queryOne<SequenceRow>(`SELECT * FROM crm_new_lead_call_sequences WHERE lead_id = $1`, [lead.id]);
+}
+
+export interface LegacyNewLeadCallMigrationResult {
+  cutoff: string;
+  movedLeadCount: number;
+  completedTaskCount: number;
+  cancelledScheduleCount: number;
+}
+
+/**
+ * Một lần đối soát an toàn cho đợt rollout 22/08/2026:
+ * - lead cũ còn ở "Khách hàng mới" được đưa sang "Đã báo giá";
+ * - phiếu gọi do tính năng mới lỡ backfill được đóng, không xóa lịch sử;
+ * - không kích hoạt workflow/email hàng loạt trong quá trình migration.
+ */
+export async function migrateLegacyNewLeadCalls(
+  suppliedPolicy?: NewLeadCallPolicy,
+): Promise<LegacyNewLeadCallMigrationResult> {
+  const { initCrmSchema } = await import("./crm-store");
+  await initCrmSchema();
+  await ensureSchema();
+  const policy = suppliedPolicy ?? await getNewLeadCallPolicy();
+  const cutoffIso = new Date(`${policy.effectiveFrom}T00:00:00+07:00`).toISOString();
+  const occurredAt = new Date().toISOString();
+  const { initJourneyReportingSchema } = await import("./crm-journey-reporting");
+  await initJourneyReportingSchema();
+  const { getDb } = await import("./db");
+  const client = await getDb().connect();
+  try {
+    await client.query("BEGIN");
+    // Nhiều nhân viên có thể mở CRM cùng lúc ngay sau deploy; khóa giao dịch
+    // bảo đảm migration chỉ chạy một lần và số liệu trả về không bị nhân đôi.
+    await client.query(`SELECT pg_advisory_xact_lock(hashtext('crm_new_lead_call_cutover_2026_08_22'))`);
+    const candidateResult = await client.query<{ id: string; stage: string }>(
+      `SELECT l.id, l.stage
+       FROM crm_leads l
+       WHERE COALESCE(
+               CASE WHEN l.data->>'createdAt' ~ '^\\d{4}-\\d{2}-\\d{2}T' THEN (l.data->>'createdAt')::timestamptz END,
+               l.updated_at
+             ) < $1
+         AND (
+           l.stage = 'new'
+           OR EXISTS (SELECT 1 FROM crm_new_lead_call_sequences s WHERE s.lead_id = l.id AND s.status = 'active')
+           OR EXISTS (SELECT 1 FROM crm_tasks t WHERE t.lead_id = l.id AND t.data->>'kind' = 'new_lead_callback' AND t.done = FALSE)
+         )`,
+      [cutoffIso],
+    );
+    const candidates = candidateResult.rows;
+    if (candidates.length === 0) {
+      await client.query("COMMIT");
+      return { cutoff: policy.effectiveFrom, movedLeadCount: 0, completedTaskCount: 0, cancelledScheduleCount: 0 };
+    }
+    const legacyIds = candidates.map(row => row.id);
+    const movedIds = candidates.filter(row => row.stage === "new").map(row => row.id);
+    let movedLeadCount = 0;
+    if (movedIds.length > 0) {
+      const leadResult = await client.query(
+        `UPDATE crm_leads
+         SET stage = 'quoted',
+             data = jsonb_set(jsonb_set(data, '{stage}', '"quoted"'::jsonb, true), '{updatedAt}', to_jsonb($2::text), true),
+             updated_at = $2
+         WHERE id = ANY($1::text[]) AND stage = 'new'`,
+        [movedIds, occurredAt],
+      );
+      movedLeadCount = Number(leadResult.rowCount || 0);
+      await client.query(
+        `INSERT INTO crm_activities (id, lead_id, data, created_at)
+         SELECT 'new-lead-call-cutover:' || lead_id,
+                lead_id,
+                jsonb_build_object(
+                  'id', 'new-lead-call-cutover:' || lead_id,
+                  'leadId', lead_id,
+                  'type', 'note',
+                  'title', 'Chuyển khách hàng cũ sang Đã báo giá',
+                  'content', 'Khách hàng được tạo trước 22/08/2026 nên không áp dụng chuỗi gọi mới. CRM đã đóng các phiếu gọi backfill và chuyển sang Đã báo giá.',
+                  'createdBy', 'CRM · Migration chuỗi gọi',
+                  'createdAt', $2::text,
+                  'attachments', '[]'::jsonb
+                ),
+                $2
+         FROM unnest($1::text[]) AS ids(lead_id)
+         ON CONFLICT (id) DO NOTHING`,
+        [movedIds, occurredAt],
+      );
+      await client.query(
+        `INSERT INTO crm_lead_stage_history (id, lead_id, from_stage, to_stage, source, metadata, occurred_at)
+         SELECT 'new-lead-call-cutover:' || lead_id,
+                lead_id, 'new', 'quoted', 'new_lead_call_cutover',
+                jsonb_build_object('effectiveFrom', $2::text, 'reason', 'legacy_lead'), $3
+         FROM unnest($1::text[]) AS ids(lead_id)
+         ON CONFLICT (id) DO NOTHING`,
+        [movedIds, policy.effectiveFrom, occurredAt],
+      );
+    }
+
+    const taskResult = await client.query(
+      `UPDATE crm_tasks
+       SET done = TRUE, data = jsonb_set(data, '{done}', 'true'::jsonb, true), updated_at = NOW()
+       WHERE lead_id = ANY($1::text[]) AND data->>'kind' = 'new_lead_callback' AND done = FALSE`,
+      [legacyIds],
+    );
+    const scheduleResult = await client.query(
+      `UPDATE crm_new_lead_call_schedules
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE lead_id = ANY($1::text[]) AND status = 'pending'`,
+      [legacyIds],
+    );
+    await client.query(
+      `UPDATE crm_new_lead_call_sequences
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE lead_id = ANY($1::text[]) AND status = 'active'`,
+      [legacyIds],
+    );
+    await client.query("COMMIT");
+    return {
+      cutoff: policy.effectiveFrom,
+      movedLeadCount,
+      completedTaskCount: Number(taskResult.rowCount || 0),
+      cancelledScheduleCount: Number(scheduleResult.rowCount || 0),
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function cancelNewLeadCallSequence(leadId: string) {
@@ -451,6 +586,7 @@ export async function getNewLeadCallDashboard(assignedTo?: string): Promise<NewL
   const { initCrmSchema } = await import("./crm-store");
   await initCrmSchema();
   await ensureSchema();
+  await migrateLegacyNewLeadCalls();
   await ensureSequencesForNewLeads(assignedTo);
   const policy = await getNewLeadCallPolicy();
   const today = vietnamDateKey(new Date());
